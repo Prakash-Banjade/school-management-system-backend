@@ -50,6 +50,8 @@
     "fastify-plugin": "^5.0.1",
     "google-auth-library": "^9.14.1",
     "handlebars": "^4.7.8",
+    "joi": "^17.13.3",
+    "mysql2": "^3.11.3",
     "nanoid": "^3.3.4",
     "nestjs-form-data": "^1.9.91",
     "nodemailer": "^6.9.15",
