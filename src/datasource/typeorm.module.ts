@@ -12,7 +12,7 @@ import { Global, Module } from '@nestjs/common';
                 // using the factory function to create the datasource instance
                 try {
                     const dataSource = new DataSource({
-                        type: 'postgres',
+                        type: 'mysql',
                         url: process.env.DATABASE_URL,
                         entities: [`${__dirname}/../**/**.entity{.ts,.js}`], // this will automatically load all entity file in the src folder
                         synchronize: true,
