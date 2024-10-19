@@ -11,6 +11,8 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuthGuard } from './common/guards/auth.guard';
 import { envSchema } from './env.schema';
+import { DormitorySystemModule } from './dormitory-system/dormitory-system.module';
+import { FinanceSystemModule } from './finance-system/finance-system.module';
 
 @Module({
   imports: [
@@ -37,6 +39,8 @@ import { envSchema } from './env.schema';
     AuthSystemModule,
     FileManagementModule,
     MailModule,
+    DormitorySystemModule,
+    FinanceSystemModule,
   ],
   controllers: [AppController],
   providers: [

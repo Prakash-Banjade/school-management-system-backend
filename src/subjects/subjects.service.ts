@@ -1,0 +1,109 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { CreateSubjectDto } from './dto/create-subject.dto';
+import { UpdateSubjectDto } from './dto/update-subject.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Subject } from './entities/subject.entity';
+import { Brackets, Repository } from 'typeorm';
+import { SubjectQueryDto } from './dto/subject-query.dto';
+import { ClassRoomsService } from 'src/class-rooms/class-rooms.service';
+import { TeachersService } from 'src/teachers/teachers.service';
+import paginatedData from 'src/utils/paginatedData';
+
+@Injectable()
+export class SubjectsService {
+  constructor(
+    @InjectRepository(Subject) private readonly subjectsRepo: Repository<Subject>,
+    private readonly classRoomsService: ClassRoomsService,
+    private readonly teachersService: TeachersService,
+  ) { }
+
+  async create(createSubjectDto: CreateSubjectDto) {
+    const teacher = createSubjectDto.teacherId
+      ? await this.teachersService.findOne(createSubjectDto.teacherId)
+      : null;
+
+    const classRoom = createSubjectDto.classRoomId
+      ? await this.classRoomsService.findOne(createSubjectDto.classRoomId)
+      : null;
+
+    const newSubject = this.subjectsRepo.create({
+      ...createSubjectDto,
+      teacher,
+      classRoom
+    });
+    const createdSubject = await this.subjectsRepo.save(newSubject);
+
+    return this.subjectMutationReturn(createdSubject, 'created');
+
+  }
+
+  async findAll(queryDto: SubjectQueryDto) {
+    const queryBuilder = this.subjectsRepo.createQueryBuilder('subject');
+
+    queryBuilder
+      .skip(queryDto.skip)
+      .take(queryDto.take)
+      .orderBy("subject.createdAt", queryDto.order)
+      .withDeleted()
+      .leftJoinAndSelect('subject.classRoom', 'classRoom')
+      .leftJoinAndSelect('subject.teacher', 'teacher')
+      .andWhere(new Brackets(qb => {
+        queryDto.search && qb.andWhere("LOWER(subject.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+        queryDto.classRoomId && qb.andWhere("classRoom.id = :classRoomId", { classRoomId: queryDto.classRoomId })
+      }))
+
+    // TODO: add select cols
+
+    return paginatedData(queryDto, queryBuilder);
+  }
+
+  async findOne(id: string) {
+    const existing = await this.subjectsRepo.findOne({
+      where: { id },
+      relations: {
+        classRoom: true,
+        teacher: true,
+      }
+    })
+    if (!existing) throw new NotFoundException(`Subject with id ${id} not found`);
+
+    return existing
+  }
+
+  async update(id: string, updateSubjectDto: UpdateSubjectDto) {
+    const existing = await this.findOne(id);
+
+    const classRoom = updateSubjectDto.classRoomId
+      ? await this.classRoomsService.findOne(updateSubjectDto.classRoomId)
+      : null;
+
+    const teacher = updateSubjectDto.teacherId
+      ? await this.teachersService.findOne(updateSubjectDto.teacherId)
+      : null;
+
+    Object.assign(existing, updateSubjectDto);
+    existing.classRoom = classRoom;
+    existing.teacher = teacher;
+
+    const updatedSubject = await this.subjectsRepo.save(existing);
+    return this.subjectMutationReturn(updatedSubject, 'updated');
+  }
+
+  async remove(id: string) {
+    const existing = await this.findOne(id);
+    const deletedSubject = await this.subjectsRepo.softRemove(existing);
+
+    return this.subjectMutationReturn(deletedSubject, 'deleted')
+  }
+
+  private subjectMutationReturn = (subject: Subject, type: 'created' | 'updated' | 'deleted') => {
+    return {
+      message: type === 'created' ? 'Subject created successfully' : 'Subject updated successfully',
+      subject: {
+        id: subject.id,
+        name: subject.subjectName,
+        subjectCode: subject.subjectCode,
+      }
+    }
+  }
+}

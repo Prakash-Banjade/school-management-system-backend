@@ -29,3 +29,130 @@ export enum AuthProvider {
     GOOGLE = 'google',
     CREDENTIALS = 'credentials',
 }
+
+export enum EClassType {
+    PRIMARY = 'primary', // to denote the direct parent class
+    SECTION = 'section',
+    SEMESTER = 'semester',
+    YEAR = 'year',
+}
+
+export enum EReligion {
+    ISLAM = 'islam',
+    HINDUISM = 'hinduism',
+    SIKHISM = 'sikhism',
+    BUDDHISM = 'buddhism',
+    CHRISTIANITY = 'christianity',
+    PROTESTANTISM = 'protestantism',
+    OTHER = 'other',
+}
+
+export enum EMaritalStatus {
+    SINGLE = 'single',
+    MARRIED = 'married',
+    DIVORCED = 'divorced',
+    WIDOWED = 'widowed',
+}
+
+export enum EBloodGroup {
+    A_POSITIVE = 'A+',
+    B_POSITIVE = 'B+',
+    AB_POSITIVE = 'AB+',
+    O_POSITIVE = 'O+',
+    A_NEGATIVE = 'A-',
+    B_NEGATIVE = 'B-',
+    AB_NEGATIVE = 'AB-',
+    O_NEGATIVE = 'O-',
+}
+
+export enum EGuardianRelation {
+    FATHER = 'father',
+    MOTHER = 'mother',
+    GUARDIAN = 'guardian',
+    OTHER = 'other',
+}
+
+export enum EAttendanceStatus {
+    PRESENT = 'present',
+    ABSENT = 'absent',
+    LATE = 'late',
+    LEAVE = 'leave',
+}
+
+export enum ESubjectChapterPriority {
+    HIGH = 'high',
+    MEDIUM = 'medium',
+    LOW = 'low',
+}
+
+export enum ETask {
+    CLASSWORK = 'classwork',
+    HOMEWORK = 'homework',
+    ASSIGNMENT = 'assignment',
+}
+
+export enum EStaff {
+    DRIVER = 'driver',
+    LABOR = 'labor',
+    HELPER = 'helper',
+    PEON = 'peon',
+    GUARD = 'guard',
+    LIBRARIAN = 'librarian',
+    RECEPTIONIST = 'receptionist',
+    ACCOUNTANT = 'accountant',
+}
+
+export enum ESalaryStatus {
+    PAID = 'paid',
+    PENDING = 'pending',
+}
+
+export enum ELeaveRequestStatus {
+    PENDING = 'pending',
+    APPROVED = 'approved',
+    REJECTED = 'rejected',
+}
+
+export enum ELibarryBookStatus {
+    RETURNED = 'returned',
+    PENDING = 'pending',
+}
+
+export enum EPaymentMethod {
+    CASH = 'cash',
+    CREDIT = 'credit',
+    DEBIT = 'debit',
+    BANK = 'bank',
+}
+
+export enum EFeeInvoicePaymentStatus {
+    NOT_PAID = 'not_paid',
+    PARTIAL_PAID = 'partial_paid',
+    FULL_PAID = 'full_paid',
+}
+
+export enum EFeeGroupAppliedTo {
+    CLASS = 'class',
+    ALL = 'all'
+}
+
+export enum EDormitoryType {
+    BOYS = 'boys',
+    GIRLS = 'girls',
+    BOTH = 'both',
+}
+
+export enum EDayOfWeek {
+    MONDAY = 'monday',
+    TUESDAY = 'tuesday',
+    WEDNESDAY = 'wednesday',
+    THURSDAY = 'thursday',
+    FRIDAY = 'friday',
+    SATURDAY = 'saturday',
+    SUNDAY = 'sunday',
+}
+
+export enum ERoutineType { 
+    CLASS = 'class',
+    BREAK = 'break',
+}

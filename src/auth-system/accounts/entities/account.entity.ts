@@ -6,6 +6,8 @@ import { AuthProvider, Role } from "src/common/types/global.type";
 import { User } from "src/auth-system/users/entities/user.entity";
 import { Image } from "src/file-management/images/entities/image.entity";
 import { BCRYPT_HASH, EMAIL_REGEX, PASSWORD_SALT_COUNT } from "src/common/CONSTANTS";
+import { Student } from "src/students/entities/student.entity";
+import { Teacher } from "src/teachers/entities/teacher.entity";
 
 @Entity()
 export class Account extends BaseEntity {
@@ -41,6 +43,12 @@ export class Account extends BaseEntity {
 
     @OneToOne(() => User, user => user.account, { nullable: true })
     user: User;
+
+    @OneToOne(() => Student, student => student.account, { nullable: true })
+    student: Student;
+
+    @OneToOne(() => Teacher, teacher => teacher.account, { nullable: true })
+    teacher: Teacher;
 
     @OneToMany(() => Image, image => image.uploadedBy)
     images: Image[];

@@ -18,7 +18,7 @@ export class User extends BaseEntity {
     @OneToOne(() => Image, image => image.user_profileImage, { nullable: true })
     profileImage: Image | null;
 
-    @OneToOne(() => Account, account => account.user, { nullable: true })
+    @OneToOne(() => Account, account => account.user, { nullable: true, onDelete: 'CASCADE' })
     @JoinColumn()
     account: Account | null;
 }

@@ -1,0 +1,43 @@
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { SalariesService } from './salaries.service';
+import { CreateSalaryDto } from './dto/create-salary.dto';
+import { UpdateSalaryDto } from './dto/update-salary.dto';
+import { ApiPaginatedResponse } from 'src/core/decorators/apiPaginatedResponse.decorator';
+import { SalaryQueryDto } from './dto/salary-query.dto';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Action } from 'src/core/types/global.types';
+import { ChekcAbilities } from 'src/core/decorators/abilities.decorator';
+
+@ApiBearerAuth()
+@ApiTags('Salaries')
+@Controller('salaries')
+export class SalariesController {
+  constructor(private readonly salariesService: SalariesService) { }
+
+  @Post()
+  create(@Body() createSalaryDto: CreateSalaryDto) {
+    return this.salariesService.create(createSalaryDto);
+  }
+
+  @Get()
+  @ApiPaginatedResponse(CreateSalaryDto)
+  findAll(@Query() queryDto: SalaryQueryDto) {
+    return this.salariesService.findAll(queryDto);
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.salariesService.findOne(id);
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateSalaryDto: UpdateSalaryDto) {
+    return this.salariesService.update(id, updateSalaryDto);
+  }
+
+  @Delete(':id')
+  @ChekcAbilities({ action: Action.DELETE, subject: 'all' })
+  remove(@Param('id') id: string) {
+    return this.salariesService.remove(id);
+  }
+}
