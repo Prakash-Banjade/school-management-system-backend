@@ -49,7 +49,13 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
 
-  await app.listen(3001);
-  console.log(`Application is running on: ${await app.getUrl()}`);
+  await app.listen(configService.get('PORT'), (err, address) => {
+    if (err) {
+      console.error(err);
+      process.exit(1);
+    } else {
+      console.log(`Server listening on ${address}`);
+    }
+  });
 }
 bootstrap();
