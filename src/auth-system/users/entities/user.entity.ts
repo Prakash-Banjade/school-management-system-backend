@@ -16,9 +16,9 @@ export class User extends BaseEntity {
     dob: string | null;
 
     @OneToOne(() => Image, image => image.user_profileImage, { nullable: true })
-    @JoinColumn()
     profileImage: Image | null;
 
     @OneToOne(() => Account, account => account.user, { nullable: true })
+    @JoinColumn()
     account: Account | null;
 }

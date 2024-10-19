@@ -39,8 +39,7 @@ export class Account extends BaseEntity {
     @Column({ type: 'simple-array', nullable: true })
     refreshTokens: string[];
 
-    @OneToOne(() => User, user => user.account, { onDelete: 'CASCADE', nullable: true })
-    @JoinColumn()
+    @OneToOne(() => User, user => user.account, { nullable: true })
     user: User;
 
     @OneToMany(() => Image, image => image.uploadedBy)
