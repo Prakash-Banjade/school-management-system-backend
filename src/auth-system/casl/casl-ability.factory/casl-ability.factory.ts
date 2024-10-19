@@ -12,7 +12,7 @@ export class CaslAbilityFactory {
     defineAbility(user: AuthUser) {
         const { can, cannot, build } = new AbilityBuilder<AppAbility>(createMongoAbility)
 
-        if (user.role === Role.ADMIN) {
+        if (user.role === Role.SUPER_ADMIN) {
             can(Action.MANAGE, 'all')
             can(Action.MANAGE, User)
         } else if (user.role === Role.USER) {
