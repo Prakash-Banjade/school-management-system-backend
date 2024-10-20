@@ -5,23 +5,23 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { LeaveRequest } from './entities/leave-request.entity';
 import { Repository } from 'typeorm';
 import { LeaveRequestQueryDto } from './dto/leave-request-query.dto';
-import { UsersService } from 'src/auth-system/users/users.service';
 import { AuthUser } from 'src/common/types/global.type';
 import paginatedData from 'src/utils/paginatedData';
+import { AccountsService } from 'src/auth-system/accounts/accounts.service';
 
 @Injectable()
 export class LeaveRequestsService {
   constructor(
     @InjectRepository(LeaveRequest) private readonly leaveRequestRepo: Repository<LeaveRequest>,
-    private readonly usersService: UsersService,
+    private readonly accountsService: AccountsService,
   ) { }
 
   async create(createLeaveRequestDto: CreateLeaveRequestDto, currentUser: AuthUser) {
-    const user = await this.usersService.findOne(createLeaveRequestDto.userId || currentUser.userId);
+    const account = await this.accountsService.findOne(createLeaveRequestDto.accountId || currentUser.accountId);
 
     const newLeaveRequest = this.leaveRequestRepo.create({
       ...createLeaveRequestDto,
-      user
+      account
     });
 
     const savedLevaeRequest = await this.leaveRequestRepo.save(newLeaveRequest);
@@ -35,7 +35,7 @@ export class LeaveRequestsService {
       .orderBy('leaveRequest.createdAt', 'DESC')
       .take(queryDto.take)
       .skip(queryDto.skip)
-    // .where({ user: { id: currentUser.userId } });
+    // .where({ account: { id: currentUser.accountId } }); 
 
     return paginatedData(queryDto, querybuilder);
   }

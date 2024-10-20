@@ -5,23 +5,23 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, Repository } from 'typeorm';
 import { Task } from './entities/task.entity';
 import { SubjectsService } from 'src/subjects/subjects.service';
-import { UsersService } from 'src/auth-system/users/users.service';
+import { AccountsService } from 'src/auth-system/accounts/accounts.service';
 import { ImagesService } from 'src/file-management/images/images.service';
-import { AuthUser } from 'src/common/types/global.type';
 import { QueryDto } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
+import { AuthUser } from 'src/common/types/global.type';
 
 @Injectable()
 export class TasksService {
   constructor(
     @InjectRepository(Task) private tasksRepo: Repository<Task>,
-    private readonly usersService: UsersService,
+    private readonly accountsService: AccountsService,
     private readonly subjectsService: SubjectsService,
     private readonly imagesService: ImagesService,
   ) { }
 
-  async create(createTaskDto: CreateTaskDto, currentUser: AuthUser) {
-    const user = await this.usersService.getUserByAccountId(currentUser.accountId);
+  async create(createTaskDto: CreateTaskDto, currentAccount: AuthUser) {
+    const account = await this.accountsService.findOne(currentAccount.accountId);
     const subject = await this.subjectsService.findOne(createTaskDto.subjectId);
     const attatchments = createTaskDto.attatchmentIds?.length
       ? await this.imagesService.findAllByIds(createTaskDto.attatchmentIds)
@@ -29,7 +29,7 @@ export class TasksService {
 
     const newTask = this.tasksRepo.create({
       ...createTaskDto,
-      setBy: user,
+      setBy: account,
       subject,
       attatchments,
     })

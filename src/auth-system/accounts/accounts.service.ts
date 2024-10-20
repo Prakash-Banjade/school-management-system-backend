@@ -1,6 +1,4 @@
-import { Injectable } from '@nestjs/common';
-import { CreateAccountDto } from './dto/create-account.dto';
-import { UpdateAccountDto } from './dto/update-account.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Account } from './entities/account.entity';
@@ -13,7 +11,7 @@ export class AccountsService {
 
   async findOne(id: string) {
     const existingAccount = await this.accountsRepo.findOneBy({ id });
-    if (!existingAccount) throw new Error('Account not found');
+    if (!existingAccount) throw new NotFoundException('Account not found');
 
     return existingAccount;
   }

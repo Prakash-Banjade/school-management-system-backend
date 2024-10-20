@@ -6,7 +6,7 @@ export class CreateAttendanceDto {
     @ApiProperty({ type: String, format: 'uuid' })
     @IsUUID()
     @IsNotEmpty()
-    userId: string;
+    accountId: string;
 
     @ApiProperty({ type: 'enum', enum: EAttendanceStatus })
     @IsNotEmpty()

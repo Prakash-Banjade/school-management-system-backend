@@ -25,5 +25,5 @@ export class CreateLeaveRequestDto {
     @ApiPropertyOptional({ type: String, format: 'uuid', description: 'User id, the leave request is assigned to' })
     @IsUUID()
     @IsOptional()
-    userId?: string
+    accountId?: string
 }

@@ -4,7 +4,7 @@ import { Brackets, Repository } from 'typeorm';
 import { LibraryBookRequest } from './entities/library-book-request.entity';
 import { CreateLibraryBookRequestDto, UpdateLibraryBookRequestDto } from './dto/create-library-book-request.dto';
 import { LibraryBookService } from './library-book.service';
-import { UsersService } from 'src/auth-system/users/users.service';
+import { AccountsService } from 'src/auth-system/accounts/accounts.service';
 import { QueryDto } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
 import { ELibarryBookStatus } from 'src/common/types/global.type';
@@ -13,18 +13,18 @@ import { ELibarryBookStatus } from 'src/common/types/global.type';
 export class LibraryBookRequestService {
     constructor(
         @InjectRepository(LibraryBookRequest) private libraryBookRequestRepo: Repository<LibraryBookRequest>,
-        private readonly usersService: UsersService,
+        private readonly accountsService: AccountsService,
         private readonly libraryBookService: LibraryBookService,
     ) { }
 
     async create(createLibraryBookRequestDto: CreateLibraryBookRequestDto) {
         const libraryBook = await this.libraryBookService.findOne(createLibraryBookRequestDto.libraryBookId);
-        const user = await this.usersService.findOne(createLibraryBookRequestDto.userId);
+        const account = await this.accountsService.findOne(createLibraryBookRequestDto.accountId);
 
         const newLibraryBookRequest = this.libraryBookRequestRepo.create({
             ...createLibraryBookRequestDto,
             libraryBook,
-            user
+            account,
         })
 
         const savedLibraryBookRequest = await this.libraryBookRequestRepo.save(newLibraryBookRequest);

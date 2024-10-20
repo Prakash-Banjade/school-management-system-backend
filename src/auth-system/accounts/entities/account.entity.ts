@@ -9,6 +9,12 @@ import { BCRYPT_HASH, EMAIL_REGEX, PASSWORD_SALT_COUNT } from "src/common/CONSTA
 import { Student } from "src/students/entities/student.entity";
 import { Teacher } from "src/teachers/entities/teacher.entity";
 import { Staff } from "src/staffs/entities/staff.entity";
+import { Attendance } from "src/attendances/entities/attendance.entity";
+import { Salary } from "src/finance-system/salaries/entities/salary.entity";
+import { LeaveRequest } from "src/leave-requests/entities/leave-request.entity";
+import { LibraryBookRequest } from "src/library-book/entities/library-book-request.entity";
+import { Recommendation } from "src/recommendations/entities/recommendation.entity";
+import { Task } from "src/tasks/entities/task.entity";
 
 @Entity()
 export class Account extends BaseEntity {
@@ -53,7 +59,7 @@ export class Account extends BaseEntity {
 
     @OneToOne(() => Staff, staff => staff.account, { nullable: true })
     staff: Staff;
-    
+
     @OneToMany(() => Image, image => image.uploadedBy)
     images: Image[];
 
@@ -72,5 +78,26 @@ export class Account extends BaseEntity {
 
         if (!EMAIL_REGEX.test(this.email)) throw new BadRequestException('Invalid email');
     }
+
+    // Below relations are due to common use cases. Eg. Both student and teacher can have attendances, so instead of creating a separate relations i.e 
+    // studentAttendances and teacherAttendances, i created a single attendances relation.
+    @OneToMany(() => Attendance, attendance => attendance.account)
+    attendances: Attendance[];
+
+    // Both staff and teacher can have salaries, so instead of creating a separate relations i.e staffSalaries and teacherSalaries, i created a single salaries relation.
+    @OneToMany(() => Salary, salary => salary.account)
+    salaries: Salary[];
+
+    @OneToMany(() => LeaveRequest, leaveRequest => leaveRequest.account)
+    leaveRequests: LeaveRequest[];
+
+    @OneToMany(() => LibraryBookRequest, libraryBookRequest => libraryBookRequest.account)
+    libraryBookRequests: LibraryBookRequest[];
+
+    @OneToMany(() => Recommendation, recommendation => recommendation.account)
+    recommendations: Recommendation[];
+
+    @OneToMany(() => Task, task => task.setBy)
+    tasks: Task[];
 
 }

@@ -7,20 +7,21 @@ import { Brackets, Repository } from 'typeorm';
 import { AttendaceQueryDto } from './dto/attendance-query.dto';
 import { UsersService } from 'src/auth-system/users/users.service';
 import paginatedData from 'src/utils/paginatedData';
+import { AccountsService } from 'src/auth-system/accounts/accounts.service';
 
 @Injectable()
 export class AttendancesService {
   constructor(
     @InjectRepository(Attendance) private attendanceRepo: Repository<Attendance>,
-    private readonly usersService: UsersService,
+    private readonly accountsService: AccountsService,
   ) { }
 
   async create(createAttendanceDto: CreateAttendanceDto) {
-    const user = await this.usersService.findOne(createAttendanceDto.userId);
+    const account = await this.accountsService.findOne(createAttendanceDto.accountId);
 
     const attendance = this.attendanceRepo.create({
       ...createAttendanceDto,
-      user
+      account
     });
 
     const savedAttendance = await this.attendanceRepo.save(attendance);
@@ -29,10 +30,9 @@ export class AttendancesService {
       message: 'Attendance created successfully',
       attendance: {
         id: savedAttendance.id,
-        user: savedAttendance.user.account.firstName + ' ' + savedAttendance.user.account.lastName
+        account: savedAttendance.account.firstName + ' ' + savedAttendance.account.lastName
       }
     }
-
   }
 
   async findAllByStudent(queryDto: AttendaceQueryDto) {
@@ -42,8 +42,7 @@ export class AttendancesService {
       .orderBy("attendance.createdAt", queryDto.order)
       .skip(queryDto.skip)
       .take(queryDto.take)
-      .leftJoin("attendance.user", "user")
-      .leftJoin("user.account", "account")
+      .leftJoin("attendance.account", "account")
       .leftJoin("account.student", "student")
       .leftJoin("student.classRoom", "classRoom")
       .andWhere(new Brackets(qb => {
@@ -77,7 +76,7 @@ export class AttendancesService {
       message: 'Attendance updated successfully',
       attendance: {
         id: savedAttendance.id,
-        user: savedAttendance.user.account.firstName + ' ' + savedAttendance.user.account.lastName
+        account: savedAttendance.account.firstName + ' ' + savedAttendance.account.lastName,
       }
     }
   }

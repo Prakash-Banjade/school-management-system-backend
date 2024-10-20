@@ -12,10 +12,10 @@ export class CreateRecommendationDto {
     @IsNotEmpty()
     content: string;
 
-    @ApiProperty({ type: String, format: 'uuid', description: 'User id, the recommender' })
+    @ApiProperty({ type: String, format: 'uuid', description: 'Account id, the recommender' })
     @IsUUID()
     @IsNotEmpty()
-    userId: string
+    accountId: string
 
     @ApiProperty({ type: String, format: 'date-time', example: '2022-10-18T00:00:00.000Z', description: 'Recommendation date' })
     @IsDateString()

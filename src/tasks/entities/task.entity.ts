@@ -1,3 +1,4 @@
+import { Account } from "src/auth-system/accounts/entities/account.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { ETask } from "src/common/types/global.type";
 import { Image } from "src/file-management/images/entities/image.entity";
@@ -29,8 +30,8 @@ export class Task extends BaseEntity {
     @OneToMany(() => Image, image => image.task_attatchments, { nullable: true, eager: true })
     attatchments: Image[];
 
-    @ManyToOne(() => User, user => user.tasks, { onDelete: 'SET NULL' })
-    setBy: User;
+    @ManyToOne(() => Account, account => account.tasks, { onDelete: 'SET NULL' })
+    setBy: Account;
 
     @ManyToOne(() => Subject, subject => subject.tasks, { onDelete: 'CASCADE' })
     subject: Subject

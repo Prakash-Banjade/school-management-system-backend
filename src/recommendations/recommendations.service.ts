@@ -4,7 +4,7 @@ import { UpdateRecommendationDto } from './dto/update-recommendation.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Recommendation } from './entities/recommendation.entity';
 import { Repository } from 'typeorm';
-import { UsersService } from 'src/auth-system/users/users.service';
+import { AccountsService } from 'src/auth-system/accounts/accounts.service';
 import { QueryDto } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
 
@@ -12,22 +12,20 @@ import paginatedData from 'src/utils/paginatedData';
 export class RecommendationsService {
   constructor(
     @InjectRepository(Recommendation) private readonly recommendationRepo: Repository<Recommendation>,
-    private readonly usersService: UsersService,
+    private readonly accountsService: AccountsService,
   ) { }
 
   async create(createRecommendationDto: CreateRecommendationDto) {
-    const user = await this.usersService.findOne(createRecommendationDto.userId);
+    const account = await this.accountsService.findOne(createRecommendationDto.accountId);
 
     const newRecommendation = this.recommendationRepo.create({
       ...createRecommendationDto,
-      user,
+      account,
     })
 
     const savedRecommendation = await this.recommendationRepo.save(newRecommendation);
 
-    return {
-      message: 'Recommendation created successfully',
-    }
+    return this.recommendationMutationReturn(savedRecommendation, 'created');
   }
 
   async findAll(queryDto: QueryDto) {
@@ -60,17 +58,23 @@ export class RecommendationsService {
 
     const savedRecommendation = await this.recommendationRepo.save(existingRecommendation);
 
-    return {
-      message: 'Recommendation updated successfully',
-    }
+    return this.recommendationMutationReturn(savedRecommendation, 'updated');
   }
 
   async remove(id: string) {
     const existingRecommendation = await this.findOne(id);
     const removedRecommendation = await this.recommendationRepo.remove(existingRecommendation);
 
+    return this.recommendationMutationReturn(removedRecommendation, 'deleted');
+  }
+
+  private recommendationMutationReturn = (recommendation: Recommendation, type: 'created' | 'updated' | 'deleted') => {
     return {
-      message: 'Recommendation removed successfully',
+      message: type === 'created' ? 'Recommendation created successfully' : type === 'deleted' ? 'Recommendation deleted successfully' : 'Recommendation updated successfully',
+      recommendation: {
+        id: recommendation.id,
+        title: recommendation.title,
+      }
     }
   }
 }

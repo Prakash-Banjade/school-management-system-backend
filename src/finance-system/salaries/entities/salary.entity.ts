@@ -1,3 +1,4 @@
+import { Account } from "src/auth-system/accounts/entities/account.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { ESalaryStatus } from "src/common/types/global.type";
 import { generateTeacherId } from "src/utils/generate-teacher-id";
@@ -38,6 +39,6 @@ export class Salary extends BaseEntity {
     @Column({ type: 'enum', enum: ESalaryStatus, default: ESalaryStatus.PENDING })
     status: ESalaryStatus
 
-    @ManyToOne(() => User, user => user.salaries, { onDelete: 'CASCADE' })
-    user: User
+    @ManyToOne(() => Account, account => account.salaries, { onDelete: 'CASCADE' })
+    account: Account;
 }

@@ -5,24 +5,26 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Salary } from './entities/salary.entity';
 import { Brackets, Repository } from 'typeorm';
 import { SalaryQueryDto } from './dto/salary-query.dto';
-import { UsersService } from 'src/auth-system/users/users.service';
 import paginatedData from 'src/utils/paginatedData';
+import { AccountsService } from 'src/auth-system/accounts/accounts.service';
 
 @Injectable()
 export class SalariesService {
   constructor(
     @InjectRepository(Salary) private salaryRepo: Repository<Salary>,
-    private readonly usersService: UsersService,
+    private readonly accountsService: AccountsService,
   ) { }
 
   // TODO: USE CRON JOBS TO RUN THIS FUNCTION ON EVERY MONTH
   async create(createSalaryDto: CreateSalaryDto) {
-    const user = await this.usersService.findOne(createSalaryDto.userId);
+    const account = await this.accountsService.findOne(createSalaryDto.accountId);
 
     const salary = this.salaryRepo.create({
       ...createSalaryDto,
-      user,
-      wage: createSalaryDto.wage || user.wage,
+      account,
+      // TODO: Observe why I used user.wage, for now only createSalaryDto.wage is used
+      // wage: createSalaryDto.wage || user.wage,
+      wage: createSalaryDto.wage,
     });
 
     const savedSalary = await this.salaryRepo.save(salary);

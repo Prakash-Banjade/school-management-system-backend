@@ -1,4 +1,4 @@
-import { User } from "src/auth-system/users/entities/user.entity";
+import { Account } from "src/auth-system/accounts/entities/account.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { Column, Entity, ManyToOne } from "typeorm";
 
@@ -13,7 +13,7 @@ export class Recommendation extends BaseEntity {
     @Column({ type: "longtext" })
     content: string;
 
-    @ManyToOne(() => User, (user) => user.recommendations, { onDelete: 'CASCADE' })
-    user: User;
+    @ManyToOne(() => Account, (account) => account.recommendations, { onDelete: 'CASCADE' })
+    account: Account;
 
 }

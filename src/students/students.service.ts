@@ -95,7 +95,7 @@ export class StudentsService extends BaseRepository {
       .leftJoin('student.enrollments', 'enrollment')
       .leftJoin('enrollment.academicYear', 'academicYear')
       .leftJoin('account.user', 'user')
-      .leftJoin('classRoom.parentClass', 'parentClass')
+      .leftJoin('classRoom.parent', 'parent')
       .leftJoin('student.guardians', 'guardians')
       .andWhere(new Brackets(qb => {
         // filter by active academic year

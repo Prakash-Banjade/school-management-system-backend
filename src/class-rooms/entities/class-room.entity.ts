@@ -7,9 +7,14 @@ import { Exam } from "src/examination-system/exams/entities/exam.entity";
 import { FeesGroup } from "src/finance-system/fees-system/fees-groups/entities/fees-group.entity";
 import { Student } from "src/students/entities/student.entity";
 import { Subject } from "src/subjects/entities/subject.entity";
-import { BeforeInsert, BeforeUpdate, Column, Entity, ManyToOne, OneToMany } from "typeorm";
+import { BeforeInsert, BeforeUpdate, Column, Entity, OneToMany, Tree, TreeChildren, TreeParent } from "typeorm";
 
 @Entity()
+@Tree("closure-table", {
+    closureTableName: "classRooms_closure",
+    ancestorColumnName: (column) => "ancestor_" + column.propertyName,
+    descendantColumnName: (column) => "descendant_" + column.propertyName,
+})
 export class ClassRoom extends BaseEntity {
     @Column({ type: "varchar" })
     name: string;
@@ -26,11 +31,11 @@ export class ClassRoom extends BaseEntity {
     @Column({ type: 'varchar', default: '' })
     location: string
 
-    @ManyToOne(() => ClassRoom, (classRoom) => classRoom.parentClass, { nullable: true })
-    parentClass: ClassRoom
+    @TreeChildren()
+    children: ClassRoom[];
 
-    @OneToMany(() => ClassRoom, (classRoom) => classRoom.parentClass)
-    childrenClasses: ClassRoom[]
+    @TreeParent({ onDelete: "CASCADE" })
+    parent: ClassRoom;
 
     @Column({ type: "enum", enum: EClassType, default: EClassType.PRIMARY })
     classType: EClassType
@@ -38,10 +43,10 @@ export class ClassRoom extends BaseEntity {
     @BeforeInsert()
     @BeforeUpdate()
     checkForTypeAndParent() {
-        if (this.parentClass && (this.parentClass.classType === EClassType.SECTION)) {
-            throw new BadRequestException(`Class type of ${this.parentClass.classType} cannot have children class.`)
+        if (this.parent && (this.parent.classType === EClassType.SECTION)) {
+            throw new BadRequestException(`Class type of ${this.parent.classType} cannot have children class.`)
         }
-        if (this.classType === this.parentClass?.classType) {
+        if (this.classType === this.parent?.classType) {
             throw new BadRequestException(`Class type of ${this.classType} cannot have parent class of same type.`)
         }
     }

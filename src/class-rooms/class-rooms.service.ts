@@ -30,7 +30,7 @@ export class ClassRoomsService extends BaseRepository {
 
     const newClassRoom = this.classRoomRepo.create({
       ...createClassRoomDto,
-      parentClass,
+      parent: parentClass,
     });
 
     const savedClassRoom = await this.getRepository(ClassRoom).save(newClassRoom);
@@ -54,8 +54,8 @@ export class ClassRoomsService extends BaseRepository {
       .take(queryDto.take)
       .withDeleted()
       // .where({ deletedAt })
-      .leftJoin("classRoom.parentClass", "classRoomParentClass")
-      .leftJoin("classRoom.childrenClasses", "childrenClasses")
+      .leftJoin("classRoom.parent", "classRoomParentClass")
+      .leftJoin("classRoom.children", "childrenClasses")
       .andWhere(new Brackets(qb => {
         queryDto.search && qb.andWhere('LOWER(classRoom.name) LIKE LOWER(:search)', { search: queryDto.search });
       }))
@@ -69,8 +69,8 @@ export class ClassRoomsService extends BaseRepository {
     const existing = await this.classRoomRepo.findOne({
       where: { id },
       relations: {
-        parentClass: true,
-        childrenClasses: true,
+        parent: true,
+        children: true,
       }
     });
 

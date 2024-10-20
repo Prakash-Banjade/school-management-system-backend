@@ -2,6 +2,7 @@ import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from "typeorm";
 import { LibraryBook } from "./library-book.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { ELibarryBookStatus } from "src/common/types/global.type";
+import { Account } from "src/auth-system/accounts/entities/account.entity";
 
 @Entity()
 export class LibraryBookRequest extends BaseEntity {
@@ -15,6 +16,6 @@ export class LibraryBookRequest extends BaseEntity {
     @Column({ type: 'enum', enum: ELibarryBookStatus, default: ELibarryBookStatus.PENDING })
     status: ELibarryBookStatus
 
-    @ManyToOne(() => User, user => user.libraryBookRequests, { onDelete: 'RESTRICT' })
-    user: User;
+    @ManyToOne(() => Account, account => account.libraryBookRequests, { onDelete: 'RESTRICT' })
+    account: Account;
 }

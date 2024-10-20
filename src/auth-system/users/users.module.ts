@@ -9,5 +9,6 @@ import { ImagesModule } from 'src/file-management/images/images.module';
   ],
   controllers: [UsersController],
   providers: [UsersService],
+  exports: [UsersService],
 })
 export class UsersModule {}

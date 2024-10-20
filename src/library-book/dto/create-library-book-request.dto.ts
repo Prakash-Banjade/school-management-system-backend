@@ -12,10 +12,10 @@ export class CreateLibraryBookRequestDto {
     @IsDateString()
     requestDate: string;
 
-    @ApiProperty({ type: String, description: 'User id', format: 'uuid' })
+    @ApiProperty({ type: String, description: 'Account id', format: 'uuid' })
     @IsUUID()
     @IsNotEmpty()
-    userId: string;
+    accountId: string;
 }
 
 export class UpdateLibraryBookRequestDto {

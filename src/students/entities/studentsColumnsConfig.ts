@@ -11,7 +11,7 @@ export const studentsColumnsConfig: FindOptionsSelect<Student> = {
     classRoom: {
         id: true,
         name: true,
-        parentClass: {
+        parent: {
             id: true,
             name: true,
         }

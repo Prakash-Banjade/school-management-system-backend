@@ -1,12 +1,12 @@
-import { User } from "src/auth-system/users/entities/user.entity";
+import { Account } from "src/auth-system/accounts/entities/account.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { ELeaveRequestStatus } from "src/common/types/global.type";
 import { Column, Entity, ManyToOne } from "typeorm";
 
 @Entity()
 export class LeaveRequest extends BaseEntity {
-    @ManyToOne(() => User, user => user.leaveRequests)
-    user: User
+    @ManyToOne(() => Account, account => account.leaveRequests)
+    account: Account
 
     @Column({ type: "datetime" })
     leaveFrom: string;

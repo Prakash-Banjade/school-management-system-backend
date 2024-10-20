@@ -4,7 +4,7 @@ import { TasksController } from './tasks.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Task } from './entities/task.entity';
 import { SubjectsModule } from 'src/subjects/subjects.module';
-import { UsersModule } from 'src/auth-system/users/users.module';
+import { AccountsModule } from 'src/auth-system/accounts/accounts.module';
 import { ImagesModule } from 'src/file-management/images/images.module';
 
 @Module({
@@ -12,7 +12,7 @@ import { ImagesModule } from 'src/file-management/images/images.module';
     TypeOrmModule.forFeature([
       Task,
     ]),
-    UsersModule,
+    AccountsModule,
     ImagesModule,
     SubjectsModule,
   ],

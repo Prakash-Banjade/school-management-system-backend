@@ -32,8 +32,8 @@ export class CreateSalaryDto {
     @IsOptional()
     status: ESalaryStatus = ESalaryStatus.PENDING;
 
-    @ApiProperty({ type: String, description: 'User ID' })
+    @ApiProperty({ type: String, description: 'Account ID' })
     @IsUUID()
     @IsNotEmpty()
-    userId: string
+    accountId: string
 }
