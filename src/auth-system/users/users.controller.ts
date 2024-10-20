@@ -2,12 +2,13 @@ import { Controller, Get, Body, Patch, Param, Delete, Query, UseInterceptors } f
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersQueryDto } from './dto/user-query.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiExcludeController, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
 import { Action, AuthUser } from 'src/common/types/global.type';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
 
+@ApiExcludeController()
 @ApiTags("Users")
 @Controller('users')
 export class UsersController {

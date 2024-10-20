@@ -1,6 +1,6 @@
 import { Body, Controller, HttpCode, HttpStatus, Post, Req, Res, UseGuards, UseInterceptors } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { ApiConsumes, ApiExcludeEndpoint, ApiTags } from '@nestjs/swagger';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { RegisterDto } from './dto/register.dto';
 import { SignInDto } from './dto/signIn.dto';
@@ -45,8 +45,9 @@ export class AuthController {
         return this.authService.refresh(req, res);
     }
 
-    @Public()
-    @Post('register')
+    // @Public()
+    // @Post('register')
+    @ApiExcludeEndpoint()
     @UseInterceptors(TransactionInterceptor)
     @ApiConsumes('multipart/form-data')
     @FormDataRequest()
@@ -54,8 +55,9 @@ export class AuthController {
         return this.authService.register(registerDto);
     }
 
-    @Public()
-    @Post('verify-email')
+    // @Public()
+    // @Post('verify-email')
+    @ApiExcludeEndpoint()
     @UseInterceptors(TransactionInterceptor)
     @HttpCode(HttpStatus.OK)
     @ApiConsumes('multipart/form-data')
