@@ -138,7 +138,10 @@ export class AuthService extends BaseRepository {
     }
 
     // create new account
-    const newAccount = this.accountsRepo.create(registerDto);
+    const newAccount = this.accountsRepo.create({
+      ...registerDto,
+      prevPasswords: [bcrypt.hashSync(registerDto.password, PASSWORD_SALT_COUNT)],
+    });
     await this.accountsRepo.save(newAccount);
 
     return await this.authHelper.sendConfirmationEmail(newAccount);

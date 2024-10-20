@@ -12,7 +12,8 @@ import { BaseRepository } from 'src/common/repository/base-repository';
 import { FastifyRequest } from 'fastify';
 import { Role } from 'src/common/types/global.type';
 import { generateRandomPassword } from 'src/utils/generatePassword';
-
+import * as bcrypt from 'bcrypt';
+import { PASSWORD_SALT_COUNT } from 'src/common/CONSTANTS';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AccountsService extends BaseRepository {
@@ -41,6 +42,7 @@ export class AccountsService extends BaseRepository {
       [key]: entity,
       isVerified: true,
       password,
+      prevPasswords: [bcrypt.hashSync(password, PASSWORD_SALT_COUNT)],
     })
 
     console.log({
