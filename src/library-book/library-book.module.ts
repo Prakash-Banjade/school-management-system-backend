@@ -6,7 +6,7 @@ import { LibraryBook } from './entities/library-book.entity';
 import { LibraryBookRequest } from './entities/library-book-request.entity';
 import { LibraryBookRequestService } from './library-requests.service';
 import { LibraryBookRequestController } from './library-requests.controller';
-import { UsersModule } from 'src/auth-system/users/users.module';
+import { AccountsModule } from 'src/auth-system/accounts/accounts.module';
 
 @Module({
   imports: [
@@ -14,7 +14,7 @@ import { UsersModule } from 'src/auth-system/users/users.module';
       LibraryBook,
       LibraryBookRequest,
     ]),
-    UsersModule,
+    AccountsModule,
   ],
   controllers: [LibraryBookController, LibraryBookRequestController],
   providers: [LibraryBookService, LibraryBookRequestService],
