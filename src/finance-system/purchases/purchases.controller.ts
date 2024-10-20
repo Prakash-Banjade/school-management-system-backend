@@ -3,9 +3,9 @@ import { PurchasesService } from './purchases.service';
 import { CreatePurchaseDto } from './dto/create-purchase.dto';
 import { UpdatePurchaseDto } from './dto/update-purchase.dto';
 import { PurchaseQueryDto } from './dto/purchase-query.dto';
-import { ChekcAbilities } from 'src/core/decorators/abilities.decorator';
-import { Action } from 'src/core/types/global.types';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
+import { Action } from 'src/common/types/global.type';
 
 @ApiBearerAuth()
 @ApiTags('Purchases')

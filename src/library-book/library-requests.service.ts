@@ -1,13 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, Repository } from 'typeorm';
-import { QueryDto } from 'src/core/dto/query.dto';
-import paginatedData from 'src/core/utils/paginatedData';
 import { LibraryBookRequest } from './entities/library-book-request.entity';
 import { CreateLibraryBookRequestDto, UpdateLibraryBookRequestDto } from './dto/create-library-book-request.dto';
 import { LibraryBookService } from './library-book.service';
-import { UsersService } from 'src/users/users.service';
-import { ELibarryBookStatus } from 'src/core/types/global.types';
+import { UsersService } from 'src/auth-system/users/users.service';
+import { QueryDto } from 'src/common/dto/query.dto';
+import paginatedData from 'src/utils/paginatedData';
+import { ELibarryBookStatus } from 'src/common/types/global.type';
 
 @Injectable()
 export class LibraryBookRequestService {

@@ -1,8 +1,7 @@
-import { BaseEntity } from "src/core/entities/base.entity";
 import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from "typeorm";
 import { LibraryBook } from "./library-book.entity";
-import { ELibarryBookStatus } from "src/core/types/global.types";
-import { User } from "src/users/entities/user.entity";
+import { BaseEntity } from "src/common/entities/base.entity";
+import { ELibarryBookStatus } from "src/common/types/global.type";
 
 @Entity()
 export class LibraryBookRequest extends BaseEntity {

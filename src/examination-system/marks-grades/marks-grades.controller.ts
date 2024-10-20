@@ -2,10 +2,10 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestj
 import { MarksGradesService } from './marks-grades.service';
 import { CreateMarksGradeDto } from './dto/create-marks-grade.dto';
 import { UpdateMarksGradeDto } from './dto/update-marks-grade.dto';
-import { QueryDto } from 'src/core/dto/query.dto';
-import { ChekcAbilities } from 'src/core/decorators/abilities.decorator';
-import { Action } from 'src/core/types/global.types';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { QueryDto } from 'src/common/dto/query.dto';
+import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
+import { Action } from 'src/common/types/global.type';
 
 @ApiBearerAuth()
 @ApiTags('Marks Grades')

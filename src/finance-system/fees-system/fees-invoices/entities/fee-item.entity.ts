@@ -1,8 +1,8 @@
-import { BaseEntity } from "src/core/entities/base.entity";
 import { BeforeInsert, BeforeUpdate, Column, Entity, ManyToOne } from "typeorm";
 import { FeesType } from "../../fees-types/entities/fees-type.entity";
 import { BadRequestException } from "@nestjs/common";
 import { FeesInvoice } from "./fees-invoice.entity";
+import { BaseEntity } from "src/common/entities/base.entity";
 
 @Entity()
 export class FeeItem extends BaseEntity {

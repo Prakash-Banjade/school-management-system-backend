@@ -2,11 +2,11 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestj
 import { SalariesService } from './salaries.service';
 import { CreateSalaryDto } from './dto/create-salary.dto';
 import { UpdateSalaryDto } from './dto/update-salary.dto';
-import { ApiPaginatedResponse } from 'src/core/decorators/apiPaginatedResponse.decorator';
 import { SalaryQueryDto } from './dto/salary-query.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Action } from 'src/core/types/global.types';
-import { ChekcAbilities } from 'src/core/decorators/abilities.decorator';
+import { ApiPaginatedResponse } from 'src/common/decorators/apiPaginatedResponse.decorator';
+import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
+import { Action } from 'src/common/types/global.type';
 
 @ApiBearerAuth()
 @ApiTags('Salaries')

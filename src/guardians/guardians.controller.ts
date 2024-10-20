@@ -2,9 +2,9 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseIntercepto
 import { GuardiansService } from './guardians.service';
 import { CreateGuardianDto } from './dto/create-guardian.dto';
 import { UpdateGuardianDto } from './dto/update-guardian.dto';
-import { QueryDto } from 'src/core/dto/query.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { TransactionInterceptor } from 'src/core/interceptors/transaction.interceptor';
+import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
+import { QueryDto } from 'src/common/dto/query.dto';
 
 @ApiBearerAuth()
 @ApiTags('Guardians')

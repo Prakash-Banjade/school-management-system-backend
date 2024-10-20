@@ -1,9 +1,9 @@
-import { Account } from "src/accounts/entities/account.entity";
-import { BaseEntity } from "src/core/entities/base.entity";
-import { BloodGroup, EStaff, Gender, MaritalStatus } from "src/core/types/global.types";
-import { generateTeacherId } from "src/core/utils/generate-teacher-id";
-import { Image } from "src/images/entities/image.entity";
+import { Account } from "src/auth-system/accounts/entities/account.entity";
+import { BaseEntity } from "src/common/entities/base.entity";
+import { EBloodGroup, EMaritalStatus, EStaff, Gender } from "src/common/types/global.type";
+import { Image } from "src/file-management/images/entities/image.entity";
 import { Vehicle } from "src/transportation-system/vehicles/entities/vehicle.entity";
+import { generateTeacherId } from "src/utils/generate-teacher-id";
 import { BeforeInsert, BeforeUpdate, Column, Entity, JoinColumn, OneToMany, OneToOne } from "typeorm";
 
 @Entity()
@@ -35,15 +35,14 @@ export class Staff extends BaseEntity {
     @Column({ type: 'datetime' })
     dob: string;
 
-    @OneToOne(() => Account, { onDelete: "SET NULL" })
+    @OneToOne(() => Account, account => account.staff, { onDelete: "CASCADE" })
     @JoinColumn()
     account: Account;
 
     @Column({ type: 'real' })
     wage: number
 
-    @OneToOne(() => Image, { nullable: true, onDelete: 'SET NULL' })
-    @JoinColumn()
+    @OneToOne(() => Image, image => image.staff_profileImage, { nullable: true })
     profileImage?: Image
 
     @Column({ type: 'enum', enum: EStaff })
@@ -52,14 +51,14 @@ export class Staff extends BaseEntity {
     @Column({ type: 'longtext', nullable: true })
     shortDescription?: string;
 
-    @Column({ type: 'enum', enum: MaritalStatus })
-    maritalStatus: MaritalStatus
+    @Column({ type: 'enum', enum: EMaritalStatus })
+    maritalStatus: EMaritalStatus
 
     @Column({ type: 'varchar' })
     qualification: string;
 
-    @Column({ type: 'enum', enum: BloodGroup })
-    bloodGroup: BloodGroup
+    @Column({ type: 'enum', enum: EBloodGroup })
+    bloodGroup: EBloodGroup
 
     @Column({ type: 'datetime' })
     joinedDate: string

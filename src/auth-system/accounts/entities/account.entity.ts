@@ -8,6 +8,7 @@ import { Image } from "src/file-management/images/entities/image.entity";
 import { BCRYPT_HASH, EMAIL_REGEX, PASSWORD_SALT_COUNT } from "src/common/CONSTANTS";
 import { Student } from "src/students/entities/student.entity";
 import { Teacher } from "src/teachers/entities/teacher.entity";
+import { Staff } from "src/staffs/entities/staff.entity";
 
 @Entity()
 export class Account extends BaseEntity {
@@ -50,6 +51,9 @@ export class Account extends BaseEntity {
     @OneToOne(() => Teacher, teacher => teacher.account, { nullable: true })
     teacher: Teacher;
 
+    @OneToOne(() => Staff, staff => staff.account, { nullable: true })
+    staff: Staff;
+    
     @OneToMany(() => Image, image => image.uploadedBy)
     images: Image[];
 

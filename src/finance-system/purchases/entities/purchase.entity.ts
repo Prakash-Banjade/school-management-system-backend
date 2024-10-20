@@ -1,5 +1,5 @@
 import { BadRequestException } from "@nestjs/common";
-import { BaseEntity } from "src/core/entities/base.entity";
+import { BaseEntity } from "src/common/entities/base.entity";
 import { Dealer } from "src/dealers/entities/dealer.entity";
 import { BeforeInsert, BeforeUpdate, Column, Entity, ManyToOne } from "typeorm";
 

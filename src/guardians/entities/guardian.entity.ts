@@ -1,5 +1,5 @@
-import { BaseEntity } from "src/core/entities/base.entity";
-import { Image } from "src/images/entities/image.entity";
+import { BaseEntity } from "src/common/entities/base.entity";
+import { Image } from "src/file-management/images/entities/image.entity";
 import { Student } from "src/students/entities/student.entity";
 import { Column, Entity, JoinColumn, ManyToMany, OneToOne } from "typeorm";
 

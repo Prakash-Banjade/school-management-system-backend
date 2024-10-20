@@ -2,8 +2,8 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestj
 import { ExamTypesService } from './exam-types.service';
 import { CreateExamTypeDto } from './dto/create-exam-type.dto';
 import { UpdateExamTypeDto } from './dto/update-exam-type.dto';
-import { QueryDto } from 'src/core/dto/query.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { QueryDto } from 'src/common/dto/query.dto';
 
 @ApiBearerAuth()
 @ApiTags('Exam Types')

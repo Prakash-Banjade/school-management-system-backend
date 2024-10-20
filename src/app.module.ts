@@ -13,6 +13,23 @@ import { AuthGuard } from './common/guards/auth.guard';
 import { envSchema } from './env.schema';
 import { DormitorySystemModule } from './dormitory-system/dormitory-system.module';
 import { FinanceSystemModule } from './finance-system/finance-system.module';
+import { AcademicYearsModule } from './academic-years/academic-years.module';
+import { AddressesModule } from './addresses/addresses.module';
+import { AttendancesModule } from './attendances/attendances.module';
+import { ClassRoomsModule } from './class-rooms/class-rooms.module';
+import { DealersModule } from './dealers/dealers.module';
+import { EnrollmentsModule } from './enrollments/enrollments.module';
+import { ExaminationSystemModule } from './examination-system/examination-system.module';
+import { GuardiansModule } from './guardians/guardians.module';
+import { LibraryBookModule } from './library-book/library-book.module';
+import { NoticesModule } from './notices/notices.module';
+import { RecommendationsModule } from './recommendations/recommendations.module';
+import { StaffsModule } from './staffs/staffs.module';
+import { StudentsModule } from './students/students.module';
+import { SubjectsModule } from './subjects/subjects.module';
+import { TasksModule } from './tasks/tasks.module';
+import { TeachersModule } from './teachers/teachers.module';
+import { TransportationSystemModule } from './transportation-system/transportation-system.module';
 
 @Module({
   imports: [
@@ -41,6 +58,23 @@ import { FinanceSystemModule } from './finance-system/finance-system.module';
     MailModule,
     DormitorySystemModule,
     FinanceSystemModule,
+    AcademicYearsModule,
+    AddressesModule,
+    AttendancesModule,
+    ClassRoomsModule,
+    DealersModule,
+    EnrollmentsModule,
+    ExaminationSystemModule,
+    GuardiansModule,
+    LibraryBookModule,
+    NoticesModule,
+    RecommendationsModule,
+    StaffsModule,
+    StudentsModule,
+    SubjectsModule,
+    TasksModule,
+    TeachersModule,
+    TransportationSystemModule,
   ],
   controllers: [AppController],
   providers: [

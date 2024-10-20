@@ -4,9 +4,9 @@ import { LibraryBookController } from './library-book.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LibraryBook } from './entities/library-book.entity';
 import { LibraryBookRequest } from './entities/library-book-request.entity';
-import { UsersModule } from 'src/users/users.module';
 import { LibraryBookRequestService } from './library-requests.service';
 import { LibraryBookRequestController } from './library-requests.controller';
+import { UsersModule } from 'src/auth-system/users/users.module';
 
 @Module({
   imports: [

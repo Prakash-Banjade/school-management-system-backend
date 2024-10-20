@@ -4,19 +4,19 @@ import { UpdateGuardianDto } from './dto/update-guardian.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Guardian } from './entities/guardian.entity';
 import { Brackets, DataSource, IsNull, Not, Or, Repository } from 'typeorm';
-import { ImagesService } from 'src/images/images.service';
-import { Deleted, QueryDto } from 'src/core/dto/query.dto';
-import paginatedData from 'src/core/utils/paginatedData';
 import { Student } from 'src/students/entities/student.entity';
 import { GuardianOmitStudentId } from 'src/students/dto/create-student.dto';
 import { REQUEST } from '@nestjs/core';
-import { Request } from 'express';
-import { BaseRepository } from 'src/core/repository/base.repository';
+import { BaseRepository } from 'src/common/repository/base-repository';
+import { ImagesService } from 'src/file-management/images/images.service';
+import { FastifyRequest } from 'fastify';
+import { Deleted, QueryDto } from 'src/common/dto/query.dto';
+import paginatedData from 'src/utils/paginatedData';
 
 @Injectable({ scope: Scope.REQUEST })
 export class GuardiansService extends BaseRepository {
   constructor(
-    dataSource: DataSource, @Inject(REQUEST) req: Request,
+    dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
     @InjectRepository(Guardian) private readonly guardiansRepo: Repository<Guardian>,
     @InjectRepository(Student) private readonly studentRepo: Repository<Student>,
     private readonly imagesService: ImagesService

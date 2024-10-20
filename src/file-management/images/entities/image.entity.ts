@@ -1,6 +1,7 @@
 import { Account } from "src/auth-system/accounts/entities/account.entity";
 import { User } from "src/auth-system/users/entities/user.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
+import { Staff } from "src/staffs/entities/staff.entity";
 import { Student } from "src/students/entities/student.entity";
 import { Task } from "src/tasks/entities/task.entity";
 import { Teacher } from "src/teachers/entities/teacher.entity";
@@ -60,4 +61,9 @@ export class Image extends BaseEntity {
     @OneToOne(() => Task, task => task.attatchments, { onDelete: 'CASCADE', nullable: true })
     @JoinColumn()
     task_attatchments: Task;
+
+    // staff
+    @OneToOne(() => Staff, staff => staff.profileImage, { onDelete: 'CASCADE', nullable: true })
+    @JoinColumn()
+    staff_profileImage: Staff;
 }

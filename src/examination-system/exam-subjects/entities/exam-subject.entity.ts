@@ -1,4 +1,4 @@
-import { BaseEntity } from "src/core/entities/base.entity";
+import { BaseEntity } from "src/common/entities/base.entity";
 import { ExamReport } from "src/examination-system/exam-reports/entities/exam-report.entity";
 import { Exam } from "src/examination-system/exams/entities/exam.entity";
 import { Subject } from "src/subjects/entities/subject.entity";

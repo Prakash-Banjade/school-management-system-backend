@@ -1,6 +1,6 @@
 import { AcademicYear } from "src/academic-years/entities/academic-year.entity";
 import { ClassRoom } from "src/class-rooms/entities/class-room.entity";
-import { BaseEntity } from "src/core/entities/base.entity";
+import { BaseEntity } from "src/common/entities/base.entity";
 import { ExamSubject } from "src/examination-system/exam-subjects/entities/exam-subject.entity";
 import { ExamType } from "src/examination-system/exam-types/entities/exam-type.entity";
 import { Entity, ManyToOne, OneToMany } from "typeorm";

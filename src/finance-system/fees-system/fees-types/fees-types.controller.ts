@@ -2,10 +2,10 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestj
 import { FeesTypesService } from './fees-types.service';
 import { CreateFeesTypeDto } from './dto/create-fees-type.dto';
 import { UpdateFeesTypeDto } from './dto/update-fees-type.dto';
-import { QueryDto } from 'src/core/dto/query.dto';
-import { ChekcAbilities } from 'src/core/decorators/abilities.decorator';
-import { Action } from 'src/core/types/global.types';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { QueryDto } from 'src/common/dto/query.dto';
+import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
+import { Action } from 'src/common/types/global.type';
 
 @ApiBearerAuth()
 @ApiTags('fees-types')

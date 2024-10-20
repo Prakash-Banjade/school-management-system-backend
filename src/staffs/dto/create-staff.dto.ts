@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsDateString, IsEmail, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Length, Min } from "class-validator";
-import { BloodGroup, EStaff, Gender, MaritalStatus } from "src/core/types/global.types";
+import { EBloodGroup, EMaritalStatus, EStaff, Gender } from "src/common/types/global.type";
 
 export class CreateStaffDto {
     @ApiProperty({ type: Number, example: '5545', description: 'StaffId of the staff' })
@@ -65,15 +65,15 @@ export class CreateStaffDto {
     @IsOptional()
     shortDescription?: string;
 
-    @ApiProperty({ type: 'enum', enum: MaritalStatus, example: MaritalStatus.MARRIED, description: 'Marital status of the staff' })
-    @IsEnum(MaritalStatus)
+    @ApiProperty({ type: 'enum', enum: EMaritalStatus, example: EMaritalStatus.MARRIED, description: 'Marital status of the staff' })
+    @IsEnum(EMaritalStatus)
     @IsNotEmpty()
-    maritalStatus!: MaritalStatus;
+    maritalStatus!: EMaritalStatus;
 
-    @ApiProperty({ type: 'enum', enum: BloodGroup, example: BloodGroup.B_POSITIVE, description: 'Blood group of the staff' })
-    @IsEnum(BloodGroup)
+    @ApiProperty({ type: 'enum', enum: EBloodGroup, example: EBloodGroup.B_POSITIVE, description: 'Blood group of the staff' })
+    @IsEnum(EBloodGroup)
     @IsNotEmpty()
-    bloodGroup!: BloodGroup;
+    bloodGroup!: EBloodGroup;
 
     @ApiProperty({ type: Date, format: 'date-time', example: '2024-07-19T11:02:05.462Z', description: 'Date of birth of the staff' })
     @IsDateString()

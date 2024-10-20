@@ -4,8 +4,8 @@ import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { StudentQueryDto } from './dto/student-query.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { TransactionInterceptor } from 'src/core/interceptors/transaction.interceptor';
-import { ApiPaginatedResponse } from 'src/core/decorators/apiPaginatedResponse.decorator';
+import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
+import { ApiPaginatedResponse } from 'src/common/decorators/apiPaginatedResponse.decorator';
 
 @ApiBearerAuth()
 @ApiTags('Students')

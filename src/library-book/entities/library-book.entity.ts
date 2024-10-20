@@ -1,6 +1,6 @@
-import { BaseEntity } from "src/core/entities/base.entity";
 import { Column, Entity, OneToOne } from "typeorm";
 import { LibraryBookRequest } from "./library-book-request.entity";
+import { BaseEntity } from "src/common/entities/base.entity";
 
 @Entity()
 export class LibraryBook extends BaseEntity {

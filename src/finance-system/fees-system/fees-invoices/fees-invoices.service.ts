@@ -6,16 +6,16 @@ import { FeesInvoice } from './entities/fees-invoice.entity';
 import { Brackets, DataSource, Repository } from 'typeorm';
 import { StudentsService } from 'src/students/students.service';
 import { FeeItemsService } from './fee-items.service';
-import { QueryDto } from 'src/core/dto/query.dto';
-import paginatedData from 'src/core/utils/paginatedData';
 import { REQUEST } from '@nestjs/core';
-import { Request } from 'express';
-import { BaseRepository } from 'src/core/repository/base.repository';
+import { BaseRepository } from 'src/common/repository/base-repository';
+import { FastifyRequest } from 'fastify';
+import { QueryDto } from 'src/common/dto/query.dto';
+import paginatedData from 'src/utils/paginatedData';
 
 @Injectable({ scope: Scope.REQUEST })
 export class FeesInvoicesService extends BaseRepository {
   constructor(
-    dataSource: DataSource, @Inject(REQUEST) req: Request,
+    dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
     @InjectRepository(FeesInvoice) private readonly feesInvoiceRepo: Repository<FeesInvoice>,
     private readonly studentService: StudentsService,
     private readonly feeItemsService: FeeItemsService,

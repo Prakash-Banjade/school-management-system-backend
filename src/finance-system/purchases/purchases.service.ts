@@ -6,7 +6,7 @@ import { Purchase } from './entities/purchase.entity';
 import { Brackets, Repository } from 'typeorm';
 import { DealersService } from 'src/dealers/dealers.service';
 import { PurchaseQueryDto } from './dto/purchase-query.dto';
-import paginatedData from 'src/core/utils/paginatedData';
+import paginatedData from 'src/utils/paginatedData';
 
 @Injectable()
 export class PurchasesService {

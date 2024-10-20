@@ -5,15 +5,15 @@ import { DataSource, Repository } from "typeorm";
 import { CreateFeeItemDto } from "./dto/create-fee-item.dto";
 import { FeesType } from "../fees-types/entities/fees-type.entity";
 import { UpdateFeeItemDto } from "./dto/update-fee-item.dto";
-import { BaseRepository } from "src/core/repository/base.repository";
 import { REQUEST } from "@nestjs/core";
-import { Request } from "express";
 import { FeesInvoice } from "./entities/fees-invoice.entity";
+import { BaseRepository } from "src/common/repository/base-repository";
+import { FastifyRequest } from "fastify";
 
 @Injectable({ scope: Scope.REQUEST })
 export class FeeItemsService extends BaseRepository {
     constructor(
-        dataSource: DataSource, @Inject(REQUEST) req: Request,
+        dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
         @InjectRepository(FeeItem) private readonly feeItemRepo: Repository<FeeItem>,
         @InjectRepository(FeesType) private readonly feesTypeRepo: Repository<FeesType>,
     ) {

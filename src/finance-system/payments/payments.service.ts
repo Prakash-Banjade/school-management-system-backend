@@ -6,7 +6,7 @@ import { Payment } from './entities/payment.entity';
 import { Brackets, Repository } from 'typeorm';
 import { DealersService } from 'src/dealers/dealers.service';
 import { PaymentQueryDto } from './dto/payment-query.dto';
-import paginatedData from 'src/core/utils/paginatedData';
+import paginatedData from 'src/utils/paginatedData';
 
 @Injectable()
 export class PaymentsService {

@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import { IsEnum, IsOptional } from "class-validator";
-import { QueryDto } from "src/core/dto/query.dto";
-import { ESalaryStatus } from "src/core/types/global.types";
+import { QueryDto } from "src/common/dto/query.dto";
+import { ESalaryStatus } from "src/common/types/global.type";
 
 export class SalaryQueryDto extends QueryDto {
     @ApiPropertyOptional({ type: 'enum', enum: ESalaryStatus })

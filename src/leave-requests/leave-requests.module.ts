@@ -3,7 +3,7 @@ import { LeaveRequestsService } from './leave-requests.service';
 import { LeaveRequestsController } from './leave-requests.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LeaveRequest } from './entities/leave-request.entity';
-import { UsersModule } from 'src/users/users.module';
+import { UsersModule } from 'src/auth-system/users/users.module';
 
 @Module({
   imports: [

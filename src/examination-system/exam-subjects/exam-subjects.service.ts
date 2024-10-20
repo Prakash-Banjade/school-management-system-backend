@@ -7,7 +7,7 @@ import { Brackets, Repository } from 'typeorm';
 import { ExamsService } from '../exams/exams.service';
 import { SubjectsService } from 'src/subjects/subjects.service';
 import { ExamSubjectQueryDto } from './dto/exam-subject-query.dto';
-import paginatedData from 'src/core/utils/paginatedData';
+import paginatedData from 'src/utils/paginatedData';
 
 @Injectable()
 export class ExamSubjectsService {

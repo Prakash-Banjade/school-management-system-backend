@@ -3,9 +3,9 @@ import { ExamReportsService } from './exam-reports.service';
 import { CreateExamReportDto } from './dto/create-exam-report.dto';
 import { UpdateExamReportDto } from './dto/update-exam-report.dto';
 import { ExamReportQueryDto } from './dto/exam-report-query.dto';
-import { ChekcAbilities } from 'src/core/decorators/abilities.decorator';
-import { Action } from 'src/core/types/global.types';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
+import { Action } from 'src/common/types/global.type';
 
 @ApiBearerAuth()
 @ApiTags('Exam Reports')

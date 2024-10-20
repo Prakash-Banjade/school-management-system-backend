@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsDateString, IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsUUID } from "class-validator";
-import { ESalaryStatus } from "src/core/types/global.types";
+import { ESalaryStatus } from "src/common/types/global.type";
 
 export class CreateSalaryDto {
     @ApiPropertyOptional({ type: Number, description: 'Salary ID' })

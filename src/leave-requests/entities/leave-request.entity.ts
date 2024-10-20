@@ -1,6 +1,6 @@
-import { BaseEntity } from "src/core/entities/base.entity";
-import { ELeaveRequestStatus } from "src/core/types/global.types";
-import { User } from "src/users/entities/user.entity";
+import { User } from "src/auth-system/users/entities/user.entity";
+import { BaseEntity } from "src/common/entities/base.entity";
+import { ELeaveRequestStatus } from "src/common/types/global.type";
 import { Column, Entity, ManyToOne } from "typeorm";
 
 @Entity()

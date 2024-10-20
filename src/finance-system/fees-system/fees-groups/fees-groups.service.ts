@@ -4,9 +4,9 @@ import { UpdateFeesGroupDto } from './dto/update-fees-group.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FeesGroup } from './entities/fees-group.entity';
 import { Brackets, ILike, Repository } from 'typeorm';
-import { QueryDto } from 'src/core/dto/query.dto';
-import paginatedData from 'src/core/utils/paginatedData';
 import { ClassRoomsService } from 'src/class-rooms/class-rooms.service';
+import { QueryDto } from 'src/common/dto/query.dto';
+import paginatedData from 'src/utils/paginatedData';
 
 @Injectable()
 export class FeesGroupsService {

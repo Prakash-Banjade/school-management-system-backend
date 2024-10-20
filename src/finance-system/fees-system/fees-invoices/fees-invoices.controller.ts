@@ -1,10 +1,10 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors } from '@nestjs/common';
 import { FeesInvoicesService } from './fees-invoices.service';
 import { CreateFeesInvoiceDto } from './dto/create-fees-invoice.dto';
-import { QueryDto } from 'src/core/dto/query.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { UpdateFeesInvoiceDto } from './dto/update-fees-invoice.dto';
-import { TransactionInterceptor } from 'src/core/interceptors/transaction.interceptor';
+import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
+import { QueryDto } from 'src/common/dto/query.dto';
 
 @ApiBearerAuth()
 @ApiTags('Fees Invoices')

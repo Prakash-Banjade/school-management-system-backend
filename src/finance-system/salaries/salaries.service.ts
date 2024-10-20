@@ -4,9 +4,9 @@ import { UpdateSalaryDto } from './dto/update-salary.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Salary } from './entities/salary.entity';
 import { Brackets, Repository } from 'typeorm';
-import { UsersService } from 'src/users/users.service';
-import paginatedData from 'src/core/utils/paginatedData';
 import { SalaryQueryDto } from './dto/salary-query.dto';
+import { UsersService } from 'src/auth-system/users/users.service';
+import paginatedData from 'src/utils/paginatedData';
 
 @Injectable()
 export class SalariesService {

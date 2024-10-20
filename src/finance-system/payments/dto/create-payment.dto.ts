@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsBoolean, IsDateString, IsEnum, IsNotEmpty, IsNumber, IsString, IsUUID } from "class-validator";
-import { EPaymentMethod } from "src/core/types/global.types";
+import { EPaymentMethod } from "src/common/types/global.type";
 
 export class CreatePaymentDto {
     @ApiProperty({ type: String, format: 'date-time', description: 'Date of the payment' })

@@ -4,10 +4,10 @@ import { UpdateLeaveRequestDto } from './dto/update-leave-request.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LeaveRequest } from './entities/leave-request.entity';
 import { Repository } from 'typeorm';
-import { UsersService } from 'src/users/users.service';
-import { AuthUser, Roles } from 'src/core/types/global.types';
 import { LeaveRequestQueryDto } from './dto/leave-request-query.dto';
-import paginatedData from 'src/core/utils/paginatedData';
+import { UsersService } from 'src/auth-system/users/users.service';
+import { AuthUser } from 'src/common/types/global.type';
+import paginatedData from 'src/utils/paginatedData';
 
 @Injectable()
 export class LeaveRequestsService {

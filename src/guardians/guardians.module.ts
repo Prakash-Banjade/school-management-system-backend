@@ -3,9 +3,8 @@ import { GuardiansService } from './guardians.service';
 import { GuardiansController } from './guardians.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Guardian } from './entities/guardian.entity';
-import { StudentsModule } from 'src/students/students.module';
-import { ImagesModule } from 'src/images/images.module';
 import { Student } from 'src/students/entities/student.entity';
+import { ImagesModule } from 'src/file-management/images/images.module';
 
 @Module({
   imports: [

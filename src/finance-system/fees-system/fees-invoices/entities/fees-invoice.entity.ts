@@ -1,9 +1,9 @@
 import { BadRequestException } from "@nestjs/common";
-import { BaseEntity } from "src/core/entities/base.entity";
-import { EFeeInvoicePaymentStatus, EPaymentMethod } from "src/core/types/global.types";
 import { Student } from "src/students/entities/student.entity";
 import { BeforeInsert, BeforeUpdate, Column, Entity, ManyToOne, OneToMany } from "typeorm";
 import { FeeItem } from "./fee-item.entity";
+import { EFeeInvoicePaymentStatus, EPaymentMethod } from "src/common/types/global.type";
+import { BaseEntity } from "src/common/entities/base.entity";
 
 @Entity()
 export class FeesInvoice extends BaseEntity {

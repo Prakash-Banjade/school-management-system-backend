@@ -1,3 +1,3 @@
-import { QueryDto } from "src/core/dto/query.dto";
+import { QueryDto } from "src/common/dto/query.dto";
 
 export class StaffQueryDto extends QueryDto { }

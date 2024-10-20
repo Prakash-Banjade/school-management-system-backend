@@ -7,8 +7,8 @@ import { Brackets, Repository } from 'typeorm';
 import { ClassRoomsService } from 'src/class-rooms/class-rooms.service';
 import { ExamTypesService } from '../exam-types/exam-types.service';
 import { ExamQueryDto } from './dto/exam-query.dto';
-import paginatedData from 'src/core/utils/paginatedData';
 import { AcademicYear } from 'src/academic-years/entities/academic-year.entity';
+import paginatedData from 'src/utils/paginatedData';
 
 @Injectable()
 export class ExamsService {

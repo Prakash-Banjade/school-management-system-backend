@@ -1,8 +1,8 @@
 import { ApiProperty, ApiPropertyOptional, OmitType } from "@nestjs/swagger";
 import { ArrayMinSize, IsArray, IsDateString, IsDefined, IsEnum, IsNotEmpty, IsUUID, ValidateNested } from "class-validator";
-import { EFeeInvoicePaymentStatus, EPaymentMethod } from "src/core/types/global.types";
 import { CreateFeeItemDto } from "./create-fee-item.dto";
 import { Type } from "class-transformer";
+import { EFeeInvoicePaymentStatus, EPaymentMethod } from "src/common/types/global.type";
 
 class FeeItemDto extends OmitType(CreateFeeItemDto, ['feeInvoiceId']) { }
 

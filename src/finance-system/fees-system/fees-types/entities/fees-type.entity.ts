@@ -1,7 +1,7 @@
-import { BaseEntity } from "src/core/entities/base.entity";
 import { Column, Entity, ManyToOne, OneToMany } from "typeorm";
 import { FeesGroup } from "../../fees-groups/entities/fees-group.entity";
 import { FeeItem } from "../../fees-invoices/entities/fee-item.entity";
+import { BaseEntity } from "src/common/entities/base.entity";
 
 @Entity()
 export class FeesType extends BaseEntity {

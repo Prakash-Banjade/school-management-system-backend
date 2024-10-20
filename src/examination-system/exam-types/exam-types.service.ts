@@ -4,8 +4,8 @@ import { UpdateExamTypeDto } from './dto/update-exam-type.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ExamType } from './entities/exam-type.entity';
 import { Brackets, Repository } from 'typeorm';
-import { QueryDto } from 'src/core/dto/query.dto';
-import paginatedData from 'src/core/utils/paginatedData';
+import { QueryDto } from 'src/common/dto/query.dto';
+import paginatedData from 'src/utils/paginatedData';
 
 @Injectable()
 export class ExamTypesService {

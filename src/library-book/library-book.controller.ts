@@ -3,9 +3,9 @@ import { LibraryBookService } from './library-book.service';
 import { CreateLibraryBookDto } from './dto/create-library-book.dto';
 import { UpdateLibraryBookDto } from './dto/update-library-book.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { QueryDto } from 'src/core/dto/query.dto';
-import { Action } from 'src/core/types/global.types';
-import { ChekcAbilities } from 'src/core/decorators/abilities.decorator';
+import { QueryDto } from 'src/common/dto/query.dto';
+import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
+import { Action } from 'src/common/types/global.type';
 
 @ApiBearerAuth()
 @ApiTags('Library Book')

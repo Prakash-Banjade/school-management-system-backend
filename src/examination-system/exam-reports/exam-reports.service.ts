@@ -7,8 +7,8 @@ import { Brackets, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm'
 import { ExamSubjectsService } from '../exam-subjects/exam-subjects.service';
 import { StudentsService } from 'src/students/students.service';
 import { ExamReportQueryDto } from './dto/exam-report-query.dto';
-import paginatedData from 'src/core/utils/paginatedData';
 import { MarksGrade } from '../marks-grades/entities/marks-grade.entity';
+import paginatedData from 'src/utils/paginatedData';
 
 @Injectable()
 export class ExamReportsService {

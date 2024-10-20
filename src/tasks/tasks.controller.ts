@@ -2,10 +2,10 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestj
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { CurrentUser } from 'src/core/decorators/user.decorator';
-import { AuthUser } from 'src/core/types/global.types';
-import { QueryDto } from 'src/core/dto/query.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { CurrentUser } from 'src/common/decorators/user.decorator';
+import { AuthUser } from 'src/common/types/global.type';
+import { QueryDto } from 'src/common/dto/query.dto';
 
 @ApiBearerAuth()
 @ApiTags('Tasks')

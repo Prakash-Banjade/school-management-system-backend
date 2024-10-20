@@ -1,5 +1,5 @@
-import { BaseEntity } from "src/core/entities/base.entity";
-import { EPaymentMethod } from "src/core/types/global.types";
+import { BaseEntity } from "src/common/entities/base.entity";
+import { EPaymentMethod } from "src/common/types/global.type";
 import { Dealer } from "src/dealers/entities/dealer.entity";
 import { Column, Entity, ManyToOne } from "typeorm";
 

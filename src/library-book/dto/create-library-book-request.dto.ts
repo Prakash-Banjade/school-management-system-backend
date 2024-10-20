@@ -1,6 +1,6 @@
-import { ApiProperty, ApiPropertyOptional, PartialType } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsDateString, IsEnum, IsNotEmpty, IsOptional, IsUUID } from "class-validator";
-import { ELibarryBookStatus } from "src/core/types/global.types";
+import { ELibarryBookStatus } from "src/common/types/global.type";
 
 export class CreateLibraryBookRequestDto {
     @ApiProperty({ type: String, description: 'Library book id', format: 'uuid' })

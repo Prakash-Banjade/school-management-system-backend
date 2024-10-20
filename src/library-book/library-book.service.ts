@@ -4,8 +4,8 @@ import { UpdateLibraryBookDto } from './dto/update-library-book.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LibraryBook } from './entities/library-book.entity';
 import { Brackets, Repository } from 'typeorm';
-import { QueryDto } from 'src/core/dto/query.dto';
-import paginatedData from 'src/core/utils/paginatedData';
+import { QueryDto } from 'src/common/dto/query.dto';
+import paginatedData from 'src/utils/paginatedData';
 
 @Injectable()
 export class LibraryBookService {

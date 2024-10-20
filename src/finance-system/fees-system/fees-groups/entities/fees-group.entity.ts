@@ -1,9 +1,9 @@
-import { BaseEntity } from "src/core/entities/base.entity";
 import { BeforeInsert, BeforeUpdate, Column, Entity, ManyToOne, OneToMany } from "typeorm";
 import { FeesType } from "../../fees-types/entities/fees-type.entity";
 import { ClassRoom } from "src/class-rooms/entities/class-room.entity";
-import { EFeeGroupAppliedTo } from "src/core/types/global.types";
 import { BadRequestException } from "@nestjs/common";
+import { BaseEntity } from "src/common/entities/base.entity";
+import { EFeeGroupAppliedTo } from "src/common/types/global.type";
 
 @Entity()
 export class FeesGroup extends BaseEntity {

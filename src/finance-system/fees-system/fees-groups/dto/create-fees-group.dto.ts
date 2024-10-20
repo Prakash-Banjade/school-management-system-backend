@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID, ValidateIf } from "class-validator";
-import { EFeeGroupAppliedTo } from "src/core/types/global.types";
+import { EFeeGroupAppliedTo } from "src/common/types/global.type";
 
 export class CreateFeesGroupDto {
     @ApiProperty()

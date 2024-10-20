@@ -1,7 +1,6 @@
-import { BaseEntity } from "src/core/entities/base.entity";
-import { ESalaryStatus } from "src/core/types/global.types";
-import { generateTeacherId } from "src/core/utils/generate-teacher-id";
-import { User } from "src/users/entities/user.entity";
+import { BaseEntity } from "src/common/entities/base.entity";
+import { ESalaryStatus } from "src/common/types/global.type";
+import { generateTeacherId } from "src/utils/generate-teacher-id";
 import { BeforeInsert, BeforeUpdate, Column, Entity, ManyToOne } from "typeorm";
 
 @Entity()

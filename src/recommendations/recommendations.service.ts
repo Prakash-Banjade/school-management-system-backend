@@ -4,9 +4,9 @@ import { UpdateRecommendationDto } from './dto/update-recommendation.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Recommendation } from './entities/recommendation.entity';
 import { Repository } from 'typeorm';
-import { UsersService } from 'src/users/users.service';
-import { QueryDto } from 'src/core/dto/query.dto';
-import paginatedData from 'src/core/utils/paginatedData';
+import { UsersService } from 'src/auth-system/users/users.service';
+import { QueryDto } from 'src/common/dto/query.dto';
+import paginatedData from 'src/utils/paginatedData';
 
 @Injectable()
 export class RecommendationsService {

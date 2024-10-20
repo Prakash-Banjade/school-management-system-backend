@@ -3,8 +3,8 @@ import { StaffsService } from './staffs.service';
 import { CreateStaffDto } from './dto/create-staff.dto';
 import { UpdateStaffDto } from './dto/update-staff.dto';
 import { StaffQueryDto } from './dto/staff-query.dto';
-import { ApiPaginatedResponse } from 'src/core/decorators/apiPaginatedResponse.decorator';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiPaginatedResponse } from 'src/common/decorators/apiPaginatedResponse.decorator';
 
 @ApiBearerAuth()
 @ApiTags("Staffs")

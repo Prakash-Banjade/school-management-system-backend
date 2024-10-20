@@ -3,19 +3,19 @@ import { CreateStaffDto } from './dto/create-staff.dto';
 import { UpdateStaffDto } from './dto/update-staff.dto';
 import { Staff } from './entities/staff.entity';
 import { Brackets, DataSource, IsNull, Not, Or } from 'typeorm';
-import { ImagesService } from 'src/images/images.service';
-import { AccountsService } from 'src/accounts/accounts.service';
 import { REQUEST } from '@nestjs/core';
-import { Request } from 'express';
-import { BaseRepository } from 'src/core/repository/base.repository';
+import { BaseRepository } from 'src/common/repository/base-repository';
+import { ImagesService } from 'src/file-management/images/images.service';
+import { AccountsService } from 'src/auth-system/accounts/accounts.service';
+import { FastifyRequest } from 'fastify';
 import { StaffQueryDto } from './dto/staff-query.dto';
-import paginatedData from 'src/core/utils/paginatedData';
-import { Deleted } from 'src/core/dto/query.dto';
+import { Deleted } from 'src/common/dto/query.dto';
+import paginatedData from 'src/utils/paginatedData';
 
 @Injectable({ scope: Scope.REQUEST })
 export class StaffsService extends BaseRepository {
   constructor(
-    dataSource: DataSource, @Inject(REQUEST) req: Request,
+    dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
     private readonly imageService: ImagesService,
     private readonly accountsService: AccountsService,
   ) {
