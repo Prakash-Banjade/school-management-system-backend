@@ -8,10 +8,10 @@ enum Order {
 }
 
 export class PageOptionsDto {
-    @ApiPropertyOptional({ enum: Order, default: Order.ASC })
+    @ApiPropertyOptional({ enum: Order, default: Order.DESC })
     @IsEnum(Order)
     @IsOptional()
-    readonly order?: Order = Order.ASC;
+    readonly order?: Order = Order.DESC;
 
     @ApiPropertyOptional({
         minimum: 1,
