@@ -17,6 +17,13 @@ export enum Role {
     SUPER_ADMIN = 'super_admin',
     ADMIN = 'admin',
     USER = 'user',
+    TEACHER = 'teacher',
+    GUARDIAN = 'guardian',
+    ACCOUNTANT = 'accountant',
+    RECEPTIONIST = 'receptionist',
+    STUDENT = 'student',
+    LIBRARIAN = 'librarian',
+    STAFF = 'staff',
 }
 
 export enum Gender {
@@ -152,7 +159,7 @@ export enum EDayOfWeek {
     SUNDAY = 'sunday',
 }
 
-export enum ERoutineType { 
+export enum ERoutineType {
     CLASS = 'class',
     BREAK = 'break',
 }
