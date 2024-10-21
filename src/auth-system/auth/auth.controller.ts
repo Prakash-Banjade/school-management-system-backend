@@ -67,7 +67,6 @@ export class AuthController {
     }
 
     @Post('logout')
-    @HttpCode(HttpStatus.OK)
     @ApiConsumes('multipart/form-data')
     @FormDataRequest()
     @UseGuards(RefreshTokenGuard)
