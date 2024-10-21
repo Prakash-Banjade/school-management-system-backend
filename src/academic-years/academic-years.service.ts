@@ -3,9 +3,11 @@ import { CreateAcademicYearDto } from './dto/create-academic-year.dto';
 import { UpdateAcademicYearDto } from './dto/update-academic-year.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AcademicYear } from './entities/academic-year.entity';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import { QueryDto } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
+import { PageMetaDto } from 'src/common/dto/pageMeta.dto';
+import { PageDto } from 'src/common/dto/page.dto.';
 
 @Injectable()
 export class AcademicYearsService {
@@ -27,18 +29,37 @@ export class AcademicYearsService {
       isActive: true
     });
 
-    return this.academicYearRepo.save(newAcademicYear);
+    const saved = await this.academicYearRepo.save(newAcademicYear);
+
+    return {
+      message: "Academic year created successfully",
+      academicYear: {
+        id: saved.id,
+        name: saved.name,
+      }
+    }
   }
 
   async findAll(queryDto: QueryDto) {
+    // the default setup is altered because the first one should be the active one
+    const activeYear = await this.academicYearRepo.findOneBy({ isActive: true });
+
     const queryBuilder = this.academicYearRepo.createQueryBuilder('academicYear');
 
     queryBuilder
       .orderBy("academicYear.createdAt", queryDto.order)
-      .take(queryDto.take)
+      .take(queryDto.take - 1)
       .skip(queryDto.skip)
+      .where(new Brackets(qb => {
+        qb.where({ isActive: false }) // select all non-active years
+      }))
 
-    return paginatedData(queryDto, queryBuilder);
+    const itemCount = await queryBuilder.getCount();
+    const { entities } = await queryBuilder.getRawAndEntities();
+
+    const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto: queryDto });
+
+    return new PageDto(!!activeYear ? [activeYear, ...entities] : entities, pageMetaDto);
   }
 
   async findOne(id: string) {
@@ -55,7 +76,15 @@ export class AcademicYearsService {
     await this.academicYearRepo.update({ isActive: true }, { isActive: false });
 
     existing.isActive = true;
-    return this.academicYearRepo.save(existing);
+    const saved = await this.academicYearRepo.save(existing);
+
+    return {
+      message: "Active year changed",
+      academicYear: {
+        id: saved.id,
+        name: saved.name,
+      }
+    }
   }
 
   async update(id: string, updateAcademicYearDto: UpdateAcademicYearDto) {
@@ -69,12 +98,28 @@ export class AcademicYearsService {
 
     // update the academic year
     Object.assign(existing, updateAcademicYearDto);
-    return this.academicYearRepo.save(existing);
+    const saved = await this.academicYearRepo.save(existing);
+
+    return {
+      message: "Updated successfully",
+      academicYear: {
+        id: saved.id,
+        name: saved.name,
+      }
+    }
 
   }
 
   async remove(id: string) {
     const existing = await this.findOne(id);
-    return this.academicYearRepo.remove(existing);
+    const removed = await this.academicYearRepo.remove(existing);
+
+    return {
+      message: "Removed successfully",
+      academicYear: {
+        id: removed.id,
+        name: removed.name,
+      }
+    }
   }
 }
