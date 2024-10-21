@@ -15,6 +15,7 @@ export enum Action {
 
 export enum Role {
     SUPER_ADMIN = 'super_admin',
+    MODERATOR = 'moderator',
     ADMIN = 'admin',
     USER = 'user',
     TEACHER = 'teacher',

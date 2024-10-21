@@ -12,9 +12,15 @@ export class CaslAbilityFactory {
     defineAbility(user: AuthUser) {
         const { can, cannot, build } = new AbilityBuilder<AppAbility>(createMongoAbility)
 
-        if (user.role === Role.SUPER_ADMIN) {
+        if (user.role === Role.ADMIN) {
             can(Action.MANAGE, 'all')
             can(Action.MANAGE, User)
+        }
+        else if (user.role === Role.MODERATOR) {
+            can(Action.READ, 'all')
+            can(Action.CREATE, 'all')
+            can(Action.UPDATE, 'all')
+            cannot(Action.DELETE, 'all').because('Access Denied')
         } else if (user.role === Role.USER) {
             cannot(Action.READ, 'all').because('Access Denied')
             can(Action.READ, User)
