@@ -22,7 +22,6 @@ export class AbilitiesGuard implements CanActivate {
         if (isPublic) return true; // no need to authorize public routes
 
         const { user } = context.switchToHttp().getRequest();
-        console.log(user)
         const ability = this.caslAbility.defineAbility(user);
 
         try {
