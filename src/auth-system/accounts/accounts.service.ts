@@ -10,10 +10,11 @@ import { Guardian } from 'src/guardians/entities/guardian.entity';
 import { Staff } from 'src/staffs/entities/staff.entity';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { FastifyRequest } from 'fastify';
-import { Role } from 'src/common/types/global.type';
+import { AuthUser, Role } from 'src/common/types/global.type';
 import { generateRandomPassword } from 'src/utils/generatePassword';
 import * as bcrypt from 'bcrypt';
 import { PASSWORD_SALT_COUNT } from 'src/common/CONSTANTS';
+import { accountSelectCols } from './helpers/account-select-cols.config';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AccountsService extends BaseRepository {
@@ -58,6 +59,16 @@ export class AccountsService extends BaseRepository {
     return {
       message: 'Account created successfully',
     }
+  }
+
+  async me(currentUser: AuthUser) {
+    const account = await this.getRepository(Account).findOne({
+      where: { id: currentUser.accountId },
+      select: accountSelectCols,
+    });
+    if (!account) throw new Error('Account not found');
+
+    return account;
   }
 
   findAll() {
