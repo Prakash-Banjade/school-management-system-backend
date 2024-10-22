@@ -14,6 +14,9 @@ async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter({}),
+    {
+      logger: false,
+    }
   );
 
   const configService = app.get(ConfigService);
@@ -50,7 +53,7 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
 
-  await app.listen(configService.get('PORT'), (err, address) => {
+  await app.listen(configService.get('PORT'), '0.0.0.0', (err, address) => {
     if (err) {
       console.error(err);
       process.exit(1);
