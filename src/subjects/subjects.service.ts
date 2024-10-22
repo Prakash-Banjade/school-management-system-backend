@@ -8,6 +8,8 @@ import { SubjectQueryDto } from './dto/subject-query.dto';
 import { ClassRoomsService } from 'src/class-rooms/class-rooms.service';
 import { TeachersService } from 'src/teachers/teachers.service';
 import paginatedData from 'src/utils/paginatedData';
+import { applySelectColumns } from 'src/utils/apply-select-cols';
+import { singleSubjectSelelctCols, subjectSelectCols } from './helpers/subject-select-cols.config';
 
 @Injectable()
 export class SubjectsService {
@@ -52,7 +54,7 @@ export class SubjectsService {
         queryDto.classRoomId && qb.andWhere("classRoom.id = :classRoomId", { classRoomId: queryDto.classRoomId })
       }))
 
-    // TODO: add select cols
+    applySelectColumns(queryBuilder, subjectSelectCols, 'subject');
 
     return paginatedData(queryDto, queryBuilder);
   }
@@ -63,11 +65,12 @@ export class SubjectsService {
       relations: {
         classRoom: true,
         teacher: true,
-      }
+      },
+      select: singleSubjectSelelctCols,
     })
     if (!existing) throw new NotFoundException(`Subject with id ${id} not found`);
 
-    return existing
+    return existing;
   }
 
   async update(id: string, updateSubjectDto: UpdateSubjectDto) {

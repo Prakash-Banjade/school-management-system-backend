@@ -19,7 +19,16 @@ export class Subject extends BaseEntity {
     content: string;
 
     @Column({ type: 'int' })
-    totalMarks: number;
+    theoryPM: number;
+
+    @Column({ type: 'int' })
+    theoryFM: number;
+
+    @Column({ type: 'int' })
+    practicalPM: number;
+    
+    @Column({ type: 'int' })
+    practicalFM: number;
 
     /**
     |--------------------------------------------------

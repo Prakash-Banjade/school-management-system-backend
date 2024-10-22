@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsInt, IsNotEmpty, IsOptional, IsString, IsUUID } from "class-validator";
+import { IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Min } from "class-validator";
 
 export class CreateSubjectDto {
     @ApiProperty({ type: String, description: 'Subject name' })
@@ -17,10 +17,29 @@ export class CreateSubjectDto {
     @IsNotEmpty()
     content: string;
 
-    @ApiProperty({ type: Number, description: 'Total marks' })
+    @ApiProperty({ type: Number, description: 'Theory pass marks' })
     @IsInt()
     @IsNotEmpty()
-    totalMarks: number;
+    @Min(0)
+    theoryPM: number;
+
+    @ApiProperty({ type: Number, description: 'Theory full marks' })
+    @IsInt()
+    @IsNotEmpty()
+    @Min(0)
+    theoryFM: number;
+
+    @ApiProperty({ type: Number, description: 'Practical pass marks' })
+    @IsInt()
+    @IsNotEmpty()
+    @Min(0)
+    practicalPM: number;
+
+    @ApiProperty({ type: Number, description: 'Practical full marks' })
+    @IsInt()
+    @IsNotEmpty()
+    @Min(0)
+    practicalFM: number;
 
     @ApiPropertyOptional({ type: 'enum', format: 'emum', description: 'Class room id' })
     @IsUUID()
