@@ -8,6 +8,7 @@ export const studentsColumnsConfig: FindOptionsSelect<Student> = {
     lastName: true,
     email: true,
     dob: true,
+    rollNo: true,
     classRoom: {
         id: true,
         name: true,
