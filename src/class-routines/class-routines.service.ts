@@ -42,6 +42,7 @@ export class ClassRoutinesService {
       .take(queryDto.take)
       .leftJoinAndSelect('classRoutine.classRoom', 'classRoom')
       .leftJoinAndSelect('classRoutine.subject', 'subject')
+      .leftJoinAndSelect('subject.teacher', 'teacher')
       .where(new Brackets(qb => {
         queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
         queryDto.subjectId && qb.andWhere('subject.id = :subjectId', { subjectId: queryDto.subjectId });
