@@ -50,6 +50,13 @@ export class AllExceptionsFilter extends BaseExceptionFilter {
             errResponse.type = 'Others'
         }
 
+        console.log(
+            request.method,
+            errResponse.path,
+            errResponse.type,
+            errResponse.message,
+        );
+
         response
             .status(errResponse.statusCode)
             .send(errResponse); // Fastify's way of sending a response
