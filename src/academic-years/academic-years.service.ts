@@ -54,7 +54,7 @@ export class AcademicYearsService {
         qb.where({ isActive: false }) // select all non-active years
       }))
 
-    const itemCount = await queryBuilder.getCount();
+    const itemCount = await queryBuilder.getCount() + 1;
     const { entities } = await queryBuilder.getRawAndEntities();
 
     const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto: queryDto });
