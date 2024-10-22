@@ -12,7 +12,8 @@ import { AccountsService } from 'src/auth-system/accounts/accounts.service';
 import { FastifyRequest } from 'fastify';
 import { Deleted } from 'src/common/dto/query.dto';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
-import paginatedData from 'src/utils/paginatedData';
+import { PageMetaDto } from 'src/common/dto/pageMeta.dto';
+import { PageDto } from 'src/common/dto/page.dto.';
 
 
 @Injectable({ scope: Scope.REQUEST })
@@ -64,7 +65,24 @@ export class TeachersService extends BaseRepository {
 
     applySelectColumns(queryBuilder, teachersColumnsConfig, 'teacher');
 
-    return paginatedData(queryDto, queryBuilder);
+    queryBuilder.addSelect("CONCAT(teacher.firstName, ' ', teacher.lastName)", 'teacherFullName'); // this is done to simplify in frontend in dynamic select `labelKey` prop
+
+    const itemCount = await queryBuilder.getCount();
+    const { entities, raw } = await queryBuilder.getRawAndEntities();
+
+    // add teacher full name to each entity
+    entities.forEach((entity, index) => {
+      const rawData = raw[index];
+      if (rawData && rawData.teacherFullName) {
+        Object.assign(entity, {
+          teacherFullName: rawData.teacherFullName
+        })
+      }
+    });
+
+    const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto: queryDto });
+
+    return new PageDto(entities, pageMetaDto);
   }
 
   async findOne(id: string) {
