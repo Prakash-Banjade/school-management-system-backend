@@ -30,6 +30,7 @@ import { SubjectsModule } from './subjects/subjects.module';
 import { TasksModule } from './tasks/tasks.module';
 import { TeachersModule } from './teachers/teachers.module';
 import { TransportationSystemModule } from './transportation-system/transportation-system.module';
+import { ClassRoutinesModule } from './class-routines/class-routines.module';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { TransportationSystemModule } from './transportation-system/transportati
     AddressesModule,
     AttendancesModule,
     ClassRoomsModule,
+    ClassRoutinesModule,
     DealersModule,
     EnrollmentsModule,
     ExaminationSystemModule,
