@@ -29,6 +29,7 @@ export const envSchema = Joi.object({
         .required(),
 
     CLIENT_URL: Joi.string().uri().required(), // Client URL should be a valid URL
+    BACKEND_URL: Joi.string().uri().required(),
 
     AES_KEY: Joi.string().required(), // AES key validation, assuming it's a string
     AES_IV: Joi.string().required(), // AES IV should also be a string
