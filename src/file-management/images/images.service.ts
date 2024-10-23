@@ -41,7 +41,7 @@ export class ImagesService {
 
     return {
       message: 'Image(s) Uploaded',
-      images: images.map(image => ({ id: image.id, url: image.url })),
+      files: images.map(image => ({ id: image.id, url: image.url })),
       count: createImageDto.images.length,
     }
   }
@@ -65,20 +65,19 @@ export class ImagesService {
 
   async findAllByIds(ids: string[]) {
     return await this.imagesRepository.find({
-      where: {
-        id: In(ids)
-      }
+      where: [
+        { id: In(ids) },
+        { url: In(ids) }
+      ]
     })
   }
 
   async findOne(id: string, currentUser?: AuthUser) {
     const existingImage = await this.imagesRepository.findOne({
-      where: {
-        id,
-        uploadedBy: {
-          id: currentUser?.accountId
-        }
-      },
+      where: [
+        { id },
+        { url: id }
+      ],
     });
     if (!existingImage) throw new NotFoundException('Image not found');
 

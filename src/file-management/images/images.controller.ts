@@ -6,20 +6,21 @@ import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagg
 import { FormDataRequest } from 'nestjs-form-data';
 import { SkipThrottle } from '@nestjs/throttler';
 import { ImageQueryDto } from './dto/image-query.dto';
-import { AuthUser } from 'src/common/types/global.type';
+import { Action, AuthUser } from 'src/common/types/global.type';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
 import { QueryDto } from 'src/common/dto/query.dto';
 import { Public } from 'src/common/decorators/setPublicRoute.decorator';
 import { FastifyReply } from 'fastify';
+import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
 
 @ApiTags('Upload Images')
-@Controller('images') // route-path: /upload/images
+@Controller('upload/images')
 export class ImagesController {
   constructor(private readonly imagesService: ImagesService) { }
 
   @Post()
   @ApiBearerAuth()
-  @FormDataRequest()
+  @FormDataRequest({ limits: { fileSize: 5 * 1024 * 1024, files: 10 } })
   @ApiOperation({ description: 'Upload Images' })
   @ApiConsumes('multipart/formdata')
   upload(@Body() createImageDto: CreateImageDto, @CurrentUser() currentUser: AuthUser) {
@@ -28,7 +29,6 @@ export class ImagesController {
 
   @Get()
   @ApiBearerAuth()
-
   findAll(@Query() queryDto: QueryDto, @CurrentUser() currentUser: AuthUser) {
     return this.imagesService.findAll(queryDto, currentUser);
   }
@@ -49,12 +49,14 @@ export class ImagesController {
   @ApiBearerAuth()
   @FormDataRequest()
   @ApiConsumes('multipart/formdata')
+  @ChekcAbilities({ subject: 'all', action: Action.UPDATE })
   update(@Param('id') id: string, @Body() updateImageDto: UpdateImageDto, @CurrentUser() currentUser: AuthUser) {
     return this.imagesService.update(id, updateImageDto, currentUser);
   }
 
   @Delete(':id')
   @ApiBearerAuth()
+  @ChekcAbilities({ subject: 'all', action: Action.DELETE })
   remove(@Param('id') id: string, @CurrentUser() currentUser: AuthUser) {
     return this.imagesService.remove(id, currentUser);
   }
