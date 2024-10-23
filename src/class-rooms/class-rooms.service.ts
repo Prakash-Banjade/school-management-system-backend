@@ -22,7 +22,7 @@ export class ClassRoomsService extends BaseRepository {
   }
 
   async create(createClassRoomDto: CreateClassRoomDto) {
-    const existingWithSameName = await this.classRoomRepo.findOneBy({ name: createClassRoomDto.name });
+    const existingWithSameName = await this.classRoomRepo.findOneBy({ name: createClassRoomDto.name, classType: EClassType.PRIMARY });
     if (existingWithSameName) throw new ConflictException('Class room with same name already exists');
 
     // evaluate parent class
@@ -68,8 +68,11 @@ export class ClassRoomsService extends BaseRepository {
       .groupBy('classRoom.id')  // Ensure group by to aggregate counts per classRoom
       .andWhere(new Brackets(qb => {
         queryDto.search && qb.andWhere('LOWER(classRoom.name) LIKE LOWER(:search)', { search: queryDto.search });
-        qb.where("classRoom.classType = :type", { type: EClassType.PRIMARY })
+        queryDto.classType && qb.andWhere('classRoom.classType = :classType', { classType: queryDto.classType });
+        queryDto.parentClassId && qb.andWhere('classRoomParentClass.id = :parentClassId', { parentClassId: queryDto.parentClassId });
       }));
+
+    // applySelectColumns(queryBuilder, classRoomsColumnsConfig, 'classRoom');
 
     const itemCount = await queryBuilder.getCount();
     const { entities, raw } = await queryBuilder.getRawAndEntities();

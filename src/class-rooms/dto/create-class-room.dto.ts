@@ -22,13 +22,15 @@ export class CreateClassRoomDto {
     @IsNotEmpty()
     @IsNumber()
     @Min(0)
-    monthlyTutionFee: number
+    @IsOptional()
+    monthlyTutionFee: number = 0;
 
     @ApiProperty({ type: Number, example: 1000, description: 'Monthly fee of the class room' })
     @IsNotEmpty()
     @IsNumber()
     @Min(0)
-    monthlyFee: number
+    @IsOptional()
+    monthlyFee: number = 0;
 
     @ApiPropertyOptional({ type: String, example: 'Room No. 34, Block 1, Floor 1', description: 'Location of the class room' })
     @IsString()
