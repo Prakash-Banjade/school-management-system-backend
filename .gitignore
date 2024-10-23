@@ -15,6 +15,9 @@ lerna-debug.log*
 # OS
 .DS_Store
 
+#public
+public
+
 # Tests
 /coverage
 /.nyc_output
