@@ -14,9 +14,6 @@ export class Task extends BaseEntity {
     description: string;
 
     @Column({ type: 'datetime' })
-    date: string; // denotes for when the task is
-
-    @Column({ type: 'datetime' })
     submissionDate: string
 
     @Column({ type: 'enum', enum: ETask })

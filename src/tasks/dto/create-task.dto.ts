@@ -13,11 +13,6 @@ export class CreateTaskDto {
     @IsNotEmpty()
     description: string;
 
-    @ApiProperty({ type: String, format: 'date-time', description: 'Task date' })
-    @IsDateString()
-    @IsNotEmpty()
-    date: string;
-
     @ApiProperty({ type: String, format: 'date-time', description: 'Submission task date' })
     @IsDateString()
     @IsNotEmpty()
