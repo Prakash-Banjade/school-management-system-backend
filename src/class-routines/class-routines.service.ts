@@ -8,6 +8,10 @@ import { ClassRoomsService } from 'src/class-rooms/class-rooms.service';
 import { SubjectsService } from 'src/subjects/subjects.service';
 import { ClassRoutineQueryDto } from './dto/class-routine.query.dto';
 import paginatedData from 'src/utils/paginatedData';
+import { AuthUser, Role } from 'src/common/types/global.type';
+import { isStudent } from 'src/utils/isStudent';
+import { applySelectColumns } from 'src/utils/apply-select-cols';
+import { classRoutinesSelectCols } from './helpers/class-routines-select-cols.config';
 
 @Injectable()
 export class ClassRoutinesService {
@@ -30,10 +34,12 @@ export class ClassRoutinesService {
       subject
     });
 
-    return this.classRoutineRepo.save(newClassRoutine);
+    const savedClassRoutine = await this.classRoutineRepo.save(newClassRoutine);
+
+    return this.classRoutineMutationReturn(savedClassRoutine, 'created');
   }
 
-  async findAll(queryDto: ClassRoutineQueryDto) {
+  async findAll(queryDto: ClassRoutineQueryDto, currentUser: AuthUser) {
     const querybuilder = this.classRoutineRepo.createQueryBuilder('classRoutine');
 
     querybuilder
@@ -49,6 +55,14 @@ export class ClassRoutinesService {
         queryDto.dayOfTheWeek && qb.andWhere('classRoutine.dayOfTheWeek = :dayOfTheWeek', { dayOfTheWeek: queryDto.dayOfTheWeek });
       }))
 
+    // filter by role
+    querybuilder.andWhere(new Brackets(qb => {
+      isStudent(currentUser) && qb.andWhere('classRoom.id = :classRoomId', { classRoomId: currentUser.classRoomId });
+    }));
+
+    applySelectColumns(querybuilder, classRoutinesSelectCols, 'classRoutine');
+
+    // TODO: send routines in ascending order of time
     return paginatedData(queryDto, querybuilder);
   }
 
@@ -79,12 +93,25 @@ export class ClassRoutinesService {
       subject
     });
 
-    return this.classRoutineRepo.save(existing);
+    const savedClassRoutine = await this.classRoutineRepo.save(existing);
+
+    return this.classRoutineMutationReturn(savedClassRoutine, 'updated');
   }
 
   async remove(id: string) {
     const existing = await this.classRoutineRepo.findOneBy({ id });
 
-    return await this.classRoutineRepo.remove(existing);
+    await this.classRoutineRepo.remove(existing);
+
+    return this.classRoutineMutationReturn(existing, 'deleted');
+  }
+
+  private classRoutineMutationReturn = (classRoutine: ClassRoutine, type: 'created' | 'updated' | 'deleted') => {
+    return {
+      message: type === 'created' ? 'Class routine created successfully' : type === 'deleted' ? 'Class routine deleted successfully' : 'Class routine updated successfully',
+      classRoutine: {
+        id: classRoutine.id,
+      }
+    }
   }
 }

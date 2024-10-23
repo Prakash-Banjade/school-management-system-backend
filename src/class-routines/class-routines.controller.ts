@@ -5,7 +5,8 @@ import { UpdateClassRoutineDto } from './dto/update-class-routine.dto';
 import { ClassRoutineQueryDto } from './dto/class-routine.query.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action } from 'src/common/types/global.type';
+import { Action, AuthUser } from 'src/common/types/global.type';
+import { CurrentUser } from 'src/common/decorators/user.decorator';
 
 @ApiBearerAuth()
 @ApiTags('Class Routines')
@@ -20,9 +21,9 @@ export class ClassRoutinesController {
   }
 
   @Get()
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
-  findAll(@Query() queryDto: ClassRoutineQueryDto) {
-    return this.classRoutinesService.findAll(queryDto);
+  // @ChekcAbilities({ action: Action.READ, subject: 'all' })
+  findAll(@Query() queryDto: ClassRoutineQueryDto, @CurrentUser() currentUser: AuthUser) {
+    return this.classRoutinesService.findAll(queryDto, currentUser);
   }
 
   @Get(':id')

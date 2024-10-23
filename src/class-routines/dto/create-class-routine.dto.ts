@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsEnum, IsNotEmpty, IsString, IsUUID, ValidateIf } from "class-validator";
+import { IsEnum, IsMilitaryTime, IsNotEmpty, IsString, IsUUID, ValidateIf } from "class-validator";
 import { EDayOfWeek, ERoutineType } from "src/common/types/global.type";
 
 export class CreateClassRoutineDto {
@@ -10,12 +10,12 @@ export class CreateClassRoutineDto {
 
     @ApiProperty()
     @IsNotEmpty()
-    @IsString()
+    @IsMilitaryTime({message: "Invalid start time. Required format: HH:MM"})
     startTime: string;
 
     @ApiProperty()
     @IsNotEmpty()
-    @IsString()
+    @IsMilitaryTime({message: "Invalid end time. Required format: HH:MM"})
     endTime: string;
 
     @ApiProperty({ enum: ERoutineType })
