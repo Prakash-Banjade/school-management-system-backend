@@ -1,11 +1,14 @@
 import { Module } from '@nestjs/common';
 import { JwtService } from './jwt.service';
 import { JwtModule as Jwt } from '@nestjs/jwt';
-import { APP_GUARD } from '@nestjs/core';
-import { AuthGuard } from 'src/common/guards/auth.guard';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Student } from 'src/students/entities/student.entity';
 
 @Module({
   imports: [
+    TypeOrmModule.forFeature([
+      Student,
+    ]),
     Jwt.register({
       global: true,
       secret: process.env.ACCESS_TOKEN_SECRET!,

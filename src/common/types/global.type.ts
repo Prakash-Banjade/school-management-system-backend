@@ -1,7 +1,12 @@
-export interface AuthUser {
+export type AuthUser = {
     accountId: string;
     email: string;
-    role: Role;
+    role: Omit<Role, Role.STUDENT>;
+} | {
+    accountId: string;
+    email: string;
+    role: Role.STUDENT;
+    classRoomId: string;
 }
 
 export enum Action {

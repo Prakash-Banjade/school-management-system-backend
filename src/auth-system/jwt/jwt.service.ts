@@ -3,14 +3,18 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService as JwtSer } from '@nestjs/jwt';
 import { Tokens } from 'src/common/CONSTANTS';
-import { AuthUser } from 'src/common/types/global.type';
+import { AuthUser, Role } from 'src/common/types/global.type';
 import { Account } from '../accounts/entities/account.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Student } from 'src/students/entities/student.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class JwtService {
     constructor(
         private readonly jwtService: JwtSer,
         private readonly configService: ConfigService,
+        @InjectRepository(Student) private readonly studentRepo: Repository<Student>,
     ) { }
 
     private readonly ACCESS_TOKEN_SECRET = this.configService.getOrThrow<string>('ACCESS_TOKEN_SECRET');
@@ -35,12 +39,41 @@ export class JwtService {
         );
     }
 
+    /**
+     * the payload will contain additional `classRoomId` if the user is a student
+     * @param account the account
+     * @returns the access and refresh tokens
+     */
     async getAuthTokens(account: Account) {
-        const payload: AuthUser = {
-            email: account.email,
-            accountId: account.id,
-            role: account.role,
-        };
+        let payload: AuthUser;
+
+        if (account.role === Role.STUDENT) {
+            const student = await this.studentRepo.findOne({
+                where: {
+                    account: { id: account.id },
+                },
+                relations: {
+                    classRoom: true,
+                },
+                select: {
+                    id: true,
+                    classRoom: { id: true }
+                }
+            });
+
+            payload = {
+                accountId: account.id,
+                email: account.email,
+                role: Role.STUDENT,
+                classRoomId: student.classRoom.id,
+            };
+        } else {
+            payload = {
+                accountId: account.id,
+                email: account.email,
+                role: account.role,
+            };
+        }
 
         const access_token = await this.createAccessToken(payload);
         const refresh_token = await this.createRefreshToken(payload);
