@@ -14,21 +14,25 @@ export class ClassRoutinesController {
   constructor(private readonly classRoutinesService: ClassRoutinesService) { }
 
   @Post()
+  @ChekcAbilities({ subject: 'all', action: Action.CREATE })
   create(@Body() createClassRoutineDto: CreateClassRoutineDto) {
     return this.classRoutinesService.create(createClassRoutineDto);
   }
 
   @Get()
+  @ChekcAbilities({ subject: 'all', action: Action.READ })
   findAll(@Query() queryDto: ClassRoutineQueryDto) {
     return this.classRoutinesService.findAll(queryDto);
   }
 
   @Get(':id')
+  @ChekcAbilities({ subject: 'all', action: Action.READ })
   findOne(@Param('id') id: string) {
     return this.classRoutinesService.findOne(id);
   }
 
   @Patch(':id')
+  @ChekcAbilities({ subject: 'all', action: Action.UPDATE })
   update(@Param('id') id: string, @Body() updateClassRoutineDto: UpdateClassRoutineDto) {
     return this.classRoutinesService.update(id, updateClassRoutineDto);
   }

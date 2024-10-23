@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsEnum, IsNotEmpty, IsString, IsUUID } from "class-validator";
+import { IsEnum, IsNotEmpty, IsString, IsUUID, ValidateIf } from "class-validator";
 import { EDayOfWeek, ERoutineType } from "src/common/types/global.type";
 
 export class CreateClassRoutineDto {
@@ -31,5 +31,6 @@ export class CreateClassRoutineDto {
     @ApiProperty({ format: 'uuid' })
     @IsNotEmpty()
     @IsUUID()
+    @ValidateIf((o) => o.type === ERoutineType.CLASS)
     subjectId: string;
 }
