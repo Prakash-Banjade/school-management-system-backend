@@ -31,6 +31,8 @@ import { TasksModule } from './tasks/tasks.module';
 import { TeachersModule } from './teachers/teachers.module';
 import { TransportationSystemModule } from './transportation-system/transportation-system.module';
 import { ClassRoutinesModule } from './class-routines/class-routines.module';
+import { AbilitiesGuard } from './common/guards/abilities.guard';
+import { CaslModule } from './auth-system/casl/casl.module';
 
 @Module({
   imports: [
@@ -57,6 +59,7 @@ import { ClassRoutinesModule } from './class-routines/class-routines.module';
     AuthSystemModule,
     FileManagementModule,
     MailModule,
+    CaslModule,
     DormitorySystemModule,
     FinanceSystemModule,
     AcademicYearsModule,
@@ -83,11 +86,15 @@ import { ClassRoutinesModule } from './class-routines/class-routines.module';
     AppService,
     {
       provide: APP_GUARD,
+      useClass: AuthGuard, // global auth guard
+    },
+    {
+      provide: APP_GUARD,
       useClass: ThrottlerGuard, // global rate limiting, but can be overriden in route level
     },
     {
       provide: APP_GUARD,
-      useClass: AuthGuard, // global auth guard
+      useClass: AbilitiesGuard, // global ability guard, this should be defined after AuthGuard, because it depends on the request['user'] which is defined by AuthGuard
     },
   ],
 })
