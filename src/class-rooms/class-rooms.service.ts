@@ -50,8 +50,8 @@ export class ClassRoomsService extends BaseRepository {
 
     queryBuilder
       .orderBy("classRoom.createdAt", queryDto.order)
-      .skip(queryDto.skip)
-      .take(queryDto.take)
+      .skip(queryDto.skipPagination === 'true' ? undefined : queryDto.skip)
+      .take(queryDto.skipPagination === 'true' ? undefined : queryDto.take)
       .withDeleted()
       .leftJoin("classRoom.parent", "classRoomParentClass")
       .leftJoin("classRoom.children", "childrenClasses")

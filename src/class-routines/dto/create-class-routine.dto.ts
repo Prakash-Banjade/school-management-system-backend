@@ -21,7 +21,7 @@ export class CreateClassRoutineDto {
     @ApiProperty({ enum: ERoutineType })
     @IsNotEmpty()
     @IsEnum(ERoutineType)
-    type: ERoutineType;
+    type: ERoutineType = ERoutineType.CLASS;
 
     @ApiProperty({ format: 'uuid' })
     @IsNotEmpty()

@@ -12,6 +12,10 @@ export const classRoutinesSelectCols: FindOptionsSelect<ClassRoutine> = {
     classRoom: {
         id: true,
         name: true,
+        parent: {
+            id: true,
+            name: true,
+        }
     },
     subject: {
         id: true,

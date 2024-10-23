@@ -8,10 +8,12 @@ import { ClassRoomsService } from 'src/class-rooms/class-rooms.service';
 import { SubjectsService } from 'src/subjects/subjects.service';
 import { ClassRoutineQueryDto } from './dto/class-routine.query.dto';
 import paginatedData from 'src/utils/paginatedData';
-import { AuthUser, Role } from 'src/common/types/global.type';
+import { AuthUser, EClassType, Role } from 'src/common/types/global.type';
 import { isStudent } from 'src/utils/isStudent';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { classRoutinesSelectCols } from './helpers/class-routines-select-cols.config';
+import { Subject } from 'src/subjects/entities/subject.entity';
+import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 
 @Injectable()
 export class ClassRoutinesService {
@@ -26,7 +28,7 @@ export class ClassRoutinesService {
     const subject = await this.subjectsService.findOne(createClassRoutineDto.subjectId);
 
     // validate if class room have the subject
-    if (subject.classRoom?.id !== classRoom.id) throw new BadRequestException('Class room does not have the subject');
+    this.validateIfClassRoomHaveSubject(subject, classRoom);
 
     const newClassRoutine = this.classRoutineRepo.create({
       ...createClassRoutineDto,
@@ -39,6 +41,11 @@ export class ClassRoutinesService {
     return this.classRoutineMutationReturn(savedClassRoutine, 'created');
   }
 
+  private validateIfClassRoomHaveSubject(subject: Subject, classRoom: ClassRoom) {
+    const parentClass = classRoom?.classType === EClassType.SECTION ? classRoom.parent : classRoom;
+    if (parentClass?.id !== subject.classRoom?.id) throw new BadRequestException('Class room does not have the subject');
+  }
+
   async findAll(queryDto: ClassRoutineQueryDto, currentUser: AuthUser) {
     const querybuilder = this.classRoutineRepo.createQueryBuilder('classRoutine');
 
@@ -46,9 +53,10 @@ export class ClassRoutinesService {
       .orderBy("classRoutine.createdAt", queryDto.order)
       .skip(queryDto.skip)
       .take(queryDto.take)
-      .leftJoinAndSelect('classRoutine.classRoom', 'classRoom')
-      .leftJoinAndSelect('classRoutine.subject', 'subject')
-      .leftJoinAndSelect('subject.teacher', 'teacher')
+      .leftJoin('classRoutine.classRoom', 'classRoom')
+      .leftJoin('classRoom.parent', 'parent')
+      .leftJoin('classRoutine.subject', 'subject')
+      .leftJoin('subject.teacher', 'teacher')
       .where(new Brackets(qb => {
         queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
         queryDto.subjectId && qb.andWhere('subject.id = :subjectId', { subjectId: queryDto.subjectId });
@@ -79,18 +87,10 @@ export class ClassRoutinesService {
   async update(id: string, updateClassRoutineDto: UpdateClassRoutineDto) {
     const existing = await this.classRoutineRepo.findOneBy({ id });
 
-    const classRoom = updateClassRoutineDto.classRoomId
-      ? await this.classRoomsService.findOne(updateClassRoutineDto.classRoomId)
-      : existing.classRoom;
-
-    const subject = updateClassRoutineDto.subjectId
-      ? await this.subjectsService.findOne(updateClassRoutineDto.subjectId)
-      : existing.subject;
-
+    // classroom and subject are note update
+    
     Object.assign(existing, {
       ...updateClassRoutineDto,
-      classRoom,
-      subject
     });
 
     const savedClassRoutine = await this.classRoutineRepo.save(existing);
