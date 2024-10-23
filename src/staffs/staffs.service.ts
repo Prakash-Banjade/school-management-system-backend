@@ -84,14 +84,6 @@ export class StaffsService extends BaseRepository {
     return existingStaff;
   }
 
-  async findOneByUserId(userId: string): Promise<Staff | null> {
-    const existingStaff = await this.getRepository(Staff).findOne({
-      where: { account: { user: { id: userId } } },
-    })
-
-    return existingStaff;
-  }
-
   async update(id: string, updateStaffDto: UpdateStaffDto) {
     const existingStaff = await this.findOne(id);
     await this.checkIfStaffExists(updateStaffDto, existingStaff);

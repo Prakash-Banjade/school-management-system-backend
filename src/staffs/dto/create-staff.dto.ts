@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsDateString, IsEmail, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Length, Min } from "class-validator";
+import { IsUuidOrUrl } from "src/common/decorators/isUrlOrUUid";
 import { EBloodGroup, EMaritalStatus, EStaff, Gender } from "src/common/types/global.type";
 
 export class CreateStaffDto {
@@ -50,8 +51,8 @@ export class CreateStaffDto {
     @IsNumber()
     wage!: number;
 
-    @ApiPropertyOptional({ type: String, format: 'uuid', example: 'd6a5f7c0-0f0f-4f7c-0f7c-0f7c0f7c0f7c', description: 'Profile image id of the staff' })
-    @IsUUID()
+    @ApiPropertyOptional({ type: String, description: 'Profile image id/url of the staff' })
+    @IsUuidOrUrl()
     @IsOptional()
     profileImageId!: string;
 

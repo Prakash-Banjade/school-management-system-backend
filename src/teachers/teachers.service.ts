@@ -101,21 +101,10 @@ export class TeachersService extends BaseRepository {
         },
         account: {
           id: true,
-          user: {
-            id: true,
-          }
         }
       }
     });
     if (!existingTeacher) throw new NotFoundException('Teacher not found');
-
-    return existingTeacher;
-  }
-
-  async findOneByUserId(userId: string): Promise<Teacher | null> {
-    const existingTeacher = await this.getRepository(Teacher).findOne({
-      where: { account: { user: { id: userId } } },
-    })
 
     return existingTeacher;
   }

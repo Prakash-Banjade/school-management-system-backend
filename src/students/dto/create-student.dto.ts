@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional, OmitType } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import { ArrayMinSize, IsArray, IsDateString, IsDefined, IsEmail, IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Max, Min, ValidateIf, ValidateNested } from "class-validator";
+import { IsUuidOrUrl } from "src/common/decorators/isUrlOrUUid";
 import { EBloodGroup, EReligion, Gender } from "src/common/types/global.type";
 import { CreateGuardianDto } from "src/guardians/dto/create-guardian.dto";
 
@@ -86,8 +87,8 @@ export class CreateStudentDto {
     @IsOptional()
     caste?: string;
 
-    @ApiPropertyOptional({ type: String, format: 'uuid', description: 'Image ID', example: '5f3d1b0d-e5b8-4f8b-b5c2-f0c8d8c1c3c4' })
-    @IsUUID()
+    @ApiPropertyOptional({ type: String, description: 'Image ID/URL' })
+    @IsUuidOrUrl()
     @IsOptional()
     profileImageId: string;
 
@@ -173,8 +174,8 @@ export class CreateStudentDto {
     @IsOptional()
     additionalNotes: string;
 
-    @ApiPropertyOptional({ type: [String], format: 'uuid', description: 'Document attatchment gallery id' })
-    @IsUUID("all", { each: true })
+    @ApiPropertyOptional({ type: [String], description: 'Document attatchment gallery id/url' })
+    @IsString({ each: true })
     @IsOptional()
     documentAttatchmentIds: string[];
 

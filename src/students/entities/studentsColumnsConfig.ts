@@ -25,9 +25,6 @@ export const studentsColumnsConfig: FindOptionsSelect<Student> = {
         phone: true,
     },
     account: {
-        id: true,
-        user: {
-            id: true,
-        }
+        id: true
     }
 }

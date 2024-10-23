@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsEmail, IsNotEmpty, IsOptional, IsString, IsUUID } from "class-validator";
+import { IsUuidOrUrl, IsUuidOrUrlConstraint } from "src/common/decorators/isUrlOrUUid";
 
 export class CreateGuardianDto {
     @ApiProperty({ type: String, description: 'Guardian first name' })
@@ -32,8 +33,8 @@ export class CreateGuardianDto {
     @IsNotEmpty()
     occupation: string;
 
-    @ApiPropertyOptional({ type: String, format: 'uudi', description: 'Guardian image id' })
-    @IsString()
+    @ApiPropertyOptional({ type: String, description: 'Guardian image id/url' })
+    @IsUuidOrUrl()
     @IsOptional()
     imageId: string;
 
