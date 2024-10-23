@@ -4,6 +4,7 @@ import { CaslAbilityFactory } from "../../auth-system/casl/casl-ability.factory/
 import { ForbiddenError } from "@casl/ability";
 import { AbilityRequiredRules, CHECK_ABILITY } from "../decorators/abilities.decorator";
 import { IS_PUBLIC_KEY } from "../decorators/setPublicRoute.decorator";
+import { FastifyRequest } from "fastify";
 
 @Injectable()
 export class AbilitiesGuard implements CanActivate {
@@ -21,7 +22,7 @@ export class AbilitiesGuard implements CanActivate {
 
         if (isPublic) return true; // no need to authorize public routes
 
-        const { user } = context.switchToHttp().getRequest();
+        const { user } = context.switchToHttp().getRequest<FastifyRequest>();
         const ability = this.caslAbility.defineAbility(user);
 
         try {
