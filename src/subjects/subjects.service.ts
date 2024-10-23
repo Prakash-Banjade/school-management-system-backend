@@ -10,6 +10,8 @@ import { TeachersService } from 'src/teachers/teachers.service';
 import paginatedData from 'src/utils/paginatedData';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { singleSubjectSelelctCols, subjectSelectCols } from './helpers/subject-select-cols.config';
+import { AuthUser, Role } from 'src/common/types/global.type';
+import { isStudent } from 'src/utils/isStudent';
 
 @Injectable()
 export class SubjectsService {
@@ -39,7 +41,7 @@ export class SubjectsService {
 
   }
 
-  async findAll(queryDto: SubjectQueryDto) {
+  async findAll(queryDto: SubjectQueryDto, currentUser: AuthUser) {
     const queryBuilder = this.subjectsRepo.createQueryBuilder('subject');
 
     queryBuilder
@@ -47,11 +49,16 @@ export class SubjectsService {
       .take(queryDto.take)
       .orderBy("subject.createdAt", queryDto.order)
       .withDeleted()
-      .leftJoinAndSelect('subject.classRoom', 'classRoom')
-      .leftJoinAndSelect('subject.teacher', 'teacher')
+      .leftJoin('subject.classRoom', 'classRoom')
+      .leftJoin('subject.teacher', 'teacher')
       .andWhere(new Brackets(qb => {
         queryDto.search && qb.andWhere("LOWER(subject.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
-        queryDto.classRoomId && qb.andWhere("classRoom.id = :classRoomId", { classRoomId: queryDto.classRoomId })
+
+        if (currentUser.role === Role.ADMIN) { // admin access
+          queryDto.classRoomId && qb.andWhere("classRoom.id = :classRoomId", { classRoomId: queryDto.classRoomId })
+        } else if (isStudent(currentUser)) { // student access
+          qb.andWhere('classRoom.id = :classRoomId', { classRoomId: currentUser.classRoomId })
+        }
       }))
 
     applySelectColumns(queryBuilder, subjectSelectCols, 'subject');

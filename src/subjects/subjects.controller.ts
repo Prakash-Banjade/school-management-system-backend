@@ -5,6 +5,8 @@ import { UpdateSubjectDto } from './dto/update-subject.dto';
 import { SubjectQueryDto } from './dto/subject-query.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ApiPaginatedResponse } from 'src/common/decorators/apiPaginatedResponse.decorator';
+import { AuthUser } from 'src/common/types/global.type';
+import { CurrentUser } from 'src/common/decorators/user.decorator';
 
 @ApiBearerAuth()
 @ApiTags('Subjects')
@@ -19,8 +21,8 @@ export class SubjectsController {
 
   @Get()
   @ApiPaginatedResponse(SubjectQueryDto)
-  findAll(@Query() queryDto: SubjectQueryDto) {
-    return this.subjectsService.findAll(queryDto);
+  findAll(@Query() queryDto: SubjectQueryDto, @CurrentUser() currentUser: AuthUser) {
+    return this.subjectsService.findAll(queryDto, currentUser);
   }
 
   @Get(':id')
