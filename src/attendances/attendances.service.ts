@@ -5,9 +5,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Attendance } from './entities/attendance.entity';
 import { Brackets, Repository } from 'typeorm';
 import { AttendaceQueryDto } from './dto/attendance-query.dto';
-import { UsersService } from 'src/auth-system/users/users.service';
 import paginatedData from 'src/utils/paginatedData';
 import { AccountsService } from 'src/auth-system/accounts/accounts.service';
+import { AuthUser, Role } from 'src/common/types/global.type';
+import { isStudent } from 'src/utils/isStudent';
+import { applySelectColumns } from 'src/utils/apply-select-cols';
+import { attendanceSelectCols } from './helpers/attendance-select-cols.config';
 
 @Injectable()
 export class AttendancesService {
@@ -35,7 +38,7 @@ export class AttendancesService {
     }
   }
 
-  async findAllByStudent(queryDto: AttendaceQueryDto) {
+  async findAll(queryDto: AttendaceQueryDto, currentUser: AuthUser) {
     const queryBuilder = this.attendanceRepo.createQueryBuilder('attendance');
 
     queryBuilder
@@ -46,10 +49,19 @@ export class AttendancesService {
       .leftJoin("account.student", "student")
       .leftJoin("student.classRoom", "classRoom")
       .andWhere(new Brackets(qb => {
-        queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId', { classRoomId: `%${queryDto.classRoomId}%` })
-        queryDto.studentId && qb.andWhere('student.id = :studentId', { studentId: `%${queryDto.studentId}%` })
-        queryDto.search && qb.orWhere("LOWER(CONCAT(student.firstName, ' ', student.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
-      }))
+        queryDto.status && qb.andWhere('attendance.status = :status', { status: queryDto.status })
+        queryDto.month && qb.andWhere('MONTH(attendance.date) = :month', { month: queryDto.month });
+
+        if (currentUser.role === Role.ADMIN) { // admin access
+          queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId', { classRoomId: `%${queryDto.classRoomId}%` })
+          queryDto.studentId && qb.andWhere('student.id = :studentId', { studentId: `%${queryDto.studentId}%` })
+          queryDto.search && qb.andWhere("LOWER(CONCAT(student.firstName, ' ', student.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+        } else if (isStudent(currentUser)) { // student access
+          qb.andWhere('account.id = :accountId', { accountId: currentUser.accountId })
+        }
+      }));
+
+    applySelectColumns(queryBuilder, attendanceSelectCols, 'attendance');
 
     return paginatedData(queryDto, queryBuilder);
   }

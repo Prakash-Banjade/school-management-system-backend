@@ -1,5 +1,6 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
-import { IsDateString, IsEnum, IsOptional, IsUUID } from "class-validator";
+import { Transform } from "class-transformer";
+import { IsDateString, IsEnum, IsNumber, IsOptional, IsUUID } from "class-validator";
 import { QueryDto } from "src/common/dto/query.dto";
 import { EAttendanceStatus } from "src/common/types/global.type";
 
@@ -23,4 +24,13 @@ export class AttendaceQueryDto extends QueryDto {
     @IsUUID()
     @IsOptional()
     studentId?: string;
+
+    @ApiPropertyOptional({ type: Number, description: 'Month of the attendance' })
+    @IsNumber()
+    @IsOptional()
+    @Transform(({ value }) => {
+        if (!isNaN(Number(value))) return Math.abs(Number(value));
+        return undefined;
+    })
+    month?: number;
 }
