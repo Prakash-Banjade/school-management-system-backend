@@ -25,7 +25,7 @@ export class EnrollmentsService extends BaseRepository {
   async create(createEnrollmentDto: CreateEnrollmentDto, newStudent: boolean = false) {
     const student = await this.getRepository<Student>(Student).findOneBy({ id: createEnrollmentDto.studentId });
     const classRoom = await this.classRoomService.findOne(createEnrollmentDto.classRoomId);
-    const academicYear = await this.getRepository<AcademicYear>(AcademicYear).findOneBy({ isActive: true });
+    const academicYear = await this.getRepository<AcademicYear>(AcademicYear).findOneBy({ isActive: true }); // enroll in current academic year
 
     const existingEnrollment = await this.getRepository<Enrollment>(Enrollment).findOne({
       where: {
