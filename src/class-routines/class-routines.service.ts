@@ -58,15 +58,15 @@ export class ClassRoutinesService {
       .leftJoin('classRoutine.subject', 'subject')
       .leftJoin('subject.teacher', 'teacher')
       .where(new Brackets(qb => {
-        queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
-        queryDto.subjectId && qb.andWhere('subject.id = :subjectId', { subjectId: queryDto.subjectId });
         queryDto.dayOfTheWeek && qb.andWhere('classRoutine.dayOfTheWeek = :dayOfTheWeek', { dayOfTheWeek: queryDto.dayOfTheWeek });
-      }))
 
-    // filter by role
-    querybuilder.andWhere(new Brackets(qb => {
-      isStudent(currentUser) && qb.andWhere('classRoom.id = :classRoomId', { classRoomId: currentUser.classRoomId });
-    }));
+        if (currentUser.role === Role.ADMIN) {
+          queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
+          queryDto.subjectId && qb.andWhere('subject.id = :subjectId', { subjectId: queryDto.subjectId });
+        } else if (isStudent(currentUser)) {
+          qb.andWhere('classRoom.id = :classRoomId', { classRoomId: currentUser.classRoomId });
+        }
+      }))
 
     applySelectColumns(querybuilder, classRoutinesSelectCols, 'classRoutine');
 
@@ -88,7 +88,7 @@ export class ClassRoutinesService {
     const existing = await this.classRoutineRepo.findOneBy({ id });
 
     // classroom and subject are note update
-    
+
     Object.assign(existing, {
       ...updateClassRoutineDto,
     });

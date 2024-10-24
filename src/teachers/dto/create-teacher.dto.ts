@@ -32,7 +32,7 @@ export class CreateTeacherDto {
     @ApiProperty({ type: String, example: '1234567890', description: 'Phone number of the teacher' })
     @IsString()
     @IsNotEmpty()
-    @Length(10, 12)
+    @Length(10, 14)
     phone!: string;
 
     @ApiProperty({ type: Date, format: 'date-time', example: '2024-07-19T11:02:05.462Z', description: 'Date of birth of the teacher' })

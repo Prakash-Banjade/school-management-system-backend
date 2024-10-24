@@ -18,10 +18,10 @@ export class DormitoryRoom extends BaseEntity {
     @Column({ type: 'longtext', nullable: true })
     description: string
 
-    @ManyToOne(() => Dormitory, (dormitory) => dormitory.dormitoryRooms)
+    @ManyToOne(() => Dormitory, (dormitory) => dormitory.dormitoryRooms, { onDelete: 'CASCADE', nullable: false })
     dormitory: Dormitory
 
-    @ManyToOne(() => RoomType, (roomType) => roomType.dormitoryRooms)
+    @ManyToOne(() => RoomType, (roomType) => roomType.dormitoryRooms, { onDelete: 'CASCADE', nullable: false })
     roomType: RoomType
 
     @OneToMany(() => Student, student => student.dormitoryRoom)

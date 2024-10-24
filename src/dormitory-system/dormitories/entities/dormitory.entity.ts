@@ -11,14 +11,14 @@ export class Dormitory extends BaseEntity {
     @Column({ type: 'enum', enum: EDormitoryType })
     type: EDormitoryType;
 
-    @Column({ type: 'varchar', nullable: true })
+    @Column({ type: 'text', nullable: true })
     address: string;
 
     @Column({ type: 'varchar', nullable: true })
     intake: string;
 
-    @Column({ type: 'varchar', nullable: true })
-    descriiption: string;
+    @Column({ type: 'longtext', nullable: true })
+    description: string;
 
     @OneToMany(() => DormitoryRoom, dormitoryRoom => dormitoryRoom.dormitory)
     dormitoryRooms: DormitoryRoom[];

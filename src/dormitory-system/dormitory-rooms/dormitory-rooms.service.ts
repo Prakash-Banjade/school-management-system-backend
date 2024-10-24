@@ -8,6 +8,8 @@ import { DormitoriesService } from '../dormitories/dormitories.service';
 import { RoomTypesService } from '../room-types/room-types.service';
 import { QueryDto } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
+import { applySelectColumns } from 'src/utils/apply-select-cols';
+import { dormitoryRoomSelectCols } from './helpers/dormitory-select-cols.config';
 
 @Injectable()
 export class DormitoryRoomsService {
@@ -37,9 +39,17 @@ export class DormitoryRoomsService {
       .orderBy('dormitoryRoom.createdAt', 'DESC')
       .skip(queryDto.skip)
       .take(queryDto.take)
+      .leftJoin("dormitoryRoom.roomType", "roomType")
+      .leftJoin("dormitoryRoom.dormitory", "dormitory")
+      .leftJoin("dormitoryRoom.students", "students")
+      .leftJoin("students.classRoom", "classRoom") 
+      .leftJoin("classRoom.parent", "parent")  
+      .leftJoin("students.profileImage", "profileImage")
       .where(new Brackets(qb => {
 
       }))
+
+    applySelectColumns(querybuilder, dormitoryRoomSelectCols, 'dormitoryRoom')
 
     return paginatedData(queryDto, querybuilder)
   }

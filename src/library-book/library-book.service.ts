@@ -15,8 +15,9 @@ export class LibraryBookService {
 
   async create(createLibraryBookDto: CreateLibraryBookDto) {
     const libraryBook = this.libraryBookRepo.create(createLibraryBookDto);
-    await this.libraryBookRepo.save(libraryBook);
-    return libraryBook;
+    const saved = await this.libraryBookRepo.save(libraryBook);
+
+    return this.libraryBookMutationReturn(saved, 'created');
   }
 
   async findAll(queryDto: QueryDto) {
@@ -35,7 +36,7 @@ export class LibraryBookService {
 
   async findOne(id: string) {
     const existing = await this.libraryBookRepo.findOne({
-      where: { id }
+      where: { id },
     })
     if (!existing) throw new NotFoundException('Library book not found')
 
@@ -45,11 +46,25 @@ export class LibraryBookService {
   async update(id: string, updateLibraryBookDto: UpdateLibraryBookDto) {
     const existing = await this.findOne(id);
     Object.assign(existing, updateLibraryBookDto);
-    return this.libraryBookRepo.save(existing);
+    await this.libraryBookRepo.save(existing);
+
+    return this.libraryBookMutationReturn(existing, "updated")
   }
 
   async remove(id: string) {
     const existing = await this.findOne(id);
-    return this.libraryBookRepo.remove(existing);
+    await this.libraryBookRepo.remove(existing);
+
+    return this.libraryBookMutationReturn(existing, "deleted")
+  }
+
+  private libraryBookMutationReturn(libraryBook: LibraryBook, type: 'created' | 'updated' | 'deleted') {
+    return {
+      message: type === 'created' ? 'Library book created successfully' : type === 'deleted' ? 'Library book deleted successfully' : 'Library book updated successfully',
+      libraryBook: {
+        id: libraryBook.id,
+        name: libraryBook.bookName,
+      }
+    }
   }
 }

@@ -26,5 +26,5 @@ export class CreateDormitoryDto {
     @ApiPropertyOptional()
     @IsString()
     @IsOptional()
-    descriiption: string;
+    description: string;
 }

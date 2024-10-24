@@ -90,9 +90,7 @@ export class TeachersService extends BaseRepository {
       where: { id },
       relations: {
         profileImage: true,
-        account: {
-          user: true
-        },
+        account: true,
       },
       select: {
         profileImage: {

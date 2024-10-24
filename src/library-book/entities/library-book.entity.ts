@@ -1,4 +1,4 @@
-import { Column, Entity, OneToOne } from "typeorm";
+import { Column, Entity, OneToMany, OneToOne } from "typeorm";
 import { LibraryBookRequest } from "./library-book-request.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 
@@ -16,6 +16,6 @@ export class LibraryBook extends BaseEntity {
     @Column({ type: 'boolean', default: true })
     available: boolean;
 
-    @OneToOne(() => LibraryBookRequest, libraryBookRequest => libraryBookRequest.libraryBook)
+    @OneToMany(() => LibraryBookRequest, libraryBookRequest => libraryBookRequest.libraryBook)
     libraryBookRequest: LibraryBookRequest;
 }

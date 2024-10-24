@@ -6,15 +6,14 @@ import { Account } from "src/auth-system/accounts/entities/account.entity";
 
 @Entity()
 export class LibraryBookRequest extends BaseEntity {
-    @OneToOne(() => LibraryBook, libraryBook => libraryBook.libraryBookRequest)
-    @JoinColumn({ name: 'library_book_id' })
+    @ManyToOne(() => LibraryBook, libraryBook => libraryBook.libraryBookRequest)
     libraryBook: LibraryBook;
 
     @Column({ type: 'datetime' })
     requestDate: string;
 
     @Column({ type: 'enum', enum: ELibarryBookStatus, default: ELibarryBookStatus.PENDING })
-    status: ELibarryBookStatus
+    status: ELibarryBookStatus;
 
     @ManyToOne(() => Account, account => account.libraryBookRequests, { onDelete: 'RESTRICT' })
     account: Account;

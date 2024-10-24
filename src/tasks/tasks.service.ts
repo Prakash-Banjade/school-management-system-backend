@@ -10,6 +10,8 @@ import { ImagesService } from 'src/file-management/images/images.service';
 import { QueryDto } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
 import { AuthUser } from 'src/common/types/global.type';
+import { applySelectColumns } from 'src/utils/apply-select-cols';
+import { selectTaskCols } from './helpers/select-task-cols.config';
 
 @Injectable()
 export class TasksService {
@@ -46,13 +48,15 @@ export class TasksService {
       .skip(queryDto.skip)
       .take(queryDto.take)
       .withDeleted()
-      .leftJoinAndSelect('task.setBy', 'setBy')
-      .leftJoinAndSelect('task.subject', 'subject')
-      .leftJoinAndSelect('task.attatchments', 'attatchments')
-      .leftJoinAndSelect('subject.classRoom', 'classRoom')
+      .leftJoin('task.setBy', 'setBy')
+      .leftJoin('task.subject', 'subject')
+      .leftJoin('task.attatchments', 'attatchments')
+      .leftJoin('subject.classRoom', 'classRoom')
       .andWhere(new Brackets(qb => {
         queryDto.search && qb.andWhere("LOWER(task.title) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
       }))
+
+    applySelectColumns(queryBuilder, selectTaskCols, 'task')
 
     return paginatedData(queryDto, queryBuilder);
   }

@@ -1,11 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateLeaveRequestDto } from './dto/create-leave-request.dto';
 import { UpdateLeaveRequestDto } from './dto/update-leave-request.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LeaveRequest } from './entities/leave-request.entity';
 import { Repository } from 'typeorm';
 import { LeaveRequestQueryDto } from './dto/leave-request-query.dto';
-import { AuthUser } from 'src/common/types/global.type';
+import { AuthUser, Role } from 'src/common/types/global.type';
 import paginatedData from 'src/utils/paginatedData';
 import { AccountsService } from 'src/auth-system/accounts/accounts.service';
 
@@ -17,7 +17,10 @@ export class LeaveRequestsService {
   ) { }
 
   async create(createLeaveRequestDto: CreateLeaveRequestDto, currentUser: AuthUser) {
-    const account = await this.accountsService.findOne(createLeaveRequestDto.accountId || currentUser.accountId);
+    if (currentUser.role === Role.ADMIN && !createLeaveRequestDto.accountId) throw new BadRequestException('Account id is required');
+    const accountId = currentUser.role === Role.ADMIN ? createLeaveRequestDto.accountId : currentUser.accountId;
+    
+    const account = await this.accountsService.findOne(accountId);
 
     const newLeaveRequest = this.leaveRequestRepo.create({
       ...createLeaveRequestDto,

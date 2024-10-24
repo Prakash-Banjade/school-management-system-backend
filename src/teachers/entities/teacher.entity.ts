@@ -56,7 +56,7 @@ export class Teacher extends BaseEntity {
     qualification: string;
 
     @Column({ type: 'enum', enum: EBloodGroup })
-    bloodGroupE: EBloodGroup;
+    bloodGroup: EBloodGroup;
 
     @Column({ type: 'datetime' })
     joinedDate: string

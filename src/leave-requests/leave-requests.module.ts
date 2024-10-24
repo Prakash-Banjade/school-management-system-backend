@@ -3,14 +3,14 @@ import { LeaveRequestsService } from './leave-requests.service';
 import { LeaveRequestsController } from './leave-requests.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LeaveRequest } from './entities/leave-request.entity';
-import { UsersModule } from 'src/auth-system/users/users.module';
+import { AccountsModule } from 'src/auth-system/accounts/accounts.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       LeaveRequest,
     ]),
-    UsersModule,
+    AccountsModule,
   ],
   controllers: [LeaveRequestsController],
   providers: [LeaveRequestsService],

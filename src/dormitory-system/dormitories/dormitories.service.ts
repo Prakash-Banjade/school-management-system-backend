@@ -1,9 +1,9 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateDormitoryDto } from './dto/create-dormitory.dto';
 import { UpdateDormitoryDto } from './dto/update-dormitory.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Dormitory } from './entities/dormitory.entity';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, Not, Repository } from 'typeorm';
 import { QueryDto } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
 
@@ -39,14 +39,24 @@ export class DormitoriesService {
 
   async findOne(id: string) {
     const existing = await this.dormitoryRepo.findOne({ where: { id } });
-    if (!existing) throw new ConflictException('Dormitory not found');
+    if (!existing) throw new NotFoundException('Dormitory not found');
 
     return existing;
   }
 
   async update(id: string, updateDormitoryDto: UpdateDormitoryDto) {
     const existing = await this.findOne(id);
-    if (existing.name && (existing.name !== updateDormitoryDto.name)) throw new ConflictException('Dormitory name already exists');
+
+    // check if name is taken
+    if (updateDormitoryDto.name && updateDormitoryDto.name !== existing.name) {
+      const existingWithSameName = await this.dormitoryRepo.findOne({
+        where: {
+          name: updateDormitoryDto.name,
+          id: Not(existing.id)
+        }
+      });
+      if (existingWithSameName) throw new ConflictException('Dormitory with same name already exists');
+    }
 
     Object.assign(existing, updateDormitoryDto);
 

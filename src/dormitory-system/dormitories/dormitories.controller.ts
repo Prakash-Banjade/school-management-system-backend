@@ -14,6 +14,7 @@ export class DormitoriesController {
   constructor(private readonly dormitoriesService: DormitoriesService) { }
 
   @Post()
+  @ChekcAbilities({ subject: 'all', action: Action.DELETE })
   create(@Body() createDormitoryDto: CreateDormitoryDto) {
     return this.dormitoriesService.create(createDormitoryDto);
   }
@@ -24,11 +25,13 @@ export class DormitoriesController {
   }
 
   @Get(':id')
+  @ChekcAbilities({ subject: 'all', action: Action.READ })
   findOne(@Param('id') id: string) {
     return this.dormitoriesService.findOne(id);
   }
 
   @Patch(':id')
+  @ChekcAbilities({ subject: 'all', action: Action.UPDATE })
   update(@Param('id') id: string, @Body() updateDormitoryDto: UpdateDormitoryDto) {
     return this.dormitoriesService.update(id, updateDormitoryDto);
   }

@@ -7,6 +7,7 @@ export const teachersColumnsConfig: FindOptionsSelect<Teacher> = {
     lastName: true,
     email: true,
     phone: true,
+    teacherId: true,
     dob: true,
     gender: true,
     createdAt: true,

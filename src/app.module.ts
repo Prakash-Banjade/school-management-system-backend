@@ -33,6 +33,7 @@ import { TransportationSystemModule } from './transportation-system/transportati
 import { ClassRoutinesModule } from './class-routines/class-routines.module';
 import { AbilitiesGuard } from './common/guards/abilities.guard';
 import { CaslModule } from './auth-system/casl/casl.module';
+import { LeaveRequestsModule } from './leave-requests/leave-requests.module';
 
 @Module({
   imports: [
@@ -75,6 +76,7 @@ import { CaslModule } from './auth-system/casl/casl.module';
     NoticesModule,
     RecommendationsModule,
     StaffsModule,
+    LeaveRequestsModule,
     StudentsModule,
     SubjectsModule,
     TasksModule,
