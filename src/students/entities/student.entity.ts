@@ -9,7 +9,7 @@ import { Image } from "src/file-management/images/entities/image.entity";
 import { FeesInvoice } from "src/finance-system/fees-system/fees-invoices/entities/fees-invoice.entity";
 import { Guardian } from "src/guardians/entities/guardian.entity";
 import { TransportRoute } from "src/transportation-system/transport-routes/entities/transport-route.entity";
-import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, OneToOne } from "typeorm";
 
 @Entity()
 export class Student extends BaseEntity {
@@ -24,9 +24,6 @@ export class Student extends BaseEntity {
 
     @ManyToOne(() => ClassRoom, (classRoom) => classRoom.students, { onDelete: 'RESTRICT' })
     classRoom: ClassRoom;
-
-    @Column({ type: 'int', nullable: true })
-    admissionNumber: number;
 
     @Column({ type: 'int' })
     rollNo: number;
@@ -101,14 +98,8 @@ export class Student extends BaseEntity {
     |--------------------------------------------------
     */
 
-    @Column({ type: 'enum', enum: EBloodGroup, nullable: true })
+    @Column({ type: 'enum', enum: EBloodGroup })
     bloodGroup: EBloodGroup
-
-    @Column({ type: 'real', nullable: true })
-    height: number;
-
-    @Column({ type: 'real', nullable: true })
-    weight: number;
 
     /**
     |--------------------------------------------------
@@ -117,7 +108,6 @@ export class Student extends BaseEntity {
     */
 
     @ManyToMany(() => Guardian, (guardian) => guardian.students)
-    @JoinTable({ name: 'student_guardians' })
     guardians: Guardian[]
 
     /**
@@ -126,10 +116,10 @@ export class Student extends BaseEntity {
     |--------------------------------------------------
     */
 
-    @Column({ type: 'varchar', nullable: true })
+    @Column({ type: 'varchar' })
     currentAddress: string;
 
-    @Column({ type: 'varchar', nullable: true })
+    @Column({ type: 'varchar' })
     permanentAddress: string;
 
     /**

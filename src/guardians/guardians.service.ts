@@ -26,12 +26,12 @@ export class GuardiansService extends BaseRepository {
 
   async create(createGuardianDto: CreateGuardianDto) {
     const student = await this.studentRepo.findOneBy({ id: createGuardianDto.studentId });
-    const image = createGuardianDto.imageId ? await this.imagesService.findOne(createGuardianDto.imageId) : null;
+    const profileImage = createGuardianDto.profileImageId ? await this.imagesService.findOne(createGuardianDto.profileImageId) : null;
 
     const newGuardian = this.guardiansRepo.create({
       ...createGuardianDto,
       students: [student],
-      image
+      profileImage
     });
 
     const savedGuardian = await this.getRepository<Guardian>(Guardian).save(newGuardian);
@@ -40,15 +40,19 @@ export class GuardiansService extends BaseRepository {
   }
 
   async createGuardiansByStudent(guardians: GuardianOmitStudentId[], student: Student) {
+    let newGuardians: Guardian[];
+    
     for (const guardian of guardians) {
-      const image = guardian.imageId ? await this.imagesService.findOne(guardian.imageId) : null;
+      const profileImage = guardian.profileImageId ? await this.imagesService.findOne(guardian.profileImageId) : null;
       const newGuardian = this.guardiansRepo.create({
         ...guardian,
         students: [student],
-        image
+        profileImage
       });
-      await this.getRepository<Guardian>(Guardian).save(newGuardian);
+      newGuardians.push(newGuardian);
     }
+
+    await this.guardiansRepo.save(newGuardians);
 
     return {
       message: 'Guardians created successfully',
@@ -79,7 +83,7 @@ export class GuardiansService extends BaseRepository {
       where: { id },
       relations: {
         students: true,
-        image: true
+        profileImage: true
       }
     })
     if (!existingGuardian) throw new NotFoundException('Guardian not found')
@@ -88,9 +92,9 @@ export class GuardiansService extends BaseRepository {
 
   async update(id: string, updateGuardianDto: UpdateGuardianDto) {
     const existingGuardian = await this.findOne(id);
-    const image = (updateGuardianDto.imageId && updateGuardianDto.imageId !== existingGuardian.image.id)
-      ? await this.imagesService.findOne(updateGuardianDto.imageId)
-      : existingGuardian.image;
+    const profileImage = (updateGuardianDto.profileImageId && updateGuardianDto.profileImageId !== existingGuardian.profileImage.id)
+      ? await this.imagesService.findOne(updateGuardianDto.profileImageId)
+      : existingGuardian.profileImage;
 
     /**
     |--------------------------------------------------
@@ -99,7 +103,7 @@ export class GuardiansService extends BaseRepository {
     */
 
     Object.assign(existingGuardian, updateGuardianDto);
-    existingGuardian.image = image;
+    existingGuardian.profileImage = profileImage;
     const updatedGuardian = await this.getRepository<Guardian>(Guardian).save(existingGuardian);
 
     return this.guardianMutationReturn(updatedGuardian, 'updated');

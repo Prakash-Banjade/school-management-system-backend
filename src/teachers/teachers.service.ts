@@ -58,7 +58,6 @@ export class TeachersService extends BaseRepository {
       .where({ deletedAt })
       .leftJoin("teacher.profileImage", "profileImage")
       .leftJoin('teacher.account', 'account')
-      .leftJoin('account.user', 'user')
       .andWhere(new Brackets(qb => {
         queryDto.search && qb.orWhere("LOWER(CONCAT(teacher.firstName, ' ', teacher.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
       }))
@@ -113,7 +112,7 @@ export class TeachersService extends BaseRepository {
     // check if teacher already exists
     await this.checkIfTeacherExists(updateTeacherDto, existingTeacher);
 
-    const profileImage = ((updateTeacherDto.profileImageId && updateTeacherDto.profileImageId !== existingTeacher.profileImage.id) || !updateTeacherDto.profileImageId)
+    const profileImage = ((updateTeacherDto.profileImageId && (updateTeacherDto.profileImageId !== existingTeacher.profileImage?.id || !updateTeacherDto.profileImageId)))
       ? await this.imageService.findOne(updateTeacherDto.profileImageId)
       : existingTeacher.profileImage;
 

@@ -1,7 +1,7 @@
 import { BaseEntity } from "src/common/entities/base.entity";
 import { Image } from "src/file-management/images/entities/image.entity";
 import { Student } from "src/students/entities/student.entity";
-import { Column, Entity, JoinColumn, ManyToMany, OneToOne } from "typeorm";
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, OneToOne } from "typeorm";
 
 @Entity()
 export class Guardian extends BaseEntity {
@@ -23,10 +23,10 @@ export class Guardian extends BaseEntity {
     @Column({ type: 'varchar', length: 255 })
     occupation: string;
 
-    @OneToOne(() => Image)
-    @JoinColumn({ name: 'image_id' })
-    image: Image
+    @OneToOne(() => Image, image => image.guardian_profileImage, { nullable: true })
+    profileImage: Image
 
     @ManyToMany(() => Student, (student) => student.guardians)
+    @JoinTable({ name: 'student_guardians' })
     students: Student[]
 }

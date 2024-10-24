@@ -31,6 +31,6 @@ export class Task extends BaseEntity {
     setBy: Account;
 
     @ManyToOne(() => Subject, subject => subject.tasks, { onDelete: 'CASCADE' })
-    subject: Subject
+    subject: Subject;
 
 }

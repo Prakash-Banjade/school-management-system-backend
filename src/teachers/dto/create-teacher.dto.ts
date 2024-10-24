@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsDateString, IsEmail, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Length, Min } from "class-validator";
+import { IsDateString, IsEmail, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, Matches, Min } from "class-validator";
+import { PHONE_NUMBER_REGEX } from "src/common/CONSTANTS";
 import { IsUuidOrUrl } from "src/common/decorators/isUrlOrUUid";
 import { EBloodGroup, EMaritalStatus, Gender } from "src/common/types/global.type";
 
@@ -32,7 +33,7 @@ export class CreateTeacherDto {
     @ApiProperty({ type: String, example: '1234567890', description: 'Phone number of the teacher' })
     @IsString()
     @IsNotEmpty()
-    @Length(10, 14)
+    @Matches(PHONE_NUMBER_REGEX)
     phone!: string;
 
     @ApiProperty({ type: Date, format: 'date-time', example: '2024-07-19T11:02:05.462Z', description: 'Date of birth of the teacher' })

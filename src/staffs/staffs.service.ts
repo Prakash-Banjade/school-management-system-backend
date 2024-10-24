@@ -11,6 +11,8 @@ import { FastifyRequest } from 'fastify';
 import { StaffQueryDto } from './dto/staff-query.dto';
 import { Deleted } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
+import { applySelectColumns } from 'src/utils/apply-select-cols';
+import { staffsColumnsConfig } from './helpers/staff-select-cols.config';
 
 @Injectable({ scope: Scope.REQUEST })
 export class StaffsService extends BaseRepository {
@@ -53,14 +55,13 @@ export class StaffsService extends BaseRepository {
       .take(queryDto.take)
       .withDeleted()
       .where({ deletedAt })
-      .leftJoinAndSelect("staff.profileImage", "profileImage")
-      // .leftJoinAndSelect('staff.account', 'account')
-      // .leftJoinAndSelect('account.user', 'user')
+      .leftJoin("staff.profileImage", "profileImage")
+      .leftJoin('staff.account', 'account')
       .andWhere(new Brackets(qb => {
         queryDto.search && qb.orWhere("LOWER(CONCAT(staff.firstName, ' ', staff.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
       }))
 
-    // applySelectColumns(queryBuilder, staffsColumnsConfig, 'staff');
+    applySelectColumns(queryBuilder, staffsColumnsConfig, 'staff');
 
     return paginatedData(queryDto, queryBuilder);
 

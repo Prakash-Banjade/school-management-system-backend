@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional, OmitType } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { ArrayMinSize, IsArray, IsDateString, IsDefined, IsEmail, IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Max, Min, ValidateIf, ValidateNested } from "class-validator";
+import { ArrayMinSize, IsArray, IsDateString, IsDefined, IsEmail, IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Matches, Max, Min, ValidateIf, ValidateNested } from "class-validator";
+import { PHONE_NUMBER_REGEX } from "src/common/CONSTANTS";
 import { IsUuidOrUrl } from "src/common/decorators/isUrlOrUUid";
 import { EBloodGroup, EReligion, Gender } from "src/common/types/global.type";
 import { CreateGuardianDto } from "src/guardians/dto/create-guardian.dto";
@@ -18,11 +19,6 @@ export class CreateStudentDto {
     @IsUUID()
     @IsNotEmpty()
     classRoomId: string;
-
-    @ApiPropertyOptional({ type: Number, description: 'Admission number of the student' })
-    @IsNumber()
-    @IsOptional()
-    admissionNumber: number;
 
     @ApiProperty({ type: Number, description: 'Roll number of the student' })
     @IsNumber()
@@ -68,7 +64,7 @@ export class CreateStudentDto {
     @IsNotEmpty()
     lastName: string;
 
-    @ApiPropertyOptional({ type: 'enum', enum: Gender, description: 'Phone number of the student' })
+    @ApiPropertyOptional({ type: 'enum', enum: Gender, description: 'Gender number of the student' })
     @IsEnum(Gender)
     gender: Gender
 
@@ -90,7 +86,7 @@ export class CreateStudentDto {
     @ApiPropertyOptional({ type: String, description: 'Image ID/URL' })
     @IsUuidOrUrl()
     @IsOptional()
-    profileImageId: string;
+    profileImageId?: string;
 
     @ApiProperty({ type: [GuardianOmitStudentId], description: 'Guardians of the student' })
     @IsDefined()
@@ -114,6 +110,7 @@ export class CreateStudentDto {
     @ApiProperty({ type: String, description: 'Phone number of the student' })
     @IsString()
     @IsNotEmpty()
+    @Matches(PHONE_NUMBER_REGEX)
     phone: string;
 
     /**
@@ -127,30 +124,20 @@ export class CreateStudentDto {
     @IsOptional()
     bloodGroup?: EBloodGroup;
 
-    @ApiPropertyOptional({ type: Number, description: 'Height of the student' })
-    @IsNumber()
-    @IsOptional()
-    height: number;
-
-    @ApiPropertyOptional({ type: Number, description: 'Weight of the student' })
-    @IsNumber()
-    @IsOptional()
-    weight: number;
-
     /**
     |--------------------------------------------------
     | ADDRESS INFORMATION
     |--------------------------------------------------
     */
 
-    @ApiPropertyOptional({ type: String, description: 'Current address of the student' })
+    @ApiProperty({ type: String, description: 'Current address of the student' })
     @IsString()
-    @IsOptional()
+    @IsNotEmpty()
     currentAddress: string;
 
-    @ApiPropertyOptional({ type: String, description: 'Permanent address of the student' })
+    @ApiProperty({ type: String, description: 'Permanent address of the student' })
     @IsString()
-    @IsOptional()
+    @IsNotEmpty()
     permanentAddress: string;
 
     /**
@@ -219,5 +206,4 @@ export class CreateStudentDto {
     @IsString()
     @IsOptional()
     previousSchoolDetails: string
-
 }

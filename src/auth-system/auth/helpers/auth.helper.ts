@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, NotFoundException, Scope, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, Scope, UnauthorizedException } from "@nestjs/common";
 import { Account } from "src/auth-system/accounts/entities/account.entity";
 import { MailService } from "src/mail/mail.service";
 import { generateOtp } from "src/utils/generateOPT";
@@ -13,6 +13,7 @@ import { ConfigService } from "@nestjs/config";
 import { EmailVerificationDto } from "../dto/email-verification.dto";
 import * as bcrypt from 'bcrypt';
 import { EncryptionService } from "src/auth-system/encryption/encryption.service";
+import { INVALID_AUTH_CREDENTIALS_MSG } from "src/common/CONSTANTS";
 
 @Injectable({ scope: Scope.REQUEST })
 export class AuthHelper extends BaseRepository {
@@ -130,14 +131,16 @@ export class AuthHelper extends BaseRepository {
     async validateAccount(email: string, password: string): Promise<Account> {
         const foundAccount = await this.accountsRepo.findOneBy({ email });
 
-        if (!foundAccount) throw new UnauthorizedException('Invalid email. Proceed to sign up.');
+        if (!foundAccount) throw new UnauthorizedException(INVALID_AUTH_CREDENTIALS_MSG);
+
+        console.log('hi')
 
         const isPasswordValid = await bcrypt.compare(
             password,
             foundAccount.password,
         );
 
-        if (!isPasswordValid) throw new UnauthorizedException('Invalid password')
+        if (!isPasswordValid) throw new UnauthorizedException(INVALID_AUTH_CREDENTIALS_MSG)
 
         return foundAccount;
     }
