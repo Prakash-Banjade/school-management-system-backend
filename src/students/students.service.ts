@@ -170,7 +170,7 @@ export class StudentsService extends BaseRepository {
   }
 
   async checkIfStudentExists(studentDto: CreateStudentDto | UpdateStudentDto, student?: Student) {
-    const { rollNo, admissionNumber, email, phone, bankAccountNumber, nationalIdCardNo } = studentDto;
+    const { rollNo, email, phone, bankAccountNumber, nationalIdCardNo } = studentDto;
 
     const existingStudent = await this.getRepository<Student>(Student).createQueryBuilder('student')
       .where(new Brackets(qb => {
@@ -178,7 +178,6 @@ export class StudentsService extends BaseRepository {
           { email },
           { phone },
           { rollNo },
-          { admissionNumber },
           { bankAccountNumber }
         ])
         student?.id && qb.andWhere({ id: Not(student.id) })
@@ -189,14 +188,12 @@ export class StudentsService extends BaseRepository {
       if (existingStudent.nationalIdCardNo === nationalIdCardNo) throw new BadRequestException('Student with this nationalIdCardNo already exists');
       if (existingStudent.phone === phone) throw new BadRequestException('Student with this phone already exists');
       if (existingStudent.rollNo === rollNo) throw new BadRequestException('Student with this rollNo already exists');
-      if (existingStudent.admissionNumber === admissionNumber) throw new BadRequestException('Student with this admissionNumber already exists');
       if (existingStudent.bankAccountNumber === bankAccountNumber) throw new BadRequestException('Student with this bankAccountNumber already exists');
     } else if (existingStudent && student) {
       if (existingStudent.email === email && existingStudent.id !== student.id) throw new BadRequestException('Student with this email already exists');
       if (existingStudent.nationalIdCardNo === nationalIdCardNo && existingStudent.id !== student.id) throw new BadRequestException('Student with this nationalIdCardNo already exists');
       if (existingStudent.phone === phone && existingStudent.id !== student.id) throw new BadRequestException('Student with this phone already exists');
       if (existingStudent.rollNo === rollNo && existingStudent.id !== student.id) throw new BadRequestException('Student with this rollNo already exists');
-      if (existingStudent.admissionNumber === admissionNumber && existingStudent.id !== student.id) throw new BadRequestException('Student with this admissionNumber already exists');
       if (existingStudent.bankAccountNumber === bankAccountNumber && existingStudent.id !== student.id) throw new BadRequestException('Student with this bankAccountNumber already exists');
     }
   }
