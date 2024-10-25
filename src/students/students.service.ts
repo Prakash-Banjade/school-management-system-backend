@@ -5,9 +5,8 @@ import { Student } from './entities/student.entity';
 import { Brackets, DataSource, IsNull, Not, Or } from 'typeorm';
 import { StudentQueryDto, StudentSortBy } from './dto/student-query.dto';
 import { ClassRoomsService } from 'src/class-rooms/class-rooms.service';
-import { GuardiansService } from 'src/guardians/guardians.service';
 import { REQUEST } from '@nestjs/core';
-import { studentsColumnsConfig } from './entities/studentsColumnsConfig';
+import { singleStudentColumnsConfig, studentsColumnsConfig } from './entities/studentsColumnsConfig';
 import { DormitoryRoomsService } from 'src/dormitory-system/dormitory-rooms/dormitory-rooms.service';
 import { EnrollmentsService } from 'src/enrollments/enrollments.service';
 import { BaseRepository } from 'src/common/repository/base-repository';
@@ -24,7 +23,6 @@ export class StudentsService extends BaseRepository {
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
     private readonly imageService: ImagesService,
     private readonly classRoomsService: ClassRoomsService,
-    private readonly guardiansService: GuardiansService,
     private readonly accountsService: AccountsService,
     private dormitoryRoomsService: DormitoryRoomsService,
     private readonly enrollmentsService: EnrollmentsService
@@ -34,7 +32,8 @@ export class StudentsService extends BaseRepository {
 
   async create(createStudentDto: CreateStudentDto) {
     // check if student already exists
-    await this.checkIfStudentExists(createStudentDto);
+    // TODO: UNCOMMENT THIS LATER
+    // await this.checkIfStudentExists(createStudentDto);
 
     // evaluate profile image
     const profileImage = createStudentDto.profileImageId
@@ -66,17 +65,14 @@ export class StudentsService extends BaseRepository {
 
     // CREATE ACCOUNT
     await this.accountsService.createAccount(savedStudent);
-
-    // CREATE GUARDIANS
-    await this.guardiansService.createGuardiansByStudent(createStudentDto.guardians, savedStudent);
-
+    
     // CREATE ENROLLMENTS
     await this.enrollmentsService.create({
       studentId: savedStudent.id,
       classRoomId: classRoom.id,
       enrollmentDate: createStudentDto.admissionDate,
     }, true);
-
+    
     return this.studentMutationReturn(savedStudent, 'created');
   }
 
@@ -91,12 +87,13 @@ export class StudentsService extends BaseRepository {
       .withDeleted()
       .where({ deletedAt })
       .leftJoin('student.classRoom', 'classRoom')
+      .leftJoin('student.profileImage', 'profileImage')
       .leftJoin('student.account', 'account')
       .leftJoin('student.enrollments', 'enrollment')
       .leftJoin('enrollment.academicYear', 'academicYear')
       .leftJoin('account.user', 'user')
       .leftJoin('classRoom.parent', 'parent')
-      .leftJoin('student.guardians', 'guardians')
+      // .leftJoin('student.guardians', 'guardians')
       .andWhere(new Brackets(qb => {
         // filter by active academic year
         queryDto.academicYearId
@@ -115,9 +112,14 @@ export class StudentsService extends BaseRepository {
     const existing = await this.getRepository<Student>(Student).findOne({
       where: { id },
       relations: {
-        classRoom: true,
+        classRoom: {
+          parent: true,
+        },
         profileImage: true,
-      }
+        guardians: true,
+        dormitoryRoom: true,
+      },
+      select: singleStudentColumnsConfig,
     })
     if (!existing) throw new NotFoundException('Student not found')
 

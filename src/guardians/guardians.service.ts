@@ -40,8 +40,8 @@ export class GuardiansService extends BaseRepository {
   }
 
   async createGuardiansByStudent(guardians: GuardianOmitStudentId[], student: Student) {
-    let newGuardians: Guardian[];
-    
+    let newGuardians: Guardian[] = [];
+
     for (const guardian of guardians) {
       const profileImage = guardian.profileImageId ? await this.imagesService.findOne(guardian.profileImageId) : null;
       const newGuardian = this.guardiansRepo.create({

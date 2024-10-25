@@ -28,20 +28,23 @@ export class EnrollmentsService extends BaseRepository {
     const classRoom = await this.classRoomService.findOne(createEnrollmentDto.classRoomId);
     const academicYear = await this.getRepository<AcademicYear>(AcademicYear).findOneBy({ isActive: true }); // enroll in current academic year
 
-    const registrationNumber = getRegistrationNumber(academicYear);
-
     const existingEnrollment = await this.getRepository<Enrollment>(Enrollment).findOne({
       where: {
         student: { id: student.id },
         classRoom: { id: classRoom.id },
         academicYear: { id: academicYear.id },
-        registrationNumber,
       }
     });
     if (existingEnrollment) throw new ConflictException('Enrollment with same student, class room and academic year already exists');
 
     // create the enrollment
-    const enrollment = this.getRepository<Enrollment>(Enrollment).create({ student, classRoom, academicYear, enrollmentDate: createEnrollmentDto.enrollmentDate });
+    const enrollment = this.getRepository<Enrollment>(Enrollment).create({
+      student,
+      classRoom,
+      academicYear,
+      enrollmentDate: createEnrollmentDto.enrollmentDate,
+      registrationNumber: getRegistrationNumber(academicYear),
+    });
     const savedEnrollment = await this.getRepository<Enrollment>(Enrollment).save(enrollment);
 
     // update student classroom
@@ -57,7 +60,7 @@ export class EnrollmentsService extends BaseRepository {
     const queryBuilder = this.getRepository<Enrollment>(Enrollment).createQueryBuilder('enrollment');
 
     queryBuilder
-      .orderBy('enrollment.createdAt', 'DESC')
+      .orderBy('enrollment.createdAt', queryDto.order)
       .skip(queryDto.skip)
       .take(queryDto.take)
       .leftJoin('enrollment.student', 'student')

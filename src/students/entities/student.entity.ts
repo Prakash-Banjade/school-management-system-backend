@@ -9,7 +9,8 @@ import { Image } from "src/file-management/images/entities/image.entity";
 import { FeesInvoice } from "src/finance-system/fees-system/fees-invoices/entities/fees-invoice.entity";
 import { Guardian } from "src/guardians/entities/guardian.entity";
 import { TransportRoute } from "src/transportation-system/transport-routes/entities/transport-route.entity";
-import { Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, OneToOne } from "typeorm";
+import { generateTeacherId } from "src/utils/generate-teacher-id";
+import { BeforeInsert, Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, OneToOne } from "typeorm";
 
 @Entity()
 export class Student extends BaseEntity {
@@ -27,15 +28,6 @@ export class Student extends BaseEntity {
 
     @Column({ type: 'int' })
     rollNo: number;
-
-    @Column({ type: 'datetime' })
-    admissionDate: string;
-
-    @Column({ type: 'int', default: 0 })
-    feeDiscountPercentage: number;
-
-    @Column({ type: 'int', default: 0 })
-    admissionDiscountPercentage: number;
 
     @OneToMany(() => FeesInvoice, (feesInvoice) => feesInvoice.student)
     feesInvoices: FeesInvoice[];
@@ -55,6 +47,14 @@ export class Student extends BaseEntity {
     |--------------------------------------------------
     */
 
+    @Column({ type: 'int' })
+    studentId: number;
+
+    @BeforeInsert()
+    generateStudentId() {
+        this.studentId = generateTeacherId();
+    }
+
     @OneToOne(() => Account, account => account.student, { onDelete: "SET NULL" })
     @JoinColumn()
     account: Account;
@@ -71,14 +71,17 @@ export class Student extends BaseEntity {
     @Column({ type: 'datetime' })
     dob: string;
 
-    @Column({ type: 'enum', enum: EReligion, nullable: true })
+    @Column({ type: 'enum', enum: EReligion })
     religion: EReligion;
 
-    @Column({ type: 'varchar', nullable: true })
+    @Column({ type: 'varchar', default: '' })
     caste?: string;
 
     @OneToOne(() => Image, image => image.student_profileImage, { nullable: true })
     profileImage: Image;
+
+    @Column({ type: 'boolean', default: false })
+    isPhysicallyChallenged: boolean;
 
     /**
     |--------------------------------------------------
@@ -107,7 +110,7 @@ export class Student extends BaseEntity {
     |--------------------------------------------------
     */
 
-    @ManyToMany(() => Guardian, (guardian) => guardian.students)
+    @ManyToMany(() => Guardian, (guardian) => guardian.students, { cascade: true })
     guardians: Guardian[]
 
     /**
@@ -128,10 +131,10 @@ export class Student extends BaseEntity {
     |--------------------------------------------------
     */
 
-    @Column({ type: 'varchar', nullable: true })
+    @Column({ type: 'varchar', default: '' })
     nationalIdCardNo: string;
 
-    @Column({ type: 'varchar', nullable: true })
+    @Column({ type: 'varchar', default: '' })
     birthCertificateNumber: string;
 
     @Column({ type: 'longtext', nullable: true })
@@ -146,13 +149,13 @@ export class Student extends BaseEntity {
     |--------------------------------------------------
     */
 
-    @Column({ type: 'varchar', nullable: true })
+    @Column({ type: 'varchar', default: '' })
     bankName: string;
 
-    @Column({ type: 'varchar', nullable: true })
+    @Column({ type: 'varchar', default: '' })
     bankAccountNumber: string;
 
-    @Column({ type: 'varchar', nullable: true })
+    @Column({ type: 'varchar', default: '' })
     ifscCode: string;
 
 
@@ -162,8 +165,11 @@ export class Student extends BaseEntity {
     |--------------------------------------------------
     */
 
+    @Column({ type: 'varchar', default: '' })
+    previousSchoolName: string;
+
     @Column({ type: 'longtext', nullable: true })
     previousSchoolDetails: string;
 
-    // TODO: assign transport route and dormitory
+    // TODO: assign transport route
 }

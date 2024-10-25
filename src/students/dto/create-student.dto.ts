@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional, OmitType } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { ArrayMinSize, IsArray, IsDateString, IsDefined, IsEmail, IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Matches, Max, Min, ValidateIf, ValidateNested } from "class-validator";
+import { ArrayMinSize, IsArray, IsBoolean, IsDateString, IsDefined, IsEmail, IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Length, Matches, Max, MaxLength, Min, ValidateIf, ValidateNested } from "class-validator";
 import { PHONE_NUMBER_REGEX } from "src/common/CONSTANTS";
 import { IsUuidOrUrl } from "src/common/decorators/isUrlOrUUid";
 import { EBloodGroup, EReligion, Gender } from "src/common/types/global.type";
@@ -23,25 +23,13 @@ export class CreateStudentDto {
     @ApiProperty({ type: Number, description: 'Roll number of the student' })
     @IsNumber()
     @IsNotEmpty()
+    @Min(1, { message: 'Roll number must be greater than 0' })
     rollNo: number;
 
     @ApiProperty({ type: Number, description: 'Admission date of the student' })
     @IsDateString()
-    admissionDate: string;
-
-    @ApiPropertyOptional({ type: Number, description: 'Fee discount percentage of the student' })
-    @IsInt()
-    @Max(100)
-    @Min(0)
     @IsOptional()
-    feeDiscountPercentage: number;
-
-    @ApiPropertyOptional({ type: Number, description: 'Admission discount percentage of the student' })
-    @IsInt()
-    @Max(100)
-    @Min(0)
-    @IsOptional()
-    admissionDiscountPercentage: number;
+    admissionDate: string = new Date().toISOString();
 
     @ApiPropertyOptional({ format: 'uuid' })
     @IsUUID()
@@ -88,6 +76,11 @@ export class CreateStudentDto {
     @IsOptional()
     profileImageId?: string;
 
+    @ApiPropertyOptional({ type: Boolean, description: 'Is the student physically challenged?' })
+    @IsBoolean()
+    @IsOptional()
+    isPhysicallyChallenged?: boolean = false;
+
     @ApiProperty({ type: [GuardianOmitStudentId], description: 'Guardians of the student' })
     @IsDefined()
     @IsArray()
@@ -133,11 +126,13 @@ export class CreateStudentDto {
     @ApiProperty({ type: String, description: 'Current address of the student' })
     @IsString()
     @IsNotEmpty()
+    @Length(1, 80)
     currentAddress: string;
 
     @ApiProperty({ type: String, description: 'Permanent address of the student' })
     @IsString()
     @IsNotEmpty()
+    @Length(1, 80)
     permanentAddress: string;
 
     /**
@@ -159,6 +154,7 @@ export class CreateStudentDto {
     @ApiPropertyOptional({ type: String, description: 'Additional notes of the student' })
     @IsString()
     @IsOptional()
+    @MaxLength(1000)
     additionalNotes: string;
 
     @ApiPropertyOptional({ type: [String], description: 'Document attatchment gallery id/url' })
@@ -202,8 +198,15 @@ export class CreateStudentDto {
     |--------------------------------------------------
     */
 
+    @ApiPropertyOptional({ type: String, description: 'Name of the previous school' })
+    @IsString()
+    @IsOptional()
+    @Length(1, 80)
+    previousSchoolName?: string
+
     @ApiPropertyOptional({ type: String, description: 'Details of the previous school' })
     @IsString()
     @IsOptional()
+    @MaxLength(1000)
     previousSchoolDetails: string
 }

@@ -8,7 +8,28 @@ export const studentsColumnsConfig: FindOptionsSelect<Student> = {
     lastName: true,
     email: true,
     dob: true,
+    phone: true,
+    gender: true,
+    studentId: true,
+    profileImage: {
+        id: true,
+        url: true
+    },
     rollNo: true,
+    classRoom: {
+        id: true,
+        name: true,
+        parent: {
+            id: true,
+            name: true,
+        }
+    },
+    account: {
+        id: true
+    }
+}
+
+export const singleStudentColumnsConfig: FindOptionsSelect<Student> = {
     classRoom: {
         id: true,
         name: true,
@@ -23,8 +44,15 @@ export const studentsColumnsConfig: FindOptionsSelect<Student> = {
         lastName: true,
         email: true,
         phone: true,
+        address: true,
+        occupation: true,
+        profileImage: {
+            id: true,
+            url: true
+        },
+        relation: true,
     },
-    account: {
-        id: true
+    dormitoryRoom: {
+        id: true,
     }
 }

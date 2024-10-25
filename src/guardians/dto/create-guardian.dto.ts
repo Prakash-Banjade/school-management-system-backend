@@ -1,7 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsEmail, IsNotEmpty, IsOptional, IsString, IsUUID, Matches } from "class-validator";
+import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID, Matches } from "class-validator";
 import { PHONE_NUMBER_REGEX } from "src/common/CONSTANTS";
-import { IsUuidOrUrl, IsUuidOrUrlConstraint } from "src/common/decorators/isUrlOrUUid";
+import { IsUuidOrUrl } from "src/common/decorators/isUrlOrUUid";
+import { EGuardianRelation } from "src/common/types/global.type";
 
 export class CreateGuardianDto {
     @ApiProperty({ type: String, description: 'Guardian first name' })
@@ -13,6 +14,11 @@ export class CreateGuardianDto {
     @IsString()
     @IsNotEmpty()
     lastName: string;
+
+    @ApiProperty({ type: 'enum', enum: EGuardianRelation, description: 'Guardian relation' })
+    @IsEnum(EGuardianRelation)
+    @IsNotEmpty()
+    relation: EGuardianRelation;
 
     @ApiProperty({ type: String, description: 'Guardian phone number' })
     @IsString()
@@ -27,8 +33,8 @@ export class CreateGuardianDto {
 
     @ApiPropertyOptional({ type: String, description: 'Guardian address' })
     @IsString()
-    @IsOptional()
-    address?: string;
+    @IsNotEmpty()
+    address: string;
 
     @ApiProperty({ type: String, description: 'Guardian occupation' })
     @IsString()

@@ -37,13 +37,13 @@ export class DormitoryRoomsService {
 
     querybuilder
       .orderBy('dormitoryRoom.createdAt', 'DESC')
-      .skip(queryDto.skip)
-      .take(queryDto.take)
+      .skip(queryDto.skipPagination ? undefined : queryDto.skip)
+      .take(queryDto.skipPagination ? undefined : queryDto.take)
       .leftJoin("dormitoryRoom.roomType", "roomType")
       .leftJoin("dormitoryRoom.dormitory", "dormitory")
       .leftJoin("dormitoryRoom.students", "students")
-      .leftJoin("students.classRoom", "classRoom") 
-      .leftJoin("classRoom.parent", "parent")  
+      .leftJoin("students.classRoom", "classRoom")
+      .leftJoin("classRoom.parent", "parent")
       .leftJoin("students.profileImage", "profileImage")
       .where(new Brackets(qb => {
 

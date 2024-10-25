@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import { PageOptionsDto } from "./pageOptions.dto";
-import { IsEnum, IsOptional, IsString } from "class-validator";
+import { IsBoolean, IsEnum, IsOptional, IsString } from "class-validator";
+import { Transform } from "class-transformer";
 
 export enum Deleted {
     ONLY = "only",
@@ -18,8 +19,9 @@ export class QueryDto extends PageOptionsDto {
     @IsOptional()
     search?: string
 
-    @ApiPropertyOptional()
-    @IsString()
+    @ApiPropertyOptional({ type: Boolean, default: false, description: "Skip pagination flag" })
+    @IsBoolean()
     @IsOptional()
-    skipPagination?: string = 'false';
+    @Transform(({ value }) => value === 'true')
+    skipPagination?: boolean = false;
 }

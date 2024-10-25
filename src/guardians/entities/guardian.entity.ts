@@ -1,7 +1,8 @@
 import { BaseEntity } from "src/common/entities/base.entity";
+import { EGuardianRelation } from "src/common/types/global.type";
 import { Image } from "src/file-management/images/entities/image.entity";
 import { Student } from "src/students/entities/student.entity";
-import { Column, Entity, JoinColumn, JoinTable, ManyToMany, OneToOne } from "typeorm";
+import { Column, Entity, JoinTable, ManyToMany, OneToOne } from "typeorm";
 
 @Entity()
 export class Guardian extends BaseEntity {
@@ -14,11 +15,14 @@ export class Guardian extends BaseEntity {
     @Column({ type: 'varchar', length: 255 })
     phone: string;
 
-    @Column({ type: 'varchar', length: 255, nullable: true })
-    email?: string;
+    @Column({ type: 'enum', enum: EGuardianRelation })
+    relation: EGuardianRelation;
 
-    @Column({ type: 'varchar', length: 255, nullable: true })
-    address?: string;
+    @Column({ type: 'varchar', length: 255, default: '' })
+    email: string;
+
+    @Column({ type: 'varchar', length: 255 })
+    address: string;
 
     @Column({ type: 'varchar', length: 255 })
     occupation: string;
@@ -26,7 +30,7 @@ export class Guardian extends BaseEntity {
     @OneToOne(() => Image, image => image.guardian_profileImage, { nullable: true })
     profileImage: Image
 
-    @ManyToMany(() => Student, (student) => student.guardians)
+    @ManyToMany(() => Student, (student) => student.guardians, { onDelete: 'CASCADE' })
     @JoinTable({ name: 'student_guardians' })
     students: Student[]
 }
