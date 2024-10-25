@@ -66,9 +66,14 @@ export class SubjectsService {
     return paginatedData(queryDto, queryBuilder);
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, currentUser?: AuthUser) {
     const existing = await this.subjectsRepo.findOne({
-      where: { id },
+      where: {
+        id,
+        classRoom: {
+          id: currentUser && isStudent(currentUser) ? currentUser.classRoomId : undefined, // different access for student and admin
+        }
+      },
       relations: {
         classRoom: true,
         teacher: true,
@@ -80,8 +85,8 @@ export class SubjectsService {
     return existing;
   }
 
-  async update(id: string, updateSubjectDto: UpdateSubjectDto) {
-    const existing = await this.findOne(id);
+  async update(id: string, updateSubjectDto: UpdateSubjectDto, currentUser: AuthUser) {
+    const existing = await this.findOne(id, currentUser);
 
     const classRoom = updateSubjectDto.classRoomId
       ? await this.classRoomsService.findOne(updateSubjectDto.classRoomId)
@@ -99,8 +104,8 @@ export class SubjectsService {
     return this.subjectMutationReturn(updatedSubject, 'updated');
   }
 
-  async remove(id: string) {
-    const existing = await this.findOne(id);
+  async remove(id: string, currentUser: AuthUser) {
+    const existing = await this.findOne(id, currentUser);
     const deletedSubject = await this.subjectsRepo.softRemove(existing);
 
     return this.subjectMutationReturn(deletedSubject, 'deleted')

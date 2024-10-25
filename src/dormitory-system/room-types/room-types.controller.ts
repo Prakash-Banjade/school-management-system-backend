@@ -20,6 +20,7 @@ export class RoomTypesController {
   }
 
   @Get()
+  @ChekcAbilities({ subject: 'all', action: Action.READ })
   findAll(@Query() queryDto: QueryDto) {
     return this.roomTypesService.findAll(queryDto);
   }

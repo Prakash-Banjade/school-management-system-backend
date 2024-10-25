@@ -20,6 +20,7 @@ export class DormitoryRoomsController {
   }
 
   @Get()
+  @ChekcAbilities({ subject: 'all', action: Action.READ })
   findAll(@Query() queryDto: QueryDto) {
     return this.dormitoryRoomsService.findAll(queryDto);
   }

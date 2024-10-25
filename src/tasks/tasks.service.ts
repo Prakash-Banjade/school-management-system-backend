@@ -22,9 +22,9 @@ export class TasksService {
     private readonly imagesService: ImagesService,
   ) { }
 
-  async create(createTaskDto: CreateTaskDto, currentAccount: AuthUser) {
-    const account = await this.accountsService.findOne(currentAccount.accountId);
-    const subject = await this.subjectsService.findOne(createTaskDto.subjectId);
+  async create(createTaskDto: CreateTaskDto, currentUser: AuthUser) {
+    const account = await this.accountsService.findOne(currentUser.accountId);
+    const subject = await this.subjectsService.findOne(createTaskDto.subjectId, currentUser);
     const attatchments = createTaskDto.attatchmentIds?.length
       ? await this.imagesService.findAllByIds(createTaskDto.attatchmentIds)
       : null;

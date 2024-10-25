@@ -6,6 +6,7 @@ import { CreateSubjectChapterDto, UpdateSubjectChapterDto } from './dto/subject-
 import { SubjectsService } from './subjects.service';
 import { QueryDto } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
+import { AuthUser } from 'src/common/types/global.type';
 
 @Injectable()
 export class SubjectChaptersService {
@@ -14,8 +15,8 @@ export class SubjectChaptersService {
         private readonly subjectsService: SubjectsService,
     ) { }
 
-    async create(createSubjectChapterDto: CreateSubjectChapterDto) {
-        const subject = await this.subjectsService.findOne(createSubjectChapterDto.subjectId);
+    async create(createSubjectChapterDto: CreateSubjectChapterDto, currentUser: AuthUser) {
+        const subject = await this.subjectsService.findOne(createSubjectChapterDto.subjectId, currentUser);
 
         const newSubjectChapter = this.subjectChaptersRepo.create({
             ...createSubjectChapterDto,
