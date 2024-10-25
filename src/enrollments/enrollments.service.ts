@@ -12,6 +12,7 @@ import { BaseRepository } from 'src/common/repository/base-repository';
 import { FastifyRequest } from 'fastify';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import paginatedData from 'src/utils/paginatedData';
+import { getRegistrationNumber } from 'src/utils/get-registration-number';
 
 @Injectable({ scope: Scope.REQUEST })
 export class EnrollmentsService extends BaseRepository {
@@ -27,11 +28,14 @@ export class EnrollmentsService extends BaseRepository {
     const classRoom = await this.classRoomService.findOne(createEnrollmentDto.classRoomId);
     const academicYear = await this.getRepository<AcademicYear>(AcademicYear).findOneBy({ isActive: true }); // enroll in current academic year
 
+    const registrationNumber = getRegistrationNumber(academicYear);
+
     const existingEnrollment = await this.getRepository<Enrollment>(Enrollment).findOne({
       where: {
         student: { id: student.id },
         classRoom: { id: classRoom.id },
-        academicYear: { id: academicYear.id }
+        academicYear: { id: academicYear.id },
+        registrationNumber,
       }
     });
     if (existingEnrollment) throw new ConflictException('Enrollment with same student, class room and academic year already exists');
@@ -73,23 +77,7 @@ export class EnrollmentsService extends BaseRepository {
         classRoom: true,
         academicYear: true
       },
-      select: {
-        student: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          dob: true,
-        },
-        classRoom: {
-          id: true,
-          name: true
-        },
-        academicYear: {
-          id: true,
-          name: true
-        }
-      }
+      select: enrollmentSelectColumns,
     });
 
     if (!existingEnrollment) throw new ConflictException('Enrollment not found');
