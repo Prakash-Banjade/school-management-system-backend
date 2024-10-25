@@ -6,6 +6,9 @@ import { Column, Entity, ManyToOne } from "typeorm";
 
 @Entity()
 export class Enrollment extends BaseEntity {
+    @Column({ type: 'varchar', length: 255 })
+    registrationNumber: string;
+    
     @ManyToOne(() => Student, (student) => student.enrollments, { onDelete: 'CASCADE' })
     student: Student;
 
