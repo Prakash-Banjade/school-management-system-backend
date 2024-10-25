@@ -60,12 +60,20 @@ export class ClassRoutinesService {
       .where(new Brackets(qb => {
         queryDto.dayOfTheWeek && qb.andWhere('classRoutine.dayOfTheWeek = :dayOfTheWeek', { dayOfTheWeek: queryDto.dayOfTheWeek });
 
-        if (currentUser.role === Role.ADMIN) {
-          queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
+        if (currentUser.role === Role.ADMIN && queryDto.classRoomId) { // routine can be associated with parent ot itself is a parent
+          qb.andWhere(new Brackets(qb => {
+            qb.orWhere('parent.id = :classRoomId', { classRoomId: queryDto.classRoomId });
+            qb.orWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
+          }))
+        }
+
+        if (currentUser.role === Role.ADMIN) { // admin access
+          queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId }); // the sectionId send by the frontend is the class room id
           queryDto.subjectId && qb.andWhere('subject.id = :subjectId', { subjectId: queryDto.subjectId });
         } else if (isStudent(currentUser)) {
           qb.andWhere('classRoom.id = :classRoomId', { classRoomId: currentUser.classRoomId });
         }
+
       }))
 
     applySelectColumns(querybuilder, classRoutinesSelectCols, 'classRoutine');

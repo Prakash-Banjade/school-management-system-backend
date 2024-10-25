@@ -8,6 +8,7 @@ import { DormitoryRoomsModule } from 'src/dormitory-system/dormitory-rooms/dormi
 import { EnrollmentsModule } from 'src/enrollments/enrollments.module';
 import { ImagesModule } from 'src/file-management/images/images.module';
 import { AccountsModule } from 'src/auth-system/accounts/accounts.module';
+import { StudentsHelper } from './helpers/students.helper';
 
 @Module({
   imports: [
@@ -19,7 +20,7 @@ import { AccountsModule } from 'src/auth-system/accounts/accounts.module';
     EnrollmentsModule,
   ],
   controllers: [StudentsController],
-  providers: [StudentsService],
+  providers: [StudentsService, StudentsHelper],
   exports: [StudentsService],
 })
 export class StudentsModule { }

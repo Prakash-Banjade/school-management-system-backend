@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import { IsEnum, IsOptional, IsString, IsUUID } from "class-validator";
-import { QueryDto } from "src/common/dto/query.dto";
+import { ClassWithSectionQueryDto } from "src/common/dto/classWithSectionQuery.dto";
 
 export enum StudentSortBy {
     NAME = "name",
@@ -8,23 +8,14 @@ export enum StudentSortBy {
     CLASS_ROOM = "classRoomName",
     SUB_CLASS = "subClassName",
     GENDER = "gender",
+    DOB = "dob",
 }
 
-export class StudentQueryDto extends QueryDto {
+export class StudentQueryDto extends ClassWithSectionQueryDto {
     @ApiPropertyOptional({ type: String, format: 'uuid', description: 'Search by academic year id' })
     @IsUUID()
     @IsOptional()
     academicYearId: string;
-
-    @ApiPropertyOptional({ type: String, description: 'Search by classRoom name' })
-    @IsString()
-    @IsOptional()
-    classRoomName: string;
-
-    @ApiPropertyOptional({ type: String, description: 'Search by exact classRoom name', example: 'Section A' })
-    @IsString()
-    @IsOptional()
-    subClassName: string;
 
     @ApiPropertyOptional({ type: String, description: 'Search by roll no', example: '44' })
     @IsString()

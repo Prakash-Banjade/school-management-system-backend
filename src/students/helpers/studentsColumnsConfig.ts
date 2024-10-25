@@ -1,5 +1,5 @@
 import { FindOptionsSelect } from "typeorm";
-import { Student } from "./student.entity";
+import { Student } from "../entities/student.entity";
 
 export const studentsColumnsConfig: FindOptionsSelect<Student> = {
     id: true,
