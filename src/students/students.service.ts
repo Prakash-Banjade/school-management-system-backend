@@ -80,9 +80,7 @@ export class StudentsService extends BaseRepository {
   }
 
   async findAll(queryDto: StudentQueryDto) {
-    const queryBuilder = this.getRepository<Student>(Student).createQueryBuilder('student');
-
-    this.studentsHelper.setQuery(queryBuilder, queryDto);
+    const queryBuilder = this.studentsHelper.setQuery(queryDto);
 
     applySelectColumns(queryBuilder, studentsColumnsConfig, 'student');
 

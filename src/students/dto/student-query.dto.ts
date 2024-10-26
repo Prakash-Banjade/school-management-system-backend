@@ -13,15 +13,9 @@ export enum StudentSortBy {
 }
 
 export class StudentQueryDto extends ClassWithSectionQueryDto {
-    @ApiPropertyOptional({ type: String, description: 'Search by student id' })
-    @IsUUID()
+    @ApiPropertyOptional({ type: String, description: 'Search by student ID' })
     @IsOptional()
     studentId: string;
-
-    @ApiPropertyOptional({ type: String, format: 'uuid', description: 'Search by academic year id' })
-    @IsUUID()
-    @IsOptional()
-    academicYearId: string;
 
     @ApiPropertyOptional({ type: String, description: 'Search by roll no', example: '44' })
     @IsString()

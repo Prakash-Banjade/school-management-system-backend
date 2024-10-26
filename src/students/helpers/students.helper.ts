@@ -12,11 +12,11 @@ export class StudentsHelper {
         @InjectRepository(Student) private readonly studentRepo: Repository<Student>,
     ) { }
 
-    setQuery(queryBuilder: SelectQueryBuilder<Student>, queryDto: StudentQueryDto) {
-        queryBuilder
+    setQuery(queryDto: StudentQueryDto): SelectQueryBuilder<Student> {
+        return this.studentRepo.createQueryBuilder('student')
             .skip(queryDto.skip)
             .take(queryDto.take)
-            .withDeleted()
+            .orderBy(this.getOrderByKey(queryDto), queryDto.order)
             .leftJoin('student.classRoom', 'classRoom')
             .leftJoin('student.profileImage', 'profileImage')
             .leftJoin('student.account', 'account')
@@ -26,16 +26,14 @@ export class StudentsHelper {
             .leftJoin('classRoom.parent', 'parent')
             .andWhere(new Brackets(qb => {
                 if (queryDto.search) {
-                    const search = `%${queryDto.search.toLowerCase()}%`;
-                    const phoneSearch = `${queryDto.search}%`; // only match from beginning
-
-                    qb.orWhere("LOWER(CONCAT(COALESCE(student.firstName, ''), ' ', COALESCE(student.lastName, ''))) LIKE :search", { search })
-                        .orWhere("LOWER(student.email) LIKE :search", { search })
-                        .orWhere("student.phone LIKE :phoneSearch", { phoneSearch })
-                        .orWhere("student.rollNo = :search", { search: queryDto.search })
-                        .orWhere("student.studentId = :search", { search: queryDto.search });
+                    qb.andWhere(new Brackets(qb => {
+                        qb.orWhere("LOWER(CONCAT(student.firstName, ' ', student.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+                        qb.orWhere("LOWER(student.email) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+                    }))
                 }
 
+                queryDto.studentId && qb.andWhere('student.studentId = :studentId', { studentId: queryDto.studentId });
+                
                 queryDto.classRoomId && qb.andWhere(new Brackets(qb => {
                     qb.orWhere('parent.id = :classRoomId', { classRoomId: queryDto.classRoomId });
                     qb.orWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
@@ -44,7 +42,6 @@ export class StudentsHelper {
                 queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId }); // the sectionId send by the frontend is the class room id
             }))
             .andWhere('academicYear.isActive = :isActive', { isActive: true }) // filter by active academic year
-            .orderBy(this.getOrderByKey(queryDto), queryDto.order)
     }
 
     private getOrderByKey(queryDto: StudentQueryDto) {
