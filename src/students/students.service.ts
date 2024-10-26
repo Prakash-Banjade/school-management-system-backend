@@ -43,7 +43,7 @@ export class StudentsService extends BaseRepository {
     // evaluate class room
     const classRoom = await this.classRoomsService.findOne(createStudentDto.classRoomId);
     if (classRoom.classType === EClassType.PRIMARY && classRoom.children?.length > 0) { // if there are class sections, then section is needed
-      throw new BadRequestException('Please select section instead of class room');
+      throw new BadRequestException('Please select section');
     }
 
     // evaluate document attatchments
@@ -132,7 +132,7 @@ export class StudentsService extends BaseRepository {
     // evaluate dormitory room
     const dormitoryRoom = updateStudentDto.dormitoryRoomId
       ? await this.dormitoryRoomsService.findOne(updateStudentDto.dormitoryRoomId)
-      : null;
+      : existing.dormitoryRoom;
 
     Object.assign(existing, {
       ...updateStudentDto,

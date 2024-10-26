@@ -18,7 +18,7 @@ export class Guardian extends BaseEntity {
     @Column({ type: 'enum', enum: EGuardianRelation })
     relation: EGuardianRelation;
 
-    @Column({ type: 'varchar', length: 255, default: '' })
+    @Column({ type: 'varchar', length: 255, nullable: true })
     email: string;
 
     @Column({ type: 'varchar', length: 255 })
@@ -30,7 +30,7 @@ export class Guardian extends BaseEntity {
     @OneToOne(() => Image, image => image.guardian_profileImage, { nullable: true })
     profileImage: Image
 
-    @ManyToMany(() => Student, (student) => student.guardians, { onDelete: 'CASCADE' })
+    @ManyToMany(() => Student, (student) => student.guardians)
     @JoinTable({ name: 'student_guardians' })
     students: Student[]
 }
