@@ -54,5 +54,6 @@ export const singleStudentColumnsConfig: FindOptionsSelect<Student> = {
     },
     dormitoryRoom: {
         id: true,
+        roomNumber: true,
     }
 }
