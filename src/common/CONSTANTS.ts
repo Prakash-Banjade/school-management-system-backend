@@ -3,8 +3,8 @@ export const enum Tokens {
     REFRESH_TOKEN_COOKIE_NAME = 'refresh_token',
 }
 
-// checks if a string has only letters, numbers, spaces, apostrophes, dots and dashes
-export const NAME_REGEX = /(^[\p{L}\d'\.\s\-]*$)/u;
+export const NAME_REGEX = /^[A-Za-z]+$/;
+export const NAME_WITH_SPACE_REGEX = /^[A-Za-z]+( [A-Za-z]+)*$/;
 
 export const BCRYPT_HASH = /^\$2[aby]?\$[0-9]{2}\$[./A-Za-z0-9]{53}$/;
 

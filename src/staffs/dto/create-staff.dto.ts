@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsDateString, IsEmail, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, Matches, Min } from "class-validator";
-import { PHONE_NUMBER_REGEX } from "src/common/CONSTANTS";
-import { IsUuidOrUrl } from "src/common/decorators/isUrlOrUUid";
+import { NAME_REGEX, NAME_WITH_SPACE_REGEX, PHONE_NUMBER_REGEX } from "src/common/CONSTANTS";
+import { IsUuidOrUrl } from "src/common/decorators/isUrlOrUUid.decorator";
 import { EBloodGroup, EMaritalStatus, EStaff, Gender } from "src/common/types/global.type";
 
 export class CreateStaffDto {
@@ -18,11 +18,17 @@ export class CreateStaffDto {
     @ApiProperty({ type: String, example: 'John', description: 'First name of the staff' })
     @IsString()
     @IsNotEmpty()
+    @Matches(NAME_REGEX, {
+        message: 'Name can have only alphabets'
+    })
     firstName!: string;
 
     @ApiPropertyOptional({ type: String, example: 'Doe', description: 'Last name of the staff' })
     @IsString()
     @IsNotEmpty()
+    @Matches(NAME_WITH_SPACE_REGEX, {
+        message: 'Seems like invalid last name'
+    })
     lastName?: string;
 
     @ApiProperty({ type: 'enum', enum: Gender, example: Gender.MALE, description: 'Gender of the staff' })

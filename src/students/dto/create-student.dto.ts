@@ -1,8 +1,8 @@
 import { ApiProperty, ApiPropertyOptional, OmitType } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import { ArrayMinSize, IsArray, IsBoolean, IsDateString, IsDefined, IsEmail, IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Length, Matches, Max, MaxLength, Min, ValidateIf, ValidateNested } from "class-validator";
-import { PHONE_NUMBER_REGEX } from "src/common/CONSTANTS";
-import { IsUuidOrUrl } from "src/common/decorators/isUrlOrUUid";
+import { NAME_REGEX, NAME_WITH_SPACE_REGEX, PHONE_NUMBER_REGEX } from "src/common/CONSTANTS";
+import { IsUuidOrUrl } from "src/common/decorators/isUrlOrUUid.decorator";
 import { EBloodGroup, EReligion, Gender } from "src/common/types/global.type";
 import { CreateGuardianDto } from "src/guardians/dto/create-guardian.dto";
 
@@ -45,11 +45,17 @@ export class CreateStudentDto {
     @ApiProperty({ type: String, description: 'Student first name' })
     @IsString()
     @IsNotEmpty()
+    @Matches(NAME_REGEX, {
+        message: 'Name can have only alphabets'
+    })
     firstName: string;
 
     @ApiProperty({ type: String, description: 'Student last name' })
     @IsString()
     @IsNotEmpty()
+    @Matches(NAME_WITH_SPACE_REGEX, {
+        message: 'Seems like invalid last name'
+    })
     lastName: string;
 
     @ApiPropertyOptional({ type: 'enum', enum: Gender, description: 'Gender number of the student' })
@@ -61,9 +67,8 @@ export class CreateStudentDto {
     @IsNotEmpty()
     dob: string;
 
-    @ApiPropertyOptional({ type: 'enum', enum: EReligion, description: 'Religioin of the student' })
+    @ApiProperty({ type: 'enum', enum: EReligion, description: 'Religioin of the student' })
     @IsEnum(EReligion)
-    @IsOptional()
     religion?: EReligion;
 
     @ApiPropertyOptional({ type: String, description: 'Caste of the student' })

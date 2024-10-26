@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsEmail, IsNotEmpty, IsOptional, IsString, IsStrongPassword, Length, Matches } from "class-validator";
-import { NAME_REGEX } from "src/common/CONSTANTS";
+import { NAME_REGEX, NAME_WITH_SPACE_REGEX } from "src/common/CONSTANTS";
 
 export class RegisterDto {
     @ApiProperty({ type: 'string', description: 'First name of the user' })
@@ -16,8 +16,8 @@ export class RegisterDto {
     @IsString()
     @Length(2)
     @IsOptional()
-    @Matches(NAME_REGEX, {
-        message: 'Name must not have special characters'
+    @Matches(NAME_WITH_SPACE_REGEX, {
+        message: 'Seems like invalid last name'
     })
     lastName?: string;
 
