@@ -133,8 +133,6 @@ export class AuthHelper extends BaseRepository {
 
         if (!foundAccount) throw new UnauthorizedException(INVALID_AUTH_CREDENTIALS_MSG);
 
-        console.log('hi')
-
         const isPasswordValid = await bcrypt.compare(
             password,
             foundAccount.password,
