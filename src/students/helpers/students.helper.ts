@@ -32,7 +32,8 @@ export class StudentsHelper {
                     qb.orWhere("LOWER(CONCAT(COALESCE(student.firstName, ''), ' ', COALESCE(student.lastName, ''))) LIKE :search", { search })
                         .orWhere("LOWER(student.email) LIKE :search", { search })
                         .orWhere("student.phone LIKE :phoneSearch", { phoneSearch })
-                        .orWhere("student.rollNo = :exactSearch", { exactSearch: queryDto.search });
+                        .orWhere("student.rollNo = :search", { search: queryDto.search })
+                        .orWhere("student.studentId = :search", { search: queryDto.search });
                 }
 
                 queryDto.classRoomId && qb.andWhere(new Brackets(qb => {
@@ -53,6 +54,9 @@ export class StudentsHelper {
             }
             case StudentSortBy.ROLL_NO: {
                 return 'student.rollNo';
+            }
+            case StudentSortBy.STUDENT_ID: {
+                return 'student.studentId';
             }
             case StudentSortBy.GENDER: {
                 return 'student.gender';

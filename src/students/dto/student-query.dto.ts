@@ -9,9 +9,15 @@ export enum StudentSortBy {
     SUB_CLASS = "subClassName",
     GENDER = "gender",
     DOB = "dob",
+    STUDENT_ID = "studentId",
 }
 
 export class StudentQueryDto extends ClassWithSectionQueryDto {
+    @ApiPropertyOptional({ type: String, description: 'Search by student id' })
+    @IsUUID()
+    @IsOptional()
+    studentId: string;
+
     @ApiPropertyOptional({ type: String, format: 'uuid', description: 'Search by academic year id' })
     @IsUUID()
     @IsOptional()
