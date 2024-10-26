@@ -4,13 +4,14 @@ import { Attendance } from "../entities/attendance.entity";
 import { AttendanceCountQueryDto } from "../dto/attendance-count-query.dto";
 import { AuthUser, EAttendanceStatus, Role } from "src/common/types/global.type";
 import { Injectable } from "@nestjs/common";
+import { countDaysInMonth, countDaysInYear } from "src/utils/countDaysInMonth";
 
 @Injectable()
 export class AttendancesHelper {
     constructor(
         @InjectRepository(Attendance) private attendanceRepo: Repository<Attendance>,
-    ){}
-    
+    ) { }
+
     async getCount(attendanceCountQueryDto: AttendanceCountQueryDto, currentUser: AuthUser) {
         const monthlyQuery = this.attendanceRepo.createQueryBuilder('attendance')
             .leftJoin('attendance.account', 'account')
@@ -59,8 +60,16 @@ export class AttendancesHelper {
         };
 
         const finalResult = {
-            monthly: formatResult(monthlyResult),
-            yearly: formatResult(yearlyResult),
+            monthly: {
+                ...formatResult(monthlyResult),
+                total: countDaysInMonth(attendanceCountQueryDto.year, attendanceCountQueryDto.month),
+                month: attendanceCountQueryDto.month,
+            },
+            yearly: {
+                ...formatResult(yearlyResult),
+                year: attendanceCountQueryDto.year,
+                total: countDaysInYear(attendanceCountQueryDto.year),
+            },
         };
 
         return finalResult;

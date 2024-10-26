@@ -16,7 +16,7 @@ export class AttendanceCountQueryDto {
             ? Math.abs(Number(value))
             : undefined;
     })
-    year?: number;
+    year?: number = new Date().getFullYear();
 
     @ApiPropertyOptional()
     @IsOptional()
@@ -26,5 +26,5 @@ export class AttendanceCountQueryDto {
             ? Math.abs(Number(value))
             : undefined;
     })
-    month?: number;
+    month?: number = new Date().getMonth() + 1;
 }

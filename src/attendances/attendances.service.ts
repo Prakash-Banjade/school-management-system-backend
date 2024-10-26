@@ -56,7 +56,7 @@ export class AttendancesService {
           queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId', { classRoomId: `%${queryDto.classRoomId}%` })
           queryDto.studentId && qb.andWhere('student.id = :studentId', { studentId: `%${queryDto.studentId}%` })
           queryDto.search && qb.andWhere("LOWER(CONCAT(student.firstName, ' ', student.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
-        } else if (isStudent(currentUser)) { // student access
+        } else { // student access
           qb.andWhere('account.id = :accountId', { accountId: currentUser.accountId })
         }
       }));
