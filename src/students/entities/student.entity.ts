@@ -55,7 +55,7 @@ export class Student extends BaseEntity {
         this.studentId = generateTeacherId();
     }
 
-    @OneToOne(() => Account, account => account.student, { onDelete: "SET NULL" })
+    @OneToOne(() => Account, account => account.student, { onDelete: "RESTRICT" })
     @JoinColumn()
     account: Account;
 

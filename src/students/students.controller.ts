@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors, ClassSerializerInterceptor } from '@nestjs/common';
 import { StudentsService } from './students.service';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
@@ -8,6 +8,7 @@ import { TransactionInterceptor } from 'src/common/interceptors/transaction.inte
 import { ApiPaginatedResponse } from 'src/common/decorators/apiPaginatedResponse.decorator';
 import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action } from 'src/common/types/global.type';
+import { StudentAttendanceQueryDto } from './dto/student-attendance-query.dto';
 
 @ApiBearerAuth()
 @ApiTags('Students')
@@ -27,6 +28,13 @@ export class StudentsController {
   @ChekcAbilities({ subject: 'all', action: Action.READ })
   findAll(@Query() queryDto: StudentQueryDto) {
     return this.studentsService.findAll(queryDto);
+  }
+
+  @Get('attendances')
+  @UseInterceptors(ClassSerializerInterceptor)
+  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  findAllAttendance(@Query() queryDto: StudentAttendanceQueryDto) {
+    return this.studentsService.getStudentsAttendance(queryDto);
   }
 
   @Get(':id')

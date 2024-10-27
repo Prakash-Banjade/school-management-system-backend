@@ -17,6 +17,7 @@ import { applySelectColumns } from 'src/utils/apply-select-cols';
 import paginatedData from 'src/utils/paginatedData';
 import { StudentsHelper } from './helpers/students.helper';
 import { EClassType } from 'src/common/types/global.type';
+import { StudentAttendanceQueryDto } from './dto/student-attendance-query.dto';
 
 @Injectable({ scope: Scope.REQUEST })
 export class StudentsService extends BaseRepository {
@@ -103,6 +104,10 @@ export class StudentsService extends BaseRepository {
     if (!existing) throw new NotFoundException('Student not found')
 
     return existing
+  }
+
+  async getStudentsAttendance(queryDto: StudentAttendanceQueryDto) {
+    return this.studentsHelper.getStudentsWithAttendance(queryDto);
   }
 
   async update(id: string, updateStudentDto: UpdateStudentDto) {

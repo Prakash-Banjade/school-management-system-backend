@@ -9,10 +9,14 @@ import { EnrollmentsModule } from 'src/enrollments/enrollments.module';
 import { ImagesModule } from 'src/file-management/images/images.module';
 import { AccountsModule } from 'src/auth-system/accounts/accounts.module';
 import { StudentsHelper } from './helpers/students.helper';
+import { Attendance } from 'src/attendances/entities/attendance.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Student]),
+    TypeOrmModule.forFeature([
+      Student,
+      Attendance
+    ]),
     ClassRoomsModule,
     ImagesModule,
     AccountsModule,
