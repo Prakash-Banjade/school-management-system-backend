@@ -5,7 +5,7 @@ import { Column, Entity, ManyToOne } from "typeorm";
 
 @Entity()
 export class LeaveRequest extends BaseEntity {
-    @ManyToOne(() => Account, account => account.leaveRequests)
+    @ManyToOne(() => Account, account => account.leaveRequests, { nullable: false, onDelete: 'CASCADE' })
     account: Account
 
     @Column({ type: "datetime" })
@@ -17,7 +17,7 @@ export class LeaveRequest extends BaseEntity {
     @Column({ type: "text" })
     title: string;
 
-    @Column({ type: "longtext" })
+    @Column({ type: "longtext", nullable: true })
     description: string;
 
     @Column({ type: 'enum', enum: ELeaveRequestStatus, default: ELeaveRequestStatus.PENDING })

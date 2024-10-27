@@ -1,13 +1,16 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateLeaveRequestDto } from './dto/create-leave-request.dto';
-import { UpdateLeaveRequestDto } from './dto/update-leave-request.dto';
+import { UpdateLeaveRequestDto, UpdateLeaveRequestStatusDto } from './dto/update-leave-request.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LeaveRequest } from './entities/leave-request.entity';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import { LeaveRequestQueryDto } from './dto/leave-request-query.dto';
 import { AuthUser, Role } from 'src/common/types/global.type';
 import paginatedData from 'src/utils/paginatedData';
 import { AccountsService } from 'src/auth-system/accounts/accounts.service';
+import { isStudent } from 'src/utils/isStudent';
+import { applySelectColumns } from 'src/utils/apply-select-cols';
+import { leaveRequestSelectCols } from './helpers/leave-requests-select-cols.config';
 
 @Injectable()
 export class LeaveRequestsService {
@@ -19,7 +22,7 @@ export class LeaveRequestsService {
   async create(createLeaveRequestDto: CreateLeaveRequestDto, currentUser: AuthUser) {
     if (currentUser.role === Role.ADMIN && !createLeaveRequestDto.accountId) throw new BadRequestException('Account id is required');
     const accountId = currentUser.role === Role.ADMIN ? createLeaveRequestDto.accountId : currentUser.accountId;
-    
+
     const account = await this.accountsService.findOne(accountId);
 
     const newLeaveRequest = this.leaveRequestRepo.create({
@@ -35,10 +38,29 @@ export class LeaveRequestsService {
     const querybuilder = this.leaveRequestRepo.createQueryBuilder('leaveRequest');
 
     querybuilder
-      .orderBy('leaveRequest.createdAt', 'DESC')
+      .orderBy('leaveRequest.createdAt', queryDto.order)
       .take(queryDto.take)
       .skip(queryDto.skip)
-    // .where({ account: { id: currentUser.accountId } }); 
+      .leftJoin('leaveRequest.account', 'account')
+      .leftJoin('account.student', 'student')
+      .leftJoin('student.classRoom', 'classRoom')
+      .leftJoin('classRoom.parent', 'parent')
+      .andWhere(new Brackets(qb => {
+        if (currentUser.role === Role.ADMIN) { // admin access
+          queryDto.classRoomId && qb.andWhere(new Brackets(qb => {
+            qb.orWhere('parent.id = :classRoomId', { classRoomId: queryDto.classRoomId });
+            qb.orWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
+          }));
+
+          queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId });
+          queryDto.status?.length && qb.andWhere('leaveRequest.status IN (:...status)', { status: Array.isArray(queryDto.status) ? queryDto.status : [queryDto.status] });
+
+        } else if (isStudent(currentUser)) {
+          qb.andWhere('account.id = :accountId', { accountId: currentUser.accountId })
+        }
+      }));
+
+    applySelectColumns(querybuilder, leaveRequestSelectCols, 'leaveRequest');
 
     return paginatedData(queryDto, querybuilder);
   }
@@ -50,6 +72,17 @@ export class LeaveRequestsService {
     if (!existing) throw new NotFoundException('Leave request not found');
 
     return existing;
+  }
+
+  async updateStatus(id: string, updateLeaveRequestStatusDto: UpdateLeaveRequestStatusDto) {
+    const existing = await this.findOne(id);
+
+    existing.status = updateLeaveRequestStatusDto.status;
+    await this.leaveRequestRepo.save(existing);
+
+    return {
+      message: 'Status updated',
+    };
   }
 
   async update(id: string, updateLeaveRequestDto: UpdateLeaveRequestDto) {
