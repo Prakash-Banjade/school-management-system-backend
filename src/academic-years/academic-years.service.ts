@@ -69,6 +69,12 @@ export class AcademicYearsService {
     return existing;
   }
 
+  async getActive() {
+    const existing = await this.academicYearRepo.findOneBy({ isActive: true });
+    if (!existing) throw new BadRequestException('Academic year not found');
+    return existing;
+  }
+
   async udpateActive(id: string) {
     const existing = await this.findOne(id);
 

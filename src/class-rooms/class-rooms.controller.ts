@@ -39,6 +39,12 @@ export class ClassRoomsController {
     return this.classRoomsHelper.getClassRoomsOptions(queryDto);
   }
 
+  @Get('sections')
+  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  findAllSections(@Query() queryDto: ClassRoomQueryDto) {
+    return this.classRoomsService.findAllSections(queryDto);
+  }
+
   @Get(':id')
   @ChekcAbilities({ subject: 'all', action: Action.READ })
   findOne(@Param('id') id: string) {

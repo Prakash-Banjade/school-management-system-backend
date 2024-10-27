@@ -10,5 +10,6 @@ import { AcademicYear } from './entities/academic-year.entity';
   ],
   controllers: [AcademicYearsController],
   providers: [AcademicYearsService],
+  exports: [AcademicYearsService],
 })
 export class AcademicYearsModule { }

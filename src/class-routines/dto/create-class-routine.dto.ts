@@ -32,5 +32,5 @@ export class CreateClassRoutineDto {
     @IsNotEmpty()
     @IsUUID()
     @ValidateIf((o) => o.type === ERoutineType.CLASS)
-    subjectId: string;
+    subjectId?: string;
 }

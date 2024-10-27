@@ -2,7 +2,7 @@ import { ConflictException, Inject, Injectable, NotFoundException, Scope } from 
 import { CreateClassRoomDto } from './dto/create-class-room.dto';
 import { UpdateClassRoomDto } from './dto/update-class-room.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, DataSource, Repository } from 'typeorm';
+import { Brackets, DataSource, Raw, Repository } from 'typeorm';
 import { ClassRoom } from './entities/class-room.entity';
 import { REQUEST } from '@nestjs/core';
 import { ClassRoomQueryDto } from './dto/classRoom-query.dto';
@@ -11,12 +11,14 @@ import { FastifyRequest } from 'fastify';
 import { EClassType, Gender } from 'src/common/types/global.type';
 import { PageMetaDto } from 'src/common/dto/pageMeta.dto';
 import { PageDto } from 'src/common/dto/page.dto.';
+import { ClassRoomsHelper } from './helpers/class-rooms.helper';
 
 @Injectable({ scope: Scope.REQUEST })
 export class ClassRoomsService extends BaseRepository {
   constructor(
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
     @InjectRepository(ClassRoom) private classRoomRepo: Repository<ClassRoom>,
+    private readonly classRoomsHelper: ClassRoomsHelper,
   ) {
     super(dataSource, req);
   }
@@ -45,32 +47,7 @@ export class ClassRoomsService extends BaseRepository {
   }
 
   async findAll(queryDto: ClassRoomQueryDto) {
-    const queryBuilder = this.classRoomRepo.createQueryBuilder('classRoom');
-    // const deletedAt = queryDto.deleted === Deleted.ONLY ? Not(IsNull()) : queryDto.deleted === Deleted.NONE ? IsNull() : Or(IsNull(), Not(IsNull()));
-
-    queryBuilder
-      .orderBy("classRoom.createdAt", queryDto.order)
-      .skip(queryDto.skipPagination ? undefined : queryDto.skip)
-      .take(queryDto.skipPagination ? undefined : queryDto.take)
-      .withDeleted()
-      .leftJoin("classRoom.parent", "classRoomParentClass")
-      .leftJoin("classRoom.children", "childrenClasses")
-      .leftJoin("classRoom.students", "students")
-      .leftJoin("childrenClasses.students", "childrenStudents")
-      .addSelect([
-        "COUNT(DISTINCT students.id) AS totalStudentsCount",
-        `COUNT(DISTINCT CASE WHEN students.gender = '${Gender.MALE}' THEN students.id END) AS totalMaleStudentsCount`,
-        `COUNT(DISTINCT CASE WHEN students.gender = '${Gender.FEMALE}' THEN students.id END) AS totalFemaleStudentsCount`,
-        "COUNT(DISTINCT childrenStudents.id) AS totalChildrenStudentsCount",
-        `COUNT(DISTINCT CASE WHEN childrenStudents.gender = '${Gender.MALE}' THEN childrenStudents.id END) AS totalChildrenMaleStudentsCount`,
-        `COUNT(DISTINCT CASE WHEN childrenStudents.gender = '${Gender.FEMALE}' THEN childrenStudents.id END) AS totalChildrenFemaleStudentsCount`
-      ])
-      .groupBy('classRoom.id')  // Ensure group by to aggregate counts per classRoom
-      .andWhere(new Brackets(qb => {
-        queryDto.search && qb.andWhere('LOWER(classRoom.name) LIKE LOWER(:search)', { search: queryDto.search });
-        queryDto.classType && qb.andWhere('classRoom.classType = :classType', { classType: queryDto.classType });
-        queryDto.parentClassId && qb.andWhere('classRoomParentClass.id = :parentClassId', { parentClassId: queryDto.parentClassId });
-      }));
+    const queryBuilder = this.classRoomsHelper.setClassRoomQuery(queryDto);
 
     // applySelectColumns(queryBuilder, classRoomsColumnsConfig, 'classRoom');
 
@@ -83,6 +60,27 @@ export class ClassRoomsService extends BaseRepository {
         totalStudentsCount: +raw[index].totalStudentsCount + +raw[index].totalChildrenStudentsCount,
         totalFemalesStudentsCount: +raw[index].totalFemaleStudentsCount + +raw[index].totalChildrenFemaleStudentsCount,
         totalMalesStudentsCount: +raw[index].totalMaleStudentsCount + +raw[index].totalChildrenMaleStudentsCount,
+      });
+      return entityWithCounts;
+    });
+
+    const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto: queryDto });
+
+    return new PageDto(entities, pageMetaDto);
+  }
+
+  async findAllSections(queryDto: ClassRoomQueryDto) {
+    const queryBuilder = this.classRoomsHelper.setSectionsQuery(queryDto);
+
+    const itemCount = await queryBuilder.getCount();
+    const { entities, raw } = await queryBuilder.getRawAndEntities();
+
+    // Add student counts to each entity
+    entities?.map((entity, index) => {
+      const entityWithCounts = Object.assign(entity, {
+        totalStudentsCount: +raw[index].totalStudentsCount,
+        totalFemalesStudentsCount: +raw[index].totalFemaleStudentsCount,
+        totalMalesStudentsCount: +raw[index].totalMaleStudentsCount,
       });
       return entityWithCounts;
     });

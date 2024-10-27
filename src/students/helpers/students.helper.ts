@@ -84,14 +84,14 @@ export class StudentsHelper {
         if (existingStudent && !student) {
             if (existingStudent.email === email) throw new BadRequestException('Student with this email already exists');
             if (existingStudent.nationalIdCardNo === nationalIdCardNo) throw new BadRequestException('Student with this nationalIdCardNo already exists');
-            if (existingStudent.phone === phone) throw new BadRequestException('Student with this phone already exists');
-            if (existingStudent.rollNo === rollNo) throw new BadRequestException('Student with this rollNo already exists');
+            // if (existingStudent.phone === phone) throw new BadRequestException('Student with this phone already exists');
+            // if (existingStudent.rollNo === rollNo) throw new BadRequestException('Student with this rollNo already exists');
             if (existingStudent.bankAccountNumber === bankAccountNumber) throw new BadRequestException('Student with this bankAccountNumber already exists');
         } else if (existingStudent && student) {
             if (existingStudent.email === email && existingStudent.id !== student.id) throw new BadRequestException('Student with this email already exists');
             if (existingStudent.nationalIdCardNo === nationalIdCardNo && existingStudent.id !== student.id) throw new BadRequestException('Student with this nationalIdCardNo already exists');
-            if (existingStudent.phone === phone && existingStudent.id !== student.id) throw new BadRequestException('Student with this phone already exists');
-            if (existingStudent.rollNo === rollNo && existingStudent.id !== student.id) throw new BadRequestException('Student with this rollNo already exists');
+            // if (existingStudent.phone === phone && existingStudent.id !== student.id) throw new BadRequestException('Student with this phone already exists');
+            // if (existingStudent.rollNo === rollNo && existingStudent.id !== student.id) throw new BadRequestException('Student with this rollNo already exists');
             if (existingStudent.bankAccountNumber === bankAccountNumber && existingStudent.id !== student.id) throw new BadRequestException('Student with this bankAccountNumber already exists');
         }
     }

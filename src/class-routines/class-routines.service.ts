@@ -25,10 +25,12 @@ export class ClassRoutinesService {
 
   async create(createClassRoutineDto: CreateClassRoutineDto) {
     const classRoom = await this.classRoomsService.findOne(createClassRoutineDto.classRoomId);
-    const subject = await this.subjectsService.findOne(createClassRoutineDto.subjectId);
+    const subject = createClassRoutineDto.subjectId
+      ? await this.subjectsService.findOne(createClassRoutineDto.subjectId)
+      : null;
 
     // validate if class room have the subject
-    this.validateIfClassRoomHaveSubject(subject, classRoom);
+    subject && this.validateIfClassRoomHaveSubject(subject, classRoom);
 
     const newClassRoutine = this.classRoutineRepo.create({
       ...createClassRoutineDto,
@@ -41,7 +43,7 @@ export class ClassRoutinesService {
     return this.classRoutineMutationReturn(savedClassRoutine, 'created');
   }
 
-  private validateIfClassRoomHaveSubject(subject: Subject, classRoom: ClassRoom) {
+  private validateIfClassRoomHaveSubject(subject: Subject | null, classRoom: ClassRoom) {
     const parentClass = classRoom?.classType === EClassType.SECTION ? classRoom.parent : classRoom;
     if (parentClass?.id !== subject.classRoom?.id) throw new BadRequestException('Class room does not have the subject');
   }

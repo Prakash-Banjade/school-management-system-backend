@@ -4,12 +4,16 @@ import { ClassRoomsController } from './class-rooms.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClassRoom } from './entities/class-room.entity';
 import { ClassRoomsHelper } from './helpers/class-rooms.helper';
+import { Student } from 'src/students/entities/student.entity';
+import { AcademicYearsModule } from 'src/academic-years/academic-years.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       ClassRoom,
+      Student
     ]),
+    AcademicYearsModule,
   ],
   controllers: [ClassRoomsController],
   providers: [ClassRoomsService, ClassRoomsHelper],
