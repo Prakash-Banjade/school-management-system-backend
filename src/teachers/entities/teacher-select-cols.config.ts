@@ -10,6 +10,7 @@ export const teachersColumnsConfig: FindOptionsSelect<Teacher> = {
     teacherId: true,
     dob: true,
     gender: true,
+    joinedDate: true,
     createdAt: true,
     profileImage: {
         id: true,

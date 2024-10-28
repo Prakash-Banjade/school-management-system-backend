@@ -11,6 +11,7 @@ export const staffsColumnsConfig: FindOptionsSelect<Staff> = {
     type: true,
     dob: true,
     gender: true,
+    joinedDate: true,
     createdAt: true,
     profileImage: {
         id: true,

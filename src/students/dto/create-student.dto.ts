@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional, OmitType } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import { ArrayMinSize, IsArray, IsBoolean, IsDateString, IsDefined, IsEmail, IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Length, Matches, Max, MaxLength, Min, ValidateIf, ValidateNested } from "class-validator";
 import { NAME_REGEX, NAME_WITH_SPACE_REGEX, PHONE_NUMBER_REGEX } from "src/common/CONSTANTS";
+import { IsNotFutureDate } from "src/common/decorators/isNotFutureDate.decorator";
 import { IsUuidOrUrl } from "src/common/decorators/isUrlOrUUid.decorator";
 import { EBloodGroup, EReligion, Gender } from "src/common/types/global.type";
 import { CreateGuardianDto } from "src/guardians/dto/create-guardian.dto";
@@ -65,6 +66,7 @@ export class CreateStudentDto {
     @ApiPropertyOptional({ type: String, format: 'date-time', description: 'Date of birth of the student' })
     @IsDateString()
     @IsNotEmpty()
+    @IsNotFutureDate({ message: 'Date of birth cannot be in the future' })
     dob: string;
 
     @ApiProperty({ type: 'enum', enum: EReligion, description: 'Religioin of the student' })

@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsDateString, IsEmail, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, Matches, Min } from "class-validator";
 import { NAME_REGEX, NAME_WITH_SPACE_REGEX, PHONE_NUMBER_REGEX } from "src/common/CONSTANTS";
+import { IsNotFutureDate } from "src/common/decorators/isNotFutureDate.decorator";
 import { IsUuidOrUrl } from "src/common/decorators/isUrlOrUUid.decorator";
 import { EBloodGroup, EMaritalStatus, Gender } from "src/common/types/global.type";
 
@@ -45,6 +46,7 @@ export class CreateTeacherDto {
     @ApiProperty({ type: Date, format: 'date-time', example: '2024-07-19T11:02:05.462Z', description: 'Date of birth of the teacher' })
     @IsDateString()
     @IsNotEmpty()
+    @IsNotFutureDate({ message: 'Date of birth cannot be in the future' })
     dob!: string;
 
     @ApiProperty({ type: Number, example: 10000, description: 'Wage of the teacher' })
@@ -80,6 +82,7 @@ export class CreateTeacherDto {
 
     @ApiProperty({ type: Date, format: 'date-time', example: '2024-07-19T11:02:05.462Z', description: 'Date of birth of the teacher' })
     @IsDateString()
+    @IsNotFutureDate({ message: 'Joining date cannot be in the future' })
     @IsNotEmpty()
     joinedDate!: string;
 
