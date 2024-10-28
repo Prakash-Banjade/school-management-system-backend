@@ -27,18 +27,6 @@ export const leaveRequestSelectCols: FindOptionsSelect<LeaveRequest> = {
                 }
             }
         },
-        teacher: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            teacherId: true,
-        },
-        staff: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            staffId: true,
-        },
     },
 }
 
