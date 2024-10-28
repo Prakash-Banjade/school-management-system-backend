@@ -58,22 +58,3 @@ export const singleStudentColumnsConfig: FindOptionsSelect<Student> = {
         roomNumber: true,
     }
 }
-
-export const studentAttendanceColumnsConfig: FindOptionsSelect<Student> = {
-    id: true,
-    firstName: true,
-    lastName: true,
-    rollNo: true,
-    account: {
-        id: true,
-    }
-}
-
-export const attendanceStudentColumnsConfig: FindOptionsSelect<Attendance> = {
-    id: true,
-    status: true,
-    account: {
-        id: true,
-    },
-    date: true,
-}

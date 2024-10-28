@@ -10,6 +10,7 @@ import { Action, AuthUser } from 'src/common/types/global.type';
 import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
 import { AttendanceCountQueryDto } from './dto/attendance-count-query.dto';
 import { AttendancesHelper } from './helpers/attendances.helper';
+import { UpdateAttendanceBatchDto } from './dto/update-attendance-batch.dto';
 
 @ApiBearerAuth()
 @ApiTags('Attendances')
@@ -43,6 +44,12 @@ export class AttendancesController {
   @ChekcAbilities({ action: Action.READ, subject: 'all' })
   findOne(@Param('id') id: string) {
     return this.attendancesService.findOne(id);
+  }
+
+  @Patch('batch')
+  @ChekcAbilities({ action: Action.UPDATE, subject: 'all' })
+  updateInBatch(@Body() updateAttendanceBatchDto: UpdateAttendanceBatchDto) {
+    return this.attendancesService.updateInBatch(updateAttendanceBatchDto);
   }
 
   @Patch(':id')

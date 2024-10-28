@@ -8,9 +8,9 @@ import { AttendaceQueryDto } from './dto/attendance-query.dto';
 import paginatedData from 'src/utils/paginatedData';
 import { AccountsService } from 'src/auth-system/accounts/accounts.service';
 import { AuthUser, Role } from 'src/common/types/global.type';
-import { isStudent } from 'src/utils/isStudent';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { attendanceSelectCols } from './helpers/attendance-select-cols.config';
+import { UpdateAttendanceBatchDto } from './dto/update-attendance-batch.dto';
 
 @Injectable()
 export class AttendancesService {
@@ -93,6 +93,27 @@ export class AttendancesService {
     }
   }
 
+  async updateInBatch(updateAttendanceBatchDto: UpdateAttendanceBatchDto) {
+    const attendances = await Promise.all(updateAttendanceBatchDto.updatedAttendances?.map(async attendance => {
+      if (attendance.id) {
+        const existing = await this.findOne(attendance.id);
+        Object.assign(existing, attendance);
+        return existing;
+      } else {
+        const account = await this.accountsService.findOne(attendance.accountId);
+        return this.attendanceRepo.create({
+          ...attendance,
+          account
+        });
+      }
+    }));
+
+    await this.attendanceRepo.save(attendances);
+
+    return {
+      message: 'Attendances updated successfully',
+    }
+  }
   async remove(id: string) {
     return `This action removes a #${id} attendance`;
   }
