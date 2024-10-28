@@ -37,7 +37,7 @@ export class StudentsHelper {
 
                 queryDto.studentId && qb.andWhere('student.studentId = :studentId', { studentId: queryDto.studentId });
 
-                queryDto.classRoomId && qb.andWhere(new Brackets(qb => {
+                queryDto.classRoomId && qb.andWhere(new Brackets(qb => { // if class room id, check in both section and class
                     qb.orWhere('parent.id = :classRoomId', { classRoomId: queryDto.classRoomId });
                     qb.orWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
                 }))

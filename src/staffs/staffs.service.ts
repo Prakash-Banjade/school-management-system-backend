@@ -58,7 +58,13 @@ export class StaffsService extends BaseRepository {
       .leftJoin("staff.profileImage", "profileImage")
       .leftJoin('staff.account', 'account')
       .andWhere(new Brackets(qb => {
-        queryDto.search && qb.orWhere("LOWER(CONCAT(staff.firstName, ' ', staff.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+        queryDto.search && qb.andWhere(new Brackets(qb => {
+          qb.orWhere("LOWER(CONCAT(staff.firstName, ' ', staff.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+          qb.orWhere("LOWER(staff.email) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+        }))
+
+        queryDto.staffId && qb.andWhere('staff.staffId = :staffId', { staffId: queryDto.staffId });
+        queryDto.type?.length && qb.andWhere('staff.type IN (:...type)', { type: queryDto.type });
       }))
 
     applySelectColumns(queryBuilder, staffsColumnsConfig, 'staff');

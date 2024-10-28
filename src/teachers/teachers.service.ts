@@ -59,7 +59,12 @@ export class TeachersService extends BaseRepository {
       .leftJoin("teacher.profileImage", "profileImage")
       .leftJoin('teacher.account', 'account')
       .andWhere(new Brackets(qb => {
-        queryDto.search && qb.orWhere("LOWER(CONCAT(teacher.firstName, ' ', teacher.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+        queryDto.search && qb.andWhere(new Brackets(qb => {
+          qb.orWhere("LOWER(CONCAT(teacher.firstName, ' ', teacher.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+          qb.orWhere("LOWER(teacher.email) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+        }))
+
+        queryDto.teacherId && qb.andWhere('teacher.teacherId = :teacherId', { teacherId: queryDto.teacherId });
       }))
 
     applySelectColumns(queryBuilder, teachersColumnsConfig, 'teacher');
