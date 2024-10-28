@@ -22,8 +22,14 @@ export class LeaveRequestsController {
 
   @Get()
   // @ChekcAbilities({ subject: 'all', action: Action.READ })
-  findAll(@Query() queryDto: LeaveRequestQueryDto, @CurrentUser() currentUser: AuthUser) {
+  findAll(@Query() queryDto: LeaveRequestQueryDto, @CurrentUser() currentUser: AuthUser) { // only for students leave request
     return this.leaveRequestsService.findAll(queryDto, currentUser);
+  }
+
+  @Get('employees')
+  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  getEmployeeLeaveRequests(@Query() queryDto: LeaveRequestQueryDto) { // only for teachers and staffs
+    return this.leaveRequestsService.getEmployeeLeaveRequests(queryDto);
   }
 
   @Get(':id')

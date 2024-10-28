@@ -12,4 +12,13 @@ export class LeaveRequestQueryDto extends ClassWithSectionQueryDto {
         return [];
     })
     status?: string[];
+
+    @ApiPropertyOptional()
+    @IsString({ each: true })
+    @IsOptional()
+    @Transform(({ value }) => {
+        if (value) return value.split(',');
+        return [];
+    })
+    employeeTypes?: string[];
 }

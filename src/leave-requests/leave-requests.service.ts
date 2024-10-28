@@ -10,7 +10,7 @@ import paginatedData from 'src/utils/paginatedData';
 import { AccountsService } from 'src/auth-system/accounts/accounts.service';
 import { isStudent } from 'src/utils/isStudent';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
-import { leaveRequestSelectCols } from './helpers/leave-requests-select-cols.config';
+import { employeesLeaveRequestSelectCols, leaveRequestSelectCols } from './helpers/leave-requests-select-cols.config';
 
 @Injectable()
 export class LeaveRequestsService {
@@ -34,7 +34,7 @@ export class LeaveRequestsService {
     return this.leaveRequestMutationReturn(savedLevaeRequest, 'created');
   }
 
-  async findAll(queryDto: LeaveRequestQueryDto, currentUser: AuthUser) {
+  async findAll(queryDto: LeaveRequestQueryDto, currentUser: AuthUser) { // only for students leave request
     const querybuilder = this.leaveRequestRepo.createQueryBuilder('leaveRequest');
 
     querybuilder
@@ -55,12 +55,47 @@ export class LeaveRequestsService {
           queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId });
           queryDto.status?.length && qb.andWhere('leaveRequest.status IN (:...status)', { status: Array.isArray(queryDto.status) ? queryDto.status : [queryDto.status] });
 
+          qb.andWhere('account.role = :role', { role: Role.STUDENT }); // only for students
+
         } else if (isStudent(currentUser)) {
           qb.andWhere('account.id = :accountId', { accountId: currentUser.accountId })
         }
       }));
 
     applySelectColumns(querybuilder, leaveRequestSelectCols, 'leaveRequest');
+
+    return paginatedData(queryDto, querybuilder);
+  }
+
+  async getEmployeeLeaveRequests(queryDto: LeaveRequestQueryDto) {
+    const querybuilder = this.leaveRequestRepo.createQueryBuilder('leaveRequest');
+
+    querybuilder
+      .orderBy('leaveRequest.createdAt', queryDto.order)
+      .take(queryDto.take)
+      .skip(queryDto.skip)
+      .leftJoin('leaveRequest.account', 'account')
+      .leftJoin('account.teacher', 'teacher')
+      .leftJoin('account.staff', 'staff')
+      .where("account.role != :role", { role: Role.STUDENT })
+      .andWhere(new Brackets(qb => {
+        queryDto.status?.length && qb.andWhere('leaveRequest.status IN (:...status)', { status: queryDto.status });
+        queryDto.search && qb.andWhere(new Brackets(qb => {
+          qb.orWhere("LOWER(CONCAT(teacher.firstName, ' ', teacher.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+          qb.orWhere("LOWER(CONCAT(staff.firstName, ' ', staff.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+        }))
+
+        if (!!queryDto.employeeTypes?.length && !queryDto.employeeTypes.includes(Role.TEACHER)) {
+          queryDto.employeeTypes?.length && qb.andWhere('staff.type IN (:...employeeTypes)', { employeeTypes: queryDto.employeeTypes });
+        } else if (!!queryDto.employeeTypes?.length) {
+          qb.andWhere(new Brackets(qb => {
+            qb.orWhere('staff.type IN (:...employeeTypes)', { employeeTypes: queryDto.employeeTypes });
+            qb.orWhere('teacher.id IS NOT NULL');
+          }))
+        }
+      }));
+
+    applySelectColumns(querybuilder, employeesLeaveRequestSelectCols, 'leaveRequest');
 
     return paginatedData(queryDto, querybuilder);
   }
