@@ -57,6 +57,10 @@ export class AllExceptionsFilter extends BaseExceptionFilter {
             errResponse.message,
         );
 
+        if (typeof errResponse.message === 'string' && errResponse.message.includes('foreign key constraint fails')) {
+            errResponse.message = "You cannot delete this record because it is referenced by other records"
+        }
+
         response
             .status(errResponse.statusCode)
             .send(errResponse); // Fastify's way of sending a response

@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsInt, IsNotEmpty, IsOptional, IsString, Length, Max, Min } from "class-validator";
+import { IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Length, Max, Min } from "class-validator";
 
 export class CreateLibraryBookDto {
     @ApiProperty({ type: String, description: 'Book code' })
@@ -32,4 +32,8 @@ export class CreateLibraryBookDto {
     @IsInt()
     @Min(1)
     copiesCount: number;
+
+    @ApiProperty({ format: 'uuid' })
+    @IsUUID()
+    categoryId: string;
 }

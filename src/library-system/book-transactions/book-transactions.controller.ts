@@ -1,13 +1,13 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors } from '@nestjs/common';
 import { BookTransactionsService } from './book-transactions.service';
 import { CreateBookTransactionDto } from './dto/create-book-transaction.dto';
-import { UpdateBookTransactionDto } from './dto/update-book-transaction.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action } from 'src/common/types/global.type';
-import { QueryDto } from 'src/common/dto/query.dto';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
+import { BookTransactionsQueryDto } from './dto/book-transactions-query.dto';
 
+@ApiBearerAuth()
 @ApiTags('Library Book Transactions')
 @Controller('book-transactions')
 export class BookTransactionsController {
@@ -22,7 +22,7 @@ export class BookTransactionsController {
 
   @Get()
   @ChekcAbilities({ subject: 'all', action: Action.READ })
-  findAll(@Query() queryDto: QueryDto) {
+  findAll(@Query() queryDto: BookTransactionsQueryDto) {
     return this.bookTransactionsService.findAll(queryDto);
   }
 
@@ -32,10 +32,11 @@ export class BookTransactionsController {
     return this.bookTransactionsService.findOne(id);
   }
 
-  @Patch(':id')
+  @Patch('return')
+  @UseInterceptors(TransactionInterceptor)
   @ChekcAbilities({ subject: 'all', action: Action.UPDATE })
-  update(@Param('id') id: string, @Body() updateBookTransactionDto: UpdateBookTransactionDto) {
-    return this.bookTransactionsService.update(id, updateBookTransactionDto);
+  update(@Param('id') id: string) {
+    return this.bookTransactionsService.returnBook(id);
   }
 
   @Delete(':id')

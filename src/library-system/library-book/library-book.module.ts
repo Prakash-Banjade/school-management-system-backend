@@ -4,6 +4,7 @@ import { LibraryBookController } from './library-book.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LibraryBook } from './entities/library-book.entity';
 import { AccountsModule } from 'src/auth-system/accounts/accounts.module';
+import { BookCategoriesModule } from '../book-categories/book-categories.module';
 
 @Module({
   imports: [
@@ -11,6 +12,7 @@ import { AccountsModule } from 'src/auth-system/accounts/accounts.module';
       LibraryBook,
     ]),
     AccountsModule,
+    BookCategoriesModule,
   ],
   controllers: [LibraryBookController],
   providers: [LibraryBookService],

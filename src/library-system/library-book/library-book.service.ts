@@ -8,35 +8,46 @@ import { QueryDto } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { libraryBookRequestSelectCols } from './helpers/library-book-request-select-cols';
+import { LibraryBookQueryDto } from './dto/library-book.query.dto';
+import { BookCategoriesService } from '../book-categories/book-categories.service';
 
 @Injectable()
 export class LibraryBookService {
   constructor(
     @InjectRepository(LibraryBook) private libraryBookRepo: Repository<LibraryBook>,
+    private readonly bookCategoriesService: BookCategoriesService,
   ) { }
 
   async create(createLibraryBookDto: CreateLibraryBookDto) {
     const existingWithSameCode = await this.libraryBookRepo.findOne({ where: { bookCode: createLibraryBookDto.bookCode } });
     if (existingWithSameCode) throw new ConflictException('Book code already exists');
 
-    const libraryBook = this.libraryBookRepo.create(createLibraryBookDto);
+    const category = await this.bookCategoriesService.findOne(createLibraryBookDto.categoryId);
+
+    const libraryBook = this.libraryBookRepo.create({
+      ...createLibraryBookDto,
+      category,
+    });
     const saved = await this.libraryBookRepo.save(libraryBook);
 
     return this.libraryBookMutationReturn(saved, 'created');
   }
 
-  async findAll(queryDto: QueryDto) {
+  async findAll(queryDto: LibraryBookQueryDto) {
     const queryBuilder = this.libraryBookRepo.createQueryBuilder('libraryBook');
 
     queryBuilder
       .skip(queryDto.skip)
       .take(queryDto.take)
       .orderBy("libraryBook.createdAt", queryDto.order)
+      .leftJoin("libraryBook.category", "category")
       .where(new Brackets(qb => {
         queryDto.search && qb.andWhere(new Brackets(qb => {
           qb.orWhere("LOWER(libraryBook.bookName) LIKE LOWER(:search)", { search: `%${queryDto.search}%` });
           qb.orWhere("libraryBook.bookCode = :search", { search: queryDto.search });
         }))
+
+        queryDto.categories && qb.andWhere("category.name IN (:...categories)", { categories: queryDto.categories });
       }))
 
     applySelectColumns(queryBuilder, libraryBookRequestSelectCols, 'libraryBook');
@@ -61,8 +72,8 @@ export class LibraryBookService {
     return this.libraryBookMutationReturn(existing, "updated")
   }
 
-  async incrementIssuedCount(book: LibraryBook) {
-    book.issuedCount++;
+  async updateCount(book: LibraryBook, type: 'issued' | 'returned') {
+    book.issuedCount += type === 'issued' ? 1 : -1;
     await this.libraryBookRepo.save(book);
   }
 

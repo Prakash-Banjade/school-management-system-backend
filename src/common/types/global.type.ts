@@ -171,3 +171,9 @@ export enum ERoutineType {
     CLASS = 'class',
     BREAK = 'break',
 }
+
+export enum EBookTransactionStatus {
+    Issued = 'issued',
+    Returned = 'returned',
+    Overdue = 'overdue',
+}

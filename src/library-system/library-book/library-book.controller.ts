@@ -6,6 +6,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { QueryDto } from 'src/common/dto/query.dto';
 import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action } from 'src/common/types/global.type';
+import { LibraryBookQueryDto } from './dto/library-book.query.dto';
 
 @ApiBearerAuth()
 @ApiTags('Library Book')
@@ -20,7 +21,7 @@ export class LibraryBookController {
   }
 
   @Get()
-  findAll(@Query() queryDto: QueryDto) {
+  findAll(@Query() queryDto: LibraryBookQueryDto) {
     return this.libraryBookService.findAll(queryDto);
   }
 

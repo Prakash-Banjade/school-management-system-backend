@@ -11,4 +11,8 @@ export const libraryBookRequestSelectCols: FindOptionsSelect<LibraryBook> = {
     publicationYear: true,
     copiesCount: true,
     issuedCount: true,
+    category: {
+        id: true,
+        name: true,
+    }
 }

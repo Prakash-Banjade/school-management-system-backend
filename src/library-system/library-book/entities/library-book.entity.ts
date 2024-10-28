@@ -1,6 +1,7 @@
-import { Column, Entity, OneToMany, OneToOne } from "typeorm";
+import { Column, Entity, ManyToOne, OneToMany, OneToOne } from "typeorm";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { BookTransaction } from "src/library-system/book-transactions/entities/book-transaction.entity";
+import { BookCategory } from "src/library-system/book-categories/entities/book-category.entity";
 
 @Entity()
 export class LibraryBook extends BaseEntity {
@@ -27,4 +28,7 @@ export class LibraryBook extends BaseEntity {
 
     @OneToMany(() => BookTransaction, (bookTransaction) => bookTransaction.book)
     transactions: BookTransaction[];
+
+    @ManyToOne(() => BookCategory, (bookCategory) => bookCategory.books, { onDelete: 'RESTRICT' })
+    category: BookCategory;
 }
