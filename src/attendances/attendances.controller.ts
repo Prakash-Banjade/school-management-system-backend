@@ -3,7 +3,7 @@ import { AttendancesService } from './attendances.service';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { AttendaceQueryDto } from './dto/attendance-query.dto';
+import { AttendanceQueryDto } from './dto/attendance-query.dto';
 import { ApiPaginatedResponse } from 'src/common/decorators/apiPaginatedResponse.decorator';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
 import { Action, AuthUser } from 'src/common/types/global.type';
@@ -30,7 +30,7 @@ export class AttendancesController {
   @Get()
   @ApiPaginatedResponse(CreateAttendanceDto)
   // @ChekcAbilities({ action: Action.CREATE, subject: 'all' })
-  findAll(@Query() queryDto: AttendaceQueryDto, @CurrentUser() currentUser: AuthUser) {
+  findAll(@Query() queryDto: AttendanceQueryDto, @CurrentUser() currentUser: AuthUser) {
     return this.attendancesService.findAll(queryDto, currentUser);
   }
 

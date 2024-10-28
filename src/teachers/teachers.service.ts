@@ -5,7 +5,7 @@ import { Brackets, DataSource, IsNull, Not, Or } from 'typeorm';
 import { REQUEST } from '@nestjs/core';
 import { Teacher } from './entities/teacher.entity';
 import { TeacherQueryDto } from './dto/teacher-query.dto';
-import { teachersColumnsConfig } from './entities/teacher-select-cols.config';
+import { teachersColumnsConfig } from './helpers/teacher-select-cols.config';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { ImagesService } from 'src/file-management/images/images.service';
 import { AccountsService } from 'src/auth-system/accounts/accounts.service';

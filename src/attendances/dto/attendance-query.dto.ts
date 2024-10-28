@@ -4,7 +4,7 @@ import { IsDateString, IsEnum, IsNumber, IsOptional, IsUUID } from "class-valida
 import { QueryDto } from "src/common/dto/query.dto";
 import { EAttendanceStatus } from "src/common/types/global.type";
 
-export class AttendaceQueryDto extends QueryDto {
+export class AttendanceQueryDto extends QueryDto {
     @ApiPropertyOptional({ type: String, format: 'date-time', description: 'Date of the attendance' })
     @IsDateString()
     @IsOptional()

@@ -8,42 +8,53 @@ import { ApiPaginatedResponse } from 'src/common/decorators/apiPaginatedResponse
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action } from 'src/common/types/global.type';
+import { EmployeeAttendanceQueryDto } from './dto/employee-attendance-query.dto';
+import { TeachersHelper } from './helpers/teacher.helper';
 
 @ApiBearerAuth()
 @ApiTags('Teachers')
 @Controller('teachers')
 export class TeachersController {
-  constructor(private readonly teachersService: TeachersService) { }
+  constructor(
+    private readonly teachersService: TeachersService,
+    private readonly teachersHelper: TeachersHelper
+  ) { }
 
   @Post()
   @UseInterceptors(TransactionInterceptor)
-  @ChekcAbilities({subject: 'all', action: Action.CREATE})
+  @ChekcAbilities({ subject: 'all', action: Action.CREATE })
   create(@Body() createTeacherDto: CreateTeacherDto) {
     return this.teachersService.create(createTeacherDto);
   }
 
   @Get()
   @ApiPaginatedResponse(CreateTeacherDto)
-  @ChekcAbilities({subject: 'all', action: Action.READ})
+  @ChekcAbilities({ subject: 'all', action: Action.READ })
   findAll(@Query() queryDto: TeacherQueryDto) {
     return this.teachersService.findAll(queryDto);
   }
 
+  @Get('attendances')
+  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  getAttendance(@Query() queryDto: EmployeeAttendanceQueryDto) {
+    return this.teachersHelper.getTeachersWithAttendance(queryDto);
+  }
+
   @Get(':id')
-  @ChekcAbilities({subject: 'all', action: Action.READ})
+  @ChekcAbilities({ subject: 'all', action: Action.READ })
   findOne(@Param('id') id: string) {
     return this.teachersService.findOne(id);
   }
 
   @Patch(':id')
   @UseInterceptors(TransactionInterceptor)
-  @ChekcAbilities({subject: 'all', action: Action.UPDATE})
+  @ChekcAbilities({ subject: 'all', action: Action.UPDATE })
   update(@Param('id') id: string, @Body() updateTeacherDto: UpdateTeacherDto) {
     return this.teachersService.update(id, updateTeacherDto);
   }
 
   @Delete(':id')
-  @ChekcAbilities({subject: 'all', action: Action.DELETE})
+  @ChekcAbilities({ subject: 'all', action: Action.DELETE })
   remove(@Param('id') id: string) {
     return this.teachersService.remove(id);
   }

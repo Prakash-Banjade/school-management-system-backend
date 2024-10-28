@@ -7,12 +7,17 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ApiPaginatedResponse } from 'src/common/decorators/apiPaginatedResponse.decorator';
 import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action } from 'src/common/types/global.type';
+import { StaffsHelper } from './helpers/staffs.helper';
+import { EmployeeAttendanceQueryDto } from 'src/teachers/dto/employee-attendance-query.dto';
 
 @ApiBearerAuth()
 @ApiTags("Staffs")
 @Controller('staffs')
 export class StaffsController {
-  constructor(private readonly staffsService: StaffsService) { }
+  constructor(
+    private readonly staffsService: StaffsService,
+    private readonly staffsHelper: StaffsHelper,
+  ) { }
 
   @Post()
   @ChekcAbilities({ subject: 'all', action: Action.CREATE })
@@ -25,6 +30,12 @@ export class StaffsController {
   @ApiPaginatedResponse(CreateStaffDto)
   findAll(@Query() queryDto: StaffQueryDto) {
     return this.staffsService.findAll(queryDto);
+  }
+
+  @Get('attendances')
+  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  getAttendance(@Query() queryDto: EmployeeAttendanceQueryDto) {
+    return this.staffsHelper.getStaffsWithAttendance(queryDto);
   }
 
   @Get(':id')

@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Staff } from './entities/staff.entity';
 import { ImagesModule } from 'src/file-management/images/images.module';
 import { AccountsModule } from 'src/auth-system/accounts/accounts.module';
+import { StaffsHelper } from './helpers/staffs.helper';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { AccountsModule } from 'src/auth-system/accounts/accounts.module';
     AccountsModule,
   ],
   controllers: [StaffsController],
-  providers: [StaffsService],
+  providers: [StaffsService, StaffsHelper],
   exports: [StaffsService],
 })
 export class StaffsModule { }

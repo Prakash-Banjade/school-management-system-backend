@@ -4,7 +4,7 @@ import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Attendance } from './entities/attendance.entity';
 import { Brackets, Repository } from 'typeorm';
-import { AttendaceQueryDto } from './dto/attendance-query.dto';
+import { AttendanceQueryDto } from './dto/attendance-query.dto';
 import paginatedData from 'src/utils/paginatedData';
 import { AccountsService } from 'src/auth-system/accounts/accounts.service';
 import { AuthUser, Role } from 'src/common/types/global.type';
@@ -38,7 +38,7 @@ export class AttendancesService {
     }
   }
 
-  async findAll(queryDto: AttendaceQueryDto, currentUser: AuthUser) {
+  async findAll(queryDto: AttendanceQueryDto, currentUser: AuthUser) {
     const queryBuilder = this.attendanceRepo.createQueryBuilder('attendance');
 
     queryBuilder
