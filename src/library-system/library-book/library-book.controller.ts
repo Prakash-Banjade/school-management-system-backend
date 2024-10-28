@@ -14,6 +14,7 @@ export class LibraryBookController {
   constructor(private readonly libraryBookService: LibraryBookService) { }
 
   @Post()
+  @ChekcAbilities({ subject: 'all', action: Action.READ })
   create(@Body() createLibraryBookDto: CreateLibraryBookDto) {
     return this.libraryBookService.create(createLibraryBookDto);
   }
@@ -29,11 +30,13 @@ export class LibraryBookController {
   }
 
   @Patch(':id')
+  @ChekcAbilities({ subject: 'all', action: Action.UPDATE })
   update(@Param('id') id: string, @Body() updateLibraryBookDto: UpdateLibraryBookDto) {
     return this.libraryBookService.update(id, updateLibraryBookDto);
   }
 
   @Delete(':id')
+  @ChekcAbilities({ subject: 'all', action: Action.DELETE })
   @ChekcAbilities({ action: Action.DELETE, subject: 'all' })
   remove(@Param('id') id: string) {
     return this.libraryBookService.remove(id);

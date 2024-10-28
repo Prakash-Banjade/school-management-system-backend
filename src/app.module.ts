@@ -21,7 +21,6 @@ import { DealersModule } from './dealers/dealers.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
 import { ExaminationSystemModule } from './examination-system/examination-system.module';
 import { GuardiansModule } from './guardians/guardians.module';
-import { LibraryBookModule } from './library-book/library-book.module';
 import { NoticesModule } from './notices/notices.module';
 import { RecommendationsModule } from './recommendations/recommendations.module';
 import { StaffsModule } from './staffs/staffs.module';
@@ -34,6 +33,7 @@ import { ClassRoutinesModule } from './class-routines/class-routines.module';
 import { AbilitiesGuard } from './common/guards/abilities.guard';
 import { CaslModule } from './auth-system/casl/casl.module';
 import { LeaveRequestsModule } from './leave-requests/leave-requests.module';
+import { LibrarySystemModule } from './library-system/library-system.module';
 
 @Module({
   imports: [
@@ -72,7 +72,6 @@ import { LeaveRequestsModule } from './leave-requests/leave-requests.module';
     EnrollmentsModule,
     ExaminationSystemModule,
     GuardiansModule,
-    LibraryBookModule,
     NoticesModule,
     RecommendationsModule,
     StaffsModule,
@@ -82,6 +81,7 @@ import { LeaveRequestsModule } from './leave-requests/leave-requests.module';
     TasksModule,
     TeachersModule,
     TransportationSystemModule,
+    LibrarySystemModule,
   ],
   controllers: [AppController],
   providers: [

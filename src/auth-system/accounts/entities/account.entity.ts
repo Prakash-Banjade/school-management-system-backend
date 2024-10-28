@@ -12,7 +12,6 @@ import { Staff } from "src/staffs/entities/staff.entity";
 import { Attendance } from "src/attendances/entities/attendance.entity";
 import { Salary } from "src/finance-system/salaries/entities/salary.entity";
 import { LeaveRequest } from "src/leave-requests/entities/leave-request.entity";
-import { LibraryBookRequest } from "src/library-book/entities/library-book-request.entity";
 import { Recommendation } from "src/recommendations/entities/recommendation.entity";
 import { Task } from "src/tasks/entities/task.entity";
 
@@ -91,8 +90,8 @@ export class Account extends BaseEntity {
     @OneToMany(() => LeaveRequest, leaveRequest => leaveRequest.account)
     leaveRequests: LeaveRequest[];
 
-    @OneToMany(() => LibraryBookRequest, libraryBookRequest => libraryBookRequest.account)
-    libraryBookRequests: LibraryBookRequest[];
+    // @OneToMany(() => LibraryBookRequest, libraryBookRequest => libraryBookRequest.account)
+    // libraryBookRequests: LibraryBookRequest[];
 
     @OneToMany(() => Recommendation, recommendation => recommendation.account)
     recommendations: Recommendation[];
