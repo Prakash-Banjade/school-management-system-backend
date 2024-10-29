@@ -111,8 +111,8 @@ export class BookTransactionsService extends BaseRepository {
   async findAllByStudent(queryDto: BookTransactionByStudentQueryDto) {
     const queryBuilder = this.getRepository(BookTransaction).createQueryBuilder('transaction')
       .orderBy("transaction.createdAt", queryDto.order)
-      .skip(queryDto.skipPagination ? undefined : queryDto.skip)
-      .take(queryDto.skipPagination ? undefined : queryDto.take)
+      .offset(queryDto.skipPagination ? undefined : queryDto.skip)
+      .limit(queryDto.skipPagination ? undefined : queryDto.take)
       .leftJoin("transaction.student", "student")
       .leftJoin("transaction.book", "book")
       .where(new Brackets(qb => {
