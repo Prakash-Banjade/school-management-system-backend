@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CreateSubjectChapterDto, SubjectChapterQueryDto, UpdateSubjectChapterDto } from './dto/subject-chapter.dto';
 import { SubjectChaptersService } from './subject-chapters.service';
@@ -6,6 +6,7 @@ import { ApiPaginatedResponse } from 'src/common/decorators/apiPaginatedResponse
 import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, AuthUser } from 'src/common/types/global.type';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
+import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 
 @ApiBearerAuth()
 @ApiTags('Subject Chapters')
@@ -40,6 +41,7 @@ export class SubjectChaptersController {
 
     @Delete(':id')
     @ChekcAbilities({ subject: 'all', action: Action.DELETE })
+    @UseInterceptors(TransactionInterceptor)
     remove(@Param('id') id: string) {
         return this.subjectChaptersService.remove(id);
     }

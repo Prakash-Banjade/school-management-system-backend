@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional, OmitType, PartialType } from "@nestjs/swagger";
-import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID } from "class-validator";
+import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength } from "class-validator";
 import { QueryDto } from "src/common/dto/query.dto";
 import { ESubjectChapterPriority } from "src/common/types/global.type";
 
@@ -12,6 +12,7 @@ export class CreateSubjectChapterDto {
     @ApiProperty({ type: String, description: 'Chapter content' })
     @IsString()
     @IsNotEmpty()
+    @MaxLength(1000, { message: 'Chapter content should not exceed 1000 characters' })
     content: string;
 
     @ApiPropertyOptional({ type: 'enum', enum: ESubjectChapterPriority, description: 'Chapter priority', default: ESubjectChapterPriority.MEDIUM })

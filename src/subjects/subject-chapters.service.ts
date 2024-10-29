@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, DataSource, Repository } from 'typeorm';
 import { SubjectChapter } from './entities/subject-chapter.entity';
 import { CreateSubjectChapterDto, SubjectChapterQueryDto, UpdateSubjectChapterDto } from './dto/subject-chapter.dto';
 import { SubjectsService } from './subjects.service';
@@ -9,29 +9,42 @@ import paginatedData from 'src/utils/paginatedData';
 import { AuthUser } from 'src/common/types/global.type';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { subjectChapterSelectCols } from './helpers/subject-chapter-select-colst';
+import { BaseRepository } from 'src/common/repository/base-repository';
+import { FastifyRequest } from 'fastify';
+import { REQUEST } from '@nestjs/core';
 
 @Injectable()
-export class SubjectChaptersService {
+export class SubjectChaptersService extends BaseRepository {
     constructor(
+        dataSource: DataSource,
+        @Inject(REQUEST) req: FastifyRequest,
         @InjectRepository(SubjectChapter) private readonly subjectChaptersRepo: Repository<SubjectChapter>,
         private readonly subjectsService: SubjectsService,
-    ) { }
+    ) { 
+        super(dataSource, req);
+    }
 
     async create(createSubjectChapterDto: CreateSubjectChapterDto, currentUser: AuthUser) {
         const subject = await this.subjectsService.findOne(createSubjectChapterDto.subjectId, currentUser);
 
-        const newSubjectChapter = this.subjectChaptersRepo.create({
-            ...createSubjectChapterDto,
-            subject
+        const lastChapter = await this.getRepository(SubjectChapter).findOne({
+            where: { subject: { id: subject.id } },
+            order: { chapterNo: 'DESC' },
         });
-        const savedChapter = await this.subjectChaptersRepo.save(newSubjectChapter);
+
+        const newSubjectChapter = this.getRepository(SubjectChapter).create({
+            ...createSubjectChapterDto,
+            subject,
+            chapterNo: lastChapter ? lastChapter.chapterNo + 1 : 1
+        });
+        const savedChapter = await this.getRepository(SubjectChapter).save(newSubjectChapter);
 
         return this.subjectChapterMutationReturn(savedChapter, 'created');
 
     }
 
     async findAll(queryDto: SubjectChapterQueryDto) {
-        const queryBuilder = this.subjectChaptersRepo.createQueryBuilder('subjectChapter');
+        const queryBuilder = this.getRepository(SubjectChapter).createQueryBuilder('subjectChapter');
 
         queryBuilder
             .skip(queryDto.skip)
@@ -50,10 +63,19 @@ export class SubjectChaptersService {
     }
 
     async findOne(id: string) {
-        const existing = await this.subjectChaptersRepo.findOne({
+        const existing = await this.getRepository(SubjectChapter).findOne({
             where: { id },
+            relations: {
+                subject: true, // used in remove method
+            },
+            select: {
+                subject: {
+                    id: true,
+                    subjectName: true,
+                }
+            }
         })
-        if (!existing) throw new NotFoundException(`SubjectChapter with id ${id} not found`);
+        if (!existing) throw new NotFoundException(`Subject chapter with id ${id} not found`);
 
         return existing
     }
@@ -63,15 +85,24 @@ export class SubjectChaptersService {
 
         Object.assign(existing, updateSubjectChapterDto);
 
-        const updatedSubjectChapter = await this.subjectChaptersRepo.save(existing);
+        const updatedSubjectChapter = await this.getRepository(SubjectChapter).save(existing);
         return this.subjectChapterMutationReturn(updatedSubjectChapter, 'updated');
     }
 
     async remove(id: string) {
         const existing = await this.findOne(id);
-        const deletedSubjectChapter = await this.subjectChaptersRepo.softRemove(existing);
+        const deletedChapter = await this.getRepository(SubjectChapter).remove(existing);
 
-        return this.subjectChapterMutationReturn(deletedSubjectChapter, 'deleted')
+        // update chapter no of next chapters
+        await this.getRepository(SubjectChapter).createQueryBuilder()
+            .update(SubjectChapter)
+            .set({
+                chapterNo: () => "chapterNo - 1"
+            })
+            .where("subjectId = :subjectId AND chapterNo > :chapterNo", { subjectId: existing.subject.id, chapterNo: existing.chapterNo }) // update the chapter no of next chapters of associated subject
+            .execute();
+
+        return this.subjectChapterMutationReturn(deletedChapter, 'deleted')
     }
 
     private subjectChapterMutationReturn = (subjectChapter: SubjectChapter, type: 'created' | 'updated' | 'deleted') => {
@@ -79,8 +110,6 @@ export class SubjectChaptersService {
             message: type === 'created' ? 'Chapter created' : type === 'deleted' ? 'Chapter deleted' : 'Chapter updated',
             subjectChapter: {
                 id: subjectChapter.id,
-                title: subjectChapter.title,
-                chapterNo: subjectChapter.chapterNo,
             }
         }
     }
