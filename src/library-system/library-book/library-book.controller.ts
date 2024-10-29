@@ -7,12 +7,16 @@ import { QueryDto } from 'src/common/dto/query.dto';
 import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action } from 'src/common/types/global.type';
 import { LibraryBookQueryDto } from './dto/library-book.query.dto';
+import { LibraryHelper } from './helpers/library.helper';
 
 @ApiBearerAuth()
 @ApiTags('Library Book')
 @Controller('library-books')
 export class LibraryBookController {
-  constructor(private readonly libraryBookService: LibraryBookService) { }
+  constructor(
+    private readonly libraryBookService: LibraryBookService,
+    private readonly libraryHelper: LibraryHelper,
+  ) { }
 
   @Post()
   @ChekcAbilities({ subject: 'all', action: Action.READ })
@@ -23,6 +27,12 @@ export class LibraryBookController {
   @Get()
   findAll(@Query() queryDto: LibraryBookQueryDto) {
     return this.libraryBookService.findAll(queryDto);
+  }
+
+  @Get('count')
+  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  getDashboardCount() {
+    return this.libraryHelper.getDashboardCount();
   }
 
   @Get(':id')

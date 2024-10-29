@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { LibraryBook } from './entities/library-book.entity';
 import { AccountsModule } from 'src/auth-system/accounts/accounts.module';
 import { BookCategoriesModule } from '../book-categories/book-categories.module';
+import { LibraryHelper } from './helpers/library.helper';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { BookCategoriesModule } from '../book-categories/book-categories.module'
     BookCategoriesModule,
   ],
   controllers: [LibraryBookController],
-  providers: [LibraryBookService],
+  providers: [LibraryBookService, LibraryHelper],
   exports: [LibraryBookService],
 })
 export class LibraryBookModule { }
