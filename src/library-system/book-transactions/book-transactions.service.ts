@@ -76,6 +76,7 @@ export class BookTransactionsService extends BaseRepository {
         if (queryDto.status) {
           if (queryDto.status === EBookTransactionStatus.Issued) {
             qb.andWhere("transaction.returnedAt IS NULL")
+            qb.andWhere("DATE(transaction.dueDate) >= DATE(:today)", { today: new Date().toISOString() })
           } else if (queryDto.status === EBookTransactionStatus.Returned) {
             qb.andWhere("transaction.returnedAt IS NOT NULL")
           } else if (queryDto.status === EBookTransactionStatus.Overdue) {
