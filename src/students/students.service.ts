@@ -106,6 +106,35 @@ export class StudentsService extends BaseRepository {
     return existing
   }
 
+  async findLibraryStudent(studentId: string) {
+    const student = await this.getRepository<Student>(Student).createQueryBuilder('student')
+      .leftJoin("student.profileImage", "profileImage")
+      .leftJoin("student.enrollments", "enrollment")
+      .leftJoin("student.bookTransactions", "bookTransactions")
+      .leftJoin("enrollment.academicYear", "academicYear")
+      .leftJoin("student.classRoom", "classRoom")
+      .leftJoin("classRoom.parent", "parent")
+      .where("student.studentId = :studentId", { studentId })
+      .andWhere("academicYear.isActive = :isActive", { isActive: true })
+      .groupBy("student.id")
+      .select([
+        "student.id AS id",
+        "CONCAT(student.firstName, ' ', student.lastName) AS name",
+        "student.rollNo AS rollNo",
+        "student.phone AS phone",
+        "student.email AS email",
+        "profileImage.url AS profileImageUrl",
+        "classRoom.name AS classRoom",
+        "parent.name AS parentClass",
+        "COUNT(bookTransactions.id) AS transactionCount"
+      ])
+      .getRawOne();
+
+    if (!student) throw new NotFoundException('Student not found');
+
+    return student;
+  }
+
   async getStudentsAttendance(queryDto: StudentAttendanceQueryDto) {
     return this.studentsHelper.getStudentsWithAttendance(queryDto);
   }

@@ -1,13 +1,14 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsDateString, IsUUID } from "class-validator";
+import { IsDateString, IsNotEmpty, IsString, IsUUID } from "class-validator";
 
 export class CreateBookTransactionDto {
     @ApiProperty({ format: 'uuid' })
     @IsUUID()
     bookId: string;
 
-    @ApiProperty({ format: 'uuid' })
-    @IsUUID()
+    @ApiProperty({ type: String })
+    @IsString()
+    @IsNotEmpty()
     studentId: string;
 
     @ApiProperty({ format: 'date-time' })

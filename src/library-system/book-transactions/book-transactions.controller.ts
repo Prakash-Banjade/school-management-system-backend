@@ -5,7 +5,8 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action } from 'src/common/types/global.type';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
-import { BookTransactionsQueryDto } from './dto/book-transactions-query.dto';
+import { BookTransactionByStudentQueryDto, BookTransactionsQueryDto } from './dto/book-transactions-query.dto';
+import { RenewBookTransactionDto, ReturnBookTransactionDto } from './dto/update-book-transaction.dto';
 
 @ApiBearerAuth()
 @ApiTags('Library Book Transactions')
@@ -26,6 +27,12 @@ export class BookTransactionsController {
     return this.bookTransactionsService.findAll(queryDto);
   }
 
+  @Get('student')
+  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  findAllByStudent(@Query() queryDto: BookTransactionByStudentQueryDto) {
+    return this.bookTransactionsService.findAllByStudent(queryDto);
+  }
+
   @Get(':id')
   @ChekcAbilities({ subject: 'all', action: Action.READ })
   findOne(@Param('id') id: string) {
@@ -35,8 +42,15 @@ export class BookTransactionsController {
   @Patch('return')
   @UseInterceptors(TransactionInterceptor)
   @ChekcAbilities({ subject: 'all', action: Action.UPDATE })
-  update(@Param('id') id: string) {
-    return this.bookTransactionsService.returnBook(id);
+  update(@Body() updateBookTransactionDto: ReturnBookTransactionDto) {
+    return this.bookTransactionsService.returnBook(updateBookTransactionDto.transactionIds);
+  }
+
+  @Patch('renew')
+  @UseInterceptors(TransactionInterceptor)
+  @ChekcAbilities({ subject: 'all', action: Action.UPDATE })
+  renew(@Body() updateBookTransactionDto: RenewBookTransactionDto) {
+    return this.bookTransactionsService.renewBookTransaction(updateBookTransactionDto.transactionIds, updateBookTransactionDto.dueDate);
   }
 
   @Delete(':id')
