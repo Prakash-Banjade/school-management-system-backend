@@ -42,12 +42,14 @@ export class LibraryBookService {
       .orderBy("libraryBook.createdAt", queryDto.order)
       .leftJoin("libraryBook.category", "category")
       .where(new Brackets(qb => {
-        queryDto.search && qb.andWhere(new Brackets(qb => {
-          qb.orWhere("LOWER(libraryBook.bookName) LIKE LOWER(:search)", { search: `%${queryDto.search}%` });
-          qb.orWhere("libraryBook.bookCode = :search", { search: queryDto.search });
-        }))
+        if (queryDto.search) {
+          qb.andWhere(new Brackets(qb => {
+            qb.orWhere("libraryBook.bookCode = :search", { search: queryDto.search });
+            qb.orWhere("LOWER(libraryBook.bookName) LIKE LOWER(:search)", { search: `%${queryDto.search}%` });
+          }))
+        }
 
-        queryDto.categories && qb.andWhere("category.name IN (:...categories)", { categories: queryDto.categories });
+        queryDto.categories?.length && qb.andWhere("category.name IN (:...categories)", { categories: queryDto.categories });
       }))
 
     applySelectColumns(queryBuilder, libraryBookRequestSelectCols, 'libraryBook');
