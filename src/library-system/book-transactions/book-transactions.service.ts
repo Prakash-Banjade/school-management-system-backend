@@ -58,8 +58,8 @@ export class BookTransactionsService extends BaseRepository {
 
     queryBuilder
       .orderBy("transaction.updatedAt", queryDto.order)
-      .skip(queryDto.skip)
-      .take(queryDto.take)
+      .limit(queryDto.take) // need to use limit and offset instead of skip and take while using getRawMany
+      .offset(queryDto.skip)
       .leftJoin("transaction.student", "student")
       .leftJoin("transaction.book", "book")
       .leftJoin("student.classRoom", "classRoom")
@@ -79,7 +79,7 @@ export class BookTransactionsService extends BaseRepository {
           } else if (queryDto.status === EBookTransactionStatus.Returned) {
             qb.andWhere("transaction.returnedAt IS NOT NULL")
           } else if (queryDto.status === EBookTransactionStatus.Overdue) {
-            qb.andWhere("DATE(transaction.dueDate) < DATE(:today)", { today: new Date().setDate(new Date().getDate() + 1) }) // look for next day, today is not due date
+            qb.andWhere("DATE(transaction.dueDate) < DATE(:today)", { today: new Date().toISOString() }) // look for next day, today is not due date
           }
         }
       }))
@@ -104,6 +104,10 @@ export class BookTransactionsService extends BaseRepository {
     return new PageDto(data, pageMetaDto);
   }
 
+  /**
+   * Returns all the book transactions for a given student.
+   * Accounts only for issued and returned transactions.
+   */
   async findAllByStudent(queryDto: BookTransactionByStudentQueryDto) {
     const queryBuilder = this.getRepository(BookTransaction).createQueryBuilder('transaction')
       .orderBy("transaction.createdAt", queryDto.order)
@@ -114,8 +118,8 @@ export class BookTransactionsService extends BaseRepository {
       .where(new Brackets(qb => {
         qb.andWhere("student.studentId = :studentId", { studentId: queryDto.studentId })
         queryDto.status === EBookTransactionStatus.Issued
-          ? qb.andWhere("transaction.returnedAt IS NULL")
-          : qb.andWhere("transaction.returnedAt IS NOT NULL")
+          ? qb.andWhere("transaction.returnedAt IS NULL") // issued
+          : qb.andWhere("transaction.returnedAt IS NOT NULL") // returned
       }))
       .select([
         "transaction.id AS id",
