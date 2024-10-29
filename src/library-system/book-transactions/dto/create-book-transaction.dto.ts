@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsDateString, IsNotEmpty, IsString, IsUUID } from "class-validator";
+import { IsFutureDate } from "src/common/decorators/isFutureDate.decorator";
 
 export class CreateBookTransactionDto {
     @ApiProperty({ format: 'uuid' })
@@ -13,5 +14,6 @@ export class CreateBookTransactionDto {
 
     @ApiProperty({ format: 'date-time' })
     @IsDateString()
+    @IsFutureDate({ message: 'The due date must be in the future.' })
     dueDate: string;
 }
