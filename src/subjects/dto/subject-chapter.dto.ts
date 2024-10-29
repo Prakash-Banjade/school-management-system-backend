@@ -1,13 +1,9 @@
 import { ApiProperty, ApiPropertyOptional, OmitType, PartialType } from "@nestjs/swagger";
-import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID } from "class-validator";
+import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID } from "class-validator";
+import { QueryDto } from "src/common/dto/query.dto";
 import { ESubjectChapterPriority } from "src/common/types/global.type";
 
 export class CreateSubjectChapterDto {
-    @ApiProperty({ type: Number, description: 'Chapter number' })
-    @IsNotEmpty()
-    @IsInt()
-    chapterNo: number;
-
     @ApiProperty({ type: String, description: 'Chapter title' })
     @IsString()
     @IsNotEmpty()
@@ -30,3 +26,10 @@ export class CreateSubjectChapterDto {
 }
 
 export class UpdateSubjectChapterDto extends PartialType(OmitType(CreateSubjectChapterDto, ['subjectId'])) { }
+
+export class SubjectChapterQueryDto extends QueryDto {
+    @ApiPropertyOptional({ type: String, description: 'Subject id' })
+    @IsOptional()
+    @IsUUID()
+    subjectId: string;
+}

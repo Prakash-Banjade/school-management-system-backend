@@ -2,11 +2,13 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, Repository } from 'typeorm';
 import { SubjectChapter } from './entities/subject-chapter.entity';
-import { CreateSubjectChapterDto, UpdateSubjectChapterDto } from './dto/subject-chapter.dto';
+import { CreateSubjectChapterDto, SubjectChapterQueryDto, UpdateSubjectChapterDto } from './dto/subject-chapter.dto';
 import { SubjectsService } from './subjects.service';
 import { QueryDto } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
 import { AuthUser } from 'src/common/types/global.type';
+import { applySelectColumns } from 'src/utils/apply-select-cols';
+import { subjectChapterSelectCols } from './helpers/subject-chapter-select-colst';
 
 @Injectable()
 export class SubjectChaptersService {
@@ -28,7 +30,7 @@ export class SubjectChaptersService {
 
     }
 
-    async findAll(queryDto: QueryDto) {
+    async findAll(queryDto: SubjectChapterQueryDto) {
         const queryBuilder = this.subjectChaptersRepo.createQueryBuilder('subjectChapter');
 
         queryBuilder
@@ -39,9 +41,10 @@ export class SubjectChaptersService {
             .leftJoinAndSelect('subjectChapter.subject', 'subject')
             .andWhere(new Brackets(qb => {
                 queryDto.search && qb.andWhere("LOWER(subjectChapter.title) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+                queryDto.subjectId && qb.andWhere('subject.id = :subjectId', { subjectId: queryDto.subjectId })
             }))
 
-        // TODO: add select cols
+        applySelectColumns(queryBuilder, subjectChapterSelectCols, 'subjectChapter');
 
         return paginatedData(queryDto, queryBuilder);
     }
@@ -49,12 +52,6 @@ export class SubjectChaptersService {
     async findOne(id: string) {
         const existing = await this.subjectChaptersRepo.findOne({
             where: { id },
-            relations: {
-                subject: {
-                    classRoom: true,
-                    teacher: true
-                },
-            }
         })
         if (!existing) throw new NotFoundException(`SubjectChapter with id ${id} not found`);
 
@@ -79,7 +76,7 @@ export class SubjectChaptersService {
 
     private subjectChapterMutationReturn = (subjectChapter: SubjectChapter, type: 'created' | 'updated' | 'deleted') => {
         return {
-            message: type === 'created' ? 'SubjectChapter created successfully' : 'SubjectChapter updated successfully',
+            message: type === 'created' ? 'Chapter created' : type === 'deleted' ? 'Chapter deleted' : 'Chapter updated',
             subjectChapter: {
                 id: subjectChapter.id,
                 title: subjectChapter.title,

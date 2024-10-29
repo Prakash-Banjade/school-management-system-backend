@@ -1,8 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { CreateSubjectChapterDto, UpdateSubjectChapterDto } from './dto/subject-chapter.dto';
+import { CreateSubjectChapterDto, SubjectChapterQueryDto, UpdateSubjectChapterDto } from './dto/subject-chapter.dto';
 import { SubjectChaptersService } from './subject-chapters.service';
-import { QueryDto } from 'src/common/dto/query.dto';
 import { ApiPaginatedResponse } from 'src/common/decorators/apiPaginatedResponse.decorator';
 import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, AuthUser } from 'src/common/types/global.type';
@@ -22,11 +21,13 @@ export class SubjectChaptersController {
 
     @Get()
     @ApiPaginatedResponse(CreateSubjectChapterDto)
-    findAll(@Query() queryDto: QueryDto) {
+    @ChekcAbilities({ subject: 'all', action: Action.READ })
+    findAll(@Query() queryDto: SubjectChapterQueryDto) {
         return this.subjectChaptersService.findAll(queryDto);
     }
 
     @Get(':id')
+    @ChekcAbilities({ subject: 'all', action: Action.READ })
     findOne(@Param('id') id: string) {
         return this.subjectChaptersService.findOne(id);
     }
