@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { BookTransaction } from './entities/book-transaction.entity';
-import { Brackets, DataSource, IsNull } from 'typeorm';
+import { Brackets, DataSource, In, IsNull } from 'typeorm';
 import { LibraryBookService } from '../library-book/library-book.service';
 import { CreateBookTransactionDto } from './dto/create-book-transaction.dto';
 import { REQUEST } from '@nestjs/core';
@@ -11,6 +11,7 @@ import { PageDto } from 'src/common/dto/page.dto.';
 import { BookTransactionByStudentQueryDto, BookTransactionsQueryDto } from './dto/book-transactions-query.dto';
 import { EBookTransactionStatus } from 'src/common/types/global.type';
 import { StudentsService } from 'src/students/students.service';
+import { LibraryBook } from '../library-book/entities/library-book.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class BookTransactionsService extends BaseRepository {
@@ -80,7 +81,7 @@ export class BookTransactionsService extends BaseRepository {
           } else if (queryDto.status === EBookTransactionStatus.Returned) {
             qb.andWhere("transaction.returnedAt IS NOT NULL")
           } else if (queryDto.status === EBookTransactionStatus.Overdue) {
-            qb.andWhere("DATE(transaction.dueDate) < DATE(:today)", { today: new Date().toISOString() }) // look for next day, today is not due date
+            qb.andWhere("DATE(transaction.dueDate) < DATE(:today) AND transaction.returnedAt IS NULL", { today: new Date().toISOString() }) // look for next day, today is not due date
           }
         }
       }))
@@ -170,6 +171,19 @@ export class BookTransactionsService extends BaseRepository {
     if (updatedTransactions.affected === 0) {
       throw new NotFoundException('Book transaction not found');
     }
+
+    // decrement issued count in books
+    const bookTransactions = await this.getRepository(BookTransaction).find({
+      where: { id: In(ids) },
+      relations: { book: true }
+    });
+
+    const updatedBooks = bookTransactions.map(bookTransaction => {
+      bookTransaction.book.issuedCount -= 1;
+      return bookTransaction.book;
+    })
+    await this.getRepository(LibraryBook).save(updatedBooks);
+    
     return this.bookTransactionMutationReturn('returned');
   }
 
