@@ -15,7 +15,6 @@ import { Attendance } from 'src/attendances/entities/attendance.entity';
   imports: [
     TypeOrmModule.forFeature([
       Student,
-      Attendance
     ]),
     ClassRoomsModule,
     ImagesModule,

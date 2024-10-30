@@ -6,15 +6,13 @@ import { DataSource } from 'typeorm';
 import { StudentQueryDto } from './dto/student-query.dto';
 import { ClassRoomsService } from 'src/class-rooms/class-rooms.service';
 import { REQUEST } from '@nestjs/core';
-import { singleStudentColumnsConfig, studentsColumnsConfig } from './helpers/studentsColumnsConfig';
+import { singleStudentColumnsConfig } from './helpers/studentsColumnsConfig';
 import { DormitoryRoomsService } from 'src/dormitory-system/dormitory-rooms/dormitory-rooms.service';
 import { EnrollmentsService } from 'src/enrollments/enrollments.service';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { ImagesService } from 'src/file-management/images/images.service';
 import { AccountsService } from 'src/auth-system/accounts/accounts.service';
 import { FastifyRequest } from 'fastify';
-import { applySelectColumns } from 'src/utils/apply-select-cols';
-import paginatedData from 'src/utils/paginatedData';
 import { StudentsHelper } from './helpers/students.helper';
 import { EClassType } from 'src/common/types/global.type';
 import { StudentAttendanceQueryDto } from './dto/student-attendance-query.dto';
@@ -81,11 +79,7 @@ export class StudentsService extends BaseRepository {
   }
 
   async findAll(queryDto: StudentQueryDto) {
-    const queryBuilder = this.studentsHelper.setQuery(queryDto);
-
-    applySelectColumns(queryBuilder, studentsColumnsConfig, 'student');
-
-    return paginatedData(queryDto, queryBuilder);
+    return this.studentsHelper.setQuery(queryDto);
   }
 
   async findOne(id: string) {

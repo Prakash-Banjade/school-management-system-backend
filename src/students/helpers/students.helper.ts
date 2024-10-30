@@ -7,18 +7,20 @@ import { UpdateStudentDto } from "../dto/update-student.dto";
 import { InjectRepository } from "@nestjs/typeorm";
 import { StudentAttendanceQueryDto } from "../dto/student-attendance-query.dto";
 import { Attendance } from "src/attendances/entities/attendance.entity";
+import { PageMetaDto } from "src/common/dto/pageMeta.dto";
+import { PageDto } from "src/common/dto/page.dto.";
 
 @Injectable()
 export class StudentsHelper {
     constructor(
         @InjectRepository(Student) private readonly studentRepo: Repository<Student>,
-        @InjectRepository(Attendance) private readonly attendanceRepo: Repository<Attendance>,
     ) { }
 
-    setQuery(queryDto: StudentQueryDto): SelectQueryBuilder<Student> {
-        return this.studentRepo.createQueryBuilder('student')
-            .skip(queryDto.skip)
-            .take(queryDto.take)
+    async setQuery(queryDto: StudentQueryDto) {
+        const queryBuilder = this.studentRepo.createQueryBuilder('student')
+            .offset(queryDto.skip)
+            .limit(queryDto.take)
+            .addSelect("CONCAT(student.firstName, ' ', student.lastName) AS fullName")
             .orderBy(this.getOrderByKey(queryDto), queryDto.order)
             .leftJoin('student.classRoom', 'classRoom')
             .leftJoin('student.profileImage', 'profileImage')
@@ -45,12 +47,35 @@ export class StudentsHelper {
                 queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId }); // the sectionId send by the frontend is the class room id
             }))
             .andWhere('academicYear.isActive = :isActive', { isActive: true }) // filter by active academic year
+            .select([
+                "student.id as id",
+                "CONCAT(student.firstName, ' ', student.lastName) AS fullName",
+                "student.rollNo as rollNo",
+                "student.phone as phone",
+                "student.email as email",
+                "student.dob as dob",
+                "student.studentId as studentId",
+                "student.gender as gender",
+                "profileImage.url as profileImageUrl",
+                "classRoom.id as classRoomId",
+                "classRoom.name as classRoom",
+                "parent.id as parentClassId",
+                "parent.name as parentClass",
+                "account.id as accountId",
+            ])
+
+        const count = await queryBuilder.getCount();
+        const data = await queryBuilder.getRawMany();
+
+        const pageMetaDto = new PageMetaDto({ itemCount: count, pageOptionsDto: queryDto });
+
+        return new PageDto(data, pageMetaDto);
     }
 
     private getOrderByKey(queryDto: StudentQueryDto) {
         switch (queryDto.sortBy) {
             case StudentSortBy.NAME: {
-                return 'CONCAT(student.firstName, " ", student.lastName)'; // TODO: not sorted by name
+                return 'fullName';
             }
             case StudentSortBy.ROLL_NO: {
                 return 'student.rollNo';
@@ -99,62 +124,6 @@ export class StudentsHelper {
         }
     }
 
-    // async getStudentsWithAttendance(queryDto: StudentAttendanceQueryDto) {
-    //     const studentsQueryBuilder = this.studentRepo.createQueryBuilder('student')
-    //         .orderBy("student.rollNo", 'ASC')
-    //         .leftJoin('student.classRoom', 'classRoom')
-    //         .leftJoin('student.account', 'account')
-    //         .leftJoin('account.attendances', 'attendances')
-    //         .leftJoin('student.enrollments', 'enrollment')
-    //         .leftJoin('enrollment.academicYear', 'academicYear')
-    //         .leftJoin('account.user', 'user')
-    //         .leftJoin('classRoom.parent', 'parent')
-    //         .andWhere(new Brackets(qb => {
-    //             qb.andWhere(new Brackets(qb => {
-    //                 qb.orWhere('parent.id = :classRoomId', { classRoomId: queryDto.classRoomId });
-    //                 qb.orWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
-    //             }));
-
-    //             if (queryDto.sectionId) {
-    //                 qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId });
-    //             }
-    //         }))
-    //         .andWhere('academicYear.isActive = :isActive', { isActive: true }) // filter by active academic year
-
-    //     applySelectColumns(studentsQueryBuilder, studentAttendanceColumnsConfig, 'student');
-
-    //     const attendancesQueryBuilder = this.attendanceRepo.createQueryBuilder('attendance')
-    //         .leftJoin('attendance.account', 'account')
-    //         .leftJoin('account.student', 'student')
-    //         .leftJoin('student.classRoom', 'classRoom')
-    //         .leftJoin('classRoom.parent', 'parent')
-    //         .where(new Brackets(qb => {
-    //             qb.andWhere('DATE(attendance.date) = :date', { date: new Date(queryDto.date).toISOString().split('T')[0] });
-    //             qb.andWhere('account.role = :role', { role: Role.STUDENT });
-
-    //             qb.andWhere(new Brackets(qb => {
-    //                 qb.orWhere('parent.id = :classRoomId', { classRoomId: queryDto.classRoomId });
-    //                 qb.orWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
-    //             }));
-
-    //             if (queryDto.sectionId) {
-    //                 qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId });
-    //             }
-    //         }))
-
-    //     applySelectColumns(attendancesQueryBuilder, attendanceStudentColumnsConfig, 'attendance');
-
-    //     const [students, attendances] = await Promise.all([studentsQueryBuilder.getMany(), attendancesQueryBuilder.getMany()]);
-
-    //     // map students with their attendance
-    //     const studentsWithAttendance = students.map(student => {
-    //         const attendance = attendances.find(attendance => attendance.account?.id === student.account?.id);
-    //         return { ...student, attendance };
-    //     });
-
-    //     return studentsWithAttendance;
-
-    // }
     async getStudentsWithAttendance(queryDto: StudentAttendanceQueryDto) {
         const studentsWithAttendance = await this.studentRepo.createQueryBuilder('student')
             .leftJoin("student.account", "account")
