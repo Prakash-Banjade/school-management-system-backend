@@ -1,71 +1,115 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, DataSource } from 'typeorm';
 import { Task } from './entities/task.entity';
 import { SubjectsService } from 'src/subjects/subjects.service';
 import { AccountsService } from 'src/auth-system/accounts/accounts.service';
 import { ImagesService } from 'src/file-management/images/images.service';
-import { QueryDto } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
 import { AuthUser } from 'src/common/types/global.type';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { selectTaskCols } from './helpers/select-task-cols.config';
+import { BaseRepository } from 'src/common/repository/base-repository';
+import { REQUEST } from '@nestjs/core';
+import { FastifyRequest } from 'fastify';
+import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
+import { TaskQueryDto } from './dto/task-query.dto';
+import { PageMetaDto } from 'src/common/dto/pageMeta.dto';
+import { PageDto } from 'src/common/dto/page.dto.';
 
 @Injectable()
-export class TasksService {
+export class TasksService extends BaseRepository {
   constructor(
-    @InjectRepository(Task) private tasksRepo: Repository<Task>,
+    dataSource: DataSource,
+    @Inject(REQUEST) private req: FastifyRequest,
     private readonly accountsService: AccountsService,
     private readonly subjectsService: SubjectsService,
     private readonly imagesService: ImagesService,
-  ) { }
+  ) {
+    super(dataSource, req);
+  }
 
   async create(createTaskDto: CreateTaskDto, currentUser: AuthUser) {
     const account = await this.accountsService.findOne(currentUser.accountId);
     const subject = await this.subjectsService.findOne(createTaskDto.subjectId, currentUser);
+
     const attatchments = createTaskDto.attatchmentIds?.length
       ? await this.imagesService.findAllByIds(createTaskDto.attatchmentIds)
       : null;
 
-    const newTask = this.tasksRepo.create({
+    // validate if class room have the subject
+    const classRooms = await this.getRepository(ClassRoom).createQueryBuilder('classRoom')
+      .leftJoin('classRoom.subjects', 'subject')
+      .where('subject.id = :subjectId', { subjectId: createTaskDto.subjectId })
+      .getMany();
+
+    if (!classRooms.length) throw new BadRequestException('No class found or the subject is not in the class');
+
+    const newTask = this.getRepository(Task).create({
       ...createTaskDto,
       setBy: account,
       subject,
       attatchments,
+      classRooms,
     })
 
-    const savedTask = await this.tasksRepo.save(newTask);
+    const savedTask = await this.getRepository(Task).save(newTask);
     return this.taskMutationReturn(savedTask, 'created');
   }
 
-  async findAll(queryDto: QueryDto) {
-    const queryBuilder = this.tasksRepo.createQueryBuilder('task');
+  async findAll(queryDto: TaskQueryDto) {
+    const queryBuilder = this.getRepository(Task).createQueryBuilder('task');
 
     queryBuilder
       .orderBy("task.createdAt", queryDto.order)
-      .skip(queryDto.skip)
-      .take(queryDto.take)
-      .withDeleted()
-      .leftJoin('task.setBy', 'setBy')
+      .offset(queryDto.skip)
+      .limit(queryDto.take)
       .leftJoin('task.subject', 'subject')
       .leftJoin('task.attatchments', 'attatchments')
       .leftJoin('subject.classRoom', 'classRoom')
+      .leftJoin('classRoom.parent', 'parent')
       .andWhere(new Brackets(qb => {
-        queryDto.search && qb.andWhere("LOWER(task.title) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+        queryDto.search && qb.andWhere("LOWER(task.title) LIKE LOWER(:search)", { search: `%${queryDto.search}%` });
+
+        if (queryDto.classRoomId) {
+          qb.andWhere(new Brackets(qb => { // if class room id, check in both section and class
+            qb.orWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
+            qb.orWhere('parent.id = :classRoomId', { classRoomId: queryDto.classRoomId });
+          }))
+        }
+
+        queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId }); // section is the class room
+        queryDto.subjectId && qb.andWhere('subject.id = :subjectId', { subjectId: queryDto.subjectId });
+        queryDto.taskType && qb.andWhere('task.taskType = :taskType', { taskType: queryDto.taskType });
       }))
+      .select([
+        "task.id as id",
+        "task.title as title",
+        "task.submissionDate as submissionDate",
+        "task.taskType as taskType",
+        "task.marks as marks",
+        "task.createdAt as createdAt",
+        "subject.subjectName as subjectName",
+        "classRoom.id as classRoomId",
+        "classRoom.name as classRoomName",
+        "parent.id as parentClassId",
+        "parent.name as parentClassName",
+      ])
 
-    applySelectColumns(queryBuilder, selectTaskCols, 'task')
+    const itemCount = await queryBuilder.getCount();
+    const data = await queryBuilder.getRawMany();
 
-    return paginatedData(queryDto, queryBuilder);
+    const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto: queryDto });
+
+    return new PageDto(data, pageMetaDto);
   }
 
   async findOne(id: string) {
-    const existingTask = await this.tasksRepo.findOne({
+    const existingTask = await this.getRepository(Task).findOne({
       where: { id },
       relations: {
-        setBy: true,
+        // setBy: true,
         subject: true,
         attatchments: true
       }
@@ -82,13 +126,13 @@ export class TasksService {
 
     existingTask.attatchments = attatchments;
 
-    const updatedTask = this.tasksRepo.merge(existingTask, updateTaskDto);
-    return this.taskMutationReturn(await this.tasksRepo.save(updatedTask), 'updated');
+    const updatedTask = this.getRepository(Task).merge(existingTask, updateTaskDto);
+    return this.taskMutationReturn(await this.getRepository(Task).save(updatedTask), 'updated');
   }
 
   async remove(id: string) {
     const existing = await this.findOne(id);
-    const removedTask = await this.tasksRepo.remove(existing);
+    const removedTask = await this.getRepository(Task).remove(existing);
 
     return this.taskMutationReturn(removedTask, 'deleted');
   }

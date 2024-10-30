@@ -7,7 +7,8 @@ import { Exam } from "src/examination-system/exams/entities/exam.entity";
 import { FeesGroup } from "src/finance-system/fees-system/fees-groups/entities/fees-group.entity";
 import { Student } from "src/students/entities/student.entity";
 import { Subject } from "src/subjects/entities/subject.entity";
-import { BeforeInsert, BeforeUpdate, Column, Entity, OneToMany, Tree, TreeChildren, TreeParent } from "typeorm";
+import { Task } from "src/tasks/entities/task.entity";
+import { BeforeInsert, BeforeUpdate, Column, Entity, ManyToMany, OneToMany, Tree, TreeChildren, TreeParent } from "typeorm";
 
 @Entity()
 @Tree("closure-table", {
@@ -59,6 +60,9 @@ export class ClassRoom extends BaseEntity {
 
     @OneToMany(() => Subject, (subject) => subject.classRoom)
     subjects: Subject[]
+
+    @ManyToMany(() => Task, (task) => task.classRooms)
+    tasks: Task[]
 
     @OneToMany(() => FeesGroup, (feesGroup) => feesGroup.classRoom)
     feesGroups: FeesGroup[]

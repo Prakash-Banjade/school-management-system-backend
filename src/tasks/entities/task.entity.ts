@@ -1,9 +1,10 @@
 import { Account } from "src/auth-system/accounts/entities/account.entity";
+import { ClassRoom } from "src/class-rooms/entities/class-room.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { ETask } from "src/common/types/global.type";
 import { Image } from "src/file-management/images/entities/image.entity";
 import { Subject } from "src/subjects/entities/subject.entity";
-import { Column, Entity, ManyToOne, OneToMany } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany } from "typeorm";
 
 @Entity()
 export class Task extends BaseEntity {
@@ -14,7 +15,7 @@ export class Task extends BaseEntity {
     description: string;
 
     @Column({ type: 'datetime' })
-    submissionDate: string
+    submissionDate: string;
 
     @Column({ type: 'enum', enum: ETask })
     taskType: ETask;
@@ -22,9 +23,7 @@ export class Task extends BaseEntity {
     @Column({ type: 'int', nullable: true })
     marks: number;
 
-    // TODO: AVAILABLE FOR COLUMN: admin | student | all students
-
-    @OneToMany(() => Image, image => image.task_attatchments, { nullable: true, eager: true })
+    @OneToMany(() => Image, image => image.task_attatchments)
     attatchments: Image[];
 
     @ManyToOne(() => Account, account => account.tasks, { onDelete: 'SET NULL' })
@@ -33,4 +32,7 @@ export class Task extends BaseEntity {
     @ManyToOne(() => Subject, subject => subject.tasks, { onDelete: 'CASCADE' })
     subject: Subject;
 
+    @ManyToMany(() => ClassRoom, classRoom => classRoom.tasks, { onDelete: 'CASCADE' })
+    @JoinColumn()
+    classRooms: ClassRoom[];
 }

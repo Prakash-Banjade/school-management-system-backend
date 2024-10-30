@@ -1,5 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID } from "class-validator";
+import { IsFutureDate } from "src/common/decorators/isFutureDate.decorator";
+import { IsUuidOrUrl } from "src/common/decorators/isUrlOrUUid.decorator";
 import { ETask } from "src/common/types/global.type";
 
 export class CreateTaskDto {
@@ -15,7 +17,7 @@ export class CreateTaskDto {
 
     @ApiProperty({ type: String, format: 'date-time', description: 'Submission task date' })
     @IsDateString()
-    @IsNotEmpty()
+    @IsFutureDate()
     submissionDate: string;
 
     @ApiProperty({ type: Number, description: 'Task type' })
@@ -27,13 +29,18 @@ export class CreateTaskDto {
     @IsEnum(ETask)
     taskType: ETask;
 
-    @ApiPropertyOptional({ type: [String], format: 'uuid', description: 'Gallery id that contains the attatchments' })
-    @IsUUID("all", { each: true })
+    @ApiPropertyOptional({ type: [String], format: 'uuid', isArray: true, description: 'Attatchment ids or urls' })
+    @IsUuidOrUrl({ each: true })
     @IsOptional()
-    attatchmentIds: string[];
+    attatchmentIds?: string[];
 
     @ApiProperty({ type: String, format: 'uuid', description: 'Subject id' })
     @IsUUID()
     @IsNotEmpty()
     subjectId: string;
+
+    @ApiProperty({ type: String, format: 'uuid', description: 'ClassRoom ids' })
+    @IsUUID(4, { each: true })
+    @IsNotEmpty()
+    classRoomIds: string[];
 }

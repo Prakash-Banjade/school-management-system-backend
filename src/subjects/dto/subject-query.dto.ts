@@ -13,3 +13,10 @@ export class SubjectQueryDto extends QueryDto {
     @IsOptional()
     classRoomId: string;
 }
+
+export class SubjectOptionsQueryDto {
+
+    @ApiPropertyOptional({ type: String, format: 'uuid' })
+    @IsUUID()
+    classRoomId: string;
+}

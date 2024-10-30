@@ -15,10 +15,10 @@ export const selectTaskCols: FindOptionsSelect<Task> = {
         url: true,
         mimeType: true,
     },
-    setBy: {
-        firstName: true,
-        lastName: true,
-    },
+    // setBy: {
+    //     firstName: true,
+    //     lastName: true,
+    // },
     subject: {
         id: true,
         subjectName: true,

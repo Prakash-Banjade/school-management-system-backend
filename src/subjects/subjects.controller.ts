@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestj
 import { SubjectsService } from './subjects.service';
 import { CreateSubjectDto } from './dto/create-subject.dto';
 import { UpdateSubjectDto } from './dto/update-subject.dto';
-import { SubjectQueryDto } from './dto/subject-query.dto';
+import { SubjectOptionsQueryDto, SubjectQueryDto } from './dto/subject-query.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ApiPaginatedResponse } from 'src/common/decorators/apiPaginatedResponse.decorator';
 import { Action, AuthUser } from 'src/common/types/global.type';
@@ -26,6 +26,12 @@ export class SubjectsController {
   @ApiPaginatedResponse(SubjectQueryDto)
   findAll(@Query() queryDto: SubjectQueryDto, @CurrentUser() currentUser: AuthUser) {
     return this.subjectsService.findAll(queryDto, currentUser);
+  }
+
+  @Get('options')
+  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  getOptions(@Query() queryDto: SubjectOptionsQueryDto) {
+    return this.subjectsService.getOptions(queryDto);
   }
 
   @Get(':id')

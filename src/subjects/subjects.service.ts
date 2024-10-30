@@ -4,7 +4,7 @@ import { UpdateSubjectDto } from './dto/update-subject.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Subject } from './entities/subject.entity';
 import { Brackets, Repository } from 'typeorm';
-import { SubjectQueryDto } from './dto/subject-query.dto';
+import { SubjectOptionsQueryDto, SubjectQueryDto } from './dto/subject-query.dto';
 import { ClassRoomsService } from 'src/class-rooms/class-rooms.service';
 import { TeachersService } from 'src/teachers/teachers.service';
 import paginatedData from 'src/utils/paginatedData';
@@ -64,6 +64,14 @@ export class SubjectsService {
     applySelectColumns(queryBuilder, subjectSelectCols, 'subject');
 
     return paginatedData(queryDto, queryBuilder);
+  }
+
+  async getOptions(queryDto: SubjectOptionsQueryDto) {
+    return this.subjectsRepo.createQueryBuilder('subject')
+      .orderBy("subject.createdAt", 'DESC')
+      .where('subject.classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId })
+      .select(["subject.id", "subject.subjectName"])
+      .getMany();
   }
 
   async findOne(id: string, currentUser?: AuthUser) {

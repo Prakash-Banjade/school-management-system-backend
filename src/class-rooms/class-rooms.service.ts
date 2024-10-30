@@ -2,7 +2,7 @@ import { ConflictException, Inject, Injectable, NotFoundException, Scope } from 
 import { CreateClassRoomDto } from './dto/create-class-room.dto';
 import { UpdateClassRoomDto } from './dto/update-class-room.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, DataSource, Raw, Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { ClassRoom } from './entities/class-room.entity';
 import { REQUEST } from '@nestjs/core';
 import { ClassRoomQueryDto } from './dto/classRoom-query.dto';
