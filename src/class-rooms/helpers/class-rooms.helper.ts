@@ -45,7 +45,6 @@ export class ClassRoomsHelper {
     }
 
     setSectionsQuery(queryDto: ClassRoomQueryDto) {
-        console.log(queryDto.parentClassId)
         return this.classRoomRepo.createQueryBuilder('classRoom')
             .orderBy("classRoom.createdAt", queryDto.order)
             .skip(queryDto.skipPagination ? undefined : queryDto.skip)
