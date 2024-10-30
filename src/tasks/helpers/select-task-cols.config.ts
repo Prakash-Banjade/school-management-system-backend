@@ -13,14 +13,17 @@ export const selectTaskCols: FindOptionsSelect<Task> = {
     attatchments: {
         id: true,
         url: true,
-        mimeType: true,
     },
-    // setBy: {
-    //     firstName: true,
-    //     lastName: true,
-    // },
     subject: {
         id: true,
         subjectName: true,
+    },
+    classRooms: {
+        id: true,
+        name: true,
+        parent: {
+            id: true,
+            name: true,
+        }
     }
 }

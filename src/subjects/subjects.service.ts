@@ -1,34 +1,43 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateSubjectDto } from './dto/create-subject.dto';
 import { UpdateSubjectDto } from './dto/update-subject.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Subject } from './entities/subject.entity';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, DataSource, Repository } from 'typeorm';
 import { SubjectOptionsQueryDto, SubjectQueryDto } from './dto/subject-query.dto';
 import { ClassRoomsService } from 'src/class-rooms/class-rooms.service';
 import { TeachersService } from 'src/teachers/teachers.service';
 import paginatedData from 'src/utils/paginatedData';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { singleSubjectSelelctCols, subjectSelectCols } from './helpers/subject-select-cols.config';
-import { AuthUser, Role } from 'src/common/types/global.type';
+import { AuthUser, EClassType, Role } from 'src/common/types/global.type';
 import { isStudent } from 'src/utils/isStudent';
+import { BaseRepository } from 'src/common/repository/base-repository';
+import { FastifyRequest } from 'fastify';
+import { REQUEST } from '@nestjs/core';
+import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 
 @Injectable()
-export class SubjectsService {
+export class SubjectsService extends BaseRepository {
   constructor(
+    dataSource: DataSource,
+    @Inject(REQUEST) private req: FastifyRequest,
     @InjectRepository(Subject) private readonly subjectsRepo: Repository<Subject>,
     private readonly classRoomsService: ClassRoomsService,
     private readonly teachersService: TeachersService,
-  ) { }
+  ) { super(dataSource, req); }
 
   async create(createSubjectDto: CreateSubjectDto) {
     const teacher = createSubjectDto.teacherId
       ? await this.teachersService.findOne(createSubjectDto.teacherId)
       : null;
 
-    const classRoom = createSubjectDto.classRoomId
-      ? await this.classRoomsService.findOne(createSubjectDto.classRoomId)
-      : null;
+    const classRoom = createSubjectDto.classRoomId ? await this.getRepository(ClassRoom).createQueryBuilder('classRoom')
+      .where('classRoom.id = :classRoomId', { classRoomId: createSubjectDto.classRoomId })
+      .select(['classRoom.id', 'classRoom.classType'])
+      .getOne() : null;
+
+    if (classRoom && classRoom.classType !== EClassType.PRIMARY) throw new BadRequestException('Cannot assign subject to section class.');
 
     const newSubject = this.subjectsRepo.create({
       ...createSubjectDto,
@@ -65,7 +74,6 @@ export class SubjectsService {
 
     return paginatedData(queryDto, queryBuilder);
   }
-
   async getOptions(queryDto: SubjectOptionsQueryDto) {
     return this.subjectsRepo.createQueryBuilder('subject')
       .orderBy("subject.createdAt", 'DESC')
@@ -98,11 +106,11 @@ export class SubjectsService {
 
     const classRoom = updateSubjectDto.classRoomId
       ? await this.classRoomsService.findOne(updateSubjectDto.classRoomId)
-      : null;
+      : existing.classRoom;
 
     const teacher = updateSubjectDto.teacherId
       ? await this.teachersService.findOne(updateSubjectDto.teacherId)
-      : null;
+      : existing.teacher;
 
     Object.assign(existing, updateSubjectDto);
     existing.classRoom = classRoom;

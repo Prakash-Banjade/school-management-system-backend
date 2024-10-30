@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID } from "class-validator";
+import { ArrayMinSize, IsArray, IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID } from "class-validator";
 import { IsFutureDate } from "src/common/decorators/isFutureDate.decorator";
 import { IsUuidOrUrl } from "src/common/decorators/isUrlOrUUid.decorator";
 import { ETask } from "src/common/types/global.type";
@@ -41,6 +41,7 @@ export class CreateTaskDto {
 
     @ApiProperty({ type: String, format: 'uuid', description: 'ClassRoom ids' })
     @IsUUID(4, { each: true })
-    @IsNotEmpty()
+    @IsArray()
+    @ArrayMinSize(1)
     classRoomIds: string[];
 }

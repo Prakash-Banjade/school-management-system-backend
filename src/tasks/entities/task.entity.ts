@@ -4,7 +4,7 @@ import { BaseEntity } from "src/common/entities/base.entity";
 import { ETask } from "src/common/types/global.type";
 import { Image } from "src/file-management/images/entities/image.entity";
 import { Subject } from "src/subjects/entities/subject.entity";
-import { Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany } from "typeorm";
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany } from "typeorm";
 
 @Entity()
 export class Task extends BaseEntity {
@@ -33,6 +33,6 @@ export class Task extends BaseEntity {
     subject: Subject;
 
     @ManyToMany(() => ClassRoom, classRoom => classRoom.tasks, { onDelete: 'CASCADE' })
-    @JoinColumn()
+    @JoinTable()
     classRooms: ClassRoom[];
 }

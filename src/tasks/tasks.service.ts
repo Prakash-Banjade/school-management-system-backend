@@ -32,26 +32,35 @@ export class TasksService extends BaseRepository {
 
   async create(createTaskDto: CreateTaskDto, currentUser: AuthUser) {
     const account = await this.accountsService.findOne(currentUser.accountId);
-    const subject = await this.subjectsService.findOne(createTaskDto.subjectId, currentUser);
 
     const attatchments = createTaskDto.attatchmentIds?.length
       ? await this.imagesService.findAllByIds(createTaskDto.attatchmentIds)
       : null;
 
     // validate if class room have the subject
-    const classRooms = await this.getRepository(ClassRoom).createQueryBuilder('classRoom')
+    const classRoomWithSubject = await this.getRepository(ClassRoom).createQueryBuilder('classRoom')
       .leftJoin('classRoom.subjects', 'subject')
+      .leftJoin('classRoom.children', 'children')
       .where('subject.id = :subjectId', { subjectId: createTaskDto.subjectId })
-      .getMany();
+      .select(['classRoom.id', 'subject.id', 'children.id'])
+      .getOne();
 
-    if (!classRooms.length) throw new BadRequestException('No class found or the subject is not in the class');
+    if (!classRoomWithSubject) throw new NotFoundException('No class found or the subject is not in the class')
+
+    const classRoomsTheTaskFor = createTaskDto.classRoomIds?.length > 1 // if length is greater than one, then class room must be of type section, so we need to get children
+      ? classRoomWithSubject.children?.filter(classRoom => createTaskDto.classRoomIds.includes(classRoom.id)) // getting only those childrens which has a match in classRoomIds
+      : classRoomWithSubject.id === createTaskDto.classRoomIds[0] // check if the classRoomIds[0](can be primary class) is equal to the classRoomWithSubject
+        ? [classRoomWithSubject]
+        : [classRoomWithSubject.children?.find(classRoom => classRoom.id === createTaskDto.classRoomIds[0])].filter(Boolean); // At this stage, it is guaranteed that the classRoomIds[0] is a child of the classRoomWithSubject;
+
+    if (!classRoomsTheTaskFor?.length) throw new NotFoundException('Class room not found with subject');
 
     const newTask = this.getRepository(Task).create({
       ...createTaskDto,
       setBy: account,
-      subject,
+      subject: classRoomWithSubject.subjects[0],
       attatchments,
-      classRooms,
+      classRooms: classRoomsTheTaskFor,
     })
 
     const savedTask = await this.getRepository(Task).save(newTask);
@@ -66,9 +75,9 @@ export class TasksService extends BaseRepository {
       .offset(queryDto.skip)
       .limit(queryDto.take)
       .leftJoin('task.subject', 'subject')
-      .leftJoin('task.attatchments', 'attatchments')
-      .leftJoin('subject.classRoom', 'classRoom')
+      .leftJoin('task.classRooms', 'classRoom')
       .leftJoin('classRoom.parent', 'parent')
+      .leftJoin('task.attatchments', 'attatchments')
       .andWhere(new Brackets(qb => {
         queryDto.search && qb.andWhere("LOWER(task.title) LIKE LOWER(:search)", { search: `%${queryDto.search}%` });
 
@@ -91,11 +100,11 @@ export class TasksService extends BaseRepository {
         "task.marks as marks",
         "task.createdAt as createdAt",
         "subject.subjectName as subjectName",
-        "classRoom.id as classRoomId",
-        "classRoom.name as classRoomName",
-        "parent.id as parentClassId",
-        "parent.name as parentClassName",
+        "JSON_ARRAYAGG(JSON_OBJECT('id', classRoom.id, 'name', classRoom.name)) as classRooms", // Aggregate classrooms as JSON
+        "MAX(parent.id) as parentClassId",  // Aggregate non-grouped fields with MAX
+        "MAX(parent.name) as parentClassName",
       ])
+      .groupBy("task.id");
 
     const itemCount = await queryBuilder.getCount();
     const data = await queryBuilder.getRawMany();
@@ -109,10 +118,13 @@ export class TasksService extends BaseRepository {
     const existingTask = await this.getRepository(Task).findOne({
       where: { id },
       relations: {
-        // setBy: true,
         subject: true,
-        attatchments: true
-      }
+        attatchments: true,
+        classRooms: {
+          parent: true
+        }
+      },
+      select: selectTaskCols,
     });
     if (!existingTask) throw new NotFoundException(`Task with id ${id} not found`);
     return existingTask;
@@ -123,6 +135,8 @@ export class TasksService extends BaseRepository {
     const attatchments = updateTaskDto.attatchmentIds?.length ?
       await this.imagesService.findAllByIds(updateTaskDto.attatchmentIds)
       : existingTask.attatchments;
+
+    // TODO: UPDATE CLASS AND SUBJECT
 
     existingTask.attatchments = attatchments;
 
@@ -142,8 +156,6 @@ export class TasksService extends BaseRepository {
       message: type === 'created' ? 'Task created successfully' : 'Task updated successfully',
       task: {
         id: task.id,
-        title: task.title,
-        description: task.description
       }
     }
   }
