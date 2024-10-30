@@ -14,6 +14,7 @@ export class NoticesController {
   constructor(private readonly noticesService: NoticesService) { }
 
   @Post()
+  @ChekcAbilities({ action: Action.CREATE, subject: 'all' })
   create(@Body() createNoticeDto: CreateNoticeDto) {
     return this.noticesService.create(createNoticeDto);
   }
@@ -29,6 +30,7 @@ export class NoticesController {
   }
 
   @Patch(':id')
+  @ChekcAbilities({ action: Action.UPDATE, subject: 'all' })
   update(@Param('id') id: string, @Body() updateNoticeDto: UpdateNoticeDto) {
     return this.noticesService.update(id, updateNoticeDto);
   }

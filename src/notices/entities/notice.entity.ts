@@ -3,9 +3,6 @@ import { Column, Entity } from "typeorm";
 
 @Entity()
 export class Notice extends BaseEntity {
-    @Column({ type: 'datetime' })
-    date: string;
-
     @Column({ type: "text" })
     title: string;
 
