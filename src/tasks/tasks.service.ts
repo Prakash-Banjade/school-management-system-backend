@@ -1,13 +1,13 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { Brackets, DataSource } from 'typeorm';
+import { Brackets, DataSource, In } from 'typeorm';
 import { Task } from './entities/task.entity';
 import { SubjectsService } from 'src/subjects/subjects.service';
 import { AccountsService } from 'src/auth-system/accounts/accounts.service';
 import { ImagesService } from 'src/file-management/images/images.service';
 import paginatedData from 'src/utils/paginatedData';
-import { AuthUser } from 'src/common/types/global.type';
+import { AuthUser, EClassType } from 'src/common/types/global.type';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { selectTaskCols } from './helpers/select-task-cols.config';
 import { BaseRepository } from 'src/common/repository/base-repository';
@@ -136,9 +136,32 @@ export class TasksService extends BaseRepository {
       await this.imagesService.findAllByIds(updateTaskDto.attatchmentIds)
       : existingTask.attatchments;
 
-    // TODO: UPDATE CLASS AND SUBJECT
+    // validate subject
+    const subject = updateTaskDto.subjectId
+      ? await this.subjectsService.findOne(updateTaskDto.subjectId)
+      : existingTask.subject;
+
+    // validate class room
+    const classRooms = updateTaskDto.classRoomIds?.length
+      ? await this.getRepository(ClassRoom).find({
+        where: {
+          id: In(updateTaskDto.classRoomIds)
+        },
+        relations: ['parent']
+      })
+      : existingTask.classRooms;
+
+    // validate if class room have the subject
+    if (!classRooms?.length) throw new BadRequestException('No class room found with the given ids');
+
+    if (classRooms[0].classType === EClassType.SECTION) {
+      const parentClassId = classRooms[0].parent?.id;
+      if (parentClassId !== subject.classRoom?.id) throw new BadRequestException('Subject doesn\'t belong to the class room');
+    } else if (subject.classRoom?.id !== classRooms[0].id) throw new BadRequestException('Subject doesn\'t belong to the class room');
 
     existingTask.attatchments = attatchments;
+    existingTask.subject = subject;
+    existingTask.classRooms = classRooms;
 
     const updatedTask = this.getRepository(Task).merge(existingTask, updateTaskDto);
     return this.taskMutationReturn(await this.getRepository(Task).save(updatedTask), 'updated');
