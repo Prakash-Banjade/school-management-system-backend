@@ -9,6 +9,7 @@ import { Image } from "src/file-management/images/entities/image.entity";
 import { FeesInvoice } from "src/finance-system/fees-system/fees-invoices/entities/fees-invoice.entity";
 import { Guardian } from "src/guardians/entities/guardian.entity";
 import { BookTransaction } from "src/library-system/book-transactions/entities/book-transaction.entity";
+import { TaskSubmission } from "src/task-system/task-submissions/entities/task-submission.entity";
 import { TransportRoute } from "src/transportation-system/transport-routes/entities/transport-route.entity";
 import { generateTeacherId } from "src/utils/generate-teacher-id";
 import { BeforeInsert, Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, OneToOne } from "typeorm";
@@ -44,6 +45,9 @@ export class Student extends BaseEntity {
 
     @OneToMany(() => BookTransaction, (bookTransaction) => bookTransaction.student)
     bookTransactions: BookTransaction[]
+
+    @OneToMany(() => TaskSubmission, (taskSubmission) => taskSubmission.student)
+    taskSubmissions: TaskSubmission[]
 
     /**
     |--------------------------------------------------

@@ -1,5 +1,7 @@
 import { BaseEntity } from "src/common/entities/base.entity";
-import { Column, Entity } from "typeorm";
+import { TaskSubmission } from "src/task-system/task-submissions/entities/task-submission.entity";
+import { Task } from "src/task-system/tasks/entities/task.entity";
+import { Column, Entity, ManyToOne } from "typeorm";
 
 @Entity()
 export class File extends BaseEntity {
@@ -20,4 +22,17 @@ export class File extends BaseEntity {
 
     @Column({ type: 'varchar', default: '' })
     name!: string
+
+    /**
+    |--------------------------------------------------
+    | RELATIONS
+    |--------------------------------------------------
+    */
+
+
+    @ManyToOne(() => Task, task => task.attatchments, { onDelete: 'CASCADE' })
+    task_attatchment: Task;
+
+    @ManyToOne(() => TaskSubmission, taskSubmission => taskSubmission.attatchments, { onDelete: 'CASCADE' })
+    task_submission_attatchment: TaskSubmission;
 }

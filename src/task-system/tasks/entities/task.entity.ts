@@ -2,8 +2,10 @@ import { Account } from "src/auth-system/accounts/entities/account.entity";
 import { ClassRoom } from "src/class-rooms/entities/class-room.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { ETask } from "src/common/types/global.type";
+import { File } from "src/file-management/files/entities/file.entity";
 import { Image } from "src/file-management/images/entities/image.entity";
 import { Subject } from "src/subjects/entities/subject.entity";
+import { TaskSubmission } from "src/task-system/task-submissions/entities/task-submission.entity";
 import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany } from "typeorm";
 
 @Entity()
@@ -23,8 +25,8 @@ export class Task extends BaseEntity {
     @Column({ type: 'int', nullable: true })
     marks: number;
 
-    @OneToMany(() => Image, image => image.task_attatchments)
-    attatchments: Image[];
+    @OneToMany(() => File, file => file.task_attatchment)
+    attatchments: File[];
 
     @ManyToOne(() => Account, account => account.tasks, { onDelete: 'SET NULL' })
     setBy: Account;
@@ -35,4 +37,7 @@ export class Task extends BaseEntity {
     @ManyToMany(() => ClassRoom, classRoom => classRoom.tasks, { onDelete: 'CASCADE' })
     @JoinTable()
     classRooms: ClassRoom[];
+
+    @OneToMany(() => TaskSubmission, taskSubmission => taskSubmission.task)
+    submissions: TaskSubmission[];
 }

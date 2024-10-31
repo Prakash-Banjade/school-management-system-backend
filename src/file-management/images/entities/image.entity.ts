@@ -58,11 +58,6 @@ export class Image extends BaseEntity {
     @JoinColumn()
     teacher_profileImage: Teacher;
 
-    // task
-    @OneToOne(() => Task, task => task.attatchments, { onDelete: 'CASCADE', nullable: true })
-    @JoinColumn()
-    task_attatchments: Task;
-
     // staff
     @OneToOne(() => Staff, staff => staff.profileImage, { onDelete: 'CASCADE', nullable: true })
     @JoinColumn()

@@ -3,7 +3,7 @@ import { Injectable } from "@nestjs/common";
 import { User } from "src/auth-system/users/entities/user.entity";
 import { Action, AuthUser, Role } from "src/common/types/global.type";
 
-export type Subjects = InferSubjects<typeof User> | 'all';
+export type Subjects = InferSubjects<typeof User> | 'all' | Role;
 
 export type AppAbility = MongoAbility<[Action, Subjects]>
 

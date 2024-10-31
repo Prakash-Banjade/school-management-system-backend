@@ -177,3 +177,9 @@ export enum EBookTransactionStatus {
     Returned = 'returned',
     Overdue = 'overdue',
 }
+
+export enum ETaskSubmissionStatus {
+    Submitted = 'submitted',
+    Late = 'late',
+    Not_Submitted = 'not_submitted',
+}

@@ -5,10 +5,7 @@ import { Brackets, DataSource, In } from 'typeorm';
 import { Task } from './entities/task.entity';
 import { SubjectsService } from 'src/subjects/subjects.service';
 import { AccountsService } from 'src/auth-system/accounts/accounts.service';
-import { ImagesService } from 'src/file-management/images/images.service';
-import paginatedData from 'src/utils/paginatedData';
 import { AuthUser, EClassType } from 'src/common/types/global.type';
-import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { selectTaskCols } from './helpers/select-task-cols.config';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { REQUEST } from '@nestjs/core';
@@ -17,6 +14,7 @@ import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { TaskQueryDto } from './dto/task-query.dto';
 import { PageMetaDto } from 'src/common/dto/pageMeta.dto';
 import { PageDto } from 'src/common/dto/page.dto.';
+import { FilesService } from 'src/file-management/files/files.service';
 
 @Injectable()
 export class TasksService extends BaseRepository {
@@ -25,7 +23,7 @@ export class TasksService extends BaseRepository {
     @Inject(REQUEST) private req: FastifyRequest,
     private readonly accountsService: AccountsService,
     private readonly subjectsService: SubjectsService,
-    private readonly imagesService: ImagesService,
+    private readonly filesService: FilesService,
   ) {
     super(dataSource, req);
   }
@@ -34,7 +32,7 @@ export class TasksService extends BaseRepository {
     const account = await this.accountsService.findOne(currentUser.accountId);
 
     const attatchments = createTaskDto.attatchmentIds?.length
-      ? await this.imagesService.findAllByIds(createTaskDto.attatchmentIds)
+      ? await this.filesService.findAllByIds(createTaskDto.attatchmentIds)
       : null;
 
     // validate if class room have the subject
@@ -133,7 +131,7 @@ export class TasksService extends BaseRepository {
   async update(id: string, updateTaskDto: UpdateTaskDto) {
     const existingTask = await this.findOne(id);
     const attatchments = updateTaskDto.attatchmentIds?.length ?
-      await this.imagesService.findAllByIds(updateTaskDto.attatchmentIds)
+      await this.filesService.findAllByIds(updateTaskDto.attatchmentIds)
       : existingTask.attatchments;
 
     // validate subject
