@@ -2,7 +2,7 @@ import { ClassRoom } from "src/class-rooms/entities/class-room.entity";
 import { Teacher } from "src/teachers/entities/teacher.entity";
 import { Column, Entity, ManyToOne, OneToMany } from "typeorm";
 import { SubjectChapter } from "./subject-chapter.entity";
-import { Task } from "src/tasks/entities/task.entity";
+import { Task } from "src/task-system/tasks/entities/task.entity";
 import { ClassRoutine } from "src/class-routines/entities/class-routine.entity";
 import { ExamSubject } from "src/examination-system/exam-subjects/entities/exam-subject.entity";
 import { BaseEntity } from "src/common/entities/base.entity";

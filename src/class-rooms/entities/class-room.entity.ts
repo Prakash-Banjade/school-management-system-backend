@@ -7,7 +7,7 @@ import { Exam } from "src/examination-system/exams/entities/exam.entity";
 import { FeesGroup } from "src/finance-system/fees-system/fees-groups/entities/fees-group.entity";
 import { Student } from "src/students/entities/student.entity";
 import { Subject } from "src/subjects/entities/subject.entity";
-import { Task } from "src/tasks/entities/task.entity";
+import { Task } from "src/task-system/tasks/entities/task.entity";
 import { BeforeInsert, BeforeUpdate, Column, Entity, ManyToMany, OneToMany, Tree, TreeChildren, TreeParent } from "typeorm";
 
 @Entity()

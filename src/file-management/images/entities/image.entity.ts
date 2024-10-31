@@ -4,7 +4,7 @@ import { BaseEntity } from "src/common/entities/base.entity";
 import { Guardian } from "src/guardians/entities/guardian.entity";
 import { Staff } from "src/staffs/entities/staff.entity";
 import { Student } from "src/students/entities/student.entity";
-import { Task } from "src/tasks/entities/task.entity";
+import { Task } from "src/task-system/tasks/entities/task.entity";
 import { Teacher } from "src/teachers/entities/teacher.entity";
 import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from "typeorm";
 

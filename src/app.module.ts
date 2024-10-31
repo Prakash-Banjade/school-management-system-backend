@@ -26,7 +26,7 @@ import { RecommendationsModule } from './recommendations/recommendations.module'
 import { StaffsModule } from './staffs/staffs.module';
 import { StudentsModule } from './students/students.module';
 import { SubjectsModule } from './subjects/subjects.module';
-import { TasksModule } from './tasks/tasks.module';
+import { TasksModule } from './task-system/tasks/tasks.module';
 import { TeachersModule } from './teachers/teachers.module';
 import { TransportationSystemModule } from './transportation-system/transportation-system.module';
 import { ClassRoutinesModule } from './class-routines/class-routines.module';
@@ -34,6 +34,7 @@ import { AbilitiesGuard } from './common/guards/abilities.guard';
 import { CaslModule } from './auth-system/casl/casl.module';
 import { LeaveRequestsModule } from './leave-requests/leave-requests.module';
 import { LibrarySystemModule } from './library-system/library-system.module';
+import { TaskSystemModule } from './task-system/task-system.module';
 
 @Module({
   imports: [
@@ -78,10 +79,10 @@ import { LibrarySystemModule } from './library-system/library-system.module';
     LeaveRequestsModule,
     StudentsModule,
     SubjectsModule,
-    TasksModule,
     TeachersModule,
     TransportationSystemModule,
     LibrarySystemModule,
+    TaskSystemModule,
   ],
   controllers: [AppController],
   providers: [

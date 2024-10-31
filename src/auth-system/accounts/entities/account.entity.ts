@@ -13,7 +13,7 @@ import { Attendance } from "src/attendances/entities/attendance.entity";
 import { Salary } from "src/finance-system/salaries/entities/salary.entity";
 import { LeaveRequest } from "src/leave-requests/entities/leave-request.entity";
 import { Recommendation } from "src/recommendations/entities/recommendation.entity";
-import { Task } from "src/tasks/entities/task.entity";
+import { Task } from "src/task-system/tasks/entities/task.entity";
 
 @Entity()
 export class Account extends BaseEntity {
