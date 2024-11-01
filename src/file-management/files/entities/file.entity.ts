@@ -9,7 +9,7 @@ export class File extends BaseEntity {
     url!: string
 
     @Column({ type: 'varchar' })
-    memeType!: string
+    mimeType!: string
 
     @Column({ type: 'varchar' })
     format!: string

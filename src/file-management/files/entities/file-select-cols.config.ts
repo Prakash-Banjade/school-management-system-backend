@@ -7,6 +7,6 @@ export const fileSelectColumns: FindOptionsSelect<File> = {
     format: true,
     originalName: true,
     name: true,
-    memeType: true,
+    mimeType: true,
     createdAt: true,
 }

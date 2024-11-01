@@ -4,7 +4,7 @@ import { MemoryStoredFile } from 'nestjs-form-data';
 import { generateSlug } from './generateSlug';
 
 export interface FileMetadata {
-    memeType: string;
+    mimeType: string;
     size: number;
     url: string;
     format: string;
@@ -20,7 +20,7 @@ export async function getFileMetadata(memoryStoredFile: MemoryStoredFile) {
     const format = path.extname(memoryStoredFile.originalName).substring(1);
 
     let metadata: FileMetadata = {
-        memeType: memoryStoredFile.mimetype,
+        mimeType: memoryStoredFile.mimetype,
         format: format,
         size: memoryStoredFile.size,
         url: process.env.BACKEND_URL + '/api/upload/files/get-file/' + fileNameSlug + '.' + format,
