@@ -12,6 +12,7 @@ import { QueryDto } from 'src/common/dto/query.dto';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import paginatedData from 'src/utils/paginatedData';
 import { FastifyReply } from 'fastify';
+import { EFileMimeType } from 'src/common/types/global.type';
 
 @Injectable()
 export class FilesService {
@@ -21,28 +22,21 @@ export class FilesService {
 
   async upload(createFileDto: CreateFileDto) {
 
-    const filesData = [];
-
-    for (const uploadFile of createFileDto.files) {
+    const files: File[] = await Promise.all(createFileDto?.files.map(async (uploadFile) => {
       const metaData = await getFileMetadata(uploadFile);
 
-      const newFile = this.filesRepository.create({
+      return this.filesRepository.create({
         ...metaData,
         name: createFileDto.name || metaData.originalName,
-      })
-
-      const savedFile = await this.filesRepository.save(newFile);
-
-      filesData.push({
-        url: savedFile.url,
-        id: savedFile.id
       });
-    }
+    }));
+
+    await this.filesRepository.save(files);
 
     return {
       message: 'File(s) Uploaded',
       count: createFileDto.files.length,
-      savedFiles: filesData
+      savedFiles: files.map(file => ({ id: file.id, url: file.url }))
     }
   }
 
@@ -59,11 +53,11 @@ export class FilesService {
     return paginatedData(queryDto, queryBuilder);
   }
 
-  async findAllByIds(ids: string[]) {
+  async findAllByIds(ids: string[], mimeType?: EFileMimeType) {
     return await this.filesRepository.find({
       where: [
-        { id: In(ids) },
-        { url: In(ids) }
+        { id: In(ids), mimeType: mimeType },
+        { url: In(ids), mimeType: mimeType }
       ]
     })
   }

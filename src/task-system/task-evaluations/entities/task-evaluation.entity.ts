@@ -1,12 +1,13 @@
 import { BaseEntity } from "src/common/entities/base.entity";
 import { TaskSubmission } from "src/task-system/task-submissions/entities/task-submission.entity";
 import { Teacher } from "src/teachers/entities/teacher.entity";
-import { Column, Entity, ManyToOne } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from "typeorm";
 
 @Entity()
 export class TaskEvaluation extends BaseEntity {
 
-    @ManyToOne(() => TaskSubmission, submission => submission.evaluations, { onDelete: 'CASCADE' })
+    @OneToOne(() => TaskSubmission, submission => submission.evaluation, { onDelete: 'CASCADE' })
+    @JoinColumn()
     submission: TaskSubmission;
 
     @ManyToOne(() => Teacher, teacher => teacher.taskEvaluations, { onDelete: 'SET NULL' })

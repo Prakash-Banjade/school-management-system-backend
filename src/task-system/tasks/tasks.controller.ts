@@ -5,7 +5,6 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
 import { Action, AuthUser } from 'src/common/types/global.type';
-import { QueryDto } from 'src/common/dto/query.dto';
 import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 import { TaskQueryDto } from './dto/task-query.dto';
@@ -27,6 +26,12 @@ export class TasksController {
   @ChekcAbilities({ subject: 'all', action: Action.READ })
   findAll(@Query() queryDto: TaskQueryDto) {
     return this.tasksService.findAll(queryDto);
+  }
+
+  @Get(':id/statistics')
+  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  getStatistics(@Param('id') id: string) {
+    return this.tasksService.getStatistics(id);
   }
 
   @Get(':id')

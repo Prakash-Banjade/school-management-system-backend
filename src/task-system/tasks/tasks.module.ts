@@ -18,5 +18,6 @@ import { FilesModule } from 'src/file-management/files/files.module';
   ],
   controllers: [TasksController],
   providers: [TasksService],
+  exports: [TasksService],
 })
 export class TasksModule { }

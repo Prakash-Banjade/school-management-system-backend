@@ -8,7 +8,7 @@ export const selectTaskCols: FindOptionsSelect<Task> = {
     title: true,
     description: true,
     marks: true,
-    submissionDate: true,
+    deadline: true,
     taskType: true,
     setBy: {
         id: true,

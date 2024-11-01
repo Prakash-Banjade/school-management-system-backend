@@ -1,12 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { TaskSubmissionsService } from './task-submissions.service';
 import { CreateTaskSubmissionDto } from './dto/create-task-submission.dto';
 import { UpdateTaskSubmissionDto } from './dto/update-task-submission.dto';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
 import { Action, AuthUser, Role } from 'src/common/types/global.type';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
+import { TaskSubmissionQueryDto } from './dto/task-submission-query.dto';
 
+@ApiBearerAuth()
 @ApiTags('Task Submissions')
 @Controller('task-submissions')
 export class TaskSubmissionsController {
@@ -14,21 +16,24 @@ export class TaskSubmissionsController {
 
   @Post()
   @ChekcAbilities({ subject: Role.STUDENT, action: Action.CREATE })
-  create(@Body() createTaskSubmissionDto: CreateTaskSubmissionDto, @CurrentUser() user: AuthUser) {
-    return this.taskSubmissionsService.create(createTaskSubmissionDto);
+  create(@Body() createTaskSubmissionDto: CreateTaskSubmissionDto, @CurrentUser() currentUser: AuthUser) {
+    return this.taskSubmissionsService.create(createTaskSubmissionDto, currentUser);
   }
 
   @Get()
-  findAll() {
-    return this.taskSubmissionsService.findAll();
+  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  findAll(@Query() queryDto: TaskSubmissionQueryDto) {
+    return this.taskSubmissionsService.findAll(queryDto);
   }
 
   @Get(':id')
+  @ChekcAbilities({ subject: 'all', action: Action.READ })
   findOne(@Param('id') id: string) {
     return this.taskSubmissionsService.findOne(id);
   }
 
   @Patch(':id')
+  @ChekcAbilities({ subject: Role.STUDENT, action: Action.UPDATE })
   update(@Param('id') id: string, @Body() updateTaskSubmissionDto: UpdateTaskSubmissionDto) {
     return this.taskSubmissionsService.update(id, updateTaskSubmissionDto);
   }

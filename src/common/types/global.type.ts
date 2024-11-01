@@ -183,3 +183,9 @@ export enum ETaskSubmissionStatus {
     Late = 'late',
     Not_Submitted = 'not_submitted',
 }
+
+export enum EFileMimeType {
+    PDF = 'application/pdf',
+    DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+}

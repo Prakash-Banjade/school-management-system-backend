@@ -18,7 +18,7 @@ export class CreateTaskDto {
     @ApiProperty({ type: String, format: 'date-time', description: 'Submission task date' })
     @IsDateString()
     @IsFutureDate()
-    submissionDate: string;
+    deadline: string;
 
     @ApiProperty({ type: Number, description: 'Task type' })
     @IsInt()

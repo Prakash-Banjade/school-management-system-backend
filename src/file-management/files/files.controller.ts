@@ -1,22 +1,21 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Res } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { FormDataRequest } from 'nestjs-form-data';
-import { Response } from 'express';
 import { CreateFileDto } from './dto/create-files.dto';
 import { FilesService } from './files.service';
 import { UpdateFileDto } from './dto/update-files.dto';
-import { SkipThrottle } from '@nestjs/throttler';
 import { QueryDto } from 'src/common/dto/query.dto';
 import { FastifyReply } from 'fastify';
 
 @ApiBearerAuth()
 @ApiTags('Upload Files')
-@Controller('files') // route-path: /upload/files
+@Controller('upload/files')
 export class FilesController {
   constructor(private readonly filesService: FilesService) { }
 
   @Post()
-  @FormDataRequest()
+  @FormDataRequest({ limits: { fileSize: 5 * 1024 * 1024, files: 10 } })
+  @ApiConsumes('multipart/formdata')
   upload(@Body() createFileDto: CreateFileDto) {
     return this.filesService.upload(createFileDto);
   }

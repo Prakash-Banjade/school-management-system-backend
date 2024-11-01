@@ -14,7 +14,8 @@ export class IsUuidOrUrlConstraint implements ValidatorConstraintInterface {
     validate(value: any, args: ValidationArguments) {
         if (typeof value !== 'string') return false;
         
-        return isUUID(value) || (isURL(value) && value.startsWith(BACKEND_URL));
+        console.log(value, value.startsWith(BACKEND_URL));
+        return isUUID(value) || value.startsWith(BACKEND_URL);
     }
 
     defaultMessage(args: ValidationArguments) {

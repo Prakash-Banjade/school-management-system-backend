@@ -100,6 +100,24 @@ export class StudentsService extends BaseRepository {
     return existing
   }
 
+  async findOneByAccountId(accountId: string) {
+    const existing = await this.getRepository<Student>(Student).findOne({
+      where: { account: { id: accountId } },
+      relations: {
+        classRoom: {
+          parent: true,
+        },
+        profileImage: true,
+        guardians: true,
+        dormitoryRoom: true,
+      },
+      select: singleStudentColumnsConfig,
+    })
+    if (!existing) throw new NotFoundException('Student not found')
+
+    return existing;
+  }
+
   async findLibraryStudent(studentId: string) {
     const student = await this.getRepository<Student>(Student).createQueryBuilder('student')
       .leftJoin("student.profileImage", "profileImage")

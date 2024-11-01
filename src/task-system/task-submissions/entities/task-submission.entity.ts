@@ -4,7 +4,7 @@ import { File } from 'src/file-management/files/entities/file.entity';
 import { Student } from 'src/students/entities/student.entity';
 import { TaskEvaluation } from 'src/task-system/task-evaluations/entities/task-evaluation.entity';
 import { Task } from 'src/task-system/tasks/entities/task.entity';
-import { Entity, Column, ManyToOne, CreateDateColumn, OneToMany } from 'typeorm';
+import { Entity, Column, ManyToOne, OneToMany, OneToOne } from 'typeorm';
 
 @Entity()
 export class TaskSubmission extends BaseEntity {
@@ -12,21 +12,18 @@ export class TaskSubmission extends BaseEntity {
     @ManyToOne(() => Task, task => task.submissions, { onDelete: 'CASCADE' })
     task: Task;
 
-    @ManyToOne(() => Student, student => student.taskSubmissions, { onDelete: 'CASCADE' })
+    @ManyToOne(() => Student, student => student.taskSubmissions, { onDelete: 'CASCADE', nullable: false })
     student: Student;
 
     @Column({ type: 'enum', enum: ETaskSubmissionStatus, default: ETaskSubmissionStatus.Not_Submitted })
     status: ETaskSubmissionStatus;
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: 'text' })
     content: string;
 
     @OneToMany(() => File, file => file.task_submission_attachment)
     attachments: File[];
 
-    @CreateDateColumn({ name: 'submission_date' })
-    submissionDate: Date;
-
-    @OneToMany(() => TaskEvaluation, evaluation => evaluation.submission)
-    evaluations: TaskEvaluation[];
+    @OneToOne(() => TaskEvaluation, evaluation => evaluation.submission)
+    evaluation: TaskEvaluation;
 }

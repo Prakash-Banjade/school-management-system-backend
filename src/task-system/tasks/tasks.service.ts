@@ -93,7 +93,7 @@ export class TasksService extends BaseRepository {
       .select([
         "task.id as id",
         "task.title as title",
-        "task.submissionDate as submissionDate",
+        "task.deadline as deadline",
         "task.taskType as taskType",
         "task.marks as marks",
         "task.createdAt as createdAt",
@@ -110,6 +110,22 @@ export class TasksService extends BaseRepository {
     const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto: queryDto });
 
     return new PageDto(data, pageMetaDto);
+  }
+
+  async getStatistics(taskId: string) {
+    const queryBuilder = this.getRepository(Task).createQueryBuilder('task')
+      .where('task.id = :id', { id: taskId })
+      .leftJoin('task.submissions', 'submission')
+      .leftJoin('submission.evaluation', 'evaluation')
+      .select([
+        'COUNT(DISTINCT submission.id) as totalSubmissions',
+        'COUNT(DISTINCT evaluation.id) as totalEvaluations',
+        'COUNT(CASE WHEN DATE(submission.createdAt) <= DATE(task.deadline) THEN 1 END) as beforeDeadline',
+        'COUNT(CASE WHEN DATE(submission.createdAt) > DATE(task.deadline) THEN 1 END) as afterDeadline',
+      ])
+
+    const taskStatistics = await queryBuilder.getRawOne();
+    return taskStatistics;
   }
 
   async findOne(id: string) {

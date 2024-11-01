@@ -14,13 +14,15 @@ export class CaslAbilityFactory {
 
         if (user.role === Role.ADMIN) {
             can(Action.MANAGE, 'all')
-            can(Action.MANAGE, User)
+            cannot(Action.MANAGE, Role.STUDENT)
         }
         else if (user.role === Role.MODERATOR) {
             can(Action.READ, 'all')
             can(Action.CREATE, 'all')
             can(Action.UPDATE, 'all')
             cannot(Action.DELETE, 'all').because('Access Denied')
+        } else if (user.role === Role.STUDENT) {
+            can(Action.MANAGE, Role.STUDENT)
         } else if (user.role === Role.USER) {
             cannot(Action.READ, 'all').because('Access Denied')
             can(Action.READ, User)
