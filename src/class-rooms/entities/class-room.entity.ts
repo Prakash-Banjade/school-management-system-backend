@@ -8,7 +8,8 @@ import { FeesGroup } from "src/finance-system/fees-system/fees-groups/entities/f
 import { Student } from "src/students/entities/student.entity";
 import { Subject } from "src/subjects/entities/subject.entity";
 import { Task } from "src/task-system/tasks/entities/task.entity";
-import { BeforeInsert, BeforeUpdate, Column, Entity, ManyToMany, OneToMany, Tree, TreeChildren, TreeParent } from "typeorm";
+import { Teacher } from "src/teachers/entities/teacher.entity";
+import { BeforeInsert, BeforeUpdate, Column, Entity, ManyToMany, ManyToOne, OneToMany, Tree, TreeChildren, TreeParent } from "typeorm";
 
 @Entity()
 @Tree("closure-table", {
@@ -40,6 +41,9 @@ export class ClassRoom extends BaseEntity {
 
     @Column({ type: "enum", enum: EClassType, default: EClassType.PRIMARY })
     classType: EClassType
+
+    @ManyToOne(() => Teacher, teacher => teacher.assignedClassRooms, { onDelete: 'SET NULL' })
+    classTeacher: Teacher;
 
     @BeforeInsert()
     @BeforeUpdate()

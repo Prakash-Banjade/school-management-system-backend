@@ -1,28 +1,23 @@
 import { FindOptionsSelect } from "typeorm"
 import { ClassRoom } from "../entities/class-room.entity"
 
-export const classRoomsColumnsConfig: FindOptionsSelect<ClassRoom> = {
+export const classRoomColumnsConfig: FindOptionsSelect<ClassRoom> = {
     id: true,
     name: true,
     monthlyTutionFee: true,
     monthlyFee: true,
     location: true,
     createdAt: true,
-    // classRoomParentClass: {
-    //     id: true,
-    //     name: true,
-    //     classType: true,
-    //     // parentClass: {
-    //     //     id: true,
-    //     //     name: true,
-    //     //     classType: true,
-    //     // },
-    // },
-    // childrenClasses: {
-    //     id: true,
-    //     name: true,
-    //     classType: true
-    // },
+    classTeacher: {
+        id: true,
+        firstName: true,
+        lastName: true,
+    },
+    description: true,
+    parent: {
+        id: true,
+        name: true,
+    },
     classType: true,
 }
 

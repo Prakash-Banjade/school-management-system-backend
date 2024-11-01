@@ -12,6 +12,8 @@ import { EClassType, Gender } from 'src/common/types/global.type';
 import { PageMetaDto } from 'src/common/dto/pageMeta.dto';
 import { PageDto } from 'src/common/dto/page.dto.';
 import { ClassRoomsHelper } from './helpers/class-rooms.helper';
+import { TeachersService } from 'src/teachers/teachers.service';
+import { classRoomColumnsConfig } from './helpers/class-room-select-cols.config';
 
 @Injectable({ scope: Scope.REQUEST })
 export class ClassRoomsService extends BaseRepository {
@@ -19,6 +21,7 @@ export class ClassRoomsService extends BaseRepository {
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
     @InjectRepository(ClassRoom) private classRoomRepo: Repository<ClassRoom>,
     private readonly classRoomsHelper: ClassRoomsHelper,
+    private readonly teachersService: TeachersService,
   ) {
     super(dataSource, req);
   }
@@ -30,9 +33,13 @@ export class ClassRoomsService extends BaseRepository {
     // evaluate parent class
     const parentClass = createClassRoomDto.parentClassId ? await this.getRepository(ClassRoom).findOneBy({ id: createClassRoomDto.parentClassId }) : null;
 
+    // evaluate teacher
+    const classTeacher = createClassRoomDto.classTeacherId ? await this.teachersService.findOne(createClassRoomDto.classTeacherId) : null;
+
     const newClassRoom = this.classRoomRepo.create({
       ...createClassRoomDto,
       parent: parentClass,
+      classTeacher,
     });
 
     const savedClassRoom = await this.getRepository(ClassRoom).save(newClassRoom);
@@ -52,21 +59,11 @@ export class ClassRoomsService extends BaseRepository {
     // applySelectColumns(queryBuilder, classRoomsColumnsConfig, 'classRoom');
 
     const itemCount = await queryBuilder.getCount();
-    const { entities, raw } = await queryBuilder.getRawAndEntities();
-
-    // Add student counts to each entity
-    entities?.map((entity, index) => {
-      const entityWithCounts = Object.assign(entity, {
-        totalStudentsCount: +raw[index].totalStudentsCount + +raw[index].totalChildrenStudentsCount,
-        totalFemalesStudentsCount: +raw[index].totalFemaleStudentsCount + +raw[index].totalChildrenFemaleStudentsCount,
-        totalMalesStudentsCount: +raw[index].totalMaleStudentsCount + +raw[index].totalChildrenMaleStudentsCount,
-      });
-      return entityWithCounts;
-    });
+    const data = await queryBuilder.getRawMany();
 
     const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto: queryDto });
 
-    return new PageDto(entities, pageMetaDto);
+    return new PageDto(data, pageMetaDto);
   }
 
   async findAllSections(queryDto: ClassRoomQueryDto) {
@@ -96,7 +93,9 @@ export class ClassRoomsService extends BaseRepository {
       relations: {
         parent: true,
         children: true,
-      }
+        classTeacher: true,
+      },
+      select: classRoomColumnsConfig,
     });
 
     if (!existing) throw new NotFoundException('Class room not found');
@@ -113,6 +112,10 @@ export class ClassRoomsService extends BaseRepository {
       if (existingWithName) throw new ConflictException('Class room with same name already exists');
     }
 
+    if (updateClassRoomDto.classTeacherId && (updateClassRoomDto.classTeacherId !== existing.classTeacher?.id || !updateClassRoomDto.classTeacherId)) {
+      const newClassTeacher = await this.teachersService.findOne(updateClassRoomDto.classTeacherId);
+      existing.classTeacher = newClassTeacher;
+    }
     // update the class room
     Object.assign(existing, updateClassRoomDto);
     const savedClassRoom = await this.classRoomRepo.save(existing);

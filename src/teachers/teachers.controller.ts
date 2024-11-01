@@ -10,6 +10,7 @@ import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action } from 'src/common/types/global.type';
 import { EmployeeAttendanceQueryDto } from './dto/employee-attendance-query.dto';
 import { TeachersHelper } from './helpers/teacher.helper';
+import { QueryDto } from 'src/common/dto/query.dto';
 
 @ApiBearerAuth()
 @ApiTags('Teachers')
@@ -38,6 +39,12 @@ export class TeachersController {
   @ChekcAbilities({ subject: 'all', action: Action.READ })
   getAttendance(@Query() queryDto: EmployeeAttendanceQueryDto) {
     return this.teachersHelper.getTeachersWithAttendance(queryDto);
+  }
+
+  @Get('options')
+  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  getTeacherOptions(@Query() queryDto: QueryDto) {
+    return this.teachersHelper.getTeacherOptions(queryDto);
   }
 
   @Get(':id')

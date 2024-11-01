@@ -6,6 +6,7 @@ import { ClassRoom } from './entities/class-room.entity';
 import { ClassRoomsHelper } from './helpers/class-rooms.helper';
 import { Student } from 'src/students/entities/student.entity';
 import { AcademicYearsModule } from 'src/academic-years/academic-years.module';
+import { TeachersModule } from 'src/teachers/teachers.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { AcademicYearsModule } from 'src/academic-years/academic-years.module';
       Student
     ]),
     AcademicYearsModule,
+    TeachersModule,
   ],
   controllers: [ClassRoomsController],
   providers: [ClassRoomsService, ClassRoomsHelper],

@@ -23,14 +23,14 @@ export class CreateClassRoomDto {
     @IsNumber()
     @Min(0)
     @IsOptional()
-    monthlyTutionFee: number = 0;
+    monthlyTutionFee: number;
 
     @ApiProperty({ type: Number, example: 1000, description: 'Monthly fee of the class room' })
     @IsNotEmpty()
     @IsNumber()
     @Min(0)
     @IsOptional()
-    monthlyFee: number = 0;
+    monthlyFee: number;
 
     @ApiPropertyOptional({ type: String, example: 'Room No. 34, Block 1, Floor 1', description: 'Location of the class room' })
     @IsString()
@@ -41,4 +41,9 @@ export class CreateClassRoomDto {
     @IsEnum(EClassType)
     @IsOptional()
     classType: EClassType = EClassType.PRIMARY;
+
+    @ApiPropertyOptional({ type: String, format: 'uuid', example: 'Teacher ID', description: 'ID of the teacher' })
+    @IsUUID()
+    @IsOptional()
+    classTeacherId?: string;
 }

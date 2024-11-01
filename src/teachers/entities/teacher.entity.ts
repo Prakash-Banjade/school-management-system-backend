@@ -1,4 +1,5 @@
 import { Account } from "src/auth-system/accounts/entities/account.entity";
+import { ClassRoom } from "src/class-rooms/entities/class-room.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { EBloodGroup, EMaritalStatus, Gender } from "src/common/types/global.type";
 import { Image } from "src/file-management/images/entities/image.entity";
@@ -46,6 +47,9 @@ export class Teacher extends BaseEntity {
     @OneToOne(() => Image, image => image.teacher_profileImage, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn()
     profileImage?: Image;
+
+    @OneToMany(() => ClassRoom, (classRoom) => classRoom.classTeacher)
+    assignedClassRooms: ClassRoom[];
 
     @Column({ type: 'longtext', nullable: true })
     shortDescription?: string;

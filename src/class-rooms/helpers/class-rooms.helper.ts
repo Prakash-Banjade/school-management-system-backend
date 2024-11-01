@@ -18,8 +18,9 @@ export class ClassRoomsHelper {
     setClassRoomQuery(queryDto: ClassRoomQueryDto) {
         return this.classRoomRepo.createQueryBuilder('classRoom')
             .orderBy("classRoom.createdAt", queryDto.order)
-            .skip(queryDto.skipPagination ? undefined : queryDto.skip)
-            .take(queryDto.skipPagination ? undefined : queryDto.take)
+            .offset(queryDto.skipPagination ? undefined : queryDto.skip)
+            .limit(queryDto.skipPagination ? undefined : queryDto.take)
+            .leftJoin("classRoom.classTeacher", "classTeacher")
             .leftJoin("classRoom.parent", "classRoomParentClass")
             .leftJoin("classRoom.children", "childrenClasses")
             .leftJoin("classRoom.students", "students")
@@ -28,13 +29,26 @@ export class ClassRoomsHelper {
             .leftJoin("childrenClasses.students", "childrenStudents")
             .leftJoin("childrenStudents.enrollments", "childrenEnrollment")
             .leftJoin("childrenEnrollment.academicYear", "childrenAcademicYear", "childrenAcademicYear.isActive = true") // Join only active academic year for children
+            .select([
+                "classRoom.id as id",
+                "classRoom.name as name",
+                "classRoom.description as description",
+                "classRoom.monthlyTutionFee as monthlyTutionFee",
+                "classRoom.monthlyFee as monthlyFee",
+                "classRoom.location as location",
+                "classRoom.classType as classType",
+                "classTeacher.id as classTeacherId",
+                "CONCAT(classTeacher.firstName, ' ', classTeacher.lastName) as classTeacherName",
+            ])
             .addSelect([
-                "COUNT(DISTINCT students.id) AS totalStudentsCount",
-                `COUNT(DISTINCT CASE WHEN students.gender = '${Gender.MALE}' THEN students.id END) AS totalMaleStudentsCount`,
-                `COUNT(DISTINCT CASE WHEN students.gender = '${Gender.FEMALE}' THEN students.id END) AS totalFemaleStudentsCount`,
-                "COUNT(DISTINCT childrenStudents.id) AS totalChildrenStudentsCount",
-                `COUNT(DISTINCT CASE WHEN childrenStudents.gender = '${Gender.MALE}' THEN childrenStudents.id END) AS totalChildrenMaleStudentsCount`,
-                `COUNT(DISTINCT CASE WHEN childrenStudents.gender = '${Gender.FEMALE}' THEN childrenStudents.id END) AS totalChildrenFemaleStudentsCount`
+                // Total student count (including children)
+                "COUNT(DISTINCT CASE WHEN (academicYear.isActive = true OR childrenAcademicYear.isActive = true) THEN students.id ELSE childrenStudents.id END) AS totalStudentsCount",
+
+                // Total male students (including children)
+                `COUNT(DISTINCT CASE WHEN (students.gender = '${Gender.MALE}' OR childrenStudents.gender = '${Gender.MALE}') THEN students.id ELSE childrenStudents.id END) AS totalMaleStudentsCount`,
+
+                // Total female students (including children)
+                `COUNT(DISTINCT CASE WHEN (students.gender = '${Gender.FEMALE}' OR childrenStudents.gender = '${Gender.FEMALE}') THEN students.id ELSE childrenStudents.id END) AS totalFemaleStudentsCount`
             ])
             .groupBy('classRoom.id')  // Ensure group by to aggregate counts per classRoom
             .where('classRoom.classType = :classType', { classType: EClassType.PRIMARY })

@@ -1,8 +1,9 @@
 import { InjectRepository } from "@nestjs/typeorm";
 import { Teacher } from "../entities/teacher.entity";
-import { Repository } from "typeorm";
+import { Brackets, Repository } from "typeorm";
 import { Attendance } from "src/attendances/entities/attendance.entity";
 import { EmployeeAttendanceQueryDto } from "../dto/employee-attendance-query.dto";
+import { QueryDto } from "src/common/dto/query.dto";
 
 export class TeachersHelper {
     constructor(
@@ -33,5 +34,26 @@ export class TeachersHelper {
 
         return teachersWithAttendance;
 
+    }
+
+    async getTeacherOptions(queryDto: QueryDto) {
+        const teacherOptions = await this.teacherRepo.createQueryBuilder('teacher')
+            .orderBy("teacher.createdAt", queryDto.order)
+            .limit(queryDto.take)
+            .offset(queryDto.skip)
+            .where(new Brackets(qb => {
+                if (!!queryDto.search) {
+                    qb.where("LOWER(CONCAT(teacher.firstName, ' ', teacher.lastName)) LIKE LOWER(:search)", {
+                        search: `%${queryDto.search}%`
+                    });
+                }
+            }))
+            .select([
+                "teacher.id as value",
+                "CONCAT(teacher.firstName, ' ', teacher.lastName) as label"
+            ])
+            .getRawMany();
+
+        return teacherOptions;
     }
 }
