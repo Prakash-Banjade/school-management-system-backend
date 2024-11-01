@@ -3,6 +3,7 @@ import { BaseEntity } from "src/common/entities/base.entity";
 import { EBloodGroup, EMaritalStatus, Gender } from "src/common/types/global.type";
 import { Image } from "src/file-management/images/entities/image.entity";
 import { Subject } from "src/subjects/entities/subject.entity";
+import { TaskEvaluation } from "src/task-system/task-evaluations/entities/task-evaluation.entity";
 import { generateTeacherId } from "src/utils/generate-teacher-id";
 import { BeforeInsert, BeforeUpdate, Column, Entity, JoinColumn, OneToMany, OneToOne } from "typeorm";
 
@@ -72,4 +73,7 @@ export class Teacher extends BaseEntity {
 
     @OneToMany(() => Subject, (subject) => subject.teacher)
     assignedSubjects: Subject[]
+
+    @OneToMany(() => TaskEvaluation, (taskEvaluation) => taskEvaluation.evaluator)
+    taskEvaluations: TaskEvaluation[]
 }

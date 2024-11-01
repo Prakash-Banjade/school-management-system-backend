@@ -2,6 +2,7 @@ import { BaseEntity } from 'src/common/entities/base.entity';
 import { ETaskSubmissionStatus } from 'src/common/types/global.type';
 import { File } from 'src/file-management/files/entities/file.entity';
 import { Student } from 'src/students/entities/student.entity';
+import { TaskEvaluation } from 'src/task-system/task-evaluations/entities/task-evaluation.entity';
 import { Task } from 'src/task-system/tasks/entities/task.entity';
 import { Entity, Column, ManyToOne, CreateDateColumn, OneToMany } from 'typeorm';
 
@@ -25,4 +26,7 @@ export class TaskSubmission extends BaseEntity {
 
     @CreateDateColumn({ name: 'submission_date' })
     submissionDate: Date;
+
+    @OneToMany(() => TaskEvaluation, evaluation => evaluation.submission)
+    evaluations: TaskEvaluation[];
 }
