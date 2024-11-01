@@ -117,6 +117,7 @@ export class TasksService extends BaseRepository {
       where: { id },
       relations: {
         subject: true,
+        setBy: true,
         attatchments: true,
         classRooms: {
           parent: true

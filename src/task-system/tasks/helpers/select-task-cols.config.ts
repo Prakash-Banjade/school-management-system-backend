@@ -10,6 +10,11 @@ export const selectTaskCols: FindOptionsSelect<Task> = {
     marks: true,
     submissionDate: true,
     taskType: true,
+    setBy: {
+        id: true,
+        firstName: true,
+        lastName: true,
+    },
     attatchments: {
         id: true,
         url: true,
