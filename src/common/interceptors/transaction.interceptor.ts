@@ -4,6 +4,7 @@ import {
     Injectable,
     NestInterceptor,
 } from '@nestjs/common';
+import { FastifyRequest } from 'fastify';
 import { Observable, catchError, concatMap, finalize } from 'rxjs';
 import { DataSource } from 'typeorm';
 
@@ -18,7 +19,7 @@ export class TransactionInterceptor implements NestInterceptor {
         next: CallHandler<any>,
     ): Promise<Observable<any>> {
         // get request object
-        const req = context.switchToHttp().getRequest<Request>();
+        const req = context.switchToHttp().getRequest<FastifyRequest>();
         // start transaction
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
