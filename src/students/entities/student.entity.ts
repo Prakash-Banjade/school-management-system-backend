@@ -148,8 +148,8 @@ export class Student extends BaseEntity {
     @Column({ type: 'longtext', nullable: true })
     additionalNotes: string;
 
-    @OneToMany(() => Image, (documentAttatchments) => documentAttatchments.student_documentAttatchments)
-    documentAttatchments: Image[];
+    @OneToMany(() => Image, (documentAttachments) => documentAttachments.student_documentAttachments)
+    documentAttachments: Image[];
 
     /**
     |--------------------------------------------------

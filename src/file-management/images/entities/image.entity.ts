@@ -50,8 +50,8 @@ export class Image extends BaseEntity {
     @JoinColumn()
     student_profileImage: Student;
 
-    @ManyToOne(() => Student, (student) => student.documentAttatchments, { onDelete: 'CASCADE', nullable: true })
-    student_documentAttatchments: Student;
+    @ManyToOne(() => Student, (student) => student.documentAttachments, { onDelete: 'CASCADE', nullable: true })
+    student_documentAttachments: Student;
 
     // teacher
     @OneToOne(() => Teacher, teacher => teacher.profileImage, { onDelete: 'CASCADE', nullable: true })

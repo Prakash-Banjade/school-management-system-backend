@@ -15,7 +15,7 @@ export const selectTaskCols: FindOptionsSelect<Task> = {
         firstName: true,
         lastName: true,
     },
-    attatchments: {
+    attachments: {
         id: true,
         url: true,
         originalName: true,

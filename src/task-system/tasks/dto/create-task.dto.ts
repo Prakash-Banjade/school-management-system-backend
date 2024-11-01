@@ -29,10 +29,10 @@ export class CreateTaskDto {
     @IsEnum(ETask)
     taskType: ETask;
 
-    @ApiPropertyOptional({ type: [String], format: 'uuid', isArray: true, description: 'Attatchment ids or urls' })
+    @ApiPropertyOptional({ type: [String], format: 'uuid', isArray: true, description: 'Attachment ids or urls' })
     @IsUuidOrUrl({ each: true })
     @IsOptional()
-    attatchmentIds?: string[];
+    attachmentIds?: string[];
 
     @ApiProperty({ type: String, format: 'uuid', description: 'Subject id' })
     @IsUUID()

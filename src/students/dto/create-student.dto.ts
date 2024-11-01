@@ -164,10 +164,10 @@ export class CreateStudentDto {
     @MaxLength(1000)
     additionalNotes: string;
 
-    @ApiPropertyOptional({ type: [String], description: 'Document attatchment gallery id/url' })
+    @ApiPropertyOptional({ type: [String], description: 'Document attachment gallery id/url' })
     @IsString({ each: true })
     @IsOptional()
-    documentAttatchmentIds: string[];
+    documentAttachmentIds: string[];
 
     /**
     |--------------------------------------------------

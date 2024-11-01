@@ -45,9 +45,9 @@ export class StudentsService extends BaseRepository {
       throw new BadRequestException('Please select section');
     }
 
-    // evaluate document attatchments
-    const documentAttatchments = createStudentDto.documentAttatchmentIds
-      ? await this.imageService.findAllByIds(createStudentDto.documentAttatchmentIds)
+    // evaluate document attachments
+    const documentAttachments = createStudentDto.documentAttachmentIds
+      ? await this.imageService.findAllByIds(createStudentDto.documentAttachmentIds)
       : null;
 
     // evaluate dormitory room
@@ -59,7 +59,7 @@ export class StudentsService extends BaseRepository {
       ...createStudentDto,
       profileImage,
       classRoom,
-      documentAttatchments,
+      documentAttachments,
       dormitoryRoom
     });
 
@@ -150,10 +150,10 @@ export class StudentsService extends BaseRepository {
     |--------------------------------------------------
     */
 
-    // evaluate document attatchments
-    const documentAttatchments = updateStudentDto.documentAttatchmentIds
-      ? await this.imageService.findAllByIds(updateStudentDto.documentAttatchmentIds)
-      : existing.documentAttatchments;
+    // evaluate document attachments
+    const documentAttachments = updateStudentDto.documentAttachmentIds
+      ? await this.imageService.findAllByIds(updateStudentDto.documentAttachmentIds)
+      : existing.documentAttachments;
 
     // evaluate dormitory room
     const dormitoryRoom = updateStudentDto.dormitoryRoomId
@@ -163,7 +163,7 @@ export class StudentsService extends BaseRepository {
     Object.assign(existing, {
       ...updateStudentDto,
       profileImage,
-      documentAttatchments,
+      documentAttachments,
       dormitoryRoom,
     });
 

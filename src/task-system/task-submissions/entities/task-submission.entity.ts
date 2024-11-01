@@ -21,8 +21,8 @@ export class TaskSubmission extends BaseEntity {
     @Column({ type: 'text', nullable: true })
     content: string;
 
-    @OneToMany(() => File, file => file.task_submission_attatchment)
-    attatchments: File[];
+    @OneToMany(() => File, file => file.task_submission_attachment)
+    attachments: File[];
 
     @CreateDateColumn({ name: 'submission_date' })
     submissionDate: Date;

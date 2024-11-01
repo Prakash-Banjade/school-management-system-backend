@@ -25,8 +25,8 @@ export class Task extends BaseEntity {
     @Column({ type: 'int', nullable: true })
     marks: number;
 
-    @OneToMany(() => File, file => file.task_attatchment)
-    attatchments: File[];
+    @OneToMany(() => File, file => file.task_attachment)
+    attachments: File[];
 
     @ManyToOne(() => Account, account => account.tasks, { onDelete: 'SET NULL' })
     setBy: Account;

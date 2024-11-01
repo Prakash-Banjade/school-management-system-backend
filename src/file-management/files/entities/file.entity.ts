@@ -29,10 +29,9 @@ export class File extends BaseEntity {
     |--------------------------------------------------
     */
 
+    @ManyToOne(() => Task, task => task.attachments, { onDelete: 'CASCADE' })
+    task_attachment: Task;
 
-    @ManyToOne(() => Task, task => task.attatchments, { onDelete: 'CASCADE' })
-    task_attatchment: Task;
-
-    @ManyToOne(() => TaskSubmission, taskSubmission => taskSubmission.attatchments, { onDelete: 'CASCADE' })
-    task_submission_attatchment: TaskSubmission;
+    @ManyToOne(() => TaskSubmission, taskSubmission => taskSubmission.attachments, { onDelete: 'CASCADE' })
+    task_submission_attachment: TaskSubmission;
 }

@@ -31,8 +31,8 @@ export class TasksService extends BaseRepository {
   async create(createTaskDto: CreateTaskDto, currentUser: AuthUser) {
     const account = await this.accountsService.findOne(currentUser.accountId);
 
-    const attatchments = createTaskDto.attatchmentIds?.length
-      ? await this.filesService.findAllByIds(createTaskDto.attatchmentIds)
+    const attachments = createTaskDto.attachmentIds?.length
+      ? await this.filesService.findAllByIds(createTaskDto.attachmentIds)
       : null;
 
     // validate if class room have the subject
@@ -57,7 +57,7 @@ export class TasksService extends BaseRepository {
       ...createTaskDto,
       setBy: account,
       subject: classRoomWithSubject.subjects[0],
-      attatchments,
+      attachments,
       classRooms: classRoomsTheTaskFor,
     })
 
@@ -75,7 +75,7 @@ export class TasksService extends BaseRepository {
       .leftJoin('task.subject', 'subject')
       .leftJoin('task.classRooms', 'classRoom')
       .leftJoin('classRoom.parent', 'parent')
-      .leftJoin('task.attatchments', 'attatchments')
+      .leftJoin('task.attachments', 'attachments')
       .andWhere(new Brackets(qb => {
         queryDto.search && qb.andWhere("LOWER(task.title) LIKE LOWER(:search)", { search: `%${queryDto.search}%` });
 
@@ -118,7 +118,7 @@ export class TasksService extends BaseRepository {
       relations: {
         subject: true,
         setBy: true,
-        attatchments: true,
+        attachments: true,
         classRooms: {
           parent: true
         }
@@ -131,9 +131,9 @@ export class TasksService extends BaseRepository {
 
   async update(id: string, updateTaskDto: UpdateTaskDto) {
     const existingTask = await this.findOne(id);
-    const attatchments = updateTaskDto.attatchmentIds?.length ?
-      await this.filesService.findAllByIds(updateTaskDto.attatchmentIds)
-      : existingTask.attatchments;
+    const attachments = updateTaskDto.attachmentIds?.length ?
+      await this.filesService.findAllByIds(updateTaskDto.attachmentIds)
+      : existingTask.attachments;
 
     // validate subject
     const subject = updateTaskDto.subjectId
@@ -158,7 +158,7 @@ export class TasksService extends BaseRepository {
       if (parentClassId !== subject.classRoom?.id) throw new BadRequestException('Subject doesn\'t belong to the class room');
     } else if (subject.classRoom?.id !== classRooms[0].id) throw new BadRequestException('Subject doesn\'t belong to the class room');
 
-    existingTask.attatchments = attatchments;
+    existingTask.attachments = attachments;
     existingTask.subject = subject;
     existingTask.classRooms = classRooms;
 

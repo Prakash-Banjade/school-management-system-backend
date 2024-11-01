@@ -16,5 +16,5 @@ export class CreateTaskSubmissionDto {
     @ApiPropertyOptional({ example: 'Attachment IDs', description: 'IDs of the attachments', required: false })
     @IsUuidOrUrl({ each: true })
     @IsOptional()
-    attatchmentIds?: string[];
+    attachmentIds?: string[];
 }
