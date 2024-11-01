@@ -2,9 +2,10 @@ import { Inject, Injectable } from "@nestjs/common";
 import { REQUEST } from "@nestjs/core";
 import { FastifyRequest } from "fastify";
 import { BaseRepository } from "src/common/repository/base-repository";
-import { DataSource } from "typeorm";
+import { Brackets, DataSource } from "typeorm";
 import { LibraryBook } from "../entities/library-book.entity";
 import { BookTransaction } from "src/library-system/book-transactions/entities/book-transaction.entity";
+import { QueryDto } from "src/common/dto/query.dto";
 
 @Injectable()
 export class LibraryHelper extends BaseRepository {
@@ -63,5 +64,26 @@ export class LibraryHelper extends BaseRepository {
             issuedStudentCount: +data[2].issuedStudentCount,
             topBooks: data[3]
         };
+    }
+
+    async getOptions(queryDto: QueryDto) {
+
+        const options = await this.getRepository(LibraryBook).createQueryBuilder('book')
+            .orderBy("book.createdAt", queryDto.order)
+            .offset(queryDto.skip)
+            .limit(queryDto.take)
+            .where(new Brackets(qb => {
+                if (queryDto.search) {
+                    qb.where("book.bookCode = :exactSearch", { exactSearch: queryDto.search })
+                        .orWhere("LOWER(book.bookName) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+                }
+            }))
+            .select([
+                "book.id as value",
+                "book.bookName as label"
+            ])
+            .getRawMany();
+
+        return options;
     }
 }

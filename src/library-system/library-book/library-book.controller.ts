@@ -35,6 +35,12 @@ export class LibraryBookController {
     return this.libraryHelper.getDashboardCount();
   }
 
+  @Get('options')
+  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  getOptions(@Query() queryDto: QueryDto) {
+    return this.libraryHelper.getOptions(queryDto);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.libraryBookService.findOne(id);
