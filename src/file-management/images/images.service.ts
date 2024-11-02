@@ -41,7 +41,7 @@ export class ImagesService {
 
     return {
       message: 'Image(s) Uploaded',
-      files: images.map(image => ({ id: image.id, url: image.url })),
+      files: images.map(image => ({ id: image.id, url: image.url, originalName: image.originalName })),
       count: createImageDto.images.length,
     }
   }

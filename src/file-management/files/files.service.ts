@@ -36,7 +36,7 @@ export class FilesService {
     return {
       message: 'File(s) Uploaded',
       count: createFileDto.files.length,
-      savedFiles: files.map(file => ({ id: file.id, url: file.url }))
+      files: files.map(file => ({ id: file.id, url: file.url, originalName: file.originalName }))
     }
   }
 

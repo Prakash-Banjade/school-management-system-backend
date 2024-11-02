@@ -16,12 +16,14 @@ import { FastifyRequest } from 'fastify';
 import { StudentsHelper } from './helpers/students.helper';
 import { EClassType } from 'src/common/types/global.type';
 import { StudentAttendanceQueryDto } from './dto/student-attendance-query.dto';
+import { FilesService } from 'src/file-management/files/files.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class StudentsService extends BaseRepository {
   constructor(
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
     private readonly imageService: ImagesService,
+    private readonly filesService: FilesService,
     private readonly classRoomsService: ClassRoomsService,
     private readonly accountsService: AccountsService,
     private dormitoryRoomsService: DormitoryRoomsService,
@@ -47,8 +49,10 @@ export class StudentsService extends BaseRepository {
 
     // evaluate document attachments
     const documentAttachments = createStudentDto.documentAttachmentIds
-      ? await this.imageService.findAllByIds(createStudentDto.documentAttachmentIds)
+      ? await this.filesService.findAllByIds(createStudentDto.documentAttachmentIds)
       : null;
+
+    console.log(documentAttachments)
 
     // evaluate dormitory room
     const dormitoryRoom = createStudentDto.dormitoryRoomId
@@ -92,6 +96,7 @@ export class StudentsService extends BaseRepository {
         profileImage: true,
         guardians: true,
         dormitoryRoom: true,
+        documentAttachments: true,
       },
       select: singleStudentColumnsConfig,
     })
@@ -110,6 +115,7 @@ export class StudentsService extends BaseRepository {
         profileImage: true,
         guardians: true,
         dormitoryRoom: true,
+        documentAttachments: true,
       },
       select: singleStudentColumnsConfig,
     })
@@ -170,13 +176,17 @@ export class StudentsService extends BaseRepository {
 
     // evaluate document attachments
     const documentAttachments = updateStudentDto.documentAttachmentIds
-      ? await this.imageService.findAllByIds(updateStudentDto.documentAttachmentIds)
+      ? await this.filesService.findAllByIds(updateStudentDto.documentAttachmentIds)
       : existing.documentAttachments;
+
+      console.log(documentAttachments)
 
     // evaluate dormitory room
     const dormitoryRoom = updateStudentDto.dormitoryRoomId
       ? await this.dormitoryRoomsService.findOne(updateStudentDto.dormitoryRoomId)
-      : existing.dormitoryRoom;
+      : updateStudentDto.dormitoryRoomId === null // unsetting dormitory room
+        ? null
+        : existing.dormitoryRoom;
 
     Object.assign(existing, {
       ...updateStudentDto,

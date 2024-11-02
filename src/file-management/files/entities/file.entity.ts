@@ -1,4 +1,5 @@
 import { BaseEntity } from "src/common/entities/base.entity";
+import { Student } from "src/students/entities/student.entity";
 import { TaskSubmission } from "src/task-system/task-submissions/entities/task-submission.entity";
 import { Task } from "src/task-system/tasks/entities/task.entity";
 import { Column, Entity, ManyToOne } from "typeorm";
@@ -28,6 +29,9 @@ export class File extends BaseEntity {
     | RELATIONS
     |--------------------------------------------------
     */
+
+    @ManyToOne(() => Student, student => student.documentAttachments, { onDelete: 'CASCADE' })
+    student_documentAttachments: Student;
 
     @ManyToOne(() => Task, task => task.attachments, { onDelete: 'CASCADE' })
     task_attachment: Task;

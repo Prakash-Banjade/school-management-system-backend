@@ -1,6 +1,5 @@
 import { FindOptionsSelect } from "typeorm";
 import { Student } from "../entities/student.entity";
-import { Attendance } from "src/attendances/entities/attendance.entity";
 
 export const studentsColumnsConfig: FindOptionsSelect<Student> = {
     id: true,
@@ -31,6 +30,11 @@ export const studentsColumnsConfig: FindOptionsSelect<Student> = {
 }
 
 export const singleStudentColumnsConfig: FindOptionsSelect<Student> = {
+    documentAttachments: {
+        id: true,
+        url: true,
+        originalName: true,
+    },
     classRoom: {
         id: true,
         name: true,

@@ -10,6 +10,7 @@ import { ImagesModule } from 'src/file-management/images/images.module';
 import { AccountsModule } from 'src/auth-system/accounts/accounts.module';
 import { StudentsHelper } from './helpers/students.helper';
 import { Attendance } from 'src/attendances/entities/attendance.entity';
+import { FilesModule } from 'src/file-management/files/files.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { Attendance } from 'src/attendances/entities/attendance.entity';
     AccountsModule,
     DormitoryRoomsModule,
     EnrollmentsModule,
+    FilesModule,
   ],
   controllers: [StudentsController],
   providers: [StudentsService, StudentsHelper],

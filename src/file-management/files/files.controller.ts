@@ -6,6 +6,7 @@ import { FilesService } from './files.service';
 import { UpdateFileDto } from './dto/update-files.dto';
 import { QueryDto } from 'src/common/dto/query.dto';
 import { FastifyReply } from 'fastify';
+import { Public } from 'src/common/decorators/setPublicRoute.decorator';
 
 @ApiBearerAuth()
 @ApiTags('Upload Files')
@@ -26,6 +27,7 @@ export class FilesController {
   }
 
   @Get('get-file/:slug')
+  @Public() // TODO: this should not be public
   getFile(@Param("slug") slug: string, @Res() res: FastifyReply) {
     return this.filesService.serveFile(slug, res);
   }

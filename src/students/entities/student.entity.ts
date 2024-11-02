@@ -5,6 +5,7 @@ import { EBloodGroup, EReligion, Gender } from "src/common/types/global.type";
 import { DormitoryRoom } from "src/dormitory-system/dormitory-rooms/entities/dormitory-room.entity";
 import { Enrollment } from "src/enrollments/entities/enrollment.entity";
 import { ExamReport } from "src/examination-system/exam-reports/entities/exam-report.entity";
+import { File } from "src/file-management/files/entities/file.entity";
 import { Image } from "src/file-management/images/entities/image.entity";
 import { FeesInvoice } from "src/finance-system/fees-system/fees-invoices/entities/fees-invoice.entity";
 import { Guardian } from "src/guardians/entities/guardian.entity";
@@ -148,8 +149,8 @@ export class Student extends BaseEntity {
     @Column({ type: 'longtext', nullable: true })
     additionalNotes: string;
 
-    @OneToMany(() => Image, (documentAttachments) => documentAttachments.student_documentAttachments)
-    documentAttachments: Image[];
+    @OneToMany(() => File, (documentAttachments) => documentAttachments.student_documentAttachments)
+    documentAttachments: File[];
 
     /**
     |--------------------------------------------------
