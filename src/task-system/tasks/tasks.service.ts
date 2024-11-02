@@ -75,7 +75,6 @@ export class TasksService extends BaseRepository {
       .leftJoin('task.subject', 'subject')
       .leftJoin('task.classRooms', 'classRoom')
       .leftJoin('classRoom.parent', 'parent')
-      .leftJoin('task.attachments', 'attachments')
       .andWhere(new Brackets(qb => {
         queryDto.search && qb.andWhere("LOWER(task.title) LIKE LOWER(:search)", { search: `%${queryDto.search}%` });
 
@@ -147,7 +146,7 @@ export class TasksService extends BaseRepository {
 
   async update(id: string, updateTaskDto: UpdateTaskDto) {
     const existingTask = await this.findOne(id);
-    const attachments = updateTaskDto.attachmentIds?.length ?
+    const attachments = updateTaskDto.attachmentIds ?
       await this.filesService.findAllByIds(updateTaskDto.attachmentIds)
       : existingTask.attachments;
 
