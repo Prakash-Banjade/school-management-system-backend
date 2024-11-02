@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors } from '@nestjs/common';
 import { StaffsService } from './staffs.service';
 import { CreateStaffDto } from './dto/create-staff.dto';
 import { UpdateStaffDto } from './dto/update-staff.dto';
@@ -9,6 +9,7 @@ import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action } from 'src/common/types/global.type';
 import { StaffsHelper } from './helpers/staffs.helper';
 import { EmployeeAttendanceQueryDto } from 'src/teachers/dto/employee-attendance-query.dto';
+import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 
 @ApiBearerAuth()
 @ApiTags("Staffs")
@@ -21,6 +22,7 @@ export class StaffsController {
 
   @Post()
   @ChekcAbilities({ subject: 'all', action: Action.CREATE })
+  @UseInterceptors(TransactionInterceptor)
   create(@Body() createStaffDto: CreateStaffDto) {
     return this.staffsService.create(createStaffDto);
   }
@@ -46,6 +48,7 @@ export class StaffsController {
 
   @Patch(':id')
   @ChekcAbilities({ subject: 'all', action: Action.UPDATE })
+  @UseInterceptors(TransactionInterceptor)
   update(@Param('id') id: string, @Body() updateStaffDto: UpdateStaffDto) {
     return this.staffsService.update(id, updateStaffDto);
   }

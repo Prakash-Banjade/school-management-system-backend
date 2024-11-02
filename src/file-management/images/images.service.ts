@@ -124,21 +124,27 @@ export class ImagesService {
     }
   }
 
-  async update(id: string, updateImageDto: UpdateImageDto) {
-    const existing = await this.findOne(id);
+  async update(existingImageId: string, newImageId: string | null) {
+    if (existingImageId === newImageId) return existingImageId;
 
-    // update image name only
-    existing.name = updateImageDto.name;
+    const existing = await this.findOne(existingImageId);
 
-    const savedImage = await this.imagesRepository.save(existing);
-
-    return {
-      message: 'Image updated',
-      image: {
-        url: savedImage.url,
-        id: savedImage.id
-      }
+    if (newImageId === null) { // if value is null, delete the image
+      await this.imagesRepository.remove(existing);
+      return;
     }
+
+    const newImage = await this.findOne(newImageId);
+
+    // update image name
+    const { id, createdAt, ...dataToMerge } = newImage;
+
+    this.imagesRepository.merge(existing, dataToMerge);
+
+    await this.imagesRepository.save(existing);
+    await this.imagesRepository.remove(newImage);
+
+    return existing.id;
   }
 
   async remove(id: string) {

@@ -40,20 +40,6 @@ export class ImagesController {
     return this.imagesService.serveImage(slug, queryDto, res);
   }
 
-  // @Get(':id')
-  // findOne(@Param('id') id: string, @Res() res: Response) {
-  //   return this.imagesService.findOne(id);
-  // }
-
-  @Patch(':id')
-  @ApiBearerAuth()
-  @FormDataRequest()
-  @ApiConsumes('multipart/formdata')
-  @ChekcAbilities({ subject: 'all', action: Action.UPDATE })
-  update(@Param('id') id: string, @Body() updateImageDto: UpdateImageDto) {
-    return this.imagesService.update(id, updateImageDto);
-  }
-
   @Delete(':id')
   @ApiBearerAuth()
   @ChekcAbilities({ subject: 'all', action: Action.DELETE })

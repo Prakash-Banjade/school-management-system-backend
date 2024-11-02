@@ -82,7 +82,8 @@ export class StaffsService extends BaseRepository {
       select: {
         profileImage: {
           id: true,
-          url: true
+          url: true,
+          originalName: true,
         }
       }
     });
@@ -95,13 +96,14 @@ export class StaffsService extends BaseRepository {
     const existingStaff = await this.findOne(id);
     await this.checkIfStaffExists(updateStaffDto, existingStaff);
 
-    const profileImage = ((updateStaffDto.profileImageId && updateStaffDto.profileImageId !== existingStaff.profileImage?.id) || !existingStaff.profileImage)
-      ? await this.imageService.findOne(updateStaffDto.profileImageId)
-      : null;
+    // evaluate profile image
+    if (existingStaff.profileImage?.id && updateStaffDto.profileImageId !== undefined) {
+      await this.imageService.update(existingStaff.profileImage.id, updateStaffDto.profileImageId);
+    } else if (updateStaffDto.profileImageId !== undefined) { // this will execute only when teacher has no profile image before
+      existingStaff.profileImage = await this.imageService.findOne(updateStaffDto.profileImageId); // setting new profile image
+    }
 
     Object.assign(existingStaff, { ...updateStaffDto });
-
-    existingStaff.profileImage = profileImage;
 
     return this.staffMutationReturn(await this.getRepository(Staff).save(existingStaff), 'updated');
   }

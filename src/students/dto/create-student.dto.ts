@@ -29,8 +29,9 @@ export class CreateStudentDto {
 
     @ApiProperty({ type: Number, description: 'Admission date of the student' })
     @IsDateString()
+    @IsNotFutureDate()
     @IsOptional()
-    admissionDate: string = new Date().toISOString();
+    admissionDate: string;
 
     @ApiPropertyOptional({ format: 'uuid' })
     @IsUUID()
@@ -86,7 +87,7 @@ export class CreateStudentDto {
     @ApiPropertyOptional({ type: Boolean, description: 'Is the student physically challenged?' })
     @IsBoolean()
     @IsOptional()
-    isPhysicallyChallenged?: boolean = false;
+    isPhysicallyChallenged?: boolean;
 
     @ApiProperty({ type: [GuardianOmitStudentId], description: 'Guardians of the student' })
     @IsDefined()

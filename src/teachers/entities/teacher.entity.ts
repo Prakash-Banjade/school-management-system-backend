@@ -44,9 +44,8 @@ export class Teacher extends BaseEntity {
     @Column({ type: 'real' })
     wage: number
 
-    @OneToOne(() => Image, image => image.teacher_profileImage, { nullable: true, onDelete: 'SET NULL' })
-    @JoinColumn()
-    profileImage?: Image;
+    @OneToOne(() => Image, image => image.teacher_profileImage, { nullable: true })
+    profileImage: Image;
 
     @OneToMany(() => ClassRoom, (classRoom) => classRoom.classTeacher)
     assignedClassRooms: ClassRoom[];

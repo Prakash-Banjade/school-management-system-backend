@@ -99,7 +99,8 @@ export class TeachersService extends BaseRepository {
       select: {
         profileImage: {
           id: true,
-          url: true
+          url: true,
+          originalName: true,
         },
         account: {
           id: true,
@@ -117,13 +118,15 @@ export class TeachersService extends BaseRepository {
     // check if teacher already exists
     await this.checkIfTeacherExists(updateTeacherDto, existingTeacher);
 
-    const profileImage = ((updateTeacherDto.profileImageId && (updateTeacherDto.profileImageId !== existingTeacher.profileImage?.id || !updateTeacherDto.profileImageId)))
-      ? await this.imageService.findOne(updateTeacherDto.profileImageId)
-      : existingTeacher.profileImage;
+    // evaluate profile image
+    if (existingTeacher.profileImage?.id && updateTeacherDto.profileImageId !== undefined) {
+      await this.imageService.update(existingTeacher.profileImage.id, updateTeacherDto.profileImageId);
+    } else if (updateTeacherDto.profileImageId !== undefined) { // this will execute only when teacher has no profile image before
+      existingTeacher.profileImage = await this.imageService.findOne(updateTeacherDto.profileImageId); // setting new profile image
+    }
 
     Object.assign(existingTeacher, {
       ...updateTeacherDto,
-      profileImage,
     });
     const savedTeacher = await this.getRepository(Teacher).save(existingTeacher);
 

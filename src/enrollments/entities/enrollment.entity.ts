@@ -18,6 +18,6 @@ export class Enrollment extends BaseEntity {
     @ManyToOne(() => AcademicYear, (academicYear) => academicYear.enrollments, { onDelete: 'CASCADE' })
     academicYear: AcademicYear;
 
-    @Column({ type: 'datetime' })
+    @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
     enrollmentDate: string;
 }
