@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { ClassRoom } from "../entities/class-room.entity";
 import { Brackets, Repository } from "typeorm";
@@ -93,6 +93,40 @@ export class ClassRoomsHelper {
         applySelectColumns(queryBuilder, classRoomOptionsSelectCols, 'classRoom');
 
         return paginatedData(queryDto, queryBuilder);
+    }
+
+    async getClassRoomDetails(id: string) {
+        const queryBuilder = this.classRoomRepo.createQueryBuilder('classRoom')
+            .where('classRoom.id = :classroomId', { classroomId: id }) // Filter by specific classroom ID
+            .leftJoin('classRoom.classTeacher', 'classTeacher')
+            .leftJoinAndSelect('classRoom.children', 'children') // Fetch child classes
+            .leftJoin('classRoom.students', 'students')
+            .leftJoin('students.enrollments', 'enrollment')
+            .leftJoin('enrollment.academicYear', 'academicYear', 'academicYear.isActive = true') // Only active academic year
+            .leftJoin('children.students', 'childrenStudents')
+            .leftJoin('childrenStudents.enrollments', 'childrenEnrollment')
+            .leftJoin('childrenEnrollment.academicYear', 'childrenAcademicYear', 'childrenAcademicYear.isActive = true') // Only active academic year for children
+            .select([
+                'classRoom.id as id',
+                'classRoom.name as name',
+                'classRoom.description as description',
+                'classRoom.monthlyTutionFee as monthlyTutionFee',
+                'classRoom.monthlyFee as monthlyFee',
+                'classRoom.location as location',
+                'classRoom.classType as classType',
+                'classRoom.createdAt as createdAt',
+                'classRoom.updatedAt as updatedAt',
+                'CONCAT(classTeacher.firstName, \' \', classTeacher.lastName) as classTeacherName',
+            ])
+            // Add aggregate student count fields
+            .addSelect('COUNT(DISTINCT students.id) + COUNT(DISTINCT childrenStudents.id)', 'totalStudentsCount')
+            .addSelect(`COUNT(DISTINCT CASE WHEN students.gender = '${Gender.MALE}' THEN students.id END) + COUNT(DISTINCT CASE WHEN childrenStudents.gender = '${Gender.MALE}' THEN childrenStudents.id END)`, 'totalMaleStudentsCount')
+            .addSelect(`COUNT(DISTINCT CASE WHEN students.gender = '${Gender.FEMALE}' THEN students.id END) + COUNT(DISTINCT CASE WHEN childrenStudents.gender = '${Gender.FEMALE}' THEN childrenStudents.id END)`, 'totalFemaleStudentsCount')
+            .groupBy('classRoom.id');
+
+        const classroomDetails = await queryBuilder.getRawOne();
+
+        return classroomDetails;
     }
 
 }

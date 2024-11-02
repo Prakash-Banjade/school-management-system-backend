@@ -45,6 +45,13 @@ export class ClassRoomsController {
     return this.classRoomsService.findAllSections(queryDto);
   }
 
+  // used in single class room page in frontend
+  @Get(':id/details')
+  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  getClassRoomDetails(@Param('id') id: string) {
+    return this.classRoomsHelper.getClassRoomDetails(id);
+
+  }
   @Get(':id')
   @ChekcAbilities({ subject: 'all', action: Action.READ })
   findOne(@Param('id') id: string) {
