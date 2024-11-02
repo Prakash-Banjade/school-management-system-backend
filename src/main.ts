@@ -26,7 +26,7 @@ async function bootstrap() {
     secret: configService.get<string>('COOKIE_SECRET'),
   });
 
-  app.register(fastifyHelmet);
+  configService.get('NODE_ENV') === 'production' && app.register(fastifyHelmet);
   app.register(fastifyCsrfProtection, { cookieOpts: { signed: true } });
   app.register(multipart);
 

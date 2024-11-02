@@ -35,6 +35,10 @@ export const singleStudentColumnsConfig: FindOptionsSelect<Student> = {
         url: true,
         originalName: true,
     },
+    profileImage: {
+        id: true,
+        url: true
+    },
     classRoom: {
         id: true,
         name: true,

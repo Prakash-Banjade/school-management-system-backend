@@ -72,7 +72,7 @@ export class ImagesService {
     })
   }
 
-  async findOne(id: string, currentUser?: AuthUser) {
+  async findOne(id: string) {
     const existingImage = await this.imagesRepository.findOne({
       where: [
         { id },
@@ -123,9 +123,9 @@ export class ImagesService {
       reply.status(404).send('Original image not found');
     }
   }
-  
-  async update(id: string, updateImageDto: UpdateImageDto, currentUser: AuthUser) {
-    const existing = await this.findOne(id, currentUser?.role !== 'admin' ? currentUser : undefined);
+
+  async update(id: string, updateImageDto: UpdateImageDto) {
+    const existing = await this.findOne(id);
 
     // update image name only
     existing.name = updateImageDto.name;
@@ -141,8 +141,8 @@ export class ImagesService {
     }
   }
 
-  async remove(id: string, currentUser: AuthUser) {
-    const existing = await this.findOne(id, currentUser);
+  async remove(id: string) {
+    const existing = await this.findOne(id);
     await this.imagesRepository.remove(existing);
     return {
       message: 'Image deleted successfully'

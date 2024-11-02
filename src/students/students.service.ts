@@ -52,8 +52,6 @@ export class StudentsService extends BaseRepository {
       ? await this.filesService.findAllByIds(createStudentDto.documentAttachmentIds)
       : null;
 
-    console.log(documentAttachments)
-
     // evaluate dormitory room
     const dormitoryRoom = createStudentDto.dormitoryRoomId
       ? await this.dormitoryRoomsService.findOne(createStudentDto.dormitoryRoomId)
@@ -163,10 +161,16 @@ export class StudentsService extends BaseRepository {
     // check if credentials are already taken
     await this.studentsHelper.checkIfStudentExists(updateStudentDto, existing);
 
-    // evaluate profile image
-    const profileImage = updateStudentDto.profileImageId
-      ? await this.imageService.findOne(updateStudentDto.profileImageId)
-      : existing.profileImage;
+    // evaluate profile image, since one-to-one relation, we need to remove the existing one first
+    if (updateStudentDto.profileImageId && (updateStudentDto.profileImageId !== existing.profileImage?.id || !existing.profileImage)) {
+      // remove existing profile image
+      await this.imageService.remove(existing.profileImage?.id);
+      // set new profile image
+      existing.profileImage = await this.imageService.findOne(updateStudentDto.profileImageId);
+    } else if (updateStudentDto.profileImageId === null) {
+      // unsetting profile image
+      existing.profileImage = null;
+    }
 
     /**
     |--------------------------------------------------
@@ -179,20 +183,18 @@ export class StudentsService extends BaseRepository {
       ? await this.filesService.findAllByIds(updateStudentDto.documentAttachmentIds)
       : existing.documentAttachments;
 
-      console.log(documentAttachments)
-
     // evaluate dormitory room
-    const dormitoryRoom = updateStudentDto.dormitoryRoomId
-      ? await this.dormitoryRoomsService.findOne(updateStudentDto.dormitoryRoomId)
-      : updateStudentDto.dormitoryRoomId === null // unsetting dormitory room
-        ? null
-        : existing.dormitoryRoom;
+    if (updateStudentDto.dormitoryRoomId && (updateStudentDto.dormitoryRoomId !== existing.dormitoryRoom?.id || !existing.dormitoryRoom)) {
+      // set new dormitory room
+      existing.dormitoryRoom = await this.dormitoryRoomsService.findOne(updateStudentDto.dormitoryRoomId);
+    } else if (updateStudentDto.dormitoryRoomId === null) {
+      // unsetting dormitory room
+      existing.dormitoryRoom = null;
+    }
 
     Object.assign(existing, {
       ...updateStudentDto,
-      profileImage,
       documentAttachments,
-      dormitoryRoom,
     });
 
     const savedStudent = await this.getRepository<Student>(Student).save(existing);

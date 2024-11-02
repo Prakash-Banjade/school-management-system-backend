@@ -50,14 +50,14 @@ export class ImagesController {
   @FormDataRequest()
   @ApiConsumes('multipart/formdata')
   @ChekcAbilities({ subject: 'all', action: Action.UPDATE })
-  update(@Param('id') id: string, @Body() updateImageDto: UpdateImageDto, @CurrentUser() currentUser: AuthUser) {
-    return this.imagesService.update(id, updateImageDto, currentUser);
+  update(@Param('id') id: string, @Body() updateImageDto: UpdateImageDto) {
+    return this.imagesService.update(id, updateImageDto);
   }
 
   @Delete(':id')
   @ApiBearerAuth()
   @ChekcAbilities({ subject: 'all', action: Action.DELETE })
-  remove(@Param('id') id: string, @CurrentUser() currentUser: AuthUser) {
-    return this.imagesService.remove(id, currentUser);
+  remove(@Param('id') id: string) {
+    return this.imagesService.remove(id);
   }
 }
