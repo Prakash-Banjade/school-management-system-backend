@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { ArrayMinSize, IsArray, IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID } from "class-validator";
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID } from "class-validator";
 import { IsFutureDate } from "src/common/decorators/isFutureDate.decorator";
 import { IsUuidOrUrl } from "src/common/decorators/isUrlOrUUid.decorator";
 import { ETask } from "src/common/types/global.type";
@@ -32,6 +32,7 @@ export class CreateTaskDto {
     @ApiPropertyOptional({ type: [String], format: 'uuid', isArray: true, description: 'Attachment ids or urls' })
     @IsUuidOrUrl({ each: true })
     @IsOptional()
+    @ArrayMaxSize(5, { message: 'Maximum 5 attachments allowed' })
     attachmentIds?: string[];
 
     @ApiProperty({ type: String, format: 'uuid', description: 'Subject id' })
