@@ -86,23 +86,17 @@ export class FilesService {
         }
       }
 
-      const contentTypeFormat = path.extname(filename).substring(1) === 'pdf' ? 'application/pdf' : 'image/' + path.extname(filename).substring(1);
+      const fileExt = path.extname(filename).substring(1);
+      const contentTypeFormat = fileExt === 'pdf' ? 'application/pdf' : `image/${fileExt}`;
 
-      // Set appropriate headers
+      // Set headers
       res.header('Content-Type', contentTypeFormat);
       res.header('Content-Length', stats.size);
+      res.header('Content-Disposition', 'inline');
 
-      // Stream the file to the response
+      // Stream the file directly to the response
       const readStream = fs.createReadStream(filePath);
-
-      readStream.on('data', (chunk) => {
-        res.raw.write(chunk);
-      });
-
-      // End the response once the stream has finished
-      readStream.on('end', () => {
-        res.raw.end();
-      });
+      res.send(readStream);
     });
   }
 
