@@ -13,6 +13,7 @@ export const dormitoryRoomSelectCols: FindOptionsSelect<DormitoryRoom> = {
         address: true,
     },
     noOfBeds: true,
+    name: true,
     roomNumber: true,
     roomType: {
         id: true,

@@ -1,3 +1,4 @@
+require('dotenv').config();
 import {
     registerDecorator,
     ValidationArguments,
@@ -5,7 +6,7 @@ import {
     ValidatorConstraint,
     ValidatorConstraintInterface,
 } from 'class-validator';
-import { isUUID, isURL } from 'class-validator';
+import { isUUID } from 'class-validator';
 
 const BACKEND_URL = process.env.BACKEND_URL;
 
@@ -32,4 +33,16 @@ export function IsUuidOrUrl(validationOptions?: ValidationOptions) {
             validator: IsUuidOrUrlConstraint,
         });
     };
+}
+
+export function isUuidOrUrl(value: any): boolean {
+    if (typeof value !== 'string') return false;
+
+    return isUUID(value) || value.startsWith(BACKEND_URL);
+}
+
+export function isBackendUrl(value: any): boolean {
+    if (typeof value !== 'string') return false;
+
+    return value.startsWith(BACKEND_URL);
 }

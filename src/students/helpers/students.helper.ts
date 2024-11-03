@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable } from "@nestjs/common";
 import { Brackets, Not, Repository, SelectQueryBuilder } from "typeorm";
 import { Student } from "../entities/student.entity";
 import { StudentQueryDto, StudentSortBy } from "../dto/student-query.dto";
@@ -9,25 +9,28 @@ import { StudentAttendanceQueryDto } from "../dto/student-attendance-query.dto";
 import { Attendance } from "src/attendances/entities/attendance.entity";
 import { PageMetaDto } from "src/common/dto/pageMeta.dto";
 import { PageDto } from "src/common/dto/page.dto.";
+import { Cache } from "cache-manager";
+import { CACHE_MANAGER } from "@nestjs/cache-manager";
+import { CACHE_KEYS } from "src/common/CONSTANTS";
 
 @Injectable()
 export class StudentsHelper {
     constructor(
         @InjectRepository(Student) private readonly studentRepo: Repository<Student>,
+        @Inject(CACHE_MANAGER) private cacheManager: Cache,
     ) { }
 
     async setQuery(queryDto: StudentQueryDto) {
+        const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+        
         const queryBuilder = this.studentRepo.createQueryBuilder('student')
+            .where("student.currentAcademicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
             .offset(queryDto.skip)
             .limit(queryDto.take)
             .addSelect("CONCAT(student.firstName, ' ', student.lastName) AS fullName")
             .orderBy(this.getOrderByKey(queryDto), queryDto.order)
             .leftJoin('student.classRoom', 'classRoom')
             .leftJoin('student.profileImage', 'profileImage')
-            .leftJoin('student.account', 'account')
-            .leftJoin('student.enrollments', 'enrollment')
-            .leftJoin('enrollment.academicYear', 'academicYear')
-            .leftJoin('account.user', 'user')
             .leftJoin('classRoom.parent', 'parent')
             .andWhere(new Brackets(qb => {
                 if (queryDto.search) {
@@ -46,7 +49,6 @@ export class StudentsHelper {
 
                 queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId }); // the sectionId send by the frontend is the class room id
             }))
-            .andWhere('academicYear.isActive = :isActive', { isActive: true }) // filter by active academic year
             .select([
                 "student.id as id",
                 "CONCAT(student.firstName, ' ', student.lastName) AS fullName",
@@ -61,7 +63,6 @@ export class StudentsHelper {
                 "classRoom.name as classRoom",
                 "parent.id as parentClassId",
                 "parent.name as parentClass",
-                "account.id as accountId",
             ])
 
         const count = await queryBuilder.getCount();
@@ -125,11 +126,12 @@ export class StudentsHelper {
     }
 
     async getStudentsWithAttendance(queryDto: StudentAttendanceQueryDto) {
+        const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+        
         const studentsWithAttendance = await this.studentRepo.createQueryBuilder('student')
+            .where("student.currentAcademicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
             .leftJoin("student.account", "account")
             .leftJoin("student.classRoom", "classRoom")
-            .leftJoin("student.enrollments", "enrollment")
-            .leftJoin("enrollment.academicYear", "academicYear")
             .leftJoinAndMapOne(
                 "student.attendance",
                 Attendance,
@@ -137,7 +139,6 @@ export class StudentsHelper {
                 "attendance.accountId = account.id AND DATE(attendance.date) = :attendanceDate",
                 { attendanceDate: new Date(queryDto.date).toISOString().split('T')[0] }
             )
-            .where("academicYear.isActive = :isActive", { isActive: true })
             .andWhere(new Brackets((qb) => {
                 if (!queryDto.sectionId) {
                     qb.where("classRoom.id = :classroomId", { classroomId: queryDto.classRoomId }); // if section id is not present look for class room id

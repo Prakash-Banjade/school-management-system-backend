@@ -1,18 +1,21 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { CreateAcademicYearDto } from './dto/create-academic-year.dto';
 import { UpdateAcademicYearDto } from './dto/update-academic-year.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AcademicYear } from './entities/academic-year.entity';
 import { Brackets, Repository } from 'typeorm';
 import { QueryDto } from 'src/common/dto/query.dto';
-import paginatedData from 'src/utils/paginatedData';
 import { PageMetaDto } from 'src/common/dto/pageMeta.dto';
 import { PageDto } from 'src/common/dto/page.dto.';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { CACHE_KEYS } from 'src/common/CONSTANTS';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class AcademicYearsService {
   constructor(
     @InjectRepository(AcademicYear) private academicYearRepo: Repository<AcademicYear>,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) { }
 
   async create(createAcademicYearDto: CreateAcademicYearDto) {
@@ -30,6 +33,8 @@ export class AcademicYearsService {
     });
 
     const saved = await this.academicYearRepo.save(newAcademicYear);
+
+    await this.cacheManager.set(CACHE_KEYS.CAY_ID, saved.id, 0); // update cache
 
     return {
       message: "Academic year created successfully",
@@ -83,6 +88,8 @@ export class AcademicYearsService {
 
     existing.isActive = true;
     const saved = await this.academicYearRepo.save(existing);
+
+    await this.cacheManager.set(CACHE_KEYS.CAY_ID, saved.id, 0); // update cache
 
     return {
       message: "Active year changed",

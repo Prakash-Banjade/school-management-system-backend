@@ -17,3 +17,8 @@ export const INVALID_AUTH_CREDENTIALS_MSG = 'Invalid email or password';
 export const MAX_PREV_PASSWORDS = 3 as const;
 
 export const PASSWORD_SALT_COUNT = 10 as const;
+
+// CACHE KEYS
+export const enum CACHE_KEYS {
+    CAY_ID = 'currentAcademicYearId'
+}

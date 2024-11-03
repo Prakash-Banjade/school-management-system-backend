@@ -2,6 +2,11 @@ import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsInt, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, IsUUID, Min } from "class-validator";
 
 export class CreateDormitoryRoomDto {
+    @ApiProperty({ type: String })
+    @IsString()
+    @IsNotEmpty()
+    name: string;
+    
     @ApiProperty({ type: Number })
     @IsInt()
     @IsNotEmpty()

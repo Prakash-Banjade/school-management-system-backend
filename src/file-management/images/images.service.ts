@@ -16,6 +16,7 @@ import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { imageSelectColumns } from './helpers/image-select-cols';
 import paginatedData from 'src/utils/paginatedData';
 import { FastifyReply } from 'fastify';
+import { isBackendUrl } from 'src/common/decorators/isUrlOrUUid.decorator';
 
 @Injectable()
 export class ImagesService {
@@ -125,7 +126,7 @@ export class ImagesService {
   }
 
   async update(existingImageId: string, newImageId: string | null) {
-    if (existingImageId === newImageId) return existingImageId;
+    if (existingImageId === newImageId || isBackendUrl(newImageId)) return existingImageId;
 
     const existing = await this.findOne(existingImageId);
 

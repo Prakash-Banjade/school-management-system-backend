@@ -1,0 +1,46 @@
+version: '3.9'
+
+# below is the format of DATABASE_URL in .env file
+# DATABASE_URL=mysql://root:mySQL@db:3306/testdb
+
+services:
+  db:
+    image: mysql:latest
+    restart: always
+    container_name: sms_db_mysql
+    ports:
+      - "3309:3306"
+    env_file:
+      - .env
+    volumes:
+      - mysql:/var/lib/mysql
+
+  redis:
+    image: redis:8.0-M02-alpine
+    restart: always
+    container_name: redis
+    ports:
+      - '6379:6379'
+    env_file:
+      - .env
+    command: redis-server --save 20 1 --loglevel warning
+    volumes:
+      - cache:/data
+  # app:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: nestjs_starter
+  #   restart: always # on crash restart the container
+  #   env_file:
+  #     - .env
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - db
+  #     - redis
+
+volumes:
+  mysql:
+  cache:
+    driver: local

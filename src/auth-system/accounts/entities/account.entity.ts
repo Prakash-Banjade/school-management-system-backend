@@ -38,7 +38,7 @@ export class Account extends BaseEntity {
     @Column({ type: 'enum', enum: AuthProvider, default: AuthProvider.CREDENTIALS })
     provider: AuthProvider;
 
-    @Column({ type: 'simple-array', nullable: true })
+    @Column({ type: 'simple-array' })
     prevPasswords: string[];
 
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })

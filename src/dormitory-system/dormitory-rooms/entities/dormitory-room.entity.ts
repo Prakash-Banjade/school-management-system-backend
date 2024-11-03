@@ -6,7 +6,10 @@ import { Column, Entity, ManyToOne, OneToMany } from "typeorm";
 
 @Entity()
 export class DormitoryRoom extends BaseEntity {
-    @Column({ type: 'int' })
+    @Column({ type: 'varchar' })
+    name: string;
+
+    @Column({ type: 'int', unique: true })
     roomNumber: number
 
     @Column({ type: 'int' })

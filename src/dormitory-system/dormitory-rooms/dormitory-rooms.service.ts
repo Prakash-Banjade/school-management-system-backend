@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import { CreateDormitoryRoomDto } from './dto/create-dormitory-room.dto';
 import { UpdateDormitoryRoomDto } from './dto/update-dormitory-room.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -20,6 +20,14 @@ export class DormitoryRoomsService {
   ) { }
 
   async create(createDormitoryRoomDto: CreateDormitoryRoomDto) {
+    const existingDormitoryRoom = await this.dormitoryRoomRepo.findOne({
+      where: {
+        roomNumber: createDormitoryRoomDto.roomNumber
+      }
+    })
+
+    if (existingDormitoryRoom) throw new ConflictException('Room number already exists')
+    
     const dormitory = await this.dormitoriesService.findOne(createDormitoryRoomDto.dormitoryId)
     const roomType = await this.doomTypesService.findOne(createDormitoryRoomDto.roomTypeId)
 
@@ -62,10 +70,11 @@ export class DormitoryRoomsService {
       relations: {
         dormitory: true,
         roomType: true,
-      }
+      },
+      select: dormitoryRoomSelectCols
     });
 
-    if (!existingDormitoryRoom) throw new Error('Dormitory Room not found')
+    if (!existingDormitoryRoom) throw new BadRequestException('Dormitory Room not found')
 
     return existingDormitoryRoom
   }

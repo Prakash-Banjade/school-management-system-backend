@@ -1,3 +1,4 @@
+import { AcademicYear } from "src/academic-years/entities/academic-year.entity";
 import { Account } from "src/auth-system/accounts/entities/account.entity";
 import { ClassRoom } from "src/class-rooms/entities/class-room.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
@@ -23,8 +24,11 @@ export class Student extends BaseEntity {
     |--------------------------------------------------
     */
 
-    @OneToMany(() => Enrollment, (enrollment) => enrollment.student)
-    enrollments: Enrollment[]
+    @OneToMany(() => Enrollment, (enrollment) => enrollment.student, { cascade: true })
+    enrollments: Enrollment[];
+
+    @ManyToOne(() => AcademicYear, (academicYear) => academicYear.students, { onDelete: 'RESTRICT' })
+    currentAcademicYear: AcademicYear;
 
     @ManyToOne(() => ClassRoom, (classRoom) => classRoom.students, { onDelete: 'RESTRICT' })
     classRoom: ClassRoom;

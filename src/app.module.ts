@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from './datasource/typeorm.module';
 import { AuthSystemModule } from './auth-system/auth-system.module';
 import { FileManagementModule } from './file-management/file-management.module';
@@ -35,6 +35,8 @@ import { CaslModule } from './auth-system/casl/casl.module';
 import { LeaveRequestsModule } from './leave-requests/leave-requests.module';
 import { LibrarySystemModule } from './library-system/library-system.module';
 import { TaskSystemModule } from './task-system/task-system.module';
+import { CacheModule, CacheStore } from '@nestjs/cache-manager';
+import { redisStore } from 'cache-manager-redis-yet';
 
 @Module({
   imports: [
@@ -57,6 +59,25 @@ import { TaskSystemModule } from './task-system/task-system.module';
       ttl: 1000, // 5 req per second
       limit: 5,
     }]),
+    CacheModule.registerAsync({
+      imports: [ConfigModule],
+      isGlobal: true,
+      useFactory: async (configService: ConfigService) => {
+        const store = await redisStore({
+          socket: {
+            host: configService.get<string>('REDIS_HOST'),
+            port: configService.get<number>('REDIS_PORT'),
+          },
+        });
+
+        return {
+          store: store as unknown as CacheStore,
+          ttl: 3 * 60000, // 3 minutes (milliseconds)
+          max: 1000,
+        };
+      },
+      inject: [ConfigService],
+    }),
     TypeOrmModule,
     AuthSystemModule,
     FileManagementModule,

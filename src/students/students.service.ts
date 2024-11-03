@@ -8,7 +8,6 @@ import { ClassRoomsService } from 'src/class-rooms/class-rooms.service';
 import { REQUEST } from '@nestjs/core';
 import { singleStudentColumnsConfig } from './helpers/studentsColumnsConfig';
 import { DormitoryRoomsService } from 'src/dormitory-system/dormitory-rooms/dormitory-rooms.service';
-import { EnrollmentsService } from 'src/enrollments/enrollments.service';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { ImagesService } from 'src/file-management/images/images.service';
 import { AccountsService } from 'src/auth-system/accounts/accounts.service';
@@ -17,6 +16,9 @@ import { StudentsHelper } from './helpers/students.helper';
 import { EClassType } from 'src/common/types/global.type';
 import { StudentAttendanceQueryDto } from './dto/student-attendance-query.dto';
 import { FilesService } from 'src/file-management/files/files.service';
+import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
+import { AcademicYear } from 'src/academic-years/entities/academic-year.entity';
+import { getRegistrationNumber } from 'src/utils/get-registration-number';
 
 @Injectable({ scope: Scope.REQUEST })
 export class StudentsService extends BaseRepository {
@@ -27,7 +29,6 @@ export class StudentsService extends BaseRepository {
     private readonly classRoomsService: ClassRoomsService,
     private readonly accountsService: AccountsService,
     private dormitoryRoomsService: DormitoryRoomsService,
-    private readonly enrollmentsService: EnrollmentsService,
     private readonly studentsHelper: StudentsHelper
   ) {
     super(dataSource, req);
@@ -36,16 +37,17 @@ export class StudentsService extends BaseRepository {
   async create(createStudentDto: CreateStudentDto) {
     await this.studentsHelper.checkIfStudentExists(createStudentDto);
 
-    // evaluate profile image
-    const profileImage = createStudentDto.profileImageId
-      ? await this.imageService.findOne(createStudentDto.profileImageId)
-      : null;
-
     // evaluate class room
     const classRoom = await this.classRoomsService.findOne(createStudentDto.classRoomId);
     if (classRoom.classType === EClassType.PRIMARY && classRoom.children?.length > 0) { // if there are class sections, then section is needed
       throw new BadRequestException('Please select section');
     }
+
+    // evaluate profile image
+    const profileImage = createStudentDto.profileImageId
+      ? await this.imageService.findOne(createStudentDto.profileImageId)
+      : null;
+
 
     // evaluate document attachments
     const documentAttachments = createStudentDto.documentAttachmentIds
@@ -57,25 +59,29 @@ export class StudentsService extends BaseRepository {
       ? await this.dormitoryRoomsService.findOne(createStudentDto.dormitoryRoomId)
       : null;
 
+    const academicYear = await this.getRepository<AcademicYear>(AcademicYear).findOneBy({ isActive: true }); // enroll in current academic year
+
+    const enrollment = this.getRepository<Enrollment>(Enrollment).create({
+      classRoom,
+      academicYear,
+      enrollmentDate: createStudentDto.admissionDate,
+      registrationNumber: getRegistrationNumber(academicYear),
+    });
+
     const newStudent = this.getRepository<Student>(Student).create({
       ...createStudentDto,
       profileImage,
       classRoom,
       documentAttachments,
-      dormitoryRoom
+      dormitoryRoom,
+      currentAcademicYear: academicYear,
+      enrollments: [enrollment], // enrollment is created automatically due to cascading
     });
 
     const savedStudent = await this.getRepository<Student>(Student).save(newStudent);
 
     // CREATE ACCOUNT
     await this.accountsService.createAccount(savedStudent);
-
-    // CREATE ENROLLMENTS
-    await this.enrollmentsService.create({
-      studentId: savedStudent.id,
-      classRoomId: classRoom.id,
-      enrollmentDate: createStudentDto.admissionDate,
-    }, true);
 
     return this.studentMutationReturn(savedStudent, 'created');
   }
@@ -162,14 +168,10 @@ export class StudentsService extends BaseRepository {
     await this.studentsHelper.checkIfStudentExists(updateStudentDto, existing);
 
     // evaluate profile image, since one-to-one relation, we need to remove the existing one first
-    if (updateStudentDto.profileImageId && (updateStudentDto.profileImageId !== existing.profileImage?.id || !existing.profileImage)) {
-      // remove existing profile image
-      await this.imageService.remove(existing.profileImage?.id);
-      // set new profile image
-      existing.profileImage = await this.imageService.findOne(updateStudentDto.profileImageId);
-    } else if (updateStudentDto.profileImageId === null) {
-      // unsetting profile image
-      existing.profileImage = null;
+    if (existing.profileImage?.id && updateStudentDto.profileImageId !== undefined) {
+      await this.imageService.update(existing.profileImage.id, updateStudentDto.profileImageId);
+    } else if (updateStudentDto.profileImageId !== undefined) { // this will execute only when student has no profile image before
+      existing.profileImage = await this.imageService.findOne(updateStudentDto.profileImageId); // setting new profile image
     }
 
     /**

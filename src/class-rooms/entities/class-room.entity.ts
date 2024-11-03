@@ -24,10 +24,10 @@ export class ClassRoom extends BaseEntity {
     @Column({ type: "longtext", nullable: true })
     description: string;
 
-    @Column({ type: "real" })
+    @Column({ type: "real", default: 0 })
     monthlyTutionFee: number;
 
-    @Column({ type: "real" })
+    @Column({ type: "real", default: 0 })
     monthlyFee: number;
 
     @Column({ type: 'varchar', default: '' })
