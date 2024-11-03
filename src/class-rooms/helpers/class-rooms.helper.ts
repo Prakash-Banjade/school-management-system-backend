@@ -126,7 +126,6 @@ export class ClassRoomsHelper {
                 `COUNT(DISTINCT CASE WHEN student.gender = '${Gender.FEMALE}' THEN student.id END) AS totalFemaleStudentsCount`
             ])
 
-        console.log(currentAcademicYearId)
         const childrenClassQueryBuilder = this.classRoomRepo.createQueryBuilder('classRoom')
             .leftJoin("classRoom.parent", "parentClass")
             .where('parentClass.id = :classroomId', { classroomId: id })
@@ -139,11 +138,15 @@ export class ClassRoomsHelper {
             ])
             .groupBy('classRoom.id');
 
-        const data = await Promise.all([classRoomQueryBuilder.getRawOne(), childrenClassQueryBuilder.getRawMany()]);
+        const [classRoom, childrenClass] = await Promise.all([classRoomQueryBuilder.getRawOne(), childrenClassQueryBuilder.getRawMany()]);
 
-        console.log(data) 
+        childrenClass?.forEach(childClass => {
+            classRoom.totalStudentsCount = +classRoom.totalStudentsCount + +childClass.totalStudentsCount;
+            classRoom.totalMaleStudentsCount = +classRoom.totalMaleStudentsCount + +childClass.totalMaleStudentsCount;
+            classRoom.totalFemaleStudentsCount = +classRoom.totalFemaleStudentsCount + +childClass.totalFemaleStudentsCount;
+        })
 
-
+        return classRoom;
     }
 
 }
