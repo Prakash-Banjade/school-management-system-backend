@@ -15,9 +15,8 @@ export class CreateAttendanceDto {
 
     @ApiPropertyOptional({ type: String, format: 'date-time' })
     @IsNotEmpty()
-    @IsOptional()
     @IsDateString()
-    date?: string;
+    date: string;
 
     @ApiPropertyOptional({ type: String, format: 'date-time' })
     @IsNotEmpty()

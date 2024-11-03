@@ -1,7 +1,7 @@
 import { Account } from "src/auth-system/accounts/entities/account.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { EAttendanceStatus } from "src/common/types/global.type";
-import { BeforeInsert, BeforeUpdate, Column, Entity, ManyToOne, } from "typeorm";
+import { Column, Entity, ManyToOne, } from "typeorm";
 
 @Entity()
 export class Attendance extends BaseEntity {
@@ -13,12 +13,6 @@ export class Attendance extends BaseEntity {
 
     @Column({ type: 'datetime' })
     date: string;
-
-    @BeforeInsert()
-    @BeforeUpdate()
-    setDate() {
-        if (!this.date) this.date = new Date().toISOString();
-    }
 
     @Column({ type: 'datetime', nullable: true })
     inTime: string;

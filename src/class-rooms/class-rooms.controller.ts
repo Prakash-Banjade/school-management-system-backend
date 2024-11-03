@@ -9,6 +9,8 @@ import { ApiPaginatedResponse } from 'src/common/decorators/apiPaginatedResponse
 import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action } from 'src/common/types/global.type';
 import { ClassRoomsHelper } from './helpers/class-rooms.helper';
+import { AttendanceStatisticsQueryDto } from './dto/attendance-statistics-query.dto';
+import { ClassRoomsStatistics } from './helpers/class-rooms.statistics';
 
 @ApiBearerAuth()
 @ApiTags('Class rooms')
@@ -16,7 +18,8 @@ import { ClassRoomsHelper } from './helpers/class-rooms.helper';
 export class ClassRoomsController {
   constructor(
     private readonly classRoomsService: ClassRoomsService,
-    private readonly classRoomsHelper: ClassRoomsHelper
+    private readonly classRoomsHelper: ClassRoomsHelper,
+    private readonly classRoomsStatistics: ClassRoomsStatistics,
   ) { }
 
   @Post()
@@ -50,8 +53,14 @@ export class ClassRoomsController {
   @ChekcAbilities({ subject: 'all', action: Action.READ })
   getClassRoomDetails(@Param('id') id: string) {
     return this.classRoomsHelper.getClassRoomDetails(id);
-
   }
+
+  @Get(':id/attendance-statistics')
+  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  getAttendanceStatistics(@Param('id') id: string, @Query() queryDto: AttendanceStatisticsQueryDto) {
+    return this.classRoomsStatistics.getAttendanceStatistics(id, queryDto);
+  }
+
   @Get(':id')
   @ChekcAbilities({ subject: 'all', action: Action.READ })
   findOne(@Param('id') id: string) {

@@ -7,6 +7,7 @@ import { ClassRoomsHelper } from './helpers/class-rooms.helper';
 import { Student } from 'src/students/entities/student.entity';
 import { AcademicYearsModule } from 'src/academic-years/academic-years.module';
 import { TeachersModule } from 'src/teachers/teachers.module';
+import { ClassRoomsStatistics } from './helpers/class-rooms.statistics';
 
 @Module({
   imports: [
@@ -18,7 +19,7 @@ import { TeachersModule } from 'src/teachers/teachers.module';
     TeachersModule,
   ],
   controllers: [ClassRoomsController],
-  providers: [ClassRoomsService, ClassRoomsHelper],
+  providers: [ClassRoomsService, ClassRoomsHelper, ClassRoomsStatistics],
   exports: [ClassRoomsService],
 })
 export class ClassRoomsModule { }

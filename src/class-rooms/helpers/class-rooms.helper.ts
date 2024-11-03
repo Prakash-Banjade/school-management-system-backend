@@ -1,7 +1,7 @@
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { ClassRoom } from "../entities/class-room.entity";
-import { Brackets, Repository } from "typeorm";
+import { Brackets, DataSource, Repository } from "typeorm";
 import { QueryDto } from "src/common/dto/query.dto";
 import { EClassType, Gender } from "src/common/types/global.type";
 import { applySelectColumns } from "src/utils/apply-select-cols";
@@ -11,13 +11,17 @@ import { ClassRoomQueryDto } from "../dto/classRoom-query.dto";
 import { CACHE_MANAGER } from "@nestjs/cache-manager";
 import { Cache } from "cache-manager";
 import { CACHE_KEYS } from "src/common/CONSTANTS";
+import { BaseRepository } from "src/common/repository/base-repository";
+import { FastifyRequest } from "fastify";
+import { REQUEST } from "@nestjs/core";
 
 @Injectable()
-export class ClassRoomsHelper {
+export class ClassRoomsHelper extends BaseRepository {
     constructor(
+        dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
         @InjectRepository(ClassRoom) private readonly classRoomRepo: Repository<ClassRoom>,
         @Inject(CACHE_MANAGER) private cacheManager: Cache,
-    ) { }
+    ) { super(dataSource, req); }
 
     setClassRoomQuery(queryDto: ClassRoomQueryDto) {
         return this.classRoomRepo.createQueryBuilder('classRoom')
@@ -107,6 +111,8 @@ export class ClassRoomsHelper {
             .where('classRoom.id = :classroomId', { classroomId: id }) // Filter by specific classroom ID
             .leftJoin('classRoom.classTeacher', 'classTeacher')
             .leftJoin('classRoom.students', 'student', 'student.currentAcademicYearId = :currentAcademicYearId', { currentAcademicYearId })
+            .leftJoin('classRoom.children', 'childClass')
+            .leftJoin('childClass.students', 'childClassStudent', 'childClassStudent.currentAcademicYearId = :currentAcademicYearId', { currentAcademicYearId })
             .select([
                 'classRoom.id as id',
                 'classRoom.name as name',
@@ -121,32 +127,33 @@ export class ClassRoomsHelper {
             ])
             // Add aggregate student count fields
             .addSelect([
-                'COUNT(DISTINCT student.id) AS totalStudentsCount',
-                `COUNT(DISTINCT CASE WHEN student.gender = '${Gender.MALE}' THEN student.id END) AS totalMaleStudentsCount`,
-                `COUNT(DISTINCT CASE WHEN student.gender = '${Gender.FEMALE}' THEN student.id END) AS totalFemaleStudentsCount`
+                'COUNT(DISTINCT student.id) + COUNT(DISTINCT childClassStudent.id) AS totalStudentsCount',
+                `COUNT(DISTINCT CASE WHEN student.gender = '${Gender.MALE}' THEN student.id END) + COUNT(DISTINCT CASE WHEN childClassStudent.gender = '${Gender.MALE}' THEN childClassStudent.id END) AS totalMaleStudentsCount`,
+                `COUNT(DISTINCT CASE WHEN student.gender = '${Gender.FEMALE}' THEN student.id END) + COUNT(DISTINCT CASE WHEN childClassStudent.gender = '${Gender.FEMALE}' THEN childClassStudent.id END) AS totalFemaleStudentsCount`
             ])
 
-        const childrenClassQueryBuilder = this.classRoomRepo.createQueryBuilder('classRoom')
-            .leftJoin("classRoom.parent", "parentClass")
-            .where('parentClass.id = :classroomId', { classroomId: id })
-            .leftJoin('classRoom.students', 'student', 'student.currentAcademicYearId = :currentAcademicYearId', { currentAcademicYearId })
-            .select([
-                'classRoom.name as name',
-                'COUNT(DISTINCT student.id) AS totalStudentsCount',
-                `COUNT(DISTINCT CASE WHEN student.gender = '${Gender.MALE}' THEN student.id END) AS totalMaleStudentsCount`,
-                `COUNT(DISTINCT CASE WHEN student.gender = '${Gender.FEMALE}' THEN student.id END) AS totalFemaleStudentsCount`
-            ])
-            .groupBy('classRoom.id');
+        return classRoomQueryBuilder.getRawOne();
 
-        const [classRoom, childrenClass] = await Promise.all([classRoomQueryBuilder.getRawOne(), childrenClassQueryBuilder.getRawMany()]);
+        // const childrenClassQueryBuilder = this.classRoomRepo.createQueryBuilder('classRoom')
+        //     .leftJoin("classRoom.parent", "parentClass")
+        //     .where('parentClass.id = :classroomId', { classroomId: id })
+        //     .leftJoin('classRoom.students', 'student', 'student.currentAcademicYearId = :currentAcademicYearId', { currentAcademicYearId })
+        //     .select([
+        //         'classRoom.name as name',
+        //         'COUNT(DISTINCT student.id) AS totalStudentsCount',
+        //         `COUNT(DISTINCT CASE WHEN student.gender = '${Gender.MALE}' THEN student.id END) AS totalMaleStudentsCount`,
+        //         `COUNT(DISTINCT CASE WHEN student.gender = '${Gender.FEMALE}' THEN student.id END) AS totalFemaleStudentsCount`
+        //     ])
+        //     .groupBy('classRoom.id');
 
-        childrenClass?.forEach(childClass => {
-            classRoom.totalStudentsCount = +classRoom.totalStudentsCount + +childClass.totalStudentsCount;
-            classRoom.totalMaleStudentsCount = +classRoom.totalMaleStudentsCount + +childClass.totalMaleStudentsCount;
-            classRoom.totalFemaleStudentsCount = +classRoom.totalFemaleStudentsCount + +childClass.totalFemaleStudentsCount;
-        })
+        // const [classRoom, childrenClass] = await Promise.all([classRoomQueryBuilder.getRawOne(), childrenClassQueryBuilder.getRawMany()]);
 
-        return classRoom;
+        // childrenClass?.forEach(childClass => {
+        //     classRoom.totalStudentsCount = +classRoom.totalStudentsCount + +childClass.totalStudentsCount;
+        //     classRoom.totalMaleStudentsCount = +classRoom.totalMaleStudentsCount + +childClass.totalMaleStudentsCount;
+        //     classRoom.totalFemaleStudentsCount = +classRoom.totalFemaleStudentsCount + +childClass.totalFemaleStudentsCount;
+        // })
+
+        // return classRoom;
     }
-
 }
