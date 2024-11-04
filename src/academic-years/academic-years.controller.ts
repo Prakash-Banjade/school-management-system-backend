@@ -6,6 +6,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { QueryDto } from 'src/common/dto/query.dto';
 import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action } from 'src/common/types/global.type';
+import { AcademicYearOptionsDto } from './dto/academic-year-options.dto';
 
 @ApiBearerAuth()
 @ApiTags('Academic Years')
@@ -23,6 +24,12 @@ export class AcademicYearsController {
   @ChekcAbilities({ action: Action.READ, subject: 'all' })
   findAll(@Query() queryDto: QueryDto) {
     return this.academicYearsService.findAll(queryDto);
+  }
+
+  @Get('options')
+  @ChekcAbilities({ action: Action.READ, subject: 'all' })
+  getOptions(@Query() queryDto: AcademicYearOptionsDto) {
+    return this.academicYearsService.getOptions(queryDto);
   }
 
   @Get(':id')

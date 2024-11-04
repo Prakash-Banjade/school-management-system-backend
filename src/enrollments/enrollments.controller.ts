@@ -24,11 +24,11 @@ export class EnrollmentsController {
     return this.enrollmentsService.findAll(queryDto);
   }
 
-  @Get(':id')
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
-  findOne(@Param('id') id: string) {
-    return this.enrollmentsService.findOne(id);
-  }
+  // @Get(':id')
+  // @ChekcAbilities({ subject: 'all', action: Action.READ })
+  // findOne(@Param('id') id: string) {
+  //   return this.enrollmentsService.findOne(id);
+  // }
 
   // @Patch(':id')
   // update(@Param('id') id: string, @Body() updateEnrollmentDto: UpdateEnrollmentDto) {

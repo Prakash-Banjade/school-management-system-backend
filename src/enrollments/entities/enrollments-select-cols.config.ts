@@ -16,7 +16,11 @@ export const enrollmentSelectColumns: FindOptionsSelect<Enrollment> = {
     },
     classRoom: {
         id: true,
-        name: true
+        name: true,
+        parent: {
+            id: true,
+            name: true,
+        }
     },
     academicYear: {
         id: true,

@@ -10,6 +10,7 @@ import { PageDto } from 'src/common/dto/page.dto.';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { CACHE_KEYS } from 'src/common/CONSTANTS';
 import { Cache } from 'cache-manager';
+import { AcademicYearOptionsDto } from './dto/academic-year-options.dto';
 
 @Injectable()
 export class AcademicYearsService {
@@ -67,6 +68,27 @@ export class AcademicYearsService {
     return new PageDto(!!activeYear ? [activeYear, ...entities] : entities, pageMetaDto);
   }
 
+  async getOptions(queryDto: AcademicYearOptionsDto) {
+    const queryBuilder = this.academicYearRepo.createQueryBuilder('academicYear');
+
+    queryBuilder
+      .orderBy("academicYear.createdAt", queryDto.order)
+      .limit(queryDto.take)
+      .offset(queryDto.skip)
+      .where(new Brackets(qb => {
+        !!queryDto.search && qb.where("LOWER(academicYear.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` });
+
+        !queryDto.withActive && qb.andWhere('academicYear.isActive = :isActive', { isActive: false });
+      }))
+      .select([
+        "academicYear.id as value",
+        "academicYear.name as label"
+      ])
+      .getRawMany();
+
+    return queryBuilder.getRawMany();
+  }
+
   async findOne(id: string) {
     const existing = await this.academicYearRepo.findOneBy({ id });
     if (!existing) throw new BadRequestException('Academic year not found');
@@ -102,12 +124,6 @@ export class AcademicYearsService {
 
   async update(id: string, updateAcademicYearDto: UpdateAcademicYearDto) {
     const existing = await this.findOne(id);
-
-    // // check if the academic year with the given year already exists
-    // if (updateAcademicYearDto.year && updateAcademicYearDto.year !== existing.year) {
-    //   const existingYear = await this.academicYearRepo.findOneBy({ year: updateAcademicYearDto.year });
-    //   if (existingYear) throw new BadRequestException('Academic year already exists');
-    // }
 
     // update the academic year
     Object.assign(existing, updateAcademicYearDto);
