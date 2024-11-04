@@ -14,6 +14,8 @@ import { CACHE_KEYS } from "src/common/CONSTANTS";
 import { BaseRepository } from "src/common/repository/base-repository";
 import { FastifyRequest } from "fastify";
 import { REQUEST } from "@nestjs/core";
+import { PageMetaDto } from "src/common/dto/pageMeta.dto";
+import { PageDto } from "src/common/dto/page.dto.";
 
 @Injectable()
 export class ClassRoomsHelper extends BaseRepository {
@@ -23,20 +25,22 @@ export class ClassRoomsHelper extends BaseRepository {
         @Inject(CACHE_MANAGER) private cacheManager: Cache,
     ) { super(dataSource, req); }
 
-    setClassRoomQuery(queryDto: ClassRoomQueryDto) {
-        return this.classRoomRepo.createQueryBuilder('classRoom')
+    async findAll(queryDto: ClassRoomQueryDto) {
+        const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+
+        const queryBuilder = this.classRoomRepo.createQueryBuilder('classRoom')
+            .where('classRoom.classType = :classType', { classType: queryDto.classType })
+            .andWhere(new Brackets(qb => {
+                queryDto.search && qb.andWhere('LOWER(classRoom.name) LIKE LOWER(:search)', { search: `%${queryDto.search}%` })
+                queryDto.parentClassId && qb.andWhere('classRoom.parentId = :parentClassId', { parentClassId: queryDto.parentClassId })
+            }))
             .orderBy("classRoom.createdAt", queryDto.order)
             .offset(queryDto.skipPagination ? undefined : queryDto.skip)
             .limit(queryDto.skipPagination ? undefined : queryDto.take)
-            .leftJoin("classRoom.classTeacher", "classTeacher")
-            .leftJoin("classRoom.parent", "classRoomParentClass")
-            .leftJoin("classRoom.children", "childrenClasses")
-            .leftJoin("classRoom.students", "students")
-            .leftJoin('students.enrollments', 'enrollment')
-            .leftJoin('enrollment.academicYear', 'academicYear', 'academicYear.isActive = true')  // Join only active academic year
-            .leftJoin("childrenClasses.students", "childrenStudents")
-            .leftJoin("childrenStudents.enrollments", "childrenEnrollment")
-            .leftJoin("childrenEnrollment.academicYear", "childrenAcademicYear", "childrenAcademicYear.isActive = true") // Join only active academic year for children
+            .leftJoin('classRoom.classTeacher', 'classTeacher')
+            .leftJoin('classRoom.students', 'student', 'student.currentAcademicYearId = :currentAcademicYearId', { currentAcademicYearId })
+            .leftJoin('classRoom.children', 'childClass')
+            .leftJoin('childClass.students', 'childClassStudent', 'childClassStudent.currentAcademicYearId = :currentAcademicYearId', { currentAcademicYearId })
             .select([
                 "classRoom.id as id",
                 "classRoom.name as name",
@@ -49,43 +53,18 @@ export class ClassRoomsHelper extends BaseRepository {
                 "CONCAT(classTeacher.firstName, ' ', classTeacher.lastName) as classTeacherName",
             ])
             .addSelect([
-                // Total student count (including children)
-                "COUNT(DISTINCT CASE WHEN (academicYear.isActive = true OR childrenAcademicYear.isActive = true) THEN students.id ELSE childrenStudents.id END) AS totalStudentsCount",
-
-                // Total male students (including children)
-                `COUNT(DISTINCT CASE WHEN (students.gender = '${Gender.MALE}' OR childrenStudents.gender = '${Gender.MALE}') THEN students.id ELSE childrenStudents.id END) AS totalMaleStudentsCount`,
-
-                // Total female students (including children)
-                `COUNT(DISTINCT CASE WHEN (students.gender = '${Gender.FEMALE}' OR childrenStudents.gender = '${Gender.FEMALE}') THEN students.id ELSE childrenStudents.id END) AS totalFemaleStudentsCount`
+                'COUNT(DISTINCT student.id) + COUNT(DISTINCT childClassStudent.id) AS totalStudentsCount',
+                `COUNT(DISTINCT CASE WHEN student.gender = '${Gender.MALE}' THEN student.id END) + COUNT(DISTINCT CASE WHEN childClassStudent.gender = '${Gender.MALE}' THEN childClassStudent.id END) AS totalMaleStudentsCount`,
+                `COUNT(DISTINCT CASE WHEN student.gender = '${Gender.FEMALE}' THEN student.id END) + COUNT(DISTINCT CASE WHEN childClassStudent.gender = '${Gender.FEMALE}' THEN childClassStudent.id END) AS totalFemaleStudentsCount`
             ])
             .groupBy('classRoom.id')  // Ensure group by to aggregate counts per classRoom
-            .where('classRoom.classType = :classType', { classType: EClassType.PRIMARY })
-            .andWhere(new Brackets(qb => {
-                queryDto.search && qb.andWhere('LOWER(classRoom.name) LIKE LOWER(:search)', { search: `%${queryDto.search}%` })
-            }));
 
-    }
+        const itemCount = await queryBuilder.getCount();
+        const data = await queryBuilder.getRawMany();
 
-    setSectionsQuery(queryDto: ClassRoomQueryDto) {
-        return this.classRoomRepo.createQueryBuilder('classRoom')
-            .orderBy("classRoom.createdAt", queryDto.order)
-            .skip(queryDto.skipPagination ? undefined : queryDto.skip)
-            .take(queryDto.skipPagination ? undefined : queryDto.take)
-            .leftJoin("classRoom.students", "students")
-            .leftJoin("classRoom.parent", "parent")
-            // .leftJoin('students.enrollments', 'enrollment')
-            // .leftJoin('enrollment.academicYear', 'academicYear')
-            .groupBy('classRoom.id')  // Ensure group by to aggregate counts per classRoom
-            .addSelect([
-                "COUNT(DISTINCT students.id) AS totalStudentsCount",
-                `COUNT(DISTINCT CASE WHEN students.gender = '${Gender.MALE}' THEN students.id END) AS totalMaleStudentsCount`,
-                `COUNT(DISTINCT CASE WHEN students.gender = '${Gender.FEMALE}' THEN students.id END) AS totalFemaleStudentsCount`,
-            ])
-            .where('classRoom.classType = :classType', { classType: EClassType.SECTION })
-            .andWhere(new Brackets(qb => {
-                queryDto.search && qb.andWhere('LOWER(classRoom.name) LIKE LOWER(:search)', { search: `%${queryDto.search}%` })
-                queryDto.parentClassId && qb.andWhere('parent.id = :parentClassId', { parentClassId: queryDto.parentClassId });
-            }));
+        const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto: queryDto });
+
+        return new PageDto(data, pageMetaDto);
     }
 
     async getClassRoomsOptions(queryDto: QueryDto) {
@@ -133,27 +112,5 @@ export class ClassRoomsHelper extends BaseRepository {
             ])
 
         return classRoomQueryBuilder.getRawOne();
-
-        // const childrenClassQueryBuilder = this.classRoomRepo.createQueryBuilder('classRoom')
-        //     .leftJoin("classRoom.parent", "parentClass")
-        //     .where('parentClass.id = :classroomId', { classroomId: id })
-        //     .leftJoin('classRoom.students', 'student', 'student.currentAcademicYearId = :currentAcademicYearId', { currentAcademicYearId })
-        //     .select([
-        //         'classRoom.name as name',
-        //         'COUNT(DISTINCT student.id) AS totalStudentsCount',
-        //         `COUNT(DISTINCT CASE WHEN student.gender = '${Gender.MALE}' THEN student.id END) AS totalMaleStudentsCount`,
-        //         `COUNT(DISTINCT CASE WHEN student.gender = '${Gender.FEMALE}' THEN student.id END) AS totalFemaleStudentsCount`
-        //     ])
-        //     .groupBy('classRoom.id');
-
-        // const [classRoom, childrenClass] = await Promise.all([classRoomQueryBuilder.getRawOne(), childrenClassQueryBuilder.getRawMany()]);
-
-        // childrenClass?.forEach(childClass => {
-        //     classRoom.totalStudentsCount = +classRoom.totalStudentsCount + +childClass.totalStudentsCount;
-        //     classRoom.totalMaleStudentsCount = +classRoom.totalMaleStudentsCount + +childClass.totalMaleStudentsCount;
-        //     classRoom.totalFemaleStudentsCount = +classRoom.totalFemaleStudentsCount + +childClass.totalFemaleStudentsCount;
-        // })
-
-        // return classRoom;
     }
 }

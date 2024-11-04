@@ -5,13 +5,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { ClassRoom } from './entities/class-room.entity';
 import { REQUEST } from '@nestjs/core';
-import { ClassRoomQueryDto } from './dto/classRoom-query.dto';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { FastifyRequest } from 'fastify';
-import { EClassType, Gender } from 'src/common/types/global.type';
-import { PageMetaDto } from 'src/common/dto/pageMeta.dto';
-import { PageDto } from 'src/common/dto/page.dto.';
-import { ClassRoomsHelper } from './helpers/class-rooms.helper';
+import { EClassType } from 'src/common/types/global.type';
 import { TeachersService } from 'src/teachers/teachers.service';
 import { classRoomColumnsConfig } from './helpers/class-room-select-cols.config';
 
@@ -20,7 +16,6 @@ export class ClassRoomsService extends BaseRepository {
   constructor(
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
     @InjectRepository(ClassRoom) private classRoomRepo: Repository<ClassRoom>,
-    private readonly classRoomsHelper: ClassRoomsHelper,
     private readonly teachersService: TeachersService,
   ) {
     super(dataSource, req);
@@ -51,40 +46,6 @@ export class ClassRoomsService extends BaseRepository {
         name: savedClassRoom.name,
       }
     };
-  }
-
-  async findAll(queryDto: ClassRoomQueryDto) {
-    const queryBuilder = this.classRoomsHelper.setClassRoomQuery(queryDto);
-
-    // applySelectColumns(queryBuilder, classRoomsColumnsConfig, 'classRoom');
-
-    const itemCount = await queryBuilder.getCount();
-    const data = await queryBuilder.getRawMany();
-
-    const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto: queryDto });
-
-    return new PageDto(data, pageMetaDto);
-  }
-
-  async findAllSections(queryDto: ClassRoomQueryDto) {
-    const queryBuilder = this.classRoomsHelper.setSectionsQuery(queryDto);
-
-    const itemCount = await queryBuilder.getCount();
-    const { entities, raw } = await queryBuilder.getRawAndEntities();
-
-    // Add student counts to each entity
-    entities?.map((entity, index) => {
-      const entityWithCounts = Object.assign(entity, {
-        totalStudentsCount: +raw[index].totalStudentsCount,
-        totalFemalesStudentsCount: +raw[index].totalFemaleStudentsCount,
-        totalMalesStudentsCount: +raw[index].totalMaleStudentsCount,
-      });
-      return entityWithCounts;
-    });
-
-    const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto: queryDto });
-
-    return new PageDto(entities, pageMetaDto);
   }
 
   async findOne(id: string) {

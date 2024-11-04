@@ -11,6 +11,7 @@ import { BaseRepository } from "src/common/repository/base-repository";
 import { FastifyRequest } from "fastify";
 import { REQUEST } from "@nestjs/core";
 import { Attendance } from "src/attendances/entities/attendance.entity";
+import { Student } from "src/students/entities/student.entity";
 
 @Injectable()
 export class ClassRoomsStatistics extends BaseRepository {
@@ -49,7 +50,8 @@ export class ClassRoomsStatistics extends BaseRepository {
             .leftJoin("student.classRoom", "classRoom")
             .andWhere("classRoom.id IN (:...classRoomIds)", { classRoomIds: classRoomIds })
             .select([
-                "DATE_FORMAT(DATE_ADD(attendance.date, INTERVAL 1 DAY), '%Y-%m-%d') AS attendanceDate", // 1 day is added because date changes while retrieving to used a jugad😂
+                // "DATE_FORMAT(DATE_ADD(attendance.date, INTERVAL 1 DAY), '%Y-%m-%d') AS attendanceDate", // 1 day is added because date changes while retrieving to used a jugad😂
+                "DATE_FORMAT(DATE(attendance.date), '%Y-%m-%d') AS attendanceDate",
                 `COUNT(DISTINCT CASE WHEN attendance.status = '${EAttendanceStatus.PRESENT}' THEN attendance.id END) AS totalPresentStudentsCount`,
                 `COUNT(DISTINCT CASE WHEN attendance.status = '${EAttendanceStatus.ABSENT}' THEN attendance.id END) AS totalAbsentStudentsCount`,
                 `COUNT(DISTINCT CASE WHEN attendance.status = '${EAttendanceStatus.LATE}' THEN attendance.id END) AS totalLateStudentsCount`,
@@ -57,34 +59,15 @@ export class ClassRoomsStatistics extends BaseRepository {
             ])
             .groupBy("attendance.date")  // Group by the attendance date for daily stats
 
-        return querybuilder.getRawMany();
+        const totalStudentsCount = this.getRepository(Student).createQueryBuilder('student')
+            .where("student.currentAcademicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
+            .andWhere("student.classRoomId IN (:...classRoomIds)", { classRoomIds: classRoomIds })
 
+        const result = await Promise.all([querybuilder.getRawMany(), totalStudentsCount.getCount()]);
 
-        // const queryBuilder = this.classRoomRepo.createQueryBuilder('classRoom')
-        //     .where("classRoom.id = :classRoomId", { classRoomId: classRoomId })
-        //     .leftJoin("classRoom.students", "student", "student.currentAcademicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
-        //     .leftJoin("student.account", "account")
-        //     .leftJoin("account.attendances", "attendance", attendanceCondition)
-        //     .leftJoin("classRoom.children", "childClass")
-        //     .leftJoin("childClass.students", "childClassStudent", "childClassStudent.currentAcademicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
-        //     .leftJoin("childClassStudent.account", "childClassAccount")
-        //     .leftJoin("childClassAccount.attendances", "childClassAttendance", childAttendanceCondition)
-        //     .select([
-        //         `DATE(childClassAttendance.date) AS attendanceDate`,
-        //         `COUNT(DISTINCT CASE WHEN attendance.status = '${EAttendanceStatus.PRESENT}' THEN attendance.id END) + COUNT(DISTINCT CASE WHEN childClassAttendance.status = '${EAttendanceStatus.PRESENT}' THEN childClassAttendance.id END) AS totalPresentStudentsCount`,
-        //         `COUNT(DISTINCT CASE WHEN attendance.status = '${EAttendanceStatus.ABSENT}' THEN attendance.id END) + COUNT(DISTINCT CASE WHEN childClassAttendance.status = '${EAttendanceStatus.ABSENT}' THEN childClassAttendance.id END) AS totalAbsentStudentsCount`,
-        //         `COUNT(DISTINCT CASE WHEN attendance.status = '${EAttendanceStatus.LATE}' THEN attendance.id END) + COUNT(DISTINCT CASE WHEN childClassAttendance.status = '${EAttendanceStatus.LATE}' THEN childClassAttendance.id END) AS totalLateStudentsCount`,
-        //         `COUNT(DISTINCT CASE WHEN attendance.status = '${EAttendanceStatus.LEAVE}' THEN attendance.id END) + COUNT(DISTINCT CASE WHEN childClassAttendance.status = '${EAttendanceStatus.LEAVE}' THEN childClassAttendance.id END) AS totalLeaveStudentsCount`
-        //     ])
-        //     .groupBy("attendanceDate")  // Group by the attendance date for daily stats
-
-        // return queryBuilder.getRawMany();
-
-
-        // const querybuilder = this.getRepository(Attendance).createQueryBuilder('attendance')
-        //     .where(attendanceSelectQuery)
-        //     .leftJoin("attendance.account", "account")
-        //     .leftJoin("account.student", "student", "student.currentAcademicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
-        //     .leftJoin("student.classRoom", "classRoom", "classRoom.id = :classRoomId", { classRoomId: queryDto.classRoomId })
+        return {
+            data: result[0],
+            totalStudentsCount: result[1]
+        }
     }
 }

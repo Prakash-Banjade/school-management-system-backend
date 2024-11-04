@@ -33,19 +33,13 @@ export class ClassRoomsController {
   @ApiPaginatedResponse(CreateClassRoomDto)
   @ChekcAbilities({ subject: 'all', action: Action.READ })
   findAll(@Query() queryDto: ClassRoomQueryDto) {
-    return this.classRoomsService.findAll(queryDto);
+    return this.classRoomsHelper.findAll(queryDto);
   }
 
   @Get('options')
   @ChekcAbilities({ subject: 'all', action: Action.READ })
   findAllOptions(@Query() queryDto: ClassRoomQueryDto) {
     return this.classRoomsHelper.getClassRoomsOptions(queryDto);
-  }
-
-  @Get('sections')
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
-  findAllSections(@Query() queryDto: ClassRoomQueryDto) {
-    return this.classRoomsService.findAllSections(queryDto);
   }
 
   // used in single class room page in frontend
