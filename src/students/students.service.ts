@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { CreateStudentDto } from './dto/create-student.dto';
-import { UpdateStudentDto } from './dto/update-student.dto';
+import { UpdateStudentClassDto, UpdateStudentDto } from './dto/update-student.dto';
 import { Student } from './entities/student.entity';
 import { DataSource } from 'typeorm';
 import { StudentQueryDto } from './dto/student-query.dto';
@@ -19,6 +19,9 @@ import { FilesService } from 'src/file-management/files/files.service';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { AcademicYear } from 'src/academic-years/entities/academic-year.entity';
 import { getRegistrationNumber } from 'src/utils/get-registration-number';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import { CACHE_KEYS } from 'src/common/CONSTANTS';
 
 @Injectable({ scope: Scope.REQUEST })
 export class StudentsService extends BaseRepository {
@@ -29,7 +32,8 @@ export class StudentsService extends BaseRepository {
     private readonly classRoomsService: ClassRoomsService,
     private readonly accountsService: AccountsService,
     private dormitoryRoomsService: DormitoryRoomsService,
-    private readonly studentsHelper: StudentsHelper
+    private readonly studentsHelper: StudentsHelper,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {
     super(dataSource, req);
   }
@@ -129,15 +133,15 @@ export class StudentsService extends BaseRepository {
   }
 
   async findLibraryStudent(studentId: string) {
+    const currentAcademicYearId = this.cacheManager.get(CACHE_KEYS.CAY_ID);
+
     const student = await this.getRepository<Student>(Student).createQueryBuilder('student')
+      .where("student.currentAcademicYearId = :currentAcademicYearId", { currentAcademicYearId })
       .leftJoin("student.profileImage", "profileImage")
-      .leftJoin("student.enrollments", "enrollment")
       .leftJoin("student.bookTransactions", "bookTransactions")
-      .leftJoin("enrollment.academicYear", "academicYear")
       .leftJoin("student.classRoom", "classRoom")
       .leftJoin("classRoom.parent", "parent")
       .where("student.studentId = :studentId", { studentId })
-      .andWhere("academicYear.isActive = :isActive", { isActive: true })
       .groupBy("student.id")
       .select([
         "student.id AS id",
@@ -202,6 +206,28 @@ export class StudentsService extends BaseRepository {
     const savedStudent = await this.getRepository<Student>(Student).save(existing);
 
     return this.studentMutationReturn(savedStudent, 'updated');
+  }
+
+  async updateClassRoom(updateStudentClassDto: UpdateStudentClassDto) {
+    const classRoom = await this.classRoomsService.findOne(updateStudentClassDto.classRoomId);
+
+    if (classRoom.classType === EClassType.PRIMARY && classRoom.children?.length > 0) { // if there are class sections, then section is needed
+      throw new BadRequestException('Please select section');
+    }
+
+    const queryBuilder = this.getRepository<Student>(Student).createQueryBuilder()
+      .update(Student)
+      .set({ classRoom: classRoom })
+      .where("student.currentAcademicYearId = :currentAcademicYearId", { currentAcademicYearId: await this.cacheManager.get(CACHE_KEYS.CAY_ID) })
+      .andWhere("student.id IN (:...studentIds)", { studentIds: updateStudentClassDto.studentIds });
+
+    const result = await queryBuilder.execute();
+
+    if (result.affected === 0) throw new NotFoundException('Student not found');
+
+    return {
+      message: 'Class Updated',
+    }
   }
 
   async remove(id: string) {

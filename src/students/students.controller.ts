@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors, ClassSerializerInterceptor } from '@nestjs/common';
 import { StudentsService } from './students.service';
 import { CreateStudentDto } from './dto/create-student.dto';
-import { UpdateStudentDto } from './dto/update-student.dto';
+import { UpdateStudentClassDto, UpdateStudentDto } from './dto/update-student.dto';
 import { StudentQueryDto } from './dto/student-query.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
@@ -47,6 +47,13 @@ export class StudentsController {
   @ChekcAbilities({ subject: 'all', action: Action.READ })
   findOne(@Param('id') id: string) {
     return this.studentsService.findOne(id);
+  }
+
+  @Patch('change-class')
+  @ChekcAbilities({ subject: 'all', action: Action.UPDATE })
+  @UseInterceptors(TransactionInterceptor)
+  updateClass(@Body() updateStudentClassDto: UpdateStudentClassDto) {
+    return this.studentsService.updateClassRoom(updateStudentClassDto);
   }
 
   @Patch(':id')

@@ -25,8 +25,8 @@ export class StudentsHelper {
         
         const queryBuilder = this.studentRepo.createQueryBuilder('student')
             .where("student.currentAcademicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
-            .offset(queryDto.skip)
-            .limit(queryDto.take)
+            .offset(queryDto.skipPagination ? undefined : queryDto.skip)
+            .limit(queryDto.skipPagination ? undefined : queryDto.take)
             .addSelect("CONCAT(student.firstName, ' ', student.lastName) AS fullName")
             .orderBy(this.getOrderByKey(queryDto), queryDto.order)
             .leftJoin('student.classRoom', 'classRoom')
