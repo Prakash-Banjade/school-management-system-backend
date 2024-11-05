@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional, OmitType, PartialType } from "@nestjs/swagger";
-import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength } from "class-validator";
+import { Type } from "class-transformer";
+import { ArrayMinSize, IsArray, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength, Min, ValidateNested } from "class-validator";
 import { QueryDto } from "src/common/dto/query.dto";
 import { ESubjectChapterPriority } from "src/common/types/global.type";
 
@@ -33,4 +34,24 @@ export class SubjectChapterQueryDto extends QueryDto {
     @IsOptional()
     @IsUUID()
     subjectId: string;
+}
+
+class UpdatedChapterNo {
+    @ApiProperty({ type: String, format: 'uuid', description: 'Chapter id' })
+    @IsUUID()
+    id: string;
+
+    @ApiProperty({ type: Number, description: 'Chapter chapterNo' })
+    @IsInt()
+    @Min(1)
+    chapterNo: number;
+}
+
+export class UpdateChapterNoDto {
+    @ApiProperty({ type: [UpdatedChapterNo], description: 'Chapters', isArray: true })
+    @ValidateNested({each: true})
+    @Type(() => UpdatedChapterNo)
+    @IsArray()
+    @ArrayMinSize(1)
+    chapters: UpdatedChapterNo[];
 }

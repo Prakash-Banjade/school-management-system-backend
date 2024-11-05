@@ -1,8 +1,8 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, DataSource, Repository } from 'typeorm';
 import { SubjectChapter } from './entities/subject-chapter.entity';
-import { CreateSubjectChapterDto, SubjectChapterQueryDto, UpdateSubjectChapterDto } from './dto/subject-chapter.dto';
+import { CreateSubjectChapterDto, SubjectChapterQueryDto, UpdateChapterNoDto, UpdateSubjectChapterDto } from './dto/subject-chapter.dto';
 import { SubjectsService } from './subjects.service';
 import { QueryDto } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
@@ -49,7 +49,7 @@ export class SubjectChaptersService extends BaseRepository {
         queryBuilder
             .skip(queryDto.skip)
             .take(queryDto.take)
-            .orderBy("subjectChapter.createdAt", queryDto.order)
+            .orderBy("subjectChapter.chapterNo", "ASC")
             .withDeleted()
             .leftJoinAndSelect('subjectChapter.subject', 'subject')
             .andWhere(new Brackets(qb => {
@@ -87,6 +87,18 @@ export class SubjectChaptersService extends BaseRepository {
 
         const updatedSubjectChapter = await this.getRepository(SubjectChapter).save(existing);
         return this.subjectChapterMutationReturn(updatedSubjectChapter, 'updated');
+    }
+
+    async updateChapterNo(updateChapterNoDto: UpdateChapterNoDto) {
+        const savedChapters = await this.getRepository(SubjectChapter).save(updateChapterNoDto.chapters);
+
+        if (savedChapters.length === 0) {
+            throw new BadRequestException('No chapters were updated');
+        }
+
+        return {
+            message: 'Chapters updated',
+        }
     }
 
     async remove(id: string) {
