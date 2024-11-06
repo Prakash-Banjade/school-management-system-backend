@@ -4,7 +4,6 @@ import { VehiclesController } from './vehicles.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Vehicle } from './entities/vehicle.entity';
 import { StaffsModule } from 'src/staffs/staffs.module';
-import { TransportRoutesModule } from '../transport-routes/transport-routes.module';
 
 @Module({
   imports: [
@@ -12,7 +11,6 @@ import { TransportRoutesModule } from '../transport-routes/transport-routes.modu
       Vehicle,
     ]),
     StaffsModule,
-    TransportRoutesModule,
   ],
   controllers: [VehiclesController],
   providers: [VehiclesService],

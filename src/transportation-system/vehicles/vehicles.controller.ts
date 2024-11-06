@@ -3,7 +3,9 @@ import { VehiclesService } from './vehicles.service';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { QueryDto } from 'src/common/dto/query.dto';
+import { VehiclesQueryDto } from './dto/vehicles-query.dto';
+import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
+import { Action } from 'src/common/types/global.type';
 
 @ApiBearerAuth()
 @ApiTags('Vehicles')
@@ -12,26 +14,31 @@ export class VehiclesController {
   constructor(private readonly vehiclesService: VehiclesService) { }
 
   @Post()
+  @ChekcAbilities({ subject: 'all', action: Action.CREATE })
   create(@Body() createVehicleDto: CreateVehicleDto) {
     return this.vehiclesService.create(createVehicleDto);
   }
 
   @Get()
-  findAll(@Query() queryDto: QueryDto) {
+  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  findAll(@Query() queryDto: VehiclesQueryDto) {
     return this.vehiclesService.findAll(queryDto);
   }
 
   @Get(':id')
+  @ChekcAbilities({ subject: 'all', action: Action.READ })
   findOne(@Param('id') id: string) {
     return this.vehiclesService.findOne(id);
   }
 
   @Patch(':id')
+  @ChekcAbilities({ subject: 'all', action: Action.UPDATE })
   update(@Param('id') id: string, @Body() updateVehicleDto: UpdateVehicleDto) {
     return this.vehiclesService.update(id, updateVehicleDto);
   }
 
   @Delete(':id')
+  @ChekcAbilities({ subject: 'all', action: Action.DELETE })
   remove(@Param('id') id: string) {
     return this.vehiclesService.remove(id);
   }

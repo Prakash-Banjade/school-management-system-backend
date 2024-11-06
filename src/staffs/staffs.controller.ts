@@ -34,6 +34,13 @@ export class StaffsController {
     return this.staffsService.findAll(queryDto);
   }
 
+  @Get('options')
+  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  @ApiPaginatedResponse(CreateStaffDto)
+  getOptions(@Query() queryDto: StaffQueryDto) {
+    return this.staffsService.getOptions(queryDto);
+  }
+
   @Get('attendances')
   @ChekcAbilities({ subject: 'all', action: Action.READ })
   getAttendance(@Query() queryDto: EmployeeAttendanceQueryDto) {

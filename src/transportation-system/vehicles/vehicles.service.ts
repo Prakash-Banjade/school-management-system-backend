@@ -5,48 +5,47 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Vehicle } from './entities/vehicle.entity';
 import { Brackets, ILike, Repository } from 'typeorm';
 import { StaffsService } from 'src/staffs/staffs.service';
-import { TransportRoutesService } from '../transport-routes/transport-routes.service';
 import { EStaff } from 'src/common/types/global.type';
-import { QueryDto } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
+import { applySelectColumns } from 'src/utils/apply-select-cols';
+import { vehicleSelectCols } from './helpers/vehicle-select-cols';
+import { VehiclesQueryDto } from './dto/vehicles-query.dto';
 
 @Injectable()
 export class VehiclesService {
   constructor(
     @InjectRepository(Vehicle) private readonly vehicleRepo: Repository<Vehicle>,
     private readonly staffsService: StaffsService,
-    private readonly transportRoutesService: TransportRoutesService,
   ) { }
 
   async create(createVehicleDto: CreateVehicleDto) {
-    const driver = await this.staffsService.findOne(createVehicleDto.staffId);
-    if (driver.type !== EStaff.DRIVER) throw new BadRequestException('Staff is not a driver');
-
-    // evaluate route
-    const transportRoute = createVehicleDto.transportRouteId
-      ? await this.transportRoutesService.findOne(createVehicleDto.transportRouteId)
-      : null;
+    const driver = createVehicleDto.driverId ? await this.staffsService.findOne(createVehicleDto.driverId, EStaff.DRIVER) : null;
 
     const vehicle = this.vehicleRepo.create({
       ...createVehicleDto,
       driver,
-      transportRoute,
     });
-    const savedVehicle = await this.vehicleRepo.save(vehicle);
+    await this.vehicleRepo.save(vehicle);
 
-    return this.vehicleMutationReturn(savedVehicle, 'created');
+    return {
+      message: 'Vehicle added',
+    }
   }
 
-  async findAll(queryDto: QueryDto) {
+  async findAll(queryDto: VehiclesQueryDto) {
     const querybuilder = this.vehicleRepo.createQueryBuilder('vehicle');
 
     querybuilder
-      .orderBy('vehicle.createdAt', 'DESC')
+      .orderBy('vehicle.createdAt', queryDto.order)
       .skip(queryDto.skip)
       .take(queryDto.take)
+      .leftJoin('vehicle.driver', 'driver')
       .where(new Brackets(qb => {
         queryDto.search && qb.andWhere({ vehicleNumber: ILike(`%${queryDto.search}%`) })
+        queryDto.types?.length && qb.andWhere('vehicle.type IN (:...types)', { types: queryDto.types })
       }))
+
+    applySelectColumns(querybuilder, vehicleSelectCols, 'vehicle');
 
     return paginatedData(queryDto, querybuilder);
   }
@@ -56,8 +55,8 @@ export class VehiclesService {
       where: { id },
       relations: {
         driver: true,
-        transportRoute: true,
-      }
+      },
+      select: vehicleSelectCols,
     })
     if (!existing) throw new BadRequestException('Vehicle not found');
 
@@ -67,40 +66,31 @@ export class VehiclesService {
   async update(id: string, updateVehicleDto: UpdateVehicleDto) {
     const existing = await this.findOne(id);
 
-    const driver = updateVehicleDto.staffId
-      ? await this.staffsService.findOne(updateVehicleDto.staffId)
-      : null;
-    if (driver && driver.type !== EStaff.DRIVER) throw new BadRequestException('Staff is not a driver');
+    const driver = updateVehicleDto.driverId
+      ? await this.staffsService.findOne(updateVehicleDto.driverId)
+      : updateVehicleDto.driverId === null ? null : existing.driver;
 
-    // evaluate route
-    const transportRoute = updateVehicleDto.transportRouteId
-      ? await this.transportRoutesService.findOne(updateVehicleDto.transportRouteId)
-      : null;
+    if (driver && driver.type !== EStaff.DRIVER) throw new BadRequestException('Staff is not a driver');
 
     Object.assign(existing, {
       ...updateVehicleDto,
       driver,
-      transportRoute,
     });
 
-    const savedVehicle = await this.vehicleRepo.save(existing);
+    await this.vehicleRepo.save(existing);
 
-    return this.vehicleMutationReturn(savedVehicle, 'updated');
+    return {
+      message: 'Vehicle updated'
+    }
   }
 
   async remove(id: string) {
     const existing = await this.findOne(id);
 
-    return this.vehicleMutationReturn(await this.vehicleRepo.remove(existing), 'deleted');
-  }
+    await this.vehicleRepo.remove(existing)
 
-  private vehicleMutationReturn(vehicle: Vehicle, type: 'created' | 'updated' | 'deleted') {
     return {
-      message: type === 'created' ? 'Vehicle created successfully' : type === 'deleted' ? 'Vehicle deleted successfully' : 'Vehicle updated successfully',
-      vehicle: {
-        id: vehicle.id,
-        vehicleNumber: vehicle.vehicleNumber,
-      }
+      message: 'Vehicle removed'
     }
   }
 }

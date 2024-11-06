@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsInt, IsNotEmpty, IsOptional, IsString, IsUUID } from "class-validator";
+import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Length, Max, Min } from "class-validator";
+import { EVehicleType } from "src/common/types/global.type";
 
 export class CreateVehicleDto {
     @ApiProperty()
@@ -8,27 +9,34 @@ export class CreateVehicleDto {
     vehicleNumber: string;
 
     @ApiProperty()
+    @IsEnum(EVehicleType)
+    type: EVehicleType;
+
+    @ApiProperty()
     @IsString()
     @IsNotEmpty()
     vehicleModel: string;
 
     @ApiProperty()
     @IsInt()
-    @IsNotEmpty()
+    @Min(1)
+    @Max(100)
+    capacity: number;
+
+    @ApiProperty()
+    @IsInt()
+    @Min(1990)
+    @Max(new Date().getFullYear())
     yearMade: number;
 
     @ApiPropertyOptional()
     @IsString()
     @IsOptional()
-    note: string
+    @Length(1, 200, { message: 'Note should not exceed 200 characters' })
+    note?: string
 
     @ApiProperty({ format: 'uuid' })
-    @IsNotEmpty()
-    @IsUUID()
-    staffId: string;
-
-    @ApiPropertyOptional({ format: 'uuid' })
     @IsUUID()
     @IsOptional()
-    transportRouteId: string;
+    driverId?: string;
 }

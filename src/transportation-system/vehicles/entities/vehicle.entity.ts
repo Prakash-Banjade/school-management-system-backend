@@ -1,6 +1,6 @@
 import { BaseEntity } from "src/common/entities/base.entity";
+import { EVehicleType } from "src/common/types/global.type";
 import { Staff } from "src/staffs/entities/staff.entity";
-import { TransportRoute } from "src/transportation-system/transport-routes/entities/transport-route.entity";
 import { Column, Entity, ManyToOne } from "typeorm";
 
 @Entity()
@@ -8,8 +8,14 @@ export class Vehicle extends BaseEntity {
     @Column({ type: 'varchar' })
     vehicleNumber: string;
 
+    @Column({ type: 'enum', enum: EVehicleType })
+    type: EVehicleType;
+
     @Column({ type: 'varchar' })
     vehicleModel: string;
+
+    @Column({ type: 'int' })
+    capacity: number;
 
     @Column({ type: 'int' })
     yearMade: number;
@@ -18,8 +24,5 @@ export class Vehicle extends BaseEntity {
     note: string
 
     @ManyToOne(() => Staff, (staff) => staff.vehicles, { onDelete: 'SET NULL' })
-    driver: Staff
-
-    @ManyToOne(() => TransportRoute, (transportRoute) => transportRoute.vehicles, { onDelete: 'SET NULL', nullable: true })
-    transportRoute: TransportRoute;
+    driver: Staff;
 }

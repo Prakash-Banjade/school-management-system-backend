@@ -13,6 +13,7 @@ import { Deleted } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { staffsColumnsConfig } from './helpers/staff-select-cols.config';
+import { EStaff } from 'src/common/types/global.type';
 
 @Injectable({ scope: Scope.REQUEST })
 export class StaffsService extends BaseRepository {
@@ -70,12 +71,27 @@ export class StaffsService extends BaseRepository {
     applySelectColumns(queryBuilder, staffsColumnsConfig, 'staff');
 
     return paginatedData(queryDto, queryBuilder);
-
   }
 
-  async findOne(id: string) {
+  async getOptions(queryDto: StaffQueryDto) {
+    return this.getRepository(Staff).createQueryBuilder('staff')
+      .orderBy("staff.createdAt", queryDto.order)
+      .where(new Brackets(qb => {
+        queryDto.type?.length && qb.andWhere('staff.type IN (:...type)', { type: queryDto.type });
+      }))
+      .select([
+        "staff.id as value",
+        "CONCAT(staff.firstName, ' ', staff.lastName) as label",
+      ])
+      .getRawMany();
+  }
+
+  async findOne(id: string, type?: EStaff) {
     const existingStaff = await this.getRepository(Staff).findOne({
-      where: { id },
+      where: {
+        id,
+        type,
+      },
       relations: {
         profileImage: true
       },

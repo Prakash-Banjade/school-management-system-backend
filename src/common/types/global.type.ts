@@ -192,3 +192,15 @@ export enum EFileMimeType {
     DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 }
+
+export enum EVehicleType {
+    Car = 'car',
+    Bus = 'bus',
+    Bike = 'bike',
+    Motorcycle = 'motorcycle',
+    Jeep = 'jeep',
+    Truck = 'truck',
+    Van = 'van',
+    Winger = 'winger',
+    Force = 'force',
+}
