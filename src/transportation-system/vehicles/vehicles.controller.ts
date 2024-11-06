@@ -25,6 +25,12 @@ export class VehiclesController {
     return this.vehiclesService.findAll(queryDto);
   }
 
+  @Get('options')
+  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  getOptions(@Query() queryDto: VehiclesQueryDto) {
+    return this.vehiclesService.getOptions(queryDto);
+  }
+
   @Get(':id')
   @ChekcAbilities({ subject: 'all', action: Action.READ })
   findOne(@Param('id') id: string) {

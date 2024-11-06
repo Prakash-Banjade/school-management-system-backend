@@ -50,6 +50,20 @@ export class VehiclesService {
     return paginatedData(queryDto, querybuilder);
   }
 
+  async getOptions(queryDto: VehiclesQueryDto) {
+    return this.vehicleRepo.createQueryBuilder('vehicle')
+      .orderBy("vehicle.createdAt", queryDto.order)
+      .limit(queryDto.take)
+      .offset(queryDto.skip)
+      .where(new Brackets(qb => {
+        queryDto.search && qb.andWhere({ vehicleNumber: ILike(`%${queryDto.search}%`) })
+      }))
+      .select([
+        "vehicle.id as value",
+        "vehicle.vehicleNumber as label",
+      ])
+      .getRawMany();
+  }
   async findOne(id: string) {
     const existing = await this.vehicleRepo.findOne({
       where: { id },

@@ -1,15 +1,13 @@
 import { BaseEntity } from "src/common/entities/base.entity";
 import { Student } from "src/students/entities/student.entity";
+import { RouteStop } from "src/transportation-system/route-stops/entities/route-stop.entity";
 import { Column, Entity, OneToMany } from "typeorm";
 
 @Entity()
 export class TransportRoute extends BaseEntity {
     @Column({ type: 'varchar' })
-    title: string;
+    name: string;
 
     @Column({ type: 'real' })
-    fare: number;
-
-    @OneToMany(() => Student, (student) => student.transportRoute)
-    students: Student[];
+    distance: number;
 }

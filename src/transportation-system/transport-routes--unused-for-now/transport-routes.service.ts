@@ -14,10 +14,10 @@ export class TransportRoutesService {
   ) { }
 
   async create(createTransportRouteDto: CreateTransportRouteDto) {
-    const existingWitSameTitle = await this.transportRouteRepo.findOne({
-      where: { title: createTransportRouteDto.title },
+    const existingWitSameName = await this.transportRouteRepo.findOne({
+      where: { name: createTransportRouteDto.name },
     })
-    if (existingWitSameTitle) throw new ConflictException('Room type with same title already exists')
+    if (existingWitSameName) throw new ConflictException('Room type with same name already exists')
 
     const newTransportRoute = this.transportRouteRepo.create(createTransportRouteDto)
     const savedTransportRoute = await this.transportRouteRepo.save(newTransportRoute)
@@ -26,7 +26,7 @@ export class TransportRoutesService {
       message: 'Room type created successfully',
       transportRoute: {
         id: savedTransportRoute.id,
-        title: savedTransportRoute.title,
+        name: savedTransportRoute.name,
       }
     }
   }
@@ -39,7 +39,7 @@ export class TransportRoutesService {
       .skip(queryDto.skip)
       .take(queryDto.take)
       .where(new Brackets(qb => {
-        queryDto.search && qb.andWhere("LOWER(transportRoute.title) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+        queryDto.search && qb.andWhere("LOWER(transportRoute.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
       }))
 
     return paginatedData(queryDto, queryBuilder);
@@ -58,10 +58,10 @@ export class TransportRoutesService {
   async update(id: string, updateTransportRouteDto: UpdateTransportRouteDto) {
     const existing = await this.findOne(id);
 
-    // check if title is taken
-    if (updateTransportRouteDto.title && updateTransportRouteDto.title !== existing.title) {
-      const existingWithTitle = await this.transportRouteRepo.findOneBy({ title: updateTransportRouteDto.title });
-      if (existingWithTitle) throw new ConflictException('Room type with same title already exists');
+    // check if name is taken
+    if (updateTransportRouteDto.name && updateTransportRouteDto.name !== existing.name) {
+      const existingWithName = await this.transportRouteRepo.findOneBy({ name: updateTransportRouteDto.name });
+      if (existingWithName) throw new ConflictException('Room type with same name already exists');
     }
 
     // update the room type
@@ -72,7 +72,7 @@ export class TransportRoutesService {
       message: 'Room type updated',
       transportRoute: {
         id: savedTransportRoute.id,
-        title: savedTransportRoute.title,
+        name: savedTransportRoute.name,
       }
     }
   }
@@ -85,7 +85,7 @@ export class TransportRoutesService {
       message: 'Room type removed',
       transportRoute: {
         id: removedTransportRoute.id,
-        title: removedTransportRoute.title,
+        name: removedTransportRoute.name,
       }
     }
 

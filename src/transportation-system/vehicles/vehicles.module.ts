@@ -14,5 +14,6 @@ import { StaffsModule } from 'src/staffs/staffs.module';
   ],
   controllers: [VehiclesController],
   providers: [VehiclesService],
+  exports: [VehiclesService],
 })
 export class VehiclesModule { }

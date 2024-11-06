@@ -12,4 +12,9 @@ export class VehiclesQueryDto extends QueryDto {
         return [];
     })
     types?: string[];
+
+    @ApiPropertyOptional()
+    @IsString()
+    @IsOptional()
+    vehicleNumber?: string;
 }

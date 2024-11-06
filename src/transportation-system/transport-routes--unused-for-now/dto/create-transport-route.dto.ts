@@ -5,7 +5,7 @@ export class CreateTransportRouteDto {
     @ApiProperty()
     @IsString()
     @IsNotEmpty()
-    title: string;
+    name: string;
 
     @ApiProperty({ type: Number })
     @IsNumber()
