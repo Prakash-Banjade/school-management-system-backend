@@ -12,7 +12,6 @@ import { FeesInvoice } from "src/finance-system/fees-system/fees-invoices/entiti
 import { Guardian } from "src/guardians/entities/guardian.entity";
 import { BookTransaction } from "src/library-system/book-transactions/entities/book-transaction.entity";
 import { TaskSubmission } from "src/task-system/task-submissions/entities/task-submission.entity";
-import { TransportRoute } from "src/transportation-system/transport-routes--unused-for-now/entities/transport-route.entity";
 import { generateTeacherId } from "src/utils/generate-teacher-id";
 import { BeforeInsert, Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, OneToOne } from "typeorm";
 
