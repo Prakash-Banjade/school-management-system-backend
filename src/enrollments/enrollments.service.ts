@@ -34,12 +34,7 @@ export class EnrollmentsService extends BaseRepository {
     if (!newAcademicYear) throw new NotFoundException('Academic year not found');
 
     if (currentAcademicYearId === newAcademicYear.id) throw new BadRequestException('Cannot enroll in current academic year');
-
-    console.log({
-      currentAcademicYearId,
-      studentIds: createEnrollmentDto.studentsWithRollNo.map(student => student.studentId)
-    })
-
+    
     const students = await this.getRepository<Student>(Student).find({
       where: {
         id: In(createEnrollmentDto.studentsWithRollNo.map(student => student.studentId)),

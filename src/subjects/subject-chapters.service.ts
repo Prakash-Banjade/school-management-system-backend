@@ -90,6 +90,7 @@ export class SubjectChaptersService extends BaseRepository {
     }
 
     async updateChapterNo(updateChapterNoDto: UpdateChapterNoDto) {
+        // TODO: validate chapters, if the chapter No is in correct sequence
         const savedChapters = await this.getRepository(SubjectChapter).save(updateChapterNoDto.chapters);
 
         if (savedChapters.length === 0) {
