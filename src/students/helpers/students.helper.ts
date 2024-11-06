@@ -29,6 +29,7 @@ export class StudentsHelper {
             .limit(queryDto.skipPagination ? undefined : queryDto.take)
             .addSelect("CONCAT(student.firstName, ' ', student.lastName) AS fullName")
             .orderBy(this.getOrderByKey(queryDto), queryDto.order)
+            .leftJoin('student.routeStop', 'routeStop')
             .leftJoin('student.classRoom', 'classRoom')
             .leftJoin('student.profileImage', 'profileImage')
             .leftJoin('classRoom.parent', 'parent')
@@ -63,6 +64,8 @@ export class StudentsHelper {
                 "classRoom.name as classRoom",
                 "parent.id as parentClassId",
                 "parent.name as parentClass",
+                "routeStop.id as routeStopId",
+                "routeStop.name as routeStop",
             ])
 
         const count = await queryBuilder.getCount();

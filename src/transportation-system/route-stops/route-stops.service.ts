@@ -60,6 +60,26 @@ export class RouteStopsService {
     }
   }
 
+  getOptions(queryDto: RouteStopQueryDto) {
+    return this.routeStopRepo.createQueryBuilder('routeStop')
+      .limit(queryDto.take)
+      .offset(queryDto.skip)
+      .leftJoin('routeStop.vehicle', 'vehicle')
+      .where(new Brackets(qb => {
+        queryDto.search && qb.orWhere("LOWER(routeStop.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+          .orWhere("LOWER(vehicle.vehicleNumber) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+      }))
+      .select([
+        'routeStop.id as value',
+        `CASE 
+          WHEN vehicle.vehicleNumber IS NOT NULL 
+          THEN CONCAT(routeStop.name, ' - ', vehicle.vehicleNumber) 
+          ELSE routeStop.name 
+        END as label`,
+      ])
+      .getRawMany();
+  }
+
   async findOne(id: string) {
     const existing = await this.routeStopRepo.findOne({
       where: { id },

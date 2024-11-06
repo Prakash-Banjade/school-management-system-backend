@@ -26,6 +26,10 @@ export const studentsColumnsConfig: FindOptionsSelect<Student> = {
     },
     account: {
         id: true
+    },
+    routeStop: {
+        id: true,
+        name: true,
     }
 }
 
@@ -64,5 +68,9 @@ export const singleStudentColumnsConfig: FindOptionsSelect<Student> = {
     dormitoryRoom: {
         id: true,
         roomNumber: true,
+    },
+    routeStop: {
+        id: true,
+        name: true,
     }
 }

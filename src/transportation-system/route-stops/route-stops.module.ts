@@ -14,5 +14,6 @@ import { VehiclesModule } from '../vehicles/vehicles.module';
   ],
   controllers: [RouteStopsController],
   providers: [RouteStopsService],
+  exports: [RouteStopsService],
 })
 export class RouteStopsModule {}

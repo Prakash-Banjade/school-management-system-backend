@@ -62,6 +62,17 @@ export class DormitoryRoomsService {
     return paginatedData(queryDto, querybuilder)
   }
 
+  getOptions(queryDto: QueryDto) {
+    return this.dormitoryRoomRepo.createQueryBuilder('dormitoryRoom')
+      .limit(queryDto.take)
+      .offset(queryDto.skip)
+      .select([
+        'dormitoryRoom.id as value',
+        'dormitoryRoom.roomNumber as label',
+      ])
+      .getRawMany();
+  }
+
   async findOne(id: string) {
     const existingDormitoryRoom = await this.dormitoryRoomRepo.findOne({
       where: {

@@ -25,6 +25,12 @@ export class RouteStopsController {
     return this.routeStopsService.findAll(queryDto);
   }
 
+  @Get('options')
+  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  getOptions(@Query() queryDto: RouteStopQueryDto) {
+    return this.routeStopsService.getOptions(queryDto);
+  }
+
   @Get(':id')
   @ChekcAbilities({ subject: 'all', action: Action.READ })
   findOne(@Param('id') id: string) {

@@ -31,12 +31,17 @@ export class CreateStudentDto {
     @IsDateString()
     @IsNotFutureDate()
     @IsOptional()
-    admissionDate: string;
+    admissionDate?: string;
 
     @ApiPropertyOptional({ format: 'uuid' })
     @IsUUID()
     @IsOptional()
-    dormitoryRoomId: string;
+    dormitoryRoomId?: string;
+
+    @ApiPropertyOptional({ format: 'uuid' })
+    @IsUUID()
+    @IsOptional()
+    routeStopId?: string;
 
     /**
     |--------------------------------------------------

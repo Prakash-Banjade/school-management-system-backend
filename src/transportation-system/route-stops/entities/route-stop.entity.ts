@@ -1,6 +1,7 @@
 import { BaseEntity } from "src/common/entities/base.entity";
+import { Student } from "src/students/entities/student.entity";
 import { Vehicle } from "src/transportation-system/vehicles/entities/vehicle.entity";
-import { Column, Entity, ManyToOne } from "typeorm";
+import { Column, Entity, ManyToOne, OneToMany } from "typeorm";
 
 @Entity()
 export class RouteStop extends BaseEntity {
@@ -27,4 +28,7 @@ export class RouteStop extends BaseEntity {
 
     @ManyToOne(() => Vehicle, (vehicle) => vehicle.stops, { onDelete: 'SET NULL' })
     vehicle: Vehicle;
+
+    @OneToMany(() => Student, (student) => student.routeStop)
+    students: Student[];
 }

@@ -9,6 +9,7 @@ import { ImagesModule } from 'src/file-management/images/images.module';
 import { AccountsModule } from 'src/auth-system/accounts/accounts.module';
 import { StudentsHelper } from './helpers/students.helper';
 import { FilesModule } from 'src/file-management/files/files.module';
+import { RouteStopsModule } from 'src/transportation-system/route-stops/route-stops.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { FilesModule } from 'src/file-management/files/files.module';
     AccountsModule,
     DormitoryRoomsModule,
     FilesModule,
+    RouteStopsModule,
   ],
   controllers: [StudentsController],
   providers: [StudentsService, StudentsHelper],

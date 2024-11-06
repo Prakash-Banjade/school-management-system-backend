@@ -22,6 +22,7 @@ import { getRegistrationNumber } from 'src/utils/get-registration-number';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { CACHE_KEYS } from 'src/common/CONSTANTS';
+import { RouteStopsService } from 'src/transportation-system/route-stops/route-stops.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class StudentsService extends BaseRepository {
@@ -33,6 +34,7 @@ export class StudentsService extends BaseRepository {
     private readonly accountsService: AccountsService,
     private dormitoryRoomsService: DormitoryRoomsService,
     private readonly studentsHelper: StudentsHelper,
+    private readonly routeStopsService: RouteStopsService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {
     super(dataSource, req);
@@ -63,6 +65,11 @@ export class StudentsService extends BaseRepository {
       ? await this.dormitoryRoomsService.findOne(createStudentDto.dormitoryRoomId)
       : null;
 
+    // evaluate routeStop
+    const routeStop = createStudentDto.routeStopId
+      ? await this.routeStopsService.findOne(createStudentDto.routeStopId)
+      : null;
+
     const academicYear = await this.getRepository<AcademicYear>(AcademicYear).findOneBy({ isActive: true }); // enroll in current academic year
 
     const enrollment = this.getRepository<Enrollment>(Enrollment).create({
@@ -80,6 +87,7 @@ export class StudentsService extends BaseRepository {
       dormitoryRoom,
       currentAcademicYear: academicYear,
       enrollments: [enrollment], // enrollment is created automatically due to cascading
+      routeStop,
     });
 
     const savedStudent = await this.getRepository<Student>(Student).save(newStudent);
@@ -105,6 +113,7 @@ export class StudentsService extends BaseRepository {
         guardians: true,
         dormitoryRoom: true,
         documentAttachments: true,
+        routeStop: true,
       },
       select: singleStudentColumnsConfig,
     })
@@ -196,6 +205,15 @@ export class StudentsService extends BaseRepository {
     } else if (updateStudentDto.dormitoryRoomId === null) {
       // unsetting dormitory room
       existing.dormitoryRoom = null;
+    }
+
+    // evaluate routeStop
+    if (updateStudentDto.routeStopId && (updateStudentDto.routeStopId !== existing.routeStop?.id || !existing.routeStop)) {
+      // set new dormitory room
+      existing.routeStop = await this.routeStopsService.findOne(updateStudentDto.routeStopId);
+    } else if (updateStudentDto.routeStopId === null) {
+      // unsetting dormitory room
+      existing.routeStop = null;
     }
 
     Object.assign(existing, {

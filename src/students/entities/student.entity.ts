@@ -12,6 +12,7 @@ import { FeesInvoice } from "src/finance-system/fees-system/fees-invoices/entiti
 import { Guardian } from "src/guardians/entities/guardian.entity";
 import { BookTransaction } from "src/library-system/book-transactions/entities/book-transaction.entity";
 import { TaskSubmission } from "src/task-system/task-submissions/entities/task-submission.entity";
+import { RouteStop } from "src/transportation-system/route-stops/entities/route-stop.entity";
 import { generateTeacherId } from "src/utils/generate-teacher-id";
 import { BeforeInsert, Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, OneToOne } from "typeorm";
 
@@ -40,6 +41,9 @@ export class Student extends BaseEntity {
 
     @ManyToOne(() => DormitoryRoom, (dormitoryRoom) => dormitoryRoom.students, { onDelete: 'RESTRICT' })
     dormitoryRoom: DormitoryRoom;
+
+    @ManyToOne(() => RouteStop, (routeStop) => routeStop.students, { onDelete: 'SET NULL' })
+    routeStop: RouteStop;
 
     @OneToMany(() => ExamReport, (examReport) => examReport.student)
     examReports: ExamReport[];
