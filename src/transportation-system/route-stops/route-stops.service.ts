@@ -5,10 +5,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { RouteStop } from './entities/route-stop.entity';
 import { Brackets, Repository } from 'typeorm';
 import { VehiclesService } from '../vehicles/vehicles.service';
-import { QueryDto } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { routeStopSelectCols } from './helpers/route-stop-select-cols';
+import { RouteStopQueryDto, ERouteStopSortBy } from './dto/route-stop-query.dto';
 
 @Injectable()
 export class RouteStopsService {
@@ -31,11 +31,11 @@ export class RouteStopsService {
     }
   }
 
-  findAll(queryDto: QueryDto) {
+  findAll(queryDto: RouteStopQueryDto) {
     const queryBuilder = this.routeStopRepo.createQueryBuilder('routeStop');
 
     queryBuilder
-      .orderBy('routeStop.createdAt', queryDto.order)
+      .orderBy(this.getOrderByKey(queryDto), queryDto.order)
       .skip(queryDto.skip)
       .take(queryDto.take)
       .leftJoinAndSelect('routeStop.vehicle', 'vehicle')
@@ -49,6 +49,15 @@ export class RouteStopsService {
     applySelectColumns(queryBuilder, routeStopSelectCols, 'routeStop');
 
     return paginatedData(queryDto, queryBuilder);
+  }
+
+  private getOrderByKey(queryDto: RouteStopQueryDto) {
+    switch (queryDto.sortBy) {
+      case ERouteStopSortBy.Sequence:
+        return 'routeStop.sequence';
+      default:
+        return 'routeStop.createdAt';
+    }
   }
 
   async findOne(id: string) {

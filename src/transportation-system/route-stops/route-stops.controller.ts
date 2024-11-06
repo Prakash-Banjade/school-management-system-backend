@@ -2,10 +2,10 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestj
 import { RouteStopsService } from './route-stops.service';
 import { CreateRouteStopDto } from './dto/create-route-stop.dto';
 import { UpdateRouteStopDto } from './dto/update-route-stop.dto';
-import { QueryDto } from 'src/common/dto/query.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action } from 'src/common/types/global.type';
+import { RouteStopQueryDto } from './dto/route-stop-query.dto';
 
 @ApiBearerAuth()
 @ApiTags('Route Stops')
@@ -21,7 +21,7 @@ export class RouteStopsController {
 
   @Get()
   @ChekcAbilities({ subject: 'all', action: Action.READ })
-  findAll(@Query() queryDto: QueryDto) {
+  findAll(@Query() queryDto: RouteStopQueryDto) {
     return this.routeStopsService.findAll(queryDto);
   }
 
