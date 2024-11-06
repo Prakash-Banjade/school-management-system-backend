@@ -8,7 +8,7 @@ import { StaffsService } from 'src/staffs/staffs.service';
 import { EStaff } from 'src/common/types/global.type';
 import paginatedData from 'src/utils/paginatedData';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
-import { vehicleSelectCols } from './helpers/vehicle-select-cols';
+import { singleVehicleSelectCols, vehicleSelectCols } from './helpers/vehicle-select-cols';
 import { VehiclesQueryDto } from './dto/vehicles-query.dto';
 
 @Injectable()
@@ -69,8 +69,9 @@ export class VehiclesService {
       where: { id },
       relations: {
         driver: true,
+        stops: true,
       },
-      select: vehicleSelectCols,
+      select: singleVehicleSelectCols,
     })
     if (!existing) throw new BadRequestException('Vehicle not found');
 

@@ -18,3 +18,17 @@ export const vehicleSelectCols: FindOptionsSelect<Vehicle> = {
         type: true,
     },
 }
+
+export const singleVehicleSelectCols: FindOptionsSelect<Vehicle> = {
+    ...vehicleSelectCols,
+    stops: {
+        id: true,
+        createdAt: true,
+        name: true,
+        location: true,
+        fare: true,
+        sequence: true,
+        pickUpTime: true,
+        dropOffTime: true,
+    }
+}

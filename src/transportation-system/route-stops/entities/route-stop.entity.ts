@@ -19,6 +19,9 @@ export class RouteStop extends BaseEntity {
     @Column({ type: 'varchar' })
     pickUpTime: string;
 
+    @Column({ type: 'real' })
+    distance: number;
+
     @Column({ type: 'varchar' })
     dropOffTime: string;
 

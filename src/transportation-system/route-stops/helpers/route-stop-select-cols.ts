@@ -10,6 +10,7 @@ export const routeStopSelectCols: FindOptionsSelect<RouteStop> = {
     sequence: true,
     pickUpTime: true,
     dropOffTime: true,
+    distance: true,
     vehicle: {
         id: true,
         vehicleNumber: true,

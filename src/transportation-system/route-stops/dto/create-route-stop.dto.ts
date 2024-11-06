@@ -35,4 +35,9 @@ export class CreateRouteStopDto {
     @ApiProperty({ format: 'uuid' })
     @IsUUID()
     vehicleId: string;
+
+    @ApiProperty()
+    @IsNumber()
+    @Min(1, { message: "Distance must be greater than 0" })
+    distance: number;
 }
