@@ -113,7 +113,9 @@ export class StudentsService extends BaseRepository {
         guardians: true,
         dormitoryRoom: true,
         documentAttachments: true,
-        routeStop: true,
+        routeStop: {
+          vehicle: true,
+        },
       },
       select: singleStudentColumnsConfig,
     })

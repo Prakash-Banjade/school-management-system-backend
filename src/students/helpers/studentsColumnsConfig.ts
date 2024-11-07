@@ -72,5 +72,9 @@ export const singleStudentColumnsConfig: FindOptionsSelect<Student> = {
     routeStop: {
         id: true,
         name: true,
+        vehicle: {
+            id: true,
+            vehicleNumber: true
+        }
     }
 }
