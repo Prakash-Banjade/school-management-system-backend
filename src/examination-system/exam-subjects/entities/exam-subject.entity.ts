@@ -9,11 +9,11 @@ export class ExamSubject extends BaseEntity {
     @Column({ type: 'datetime' })
     examDate: string;
 
-    @Column({ type: 'datetime' })
+    @Column({ type: 'varchar' })
     startTime: string;
 
-    @Column({ type: 'varchar' })
-    duration: string;
+    @Column({ type: 'real' }) // in minutes
+    duration: number;
 
     @Column({ type: 'int' })
     fullMark: number;
@@ -21,7 +21,7 @@ export class ExamSubject extends BaseEntity {
     @Column({ type: 'int' })
     passMark: number;
 
-    @Column({ type: 'varchar', default: 'N' })
+    @Column({ type: 'varchar' })
     venue: string;
 
     @ManyToOne(() => Exam, exam => exam.examSubjects, { onDelete: 'CASCADE' })

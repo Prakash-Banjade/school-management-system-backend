@@ -8,6 +8,8 @@ import { ExamsService } from '../exams/exams.service';
 import { SubjectsService } from 'src/subjects/subjects.service';
 import { ExamSubjectQueryDto } from './dto/exam-subject-query.dto';
 import paginatedData from 'src/utils/paginatedData';
+import { applySelectColumns } from 'src/utils/apply-select-cols';
+import { examSubjectSelectCols } from './helpers/exam-subject-select-cols';
 
 @Injectable()
 export class ExamSubjectsService {
@@ -22,7 +24,7 @@ export class ExamSubjectsService {
     const subject = await this.subjectsService.findOne(createExamSubjectDto.subjectId);
 
     // validate if the subject is in the class room
-    if (subject.classRoom.id !== exam.classRoom.id) throw new BadRequestException('Subject is not in the class room of the exam');
+    if (subject.classRoom?.id !== exam.classRoom?.id) throw new BadRequestException('Subject is not in the class room of the exam');
 
     const newExamSubject = this.examSubjectRepo.create({
       ...createExamSubjectDto,
@@ -30,14 +32,10 @@ export class ExamSubjectsService {
       subject,
     });
 
-    const savedExamSubject = await this.examSubjectRepo.save(newExamSubject);
+    await this.examSubjectRepo.save(newExamSubject);
 
     return {
-      message: 'Exam subject created successfully',
-      examSubject: {
-        id: savedExamSubject.id,
-        subjectName: savedExamSubject.subject.subjectName,
-      }
+      message: 'Exam subject created',
     }
   }
 
@@ -52,6 +50,8 @@ export class ExamSubjectsService {
       .where(new Brackets(qb => {
         queryDto.examId && qb.andWhere("exam.id = :examId", { examId: queryDto.examId })
       }))
+
+    applySelectColumns(querybuilder, examSubjectSelectCols, 'examSubject');
 
     return paginatedData(queryDto, querybuilder);
   }
@@ -75,27 +75,19 @@ export class ExamSubjectsService {
     const existing = await this.findOne(id);
 
     Object.assign(existing, updateExamSubjectDto);
-    const savedExamSubject = await this.examSubjectRepo.save(existing);
+    await this.examSubjectRepo.save(existing);
 
     return {
-      message: 'Exam subject updated successfully',
-      examSubject: {
-        id: savedExamSubject.id,
-        subjectName: savedExamSubject.subject.subjectName,
-      }
+      message: 'Exam subject updated',
     }
   }
 
   async remove(id: string) {
     const existing = await this.findOne(id);
-    const deleted = await this.examSubjectRepo.remove(existing);
+    await this.examSubjectRepo.remove(existing);
 
     return {
-      message: 'Exam subject deleted successfully',
-      examSubject: {
-        id: deleted.id,
-        subjectName: deleted.subject.subjectName,
-      }
+      message: 'Exam subject deleted',
     }
   }
 }

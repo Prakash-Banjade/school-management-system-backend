@@ -53,7 +53,7 @@ export class ExamReportsService {
     })
 
     return {
-      gpa: examGrade?.gpa ?? 0,
+      gpa:  0, // TODO: calculate gpa
       grade: examGrade?.gradeName ?? 'F'
     }
   }

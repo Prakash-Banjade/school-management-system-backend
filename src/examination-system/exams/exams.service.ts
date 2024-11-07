@@ -28,17 +28,13 @@ export class ExamsService {
       examType,
       classRoom,
       academicYear,
+      examSubjects: createExamDto.examSubjects,
     });
 
-    const savedExam = await this.examRepo.save(newExam);
+    await this.examRepo.save(newExam);
 
     return {
-      message: 'Exam created successfully',
-      exam: {
-        id: savedExam.id,
-        type: savedExam.examType.name,
-        classRoom: savedExam.classRoom.name,
-      }
+      message: 'Exam created',
     }
   }
 
@@ -49,8 +45,8 @@ export class ExamsService {
       .orderBy("exam.createdAt", queryDto.order)
       .skip(queryDto.skip)
       .take(queryDto.take)
-      .leftJoinAndSelect('exam.examType', 'examType')
-      .leftJoinAndSelect('exam.classRoom', 'classRoom')
+      .leftJoin('exam.examType', 'examType')
+      .leftJoin('exam.classRoom', 'classRoom')
       .where(new Brackets(qb => {
         // queryDto.search && qb.andWhere("LOWER(exam.type) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
       }))

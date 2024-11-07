@@ -1,30 +1,30 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsDateString, IsNotEmpty, IsNumber, IsString, IsUUID } from "class-validator";
+import { IsDateString, IsInt, IsMilitaryTime, IsNotEmpty, IsNumber, IsString, IsUUID, Min } from "class-validator";
+import { IsFutureDate } from "src/common/decorators/isFutureDate.decorator";
 
 export class CreateExamSubjectDto {
     @ApiProperty({ format: 'date-time' })
-    @IsNotEmpty()
     @IsDateString()
+    @IsFutureDate()
     examDate: string;
 
     @ApiProperty({ format: 'date-time' })
+    @IsMilitaryTime({ message: 'Invalid start time. Time must be in format HH:MM' })
     @IsNotEmpty()
-    @IsDateString()
     startTime: string;
 
     @ApiProperty()
-    @IsString()
-    @IsNotEmpty()
-    duration: string;
+    @IsInt({ message: 'Duration must be a number' })
+    duration: number;
 
     @ApiProperty({ type: Number })
-    @IsNotEmpty()
-    @IsNumber()
+    @IsInt()
+    @Min(1, { message: 'Full mark must be a number greater than 0' })
     fullMark: number;
 
     @ApiProperty({ type: Number })
-    @IsNotEmpty()
-    @IsNumber()
+    @IsInt()
+    @Min(1, { message: 'Pass mark must be a number greater than 0' })
     passMark: number;
 
     @ApiProperty()
