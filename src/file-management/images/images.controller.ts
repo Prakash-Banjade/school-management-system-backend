@@ -6,12 +6,12 @@ import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagg
 import { FormDataRequest } from 'nestjs-form-data';
 import { SkipThrottle } from '@nestjs/throttler';
 import { ImageQueryDto } from './dto/image-query.dto';
-import { Action, AuthUser } from 'src/common/types/global.type';
+import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
 import { QueryDto } from 'src/common/dto/query.dto';
 import { Public } from 'src/common/decorators/setPublicRoute.decorator';
 import { FastifyReply } from 'fastify';
-import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
+import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 
 @ApiTags('Upload Images')
 @Controller('upload/images')
@@ -42,7 +42,7 @@ export class ImagesController {
 
   @Delete(':id')
   @ApiBearerAuth()
-  @ChekcAbilities({ subject: 'all', action: Action.DELETE })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.DELETE })
   remove(@Param('id') id: string) {
     return this.imagesService.remove(id);
   }

@@ -13,7 +13,6 @@ import paginatedData from 'src/utils/paginatedData';
 import { AuthUser, EFileMimeType, ETaskSubmissionStatus } from 'src/common/types/global.type';
 import { StudentsService } from 'src/students/students.service';
 import { FilesService } from 'src/file-management/files/files.service';
-import { TasksService } from '../tasks/tasks.service';
 import { Task } from '../tasks/entities/task.entity';
 import { isStudent } from 'src/utils/isStudent';
 

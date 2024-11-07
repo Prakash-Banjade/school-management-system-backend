@@ -5,7 +5,7 @@ import { UpdateTaskSubmissionDto } from './dto/update-task-submission.dto';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
 import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
+import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { TaskSubmissionQueryDto } from './dto/task-submission-query.dto';
 
 @ApiBearerAuth()
@@ -15,31 +15,31 @@ export class TaskSubmissionsController {
   constructor(private readonly taskSubmissionsService: TaskSubmissionsService) { }
 
   @Post()
-  @ChekcAbilities({ subject: Role.STUDENT, action: Action.CREATE })
+  @CheckAbilities({ subject: Role.STUDENT, action: Action.CREATE })
   create(@Body() createTaskSubmissionDto: CreateTaskSubmissionDto, @CurrentUser() currentUser: AuthUser) {
     return this.taskSubmissionsService.create(createTaskSubmissionDto, currentUser);
   }
 
   @Get()
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findAll(@Query() queryDto: TaskSubmissionQueryDto) {
     return this.taskSubmissionsService.findAll(queryDto);
   }
 
   @Get(':id')
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findOne(@Param('id') id: string) {
     return this.taskSubmissionsService.findOne(id);
   }
 
   @Patch(':id')
-  @ChekcAbilities({ subject: Role.STUDENT, action: Action.UPDATE })
+  @CheckAbilities({ subject: Role.STUDENT, action: Action.UPDATE })
   update(@Param('id') id: string, @Body() updateTaskSubmissionDto: UpdateTaskSubmissionDto) {
     return this.taskSubmissionsService.update(id, updateTaskSubmissionDto);
   }
 
   @Delete(':id')
-  @ChekcAbilities({ subject: 'all', action: Action.DELETE })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.DELETE })
   remove(@Param('id') id: string) {
     return this.taskSubmissionsService.remove(id);
   }

@@ -5,8 +5,8 @@ import { UpdateStaffDto } from './dto/update-staff.dto';
 import { StaffQueryDto } from './dto/staff-query.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ApiPaginatedResponse } from 'src/common/decorators/apiPaginatedResponse.decorator';
-import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action } from 'src/common/types/global.type';
+import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
+import { Action, Role } from 'src/common/types/global.type';
 import { StaffsHelper } from './helpers/staffs.helper';
 import { EmployeeAttendanceQueryDto } from 'src/teachers/dto/employee-attendance-query.dto';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
@@ -21,47 +21,47 @@ export class StaffsController {
   ) { }
 
   @Post()
-  @ChekcAbilities({ subject: 'all', action: Action.CREATE })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
   @UseInterceptors(TransactionInterceptor)
   create(@Body() createStaffDto: CreateStaffDto) {
     return this.staffsService.create(createStaffDto);
   }
 
   @Get()
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   @ApiPaginatedResponse(CreateStaffDto)
   findAll(@Query() queryDto: StaffQueryDto) {
     return this.staffsService.findAll(queryDto);
   }
 
   @Get('options')
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   @ApiPaginatedResponse(CreateStaffDto)
   getOptions(@Query() queryDto: StaffQueryDto) {
     return this.staffsService.getOptions(queryDto);
   }
 
   @Get('attendances')
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   getAttendance(@Query() queryDto: EmployeeAttendanceQueryDto) {
     return this.staffsHelper.getStaffsWithAttendance(queryDto);
   }
 
   @Get(':id')
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findOne(@Param('id') id: string) {
     return this.staffsService.findOne(id);
   }
 
   @Patch(':id')
-  @ChekcAbilities({ subject: 'all', action: Action.UPDATE })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
   @UseInterceptors(TransactionInterceptor)
   update(@Param('id') id: string, @Body() updateStaffDto: UpdateStaffDto) {
     return this.staffsService.update(id, updateStaffDto);
   }
 
   @Delete(':id')
-  @ChekcAbilities({ subject: 'all', action: Action.DELETE })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.DELETE })
   remove(@Param('id') id: string) {
     return this.staffsService.remove(id);
   }

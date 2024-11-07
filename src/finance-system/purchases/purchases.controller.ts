@@ -4,8 +4,8 @@ import { CreatePurchaseDto } from './dto/create-purchase.dto';
 import { UpdatePurchaseDto } from './dto/update-purchase.dto';
 import { PurchaseQueryDto } from './dto/purchase-query.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action } from 'src/common/types/global.type';
+import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
+import { Action, Role } from 'src/common/types/global.type';
 
 @ApiBearerAuth()
 @ApiTags('Purchases')
@@ -34,7 +34,7 @@ export class PurchasesController {
   }
 
   @Delete(':id')
-  @ChekcAbilities({ action: Action.DELETE, subject: 'all' })
+  @CheckAbilities({ action: Action.DELETE, subject: Role.ADMIN })
   remove(@Param('id') id: string) {
     return this.purchasesService.remove(id);
   }

@@ -5,8 +5,8 @@ import { UpdateSalaryDto } from './dto/update-salary.dto';
 import { SalaryQueryDto } from './dto/salary-query.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ApiPaginatedResponse } from 'src/common/decorators/apiPaginatedResponse.decorator';
-import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action } from 'src/common/types/global.type';
+import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
+import { Action, Role } from 'src/common/types/global.type';
 
 @ApiBearerAuth()
 @ApiTags('Salaries')
@@ -36,7 +36,7 @@ export class SalariesController {
   }
 
   @Delete(':id')
-  @ChekcAbilities({ action: Action.DELETE, subject: 'all' })
+  @CheckAbilities({ action: Action.DELETE, subject: Role.ADMIN })
   remove(@Param('id') id: string) {
     return this.salariesService.remove(id);
   }

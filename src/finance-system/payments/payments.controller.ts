@@ -4,8 +4,8 @@ import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { PaymentQueryDto } from './dto/payment-query.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action } from 'src/common/types/global.type';
+import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
+import { Action, Role } from 'src/common/types/global.type';
 
 @ApiBearerAuth()
 @ApiTags('Payments')
@@ -34,7 +34,7 @@ export class PaymentsController {
   }
 
   @Delete(':id')
-  @ChekcAbilities({ action: Action.DELETE, subject: 'all' }) 
+  @CheckAbilities({ action: Action.DELETE, subject: Role.ADMIN }) 
   remove(@Param('id') id: string) {
     return this.paymentsService.remove(id);
   }

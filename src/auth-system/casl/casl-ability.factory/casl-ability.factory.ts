@@ -3,7 +3,7 @@ import { Injectable } from "@nestjs/common";
 import { User } from "src/auth-system/users/entities/user.entity";
 import { Action, AuthUser, Role } from "src/common/types/global.type";
 
-export type Subjects = InferSubjects<typeof User> | 'all' | Role;
+export type Subjects = InferSubjects<typeof User | Role> | 'all'
 
 export type AppAbility = MongoAbility<[Action, Subjects]>
 
@@ -13,26 +13,15 @@ export class CaslAbilityFactory {
         const { can, cannot, build } = new AbilityBuilder<AppAbility>(createMongoAbility)
 
         if (user.role === Role.ADMIN) {
-            can(Action.MANAGE, 'all')
-            cannot(Action.MANAGE, Role.STUDENT)
+            can(Action.MANAGE, Role.ADMIN)
         }
         else if (user.role === Role.MODERATOR) {
-            can(Action.READ, 'all')
-            can(Action.CREATE, 'all')
-            can(Action.UPDATE, 'all')
-            cannot(Action.DELETE, 'all').because('Access Denied')
+            can(Action.READ, Role.ADMIN)
+            can(Action.CREATE, Role.ADMIN)
+            can(Action.UPDATE, Role.ADMIN)
+            cannot(Action.DELETE, Role.ADMIN).because('Access Denied')
         } else if (user.role === Role.STUDENT) {
             can(Action.MANAGE, Role.STUDENT)
-        } else if (user.role === Role.USER) {
-            cannot(Action.READ, 'all').because('Access Denied')
-            can(Action.READ, User)
-            cannot(Action.RESTORE, 'all').because('Access Denied')
-            cannot(Action.CREATE, 'all').because('Access Denied')
-            can(Action.CREATE, User)
-            cannot(Action.UPDATE, 'all').because('Access Denied')
-            can(Action.UPDATE, User)
-            cannot(Action.DELETE, 'all').because('Access Denied')
-            can(Action.DELETE, User)
         }
 
         return build({

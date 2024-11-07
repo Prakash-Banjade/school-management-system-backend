@@ -6,6 +6,7 @@ import { Task } from './entities/task.entity';
 import { SubjectsModule } from 'src/subjects/subjects.module';
 import { AccountsModule } from 'src/auth-system/accounts/accounts.module';
 import { FilesModule } from 'src/file-management/files/files.module';
+import { TaskStudentViewService } from './task.student-view.service';
 
 @Module({
   imports: [
@@ -17,7 +18,7 @@ import { FilesModule } from 'src/file-management/files/files.module';
     SubjectsModule,
   ],
   controllers: [TasksController],
-  providers: [TasksService],
+  providers: [TasksService, TaskStudentViewService],
   exports: [TasksService],
 })
 export class TasksModule { }

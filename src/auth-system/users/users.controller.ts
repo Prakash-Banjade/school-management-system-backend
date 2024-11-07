@@ -4,9 +4,9 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersQueryDto } from './dto/user-query.dto';
 import { ApiExcludeController, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
-import { Action, AuthUser } from 'src/common/types/global.type';
+import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
-import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
+import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 
 @ApiExcludeController()
 @ApiTags("Users")
@@ -20,7 +20,7 @@ export class UsersController {
   // }
 
   @Get()
-  @ChekcAbilities({subject: 'all', action: Action.READ})
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findAll(@Query() queryDto: UsersQueryDto) {
     return this.usersService.findAll(queryDto);
   }

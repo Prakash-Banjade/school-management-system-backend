@@ -7,6 +7,8 @@ import { UpdateFileDto } from './dto/update-files.dto';
 import { QueryDto } from 'src/common/dto/query.dto';
 import { FastifyReply } from 'fastify';
 import { Public } from 'src/common/decorators/setPublicRoute.decorator';
+import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
+import { Action, Role } from 'src/common/types/global.type';
 
 @ApiBearerAuth()
 @ApiTags('Upload Files')
@@ -17,6 +19,10 @@ export class FilesController {
   @Post()
   @FormDataRequest({ limits: { fileSize: 5 * 1024 * 1024, files: 10 } })
   @ApiConsumes('multipart/formdata')
+  @CheckAbilities(
+    { action: Action.CREATE, subject: Role.ADMIN },
+    { action: Action.CREATE, subject: Role.STUDENT }
+  )  
   upload(@Body() createFileDto: CreateFileDto) {
     return this.filesService.upload(createFileDto);
   }

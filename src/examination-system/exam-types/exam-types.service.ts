@@ -47,6 +47,20 @@ export class ExamTypesService {
     return paginatedData(queryDto, queryBuilder);
   }
 
+  async getOptions(queryDto: QueryDto) {
+    return this.examTypeRepo.createQueryBuilder('examType')
+      .orderBy("examType.createdAt", queryDto.order)
+      .limit(queryDto.take)
+      .offset(queryDto.skip)
+      .where(new Brackets(qb => {
+        queryDto.search && qb.andWhere("LOWER(examType.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+      }))
+      .select([
+        "examType.id as value",
+        "examType.name as label",
+      ])
+      .getRawMany();
+  }
   async findOne(id: string) {
     const existing = await this.examTypeRepo.findOne({
       where: { id },

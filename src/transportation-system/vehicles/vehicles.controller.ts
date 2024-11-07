@@ -4,8 +4,8 @@ import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { VehiclesQueryDto } from './dto/vehicles-query.dto';
-import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action } from 'src/common/types/global.type';
+import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
+import { Action, Role } from 'src/common/types/global.type';
 
 @ApiBearerAuth()
 @ApiTags('Vehicles')
@@ -14,37 +14,37 @@ export class VehiclesController {
   constructor(private readonly vehiclesService: VehiclesService) { }
 
   @Post()
-  @ChekcAbilities({ subject: 'all', action: Action.CREATE })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
   create(@Body() createVehicleDto: CreateVehicleDto) {
     return this.vehiclesService.create(createVehicleDto);
   }
 
   @Get()
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findAll(@Query() queryDto: VehiclesQueryDto) {
     return this.vehiclesService.findAll(queryDto);
   }
 
   @Get('options')
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   getOptions(@Query() queryDto: VehiclesQueryDto) {
     return this.vehiclesService.getOptions(queryDto);
   }
 
   @Get(':id')
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findOne(@Param('id') id: string) {
     return this.vehiclesService.findOne(id);
   }
 
   @Patch(':id')
-  @ChekcAbilities({ subject: 'all', action: Action.UPDATE })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
   update(@Param('id') id: string, @Body() updateVehicleDto: UpdateVehicleDto) {
     return this.vehiclesService.update(id, updateVehicleDto);
   }
 
   @Delete(':id')
-  @ChekcAbilities({ subject: 'all', action: Action.DELETE })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.DELETE })
   remove(@Param('id') id: string) {
     return this.vehiclesService.remove(id);
   }

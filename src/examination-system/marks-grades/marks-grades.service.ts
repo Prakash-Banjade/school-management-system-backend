@@ -19,7 +19,11 @@ export class MarksGradesService {
     const existingWithSameNameAndScale = await this.marksGradeRepo.findOneBy({ gradeName: createMarksGradeDto.gradeName, gradeScale: createMarksGradeDto.gradeScale });
     if (existingWithSameNameAndScale) throw new ConflictException('Marks grade with same name and scale already exists');
 
-    return this.marksGradeRepo.save(createMarksGradeDto);
+    await this.marksGradeRepo.save(createMarksGradeDto);
+
+    return {
+      message: 'Marks grade created',
+    }
   }
 
   async findAll(queryDto: QueryDto) {
@@ -56,11 +60,19 @@ export class MarksGradesService {
     if (existingWithSameNameAndScale) throw new ConflictException('Marks grade with same name and scale already exists');
 
     Object.assign(existing, updateMarksGradeDto);
-    return this.marksGradeRepo.save(existing);
+    await this.marksGradeRepo.save(existing);
+
+    return {
+      message: 'Marks grade updated',
+    }
   }
 
   async remove(id: string) {
     const existing = await this.findOne(id);
-    return this.marksGradeRepo.remove(existing);
+    await this.marksGradeRepo.remove(existing);
+
+    return {
+      message: 'Marks grade deleted',
+    }
   }
 }

@@ -4,8 +4,8 @@ import { CreateDormitoryDto } from './dto/create-dormitory.dto';
 import { UpdateDormitoryDto } from './dto/update-dormitory.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { QueryDto } from 'src/common/dto/query.dto';
-import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action } from 'src/common/types/global.type';
+import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
+import { Action, Role } from 'src/common/types/global.type';
 
 @ApiBearerAuth()
 @ApiTags('Dormitories')
@@ -14,7 +14,7 @@ export class DormitoriesController {
   constructor(private readonly dormitoriesService: DormitoriesService) { }
 
   @Post()
-  @ChekcAbilities({ subject: 'all', action: Action.DELETE })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.DELETE })
   create(@Body() createDormitoryDto: CreateDormitoryDto) {
     return this.dormitoriesService.create(createDormitoryDto);
   }
@@ -25,19 +25,19 @@ export class DormitoriesController {
   }
 
   @Get(':id')
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findOne(@Param('id') id: string) {
     return this.dormitoriesService.findOne(id);
   }
 
   @Patch(':id')
-  @ChekcAbilities({ subject: 'all', action: Action.UPDATE })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
   update(@Param('id') id: string, @Body() updateDormitoryDto: UpdateDormitoryDto) {
     return this.dormitoriesService.update(id, updateDormitoryDto);
   }
 
   @Delete(':id')
-  @ChekcAbilities({ action: Action.DELETE, subject: 'all' }) 
+  @CheckAbilities({ action: Action.DELETE, subject: Role.ADMIN }) 
   remove(@Param('id') id: string) {
     return this.dormitoriesService.remove(id);
   }

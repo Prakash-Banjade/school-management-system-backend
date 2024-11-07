@@ -4,8 +4,8 @@ import { CreateExamDto } from './dto/create-exam.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
 import { ExamQueryDto } from './dto/exam-query.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action } from 'src/common/types/global.type';
+import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
+import { Action, Role } from 'src/common/types/global.type';
 
 @ApiBearerAuth()
 @ApiTags('Exams')
@@ -34,7 +34,7 @@ export class ExamsController {
   }
 
   @Delete(':id')
-  @ChekcAbilities({ subject: 'all', action: Action.DELETE }) 
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.DELETE }) 
   remove(@Param('id') id: string) {
     return this.examsService.remove(id);
   }

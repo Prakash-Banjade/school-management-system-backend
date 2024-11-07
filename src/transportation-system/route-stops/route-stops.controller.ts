@@ -3,8 +3,8 @@ import { RouteStopsService } from './route-stops.service';
 import { CreateRouteStopDto } from './dto/create-route-stop.dto';
 import { UpdateRouteStopDto } from './dto/update-route-stop.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action } from 'src/common/types/global.type';
+import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
+import { Action, Role } from 'src/common/types/global.type';
 import { RouteStopQueryDto } from './dto/route-stop-query.dto';
 
 @ApiBearerAuth()
@@ -14,37 +14,37 @@ export class RouteStopsController {
   constructor(private readonly routeStopsService: RouteStopsService) { }
 
   @Post()
-  @ChekcAbilities({ subject: 'all', action: Action.CREATE })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
   create(@Body() createRouteStopDto: CreateRouteStopDto) {
     return this.routeStopsService.create(createRouteStopDto);
   }
 
   @Get()
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findAll(@Query() queryDto: RouteStopQueryDto) {
     return this.routeStopsService.findAll(queryDto);
   }
 
   @Get('options')
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   getOptions(@Query() queryDto: RouteStopQueryDto) {
     return this.routeStopsService.getOptions(queryDto);
   }
 
   @Get(':id')
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findOne(@Param('id') id: string) {
     return this.routeStopsService.findOne(id);
   }
 
   @Patch(':id')
-  @ChekcAbilities({ subject: 'all', action: Action.UPDATE })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
   update(@Param('id') id: string, @Body() updateRouteStopDto: UpdateRouteStopDto) {
     return this.routeStopsService.update(id, updateRouteStopDto);
   }
 
   @Delete(':id')
-  @ChekcAbilities({ subject: 'all', action: Action.DELETE })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.DELETE })
   remove(@Param('id') id: string) {
     return this.routeStopsService.remove(id);
   }

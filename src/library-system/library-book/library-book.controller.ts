@@ -4,8 +4,8 @@ import { CreateLibraryBookDto } from './dto/create-library-book.dto';
 import { UpdateLibraryBookDto } from './dto/update-library-book.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { QueryDto } from 'src/common/dto/query.dto';
-import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action } from 'src/common/types/global.type';
+import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
+import { Action, Role } from 'src/common/types/global.type';
 import { LibraryBookQueryDto } from './dto/library-book.query.dto';
 import { LibraryHelper } from './helpers/library.helper';
 
@@ -19,7 +19,7 @@ export class LibraryBookController {
   ) { }
 
   @Post()
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   create(@Body() createLibraryBookDto: CreateLibraryBookDto) {
     return this.libraryBookService.create(createLibraryBookDto);
   }
@@ -30,13 +30,13 @@ export class LibraryBookController {
   }
 
   @Get('count')
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   getDashboardCount() {
     return this.libraryHelper.getDashboardCount();
   }
 
   @Get('options')
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   getOptions(@Query() queryDto: QueryDto) {
     return this.libraryHelper.getOptions(queryDto);
   }
@@ -47,14 +47,13 @@ export class LibraryBookController {
   }
 
   @Patch(':id')
-  @ChekcAbilities({ subject: 'all', action: Action.UPDATE })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
   update(@Param('id') id: string, @Body() updateLibraryBookDto: UpdateLibraryBookDto) {
     return this.libraryBookService.update(id, updateLibraryBookDto);
   }
 
   @Delete(':id')
-  @ChekcAbilities({ subject: 'all', action: Action.DELETE })
-  @ChekcAbilities({ action: Action.DELETE, subject: 'all' })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.DELETE })
   remove(@Param('id') id: string) {
     return this.libraryBookService.remove(id);
   }

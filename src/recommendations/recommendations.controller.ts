@@ -4,8 +4,8 @@ import { CreateRecommendationDto } from './dto/create-recommendation.dto';
 import { UpdateRecommendationDto } from './dto/update-recommendation.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { QueryDto } from 'src/common/dto/query.dto';
-import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action } from 'src/common/types/global.type';
+import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
+import { Action, Role } from 'src/common/types/global.type';
 
 @ApiBearerAuth()
 @ApiTags('Recommendations')
@@ -34,7 +34,7 @@ export class RecommendationsController {
   }
 
   @Delete(':id')
-  @ChekcAbilities({ action: Action.DELETE, subject: 'all' })
+  @CheckAbilities({ action: Action.DELETE, subject: Role.ADMIN })
   remove(@Param('id') id: string) {
     return this.recommendationsService.remove(id);
   }

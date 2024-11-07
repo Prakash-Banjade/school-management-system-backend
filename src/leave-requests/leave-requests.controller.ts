@@ -5,8 +5,8 @@ import { UpdateLeaveRequestDto, UpdateLeaveRequestStatusDto } from './dto/update
 import { LeaveRequestQueryDto } from './dto/leave-request-query.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
-import { Action, AuthUser } from 'src/common/types/global.type';
-import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
+import { Action, AuthUser, Role } from 'src/common/types/global.type';
+import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 
 @ApiBearerAuth()
 @ApiTags('Leave Requests')
@@ -15,44 +15,43 @@ export class LeaveRequestsController {
   constructor(private readonly leaveRequestsService: LeaveRequestsService) { }
 
   @Post()
-  // @ChekcAbilities({ subject: 'all', action: Action.CREATE })
+  // @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
   create(@Body() createLeaveRequestDto: CreateLeaveRequestDto, @CurrentUser() currentUser: AuthUser) {
     return this.leaveRequestsService.create(createLeaveRequestDto, currentUser);
   }
 
   @Get()
-  // @ChekcAbilities({ subject: 'all', action: Action.READ })
+  // @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findAll(@Query() queryDto: LeaveRequestQueryDto, @CurrentUser() currentUser: AuthUser) { // only for students leave request
     return this.leaveRequestsService.findAll(queryDto, currentUser);
   }
 
   @Get('employees')
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   getEmployeeLeaveRequests(@Query() queryDto: LeaveRequestQueryDto) { // only for teachers and staffs
     return this.leaveRequestsService.getEmployeeLeaveRequests(queryDto);
   }
 
   @Get(':id')
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findOne(@Param('id') id: string) {
     return this.leaveRequestsService.findOne(id);
   }
 
   @Patch(':id/updateStatus')
-  @ChekcAbilities({ subject: 'all', action: Action.CREATE })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
   updateStatus(@Param('id') id: string, @Body() udpateLeaveRequestStatusDto: UpdateLeaveRequestStatusDto) {
     return this.leaveRequestsService.updateStatus(id, udpateLeaveRequestStatusDto);
   }
 
   @Patch(':id')
-  @ChekcAbilities({ subject: 'all', action: Action.CREATE })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
   update(@Param('id') id: string, @Body() updateLeaveRequestDto: UpdateLeaveRequestDto) {
     return this.leaveRequestsService.update(id, updateLeaveRequestDto);
   }
 
   @Delete(':id')
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
-  @ChekcAbilities({ action: Action.DELETE, subject: 'all' })
+  @CheckAbilities({ action: Action.DELETE, subject: Role.ADMIN })
   remove(@Param('id') id: string) {
     return this.leaveRequestsService.remove(id);
   }

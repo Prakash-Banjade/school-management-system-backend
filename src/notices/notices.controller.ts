@@ -4,8 +4,8 @@ import { CreateNoticeDto } from './dto/create-notice.dto';
 import { UpdateNoticeDto } from './dto/update-notice.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { QueryDto } from 'src/common/dto/query.dto';
-import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action } from 'src/common/types/global.type';
+import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
+import { Action, Role } from 'src/common/types/global.type';
 
 @ApiBearerAuth()
 @ApiTags('Notices')
@@ -14,7 +14,7 @@ export class NoticesController {
   constructor(private readonly noticesService: NoticesService) { }
 
   @Post()
-  @ChekcAbilities({ action: Action.CREATE, subject: 'all' })
+  @CheckAbilities({ action: Action.CREATE, subject: Role.ADMIN })
   create(@Body() createNoticeDto: CreateNoticeDto) {
     return this.noticesService.create(createNoticeDto);
   }
@@ -30,13 +30,13 @@ export class NoticesController {
   }
 
   @Patch(':id')
-  @ChekcAbilities({ action: Action.UPDATE, subject: 'all' })
+  @CheckAbilities({ action: Action.UPDATE, subject: Role.ADMIN })
   update(@Param('id') id: string, @Body() updateNoticeDto: UpdateNoticeDto) {
     return this.noticesService.update(id, updateNoticeDto);
   }
 
   @Delete(':id')
-  @ChekcAbilities({ action: Action.DELETE, subject: 'all' })
+  @CheckAbilities({ action: Action.DELETE, subject: Role.ADMIN })
   remove(@Param('id') id: string) {
     return this.noticesService.remove(id);
   }

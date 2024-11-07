@@ -36,7 +36,6 @@ import { LibrarySystemModule } from './library-system/library-system.module';
 import { TaskSystemModule } from './task-system/task-system.module';
 import { CacheModule, CacheStore } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-redis-yet';
-import { RoleBasedViewModule } from './_role-based-view/role-based-view.module';
 
 @Module({
   imports: [
@@ -104,7 +103,6 @@ import { RoleBasedViewModule } from './_role-based-view/role-based-view.module';
     TransportationSystemModule,
     LibrarySystemModule,
     TaskSystemModule,
-    RoleBasedViewModule,
   ],
   controllers: [AppController],
   providers: [

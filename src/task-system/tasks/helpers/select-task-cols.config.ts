@@ -33,3 +33,16 @@ export const selectTaskCols: FindOptionsSelect<Task> = {
         }
     }
 }
+
+export const selectTaskCols_student = {
+    ...selectTaskCols,
+    submissions: {
+        id: true,
+        status: true,
+        evaluation: {
+            id: true,
+            score: true,
+            feedback: true,
+        }
+    }
+}

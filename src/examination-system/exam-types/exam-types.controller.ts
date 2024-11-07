@@ -4,8 +4,8 @@ import { CreateExamTypeDto } from './dto/create-exam-type.dto';
 import { UpdateExamTypeDto } from './dto/update-exam-type.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { QueryDto } from 'src/common/dto/query.dto';
-import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action } from 'src/common/types/global.type';
+import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
+import { Action, Role } from 'src/common/types/global.type';
 
 @ApiBearerAuth()
 @ApiTags('Exam Types')
@@ -14,31 +14,31 @@ export class ExamTypesController {
   constructor(private readonly examTypesService: ExamTypesService) { }
 
   @Post()
-  @ChekcAbilities({ subject: 'all', action: Action.CREATE })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
   create(@Body() createExamTypeDto: CreateExamTypeDto) {
     return this.examTypesService.create(createExamTypeDto);
   }
 
   @Get()
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findAll(@Query() queryDto: QueryDto) {
     return this.examTypesService.findAll(queryDto);
   }
 
   @Get(':id')
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.examTypesService.findOne(id);
   }
 
   @Patch(':id')
-  @ChekcAbilities({ subject: 'all', action: Action.UPDATE })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
   update(@Param('id', ParseUUIDPipe) id: string, @Body() updateExamTypeDto: UpdateExamTypeDto) {
     return this.examTypesService.update(id, updateExamTypeDto);
   }
 
   @Delete(':id')
-  @ChekcAbilities({ subject: 'all', action: Action.DELETE })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.DELETE })
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.examTypesService.remove(id);
   }

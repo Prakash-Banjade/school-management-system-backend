@@ -4,8 +4,8 @@ import { CreateDormitoryRoomDto } from './dto/create-dormitory-room.dto';
 import { UpdateDormitoryRoomDto } from './dto/update-dormitory-room.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { QueryDto } from 'src/common/dto/query.dto';
-import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action } from 'src/common/types/global.type';
+import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
+import { Action, Role } from 'src/common/types/global.type';
 
 @ApiBearerAuth()
 @ApiTags('Dormitory Rooms')
@@ -14,37 +14,37 @@ export class DormitoryRoomsController {
   constructor(private readonly dormitoryRoomsService: DormitoryRoomsService) { }
 
   @Post()
-  @ChekcAbilities({ subject: 'all', action: Action.CREATE })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
   create(@Body() createDormitoryRoomDto: CreateDormitoryRoomDto) {
     return this.dormitoryRoomsService.create(createDormitoryRoomDto);
   }
 
   @Get()
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findAll(@Query() queryDto: QueryDto) {
     return this.dormitoryRoomsService.findAll(queryDto);
   }
 
   @Get('options')
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   getOptions(@Query() queryDto: QueryDto) {
     return this.dormitoryRoomsService.getOptions(queryDto);
   }
 
   @Get(':id')
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findOne(@Param('id') id: string) {
     return this.dormitoryRoomsService.findOne(id);
   }
 
   @Patch(':id')
-  @ChekcAbilities({ subject: 'all', action: Action.UPDATE })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
   update(@Param('id') id: string, @Body() updateDormitoryRoomDto: UpdateDormitoryRoomDto) {
     return this.dormitoryRoomsService.update(id, updateDormitoryRoomDto);
   }
 
   @Delete(':id')
-  @ChekcAbilities({ action: Action.DELETE, subject: 'all' })
+  @CheckAbilities({ action: Action.DELETE, subject: Role.ADMIN })
   remove(@Param('id') id: string) {
     return this.dormitoryRoomsService.remove(id);
   }

@@ -7,6 +7,7 @@ export type AuthUser = {
     email: string;
     role: Role.STUDENT;
     classRoomId: string;
+    studentId: string;
 }
 
 export enum Action {

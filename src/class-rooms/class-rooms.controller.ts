@@ -6,8 +6,8 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ClassRoomQueryDto } from './dto/classRoom-query.dto';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 import { ApiPaginatedResponse } from 'src/common/decorators/apiPaginatedResponse.decorator';
-import { ChekcAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action } from 'src/common/types/global.type';
+import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
+import { Action, Role } from 'src/common/types/global.type';
 import { ClassRoomsHelper } from './helpers/class-rooms.helper';
 import { AttendanceStatisticsQueryDto } from './dto/attendance-statistics-query.dto';
 import { ClassRoomsStatistics } from './helpers/class-rooms.statistics';
@@ -24,52 +24,52 @@ export class ClassRoomsController {
 
   @Post()
   @UseInterceptors(TransactionInterceptor)
-  @ChekcAbilities({ subject: 'all', action: Action.CREATE })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
   create(@Body() createClassRoomDto: CreateClassRoomDto) {
     return this.classRoomsService.create(createClassRoomDto);
   }
 
   @Get()
   @ApiPaginatedResponse(CreateClassRoomDto)
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findAll(@Query() queryDto: ClassRoomQueryDto) {
     return this.classRoomsHelper.findAll(queryDto);
   }
 
   @Get('options')
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findAllOptions(@Query() queryDto: ClassRoomQueryDto) {
     return this.classRoomsHelper.getClassRoomsOptions(queryDto);
   }
 
   // used in single class room page in frontend
   @Get(':id/details')
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   getClassRoomDetails(@Param('id') id: string) {
     return this.classRoomsHelper.getClassRoomDetails(id);
   }
 
   @Get(':id/attendance-statistics')
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   getAttendanceStatistics(@Param('id') id: string, @Query() queryDto: AttendanceStatisticsQueryDto) {
     return this.classRoomsStatistics.getAttendanceStatistics(id, queryDto);
   }
 
   @Get(':id')
-  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findOne(@Param('id') id: string) {
     return this.classRoomsService.findOne(id);
   }
 
   @Patch(':id')
-  @ChekcAbilities({ subject: 'all', action: Action.UPDATE })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
   @UseInterceptors(TransactionInterceptor)
   update(@Param('id') id: string, @Body() updateClassRoomDto: UpdateClassRoomDto) {
     return this.classRoomsService.update(id, updateClassRoomDto);
   }
 
   @Delete(':id')
-  @ChekcAbilities({ subject: 'all', action: Action.DELETE })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.DELETE })
   remove(@Param('id') id: string) {
     return this.classRoomsService.remove(id);
   }

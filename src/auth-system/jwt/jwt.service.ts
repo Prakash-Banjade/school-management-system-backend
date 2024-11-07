@@ -66,6 +66,7 @@ export class JwtService {
                 email: account.email,
                 role: Role.STUDENT,
                 classRoomId: student.classRoom.id,
+                studentId: student.id,
             };
         } else {
             payload = {
