@@ -46,7 +46,7 @@ export class ClassRoomsStatistics extends BaseRepository {
         const querybuilder = this.getRepository(Attendance).createQueryBuilder('attendance')
             .where(attendanceCondition)
             .leftJoin("attendance.account", "account")
-            .leftJoin("account.student", "student", "student.currentAcademicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
+            .leftJoin("account.student", "student", "FIND_IN_SET(:currentAcademicYearId, student.academicYearIds) > 0", { currentAcademicYearId })
             .leftJoin("student.classRoom", "classRoom")
             .andWhere("classRoom.id IN (:...classRoomIds)", { classRoomIds: classRoomIds })
             .select([
@@ -60,7 +60,7 @@ export class ClassRoomsStatistics extends BaseRepository {
             .groupBy("attendance.date")  // Group by the attendance date for daily stats
 
         const totalStudentsCount = this.getRepository(Student).createQueryBuilder('student')
-            .where("student.currentAcademicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
+            .where("FIND_IN_SET(:currentAcademicYearId, student.academicYearIds) > 0", { currentAcademicYearId })
             .andWhere("student.classRoomId IN (:...classRoomIds)", { classRoomIds: classRoomIds })
 
         const result = await Promise.all([querybuilder.getRawMany(), totalStudentsCount.getCount()]);

@@ -85,7 +85,7 @@ export class StudentsService extends BaseRepository {
       classRoom,
       documentAttachments,
       dormitoryRoom,
-      currentAcademicYear: academicYear,
+      academicYearIds: [academicYear.id],
       enrollments: [enrollment], // enrollment is created automatically due to cascading
       routeStop,
     });
@@ -147,7 +147,7 @@ export class StudentsService extends BaseRepository {
     const currentAcademicYearId = this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
     const student = await this.getRepository<Student>(Student).createQueryBuilder('student')
-      .where("student.currentAcademicYearId = :currentAcademicYearId", { currentAcademicYearId })
+      .where("FIND_IN_SET(:currentAcademicYearId, student.academicYearIds) > 0", { currentAcademicYearId })
       .leftJoin("student.profileImage", "profileImage")
       .leftJoin("student.bookTransactions", "bookTransactions")
       .leftJoin("student.classRoom", "classRoom")
@@ -238,7 +238,7 @@ export class StudentsService extends BaseRepository {
     const queryBuilder = this.getRepository<Student>(Student).createQueryBuilder()
       .update(Student)
       .set({ classRoom: classRoom })
-      .where("student.currentAcademicYearId = :currentAcademicYearId", { currentAcademicYearId: await this.cacheManager.get(CACHE_KEYS.CAY_ID) })
+      .where("FIND_IN_SET(:currentAcademicYearId, student.academicYearIds) > 0", { currentAcademicYearId: await this.cacheManager.get(CACHE_KEYS.CAY_ID) })
       .andWhere("student.id IN (:...studentIds)", { studentIds: updateStudentClassDto.studentIds });
 
     const result = await queryBuilder.execute();

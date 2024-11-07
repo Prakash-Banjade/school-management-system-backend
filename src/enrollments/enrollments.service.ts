@@ -34,13 +34,15 @@ export class EnrollmentsService extends BaseRepository {
     if (!newAcademicYear) throw new NotFoundException('Academic year not found');
 
     if (currentAcademicYearId === newAcademicYear.id) throw new BadRequestException('Cannot enroll in current academic year');
-    
-    const students = await this.getRepository<Student>(Student).find({
-      where: {
-        id: In(createEnrollmentDto.studentsWithRollNo.map(student => student.studentId)),
-        currentAcademicYear: { id: currentAcademicYearId }
-      },
-    });
+
+    const students = await this.getRepository<Student>(Student).createQueryBuilder('student')
+      .whereInIds(createEnrollmentDto.studentsWithRollNo.map(student => student.studentId))
+      .andWhere('FIND_IN_SET(:currentAcademicYearId, student.academicYearIds)', { currentAcademicYearId }) // The FIND_IN_SET function in MySQL returns the position (index) of the specified item (tag) within the comma-separated list (tags).
+      .select([
+        'student.id',
+        'student.academicYearIds',
+      ])
+      .getMany();
 
     if (!students?.length) throw new NotFoundException('Student not found');
 
@@ -60,7 +62,7 @@ export class EnrollmentsService extends BaseRepository {
     // update student classroom
     const promotedStudents = students.map(student => {
       student.classRoom = newClassRoom;
-      student.currentAcademicYear = newAcademicYear;
+      student.academicYearIds = [...(student.academicYearIds ?? []), newAcademicYear.id];
       return student;
     });
 

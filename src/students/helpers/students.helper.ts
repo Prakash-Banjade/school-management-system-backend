@@ -24,7 +24,7 @@ export class StudentsHelper {
         const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
         
         const queryBuilder = this.studentRepo.createQueryBuilder('student')
-            .where("student.currentAcademicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
+            .where("FIND_IN_SET(:academicYearId, student.academicYearIds) > 0", { academicYearId: currentAcademicYearId })
             .offset(queryDto.skipPagination ? undefined : queryDto.skip)
             .limit(queryDto.skipPagination ? undefined : queryDto.take)
             .addSelect("CONCAT(student.firstName, ' ', student.lastName) AS fullName")
@@ -132,7 +132,7 @@ export class StudentsHelper {
         const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
         
         const studentsWithAttendance = await this.studentRepo.createQueryBuilder('student')
-            .where("student.currentAcademicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
+            .where("FIND_IN_SET(:academicYearId, student.academicYearIds) > 0", { academicYearId: currentAcademicYearId })
             .leftJoin("student.account", "account")
             .leftJoin("student.classRoom", "classRoom")
             .leftJoinAndMapOne(

@@ -1,3 +1,4 @@
+
 export type AuthUser = {
     accountId: string;
     email: string;

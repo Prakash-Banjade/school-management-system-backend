@@ -18,9 +18,9 @@ export class AbilitiesGuard implements CanActivate {
             context.getHandler(),
             context.getClass(),
         ]);
-        const rules = this.reflector.get<AbilityRequiredRules[]>(CHECK_ABILITY, context.getHandler()) || [];
-
         if (isPublic) return true; // No need to authorize public routes
+
+        const rules = this.reflector.get<AbilityRequiredRules[]>(CHECK_ABILITY, context.getHandler()) || [];
 
         const { user } = context.switchToHttp().getRequest<FastifyRequest>();
         const ability = this.caslAbility.defineAbility(user);

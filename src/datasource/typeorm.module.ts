@@ -15,7 +15,7 @@ import { Global, Module } from '@nestjs/common';
                         type: 'mysql',
                         url: process.env.DATABASE_URL,
                         entities: [`${__dirname}/../**/**.entity{.ts,.js}`], // this will automatically load all entity file in the src folder
-                        synchronize: true,
+                        synchronize: process.env.DB_SYNCHRONIZE === 'true',
                     });
                     await dataSource.initialize(); // initialize the data source
                     console.log('Database connected successfully');

@@ -38,9 +38,9 @@ export class ClassRoomsHelper extends BaseRepository {
             .offset(queryDto.skipPagination ? undefined : queryDto.skip)
             .limit(queryDto.skipPagination ? undefined : queryDto.take)
             .leftJoin('classRoom.classTeacher', 'classTeacher')
-            .leftJoin('classRoom.students', 'student', 'student.currentAcademicYearId = :currentAcademicYearId', { currentAcademicYearId })
+            .leftJoin('classRoom.students', 'student', 'FIND_IN_SET(:currentAcademicYearId, student.academicYearIds) > 0', { currentAcademicYearId })
             .leftJoin('classRoom.children', 'childClass')
-            .leftJoin('childClass.students', 'childClassStudent', 'childClassStudent.currentAcademicYearId = :currentAcademicYearId', { currentAcademicYearId })
+            .leftJoin('childClass.students', 'childClassStudent', 'FIND_IN_SET(:currentAcademicYearId, childClassStudent.academicYearIds) > 0', { currentAcademicYearId })
             .select([
                 "classRoom.id as id",
                 "classRoom.name as name",
@@ -89,9 +89,9 @@ export class ClassRoomsHelper extends BaseRepository {
         const classRoomQueryBuilder = this.classRoomRepo.createQueryBuilder('classRoom')
             .where('classRoom.id = :classroomId', { classroomId: id }) // Filter by specific classroom ID
             .leftJoin('classRoom.classTeacher', 'classTeacher')
-            .leftJoin('classRoom.students', 'student', 'student.currentAcademicYearId = :currentAcademicYearId', { currentAcademicYearId })
+            .leftJoin('classRoom.students', 'student', 'FIND_IN_SET(:currentAcademicYearId, student.academicYearIds) > 0', { currentAcademicYearId })
             .leftJoin('classRoom.children', 'childClass')
-            .leftJoin('childClass.students', 'childClassStudent', 'childClassStudent.currentAcademicYearId = :currentAcademicYearId', { currentAcademicYearId })
+            .leftJoin('childClass.students', 'childClassStudent', 'FIND_IN_SET(:currentAcademicYearId, childClassStudent.academicYearIds) > 0', { currentAcademicYearId })
             .select([
                 'classRoom.id as id',
                 'classRoom.name as name',
