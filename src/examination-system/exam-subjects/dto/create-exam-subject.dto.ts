@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsDateString, IsInt, IsMilitaryTime, IsNotEmpty, IsNumber, IsString, IsUUID, Min } from "class-validator";
+import { IsDateString, IsInt, IsMilitaryTime, IsNotEmpty, IsNumber, IsString, IsUUID, Min, ValidateIf } from "class-validator";
 import { IsFutureDate } from "src/common/decorators/isFutureDate.decorator";
 
 export class CreateExamSubjectDto {
@@ -25,6 +25,7 @@ export class CreateExamSubjectDto {
     @ApiProperty({ type: Number })
     @IsInt()
     @Min(1, { message: 'Pass mark must be a number greater than 0' })
+    @ValidateIf((dto: CreateExamSubjectDto) => dto.fullMark >= dto.passMark, { message: 'Full mark must be greater than or equal to pass mark' })
     passMark: number;
 
     @ApiProperty()

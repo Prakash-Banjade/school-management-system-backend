@@ -3,7 +3,7 @@ import { Type } from "class-transformer";
 import { ArrayMinSize, IsArray, IsNotEmpty, IsUUID, ValidateNested } from "class-validator";
 import { CreateExamSubjectDto } from "src/examination-system/exam-subjects/dto/create-exam-subject.dto";
 
-class ExamSubject extends OmitType(CreateExamSubjectDto, ['examId', 'subjectId']) { }
+class ExamSubject extends OmitType(CreateExamSubjectDto, ['examId']) { }
 
 export class CreateExamDto {
     @ApiProperty({ format: 'uuid' })

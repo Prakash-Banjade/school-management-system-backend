@@ -22,7 +22,7 @@ export class SubjectsController {
   }
 
   @Get()
-  // @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   @ApiPaginatedResponse(SubjectQueryDto)
   findAll(@Query() queryDto: SubjectQueryDto, @CurrentUser() currentUser: AuthUser) {
     return this.subjectsService.findAll(queryDto, currentUser);

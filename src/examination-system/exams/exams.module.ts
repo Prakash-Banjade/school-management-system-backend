@@ -6,12 +6,14 @@ import { Exam } from './entities/exam.entity';
 import { ClassRoomsModule } from 'src/class-rooms/class-rooms.module';
 import { ExamTypesModule } from '../exam-types/exam-types.module';
 import { AcademicYear } from 'src/academic-years/entities/academic-year.entity';
+import { Subject } from 'src/subjects/entities/subject.entity';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       Exam,
-      AcademicYear
+      AcademicYear,
+      Subject
     ]),
     ClassRoomsModule,
     ExamTypesModule,

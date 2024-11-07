@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateExamDto } from './dto/create-exam.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -9,11 +9,14 @@ import { ExamTypesService } from '../exam-types/exam-types.service';
 import { ExamQueryDto } from './dto/exam-query.dto';
 import { AcademicYear } from 'src/academic-years/entities/academic-year.entity';
 import paginatedData from 'src/utils/paginatedData';
+import { ExamSubject } from '../exam-subjects/entities/exam-subject.entity';
+import { Subject } from 'src/subjects/entities/subject.entity';
 
 @Injectable()
 export class ExamsService {
   constructor(
     @InjectRepository(Exam) private examRepo: Repository<Exam>,
+    @InjectRepository(Subject) private subjectRepo: Repository<Subject>,
     @InjectRepository(AcademicYear) private academicYearRepo: Repository<AcademicYear>,
     private readonly examTypesService: ExamTypesService,
     private readonly classRoomsService: ClassRoomsService,
@@ -24,11 +27,22 @@ export class ExamsService {
     const classRoom = await this.classRoomsService.findOne(createExamDto.classRoomId);
     const academicYear = await this.academicYearRepo.findOneBy({ isActive: true });
 
+    // evaluate exam subjects
+    const examSubjects: Partial<ExamSubject>[] = await Promise.all(createExamDto.examSubjects.map(async (examSubject) => ({
+      examDate: examSubject.examDate,
+      startTime: examSubject.startTime,
+      duration: examSubject.duration,
+      fullMark: examSubject.fullMark,
+      passMark: examSubject.passMark,
+      venue: examSubject.venue,
+      subject: await this.getSubject(examSubject.subjectId, classRoom.id)
+    })))
+
     const newExam = this.examRepo.create({
       examType,
       classRoom,
       academicYear,
-      examSubjects: createExamDto.examSubjects,
+      examSubjects,
     });
 
     await this.examRepo.save(newExam);
@@ -36,6 +50,16 @@ export class ExamsService {
     return {
       message: 'Exam created',
     }
+  }
+
+  async getSubject(subjectId: string, classRoomId: string): Promise<Subject> {
+    const subject = await this.subjectRepo.findOne({
+      where: { id: subjectId, classRoom: { id: classRoomId } },
+      select: { id: true }
+    })
+    if (!subject) throw new NotFoundException('Subject not found');
+
+    return subject;
   }
 
   async findAll(queryDto: ExamQueryDto) {

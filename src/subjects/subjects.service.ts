@@ -54,8 +54,8 @@ export class SubjectsService extends BaseRepository {
     const queryBuilder = this.subjectsRepo.createQueryBuilder('subject');
 
     queryBuilder
-      .skip(queryDto.skip)
-      .take(queryDto.take)
+      .skip(queryDto.skipPagination ? undefined : queryDto.skip)
+      .take(queryDto.skipPagination ? undefined : queryDto.take)
       .orderBy("subject.createdAt", queryDto.order)
       .withDeleted()
       .leftJoin('subject.classRoom', 'classRoom')
@@ -74,6 +74,7 @@ export class SubjectsService extends BaseRepository {
 
     return paginatedData(queryDto, queryBuilder);
   }
+
   async getOptions(queryDto: SubjectOptionsQueryDto) {
     return this.subjectsRepo.createQueryBuilder('subject')
       .orderBy("subject.createdAt", 'DESC')

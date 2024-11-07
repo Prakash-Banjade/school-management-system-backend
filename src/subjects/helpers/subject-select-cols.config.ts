@@ -20,7 +20,7 @@ export const subjectSelectCols: FindOptionsSelect<Subject> = {
         firstName: true,
         lastName: true,
     },
-    content: true, // actually this should not be sent because it can be too big, for simplicity in frontend, I am sending it for now
+    content: true, // TODO: actually this should not be sent because it can be too big, for simplicity in frontend, I am sending it for now
 }
 
 export const singleSubjectSelelctCols: FindOptionsSelect<Subject> = {
