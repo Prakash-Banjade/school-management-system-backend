@@ -3,9 +3,11 @@ import { CreateMarksGradeDto } from './dto/create-marks-grade.dto';
 import { UpdateMarksGradeDto } from './dto/update-marks-grade.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MarksGrade } from './entities/marks-grade.entity';
-import { Repository } from 'typeorm';
+import { Brackets, Not, Repository } from 'typeorm';
 import { QueryDto } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
+import { applySelectColumns } from 'src/utils/apply-select-cols';
+import { markGradeSelectCols } from './helpers/mark-grade-select-cols';
 
 @Injectable()
 export class MarksGradesService {
@@ -14,11 +16,8 @@ export class MarksGradesService {
   ) { }
 
   async create(createMarksGradeDto: CreateMarksGradeDto) {
-    const existingWithSameName = await this.marksGradeRepo.findOneBy({ gradeName: createMarksGradeDto.gradeName });
-    if (existingWithSameName) throw new ConflictException('Marks grade with same name already exists');
-
-    const existingWithSameGpa = await this.marksGradeRepo.findOneBy({ gpa: createMarksGradeDto.gpa });
-    if (existingWithSameGpa) throw new ConflictException('Marks grade with same gpa already exists');
+    const existingWithSameNameAndScale = await this.marksGradeRepo.findOneBy({ gradeName: createMarksGradeDto.gradeName, gradeScale: createMarksGradeDto.gradeScale });
+    if (existingWithSameNameAndScale) throw new ConflictException('Marks grade with same name and scale already exists');
 
     return this.marksGradeRepo.save(createMarksGradeDto);
   }
@@ -27,9 +26,14 @@ export class MarksGradesService {
     const queryBuilder = this.marksGradeRepo.createQueryBuilder('marksGrade');
 
     queryBuilder
+      .orderBy('marksGrade.gradeName', queryDto.order)
       .skip(queryDto.skip)
       .take(queryDto.take)
-      .orderBy('marksGrade.createdAt', 'DESC')
+      .where(new Brackets(qb => {
+        queryDto.search && qb.andWhere('LOWER(marksGrade.gradeName) LIKE LOWER(:search)', { search: `%${queryDto.search}%` })
+      }))
+
+    applySelectColumns(queryBuilder, markGradeSelectCols, 'marksGrade');
 
     return paginatedData(queryDto, queryBuilder);
   }
@@ -44,15 +48,12 @@ export class MarksGradesService {
   async update(id: string, updateMarksGradeDto: UpdateMarksGradeDto) {
     const existing = await this.findOne(id);
 
-    if (updateMarksGradeDto.gradeName && updateMarksGradeDto.gradeName !== existing.gradeName) {
-      const existingWithSameName = await this.marksGradeRepo.findOneBy({ gradeName: updateMarksGradeDto.gradeName });
-      if (existingWithSameName && existingWithSameName.id !== id) throw new ConflictException('Marks grade with same name already exists');
-    }
+    // check if existing with same name and scale exists
+    const name = updateMarksGradeDto.gradeName || existing.gradeName;
+    const scale = updateMarksGradeDto.gradeScale || existing.gradeScale;
 
-    if (updateMarksGradeDto.gpa && updateMarksGradeDto.gpa !== existing.gpa) {
-      const existingWithSameGpa = await this.marksGradeRepo.findOneBy({ gpa: updateMarksGradeDto.gpa });
-      if (existingWithSameGpa && existingWithSameGpa.id !== id) throw new ConflictException('Marks grade with same gpa already exists');
-    }
+    const existingWithSameNameAndScale = await this.marksGradeRepo.findOneBy({ gradeName: name, gradeScale: scale, id: Not(id) });
+    if (existingWithSameNameAndScale) throw new ConflictException('Marks grade with same name and scale already exists');
 
     Object.assign(existing, updateMarksGradeDto);
     return this.marksGradeRepo.save(existing);

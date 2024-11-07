@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe } from '@nestjs/common';
 import { MarksGradesService } from './marks-grades.service';
 import { CreateMarksGradeDto } from './dto/create-marks-grade.dto';
 import { UpdateMarksGradeDto } from './dto/update-marks-grade.dto';
@@ -14,28 +14,32 @@ export class MarksGradesController {
   constructor(private readonly marksGradesService: MarksGradesService) { }
 
   @Post()
+  @ChekcAbilities({ subject: 'all', action: Action.CREATE })
   create(@Body() createMarksGradeDto: CreateMarksGradeDto) {
     return this.marksGradesService.create(createMarksGradeDto);
   }
 
   @Get()
+  @ChekcAbilities({ subject: 'all', action: Action.READ })
   findAll(@Query() queryDto: QueryDto) {
     return this.marksGradesService.findAll(queryDto);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  @ChekcAbilities({ subject: 'all', action: Action.READ })
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.marksGradesService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateMarksGradeDto: UpdateMarksGradeDto) {
+  @ChekcAbilities({ subject: 'all', action: Action.UPDATE })
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateMarksGradeDto: UpdateMarksGradeDto) {
     return this.marksGradesService.update(id, updateMarksGradeDto);
   }
 
   @Delete(':id')
   @ChekcAbilities({ subject: 'all', action: Action.DELETE })
-  remove(@Param('id') id: string) {
+  remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.marksGradesService.remove(id);
   }
 }

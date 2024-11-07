@@ -20,14 +20,10 @@ export class ExamTypesService {
     if (existingWitSameName) throw new ConflictException('Exam type with same name already exists')
 
     const newExamType = this.examTypeRepo.create(createExamTypeDto)
-    const savedExamType = await this.examTypeRepo.save(newExamType)
+    await this.examTypeRepo.save(newExamType)
 
     return {
-      message: 'Exam type created successfully',
-      examType: {
-        id: savedExamType.id,
-        name: savedExamType.name,
-      }
+      message: 'Exam type added',
     }
   }
 
@@ -41,6 +37,12 @@ export class ExamTypesService {
       .where(new Brackets(qb => {
         queryDto.search && qb.andWhere("LOWER(examType.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
       }))
+      .select([
+        "examType.id",
+        "examType.name",
+        "examType.description",
+        "examType.createdAt",
+      ])
 
     return paginatedData(queryDto, queryBuilder);
   }
@@ -66,28 +68,19 @@ export class ExamTypesService {
 
     // update the exam type
     Object.assign(existing, updateExamTypeDto);
-    const savedExamType = await this.examTypeRepo.save(existing);
+    await this.examTypeRepo.save(existing);
 
     return {
-      message: 'Exam type updated',
-      examType: {
-        id: savedExamType.id,
-        name: savedExamType.name,
-      }
+      message: 'Exam type updated'
     }
   }
 
   async remove(id: string) {
     const existing = await this.findOne(id);
-    const removedExamType = await this.examTypeRepo.remove(existing);
+    await this.examTypeRepo.remove(existing);
 
     return {
       message: 'Exam type removed',
-      examType: {
-        id: removedExamType.id,
-        name: removedExamType.name,
-      }
     }
-
   }
 }

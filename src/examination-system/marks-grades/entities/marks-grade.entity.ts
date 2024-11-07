@@ -6,8 +6,8 @@ export class MarksGrade extends BaseEntity {
     @Column({ type: "varchar" })
     gradeName: string;
 
-    @Column({ type: "float" })
-    gpa: number;
+    @Column({ type: "int" })
+    gradeScale: number;
 
     @Column({ type: "float" })
     percentFrom: number;
