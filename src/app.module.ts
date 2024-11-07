@@ -26,7 +26,6 @@ import { RecommendationsModule } from './recommendations/recommendations.module'
 import { StaffsModule } from './staffs/staffs.module';
 import { StudentsModule } from './students/students.module';
 import { SubjectsModule } from './subjects/subjects.module';
-import { TasksModule } from './task-system/tasks/tasks.module';
 import { TeachersModule } from './teachers/teachers.module';
 import { TransportationSystemModule } from './transportation-system/transportation-system.module';
 import { ClassRoutinesModule } from './class-routines/class-routines.module';
@@ -37,6 +36,7 @@ import { LibrarySystemModule } from './library-system/library-system.module';
 import { TaskSystemModule } from './task-system/task-system.module';
 import { CacheModule, CacheStore } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-redis-yet';
+import { RoleBasedViewModule } from './_role-based-view/role-based-view.module';
 
 @Module({
   imports: [
@@ -104,6 +104,7 @@ import { redisStore } from 'cache-manager-redis-yet';
     TransportationSystemModule,
     LibrarySystemModule,
     TaskSystemModule,
+    RoleBasedViewModule,
   ],
   controllers: [AppController],
   providers: [
