@@ -11,10 +11,11 @@ import { FormDataRequest } from 'nestjs-form-data';
 import { RefreshTokenGuard } from 'src/common/guards/refresh-token.guard';
 import { ChangePasswordDto } from './dto/changePassword.dto';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
-import { AuthUser } from 'src/common/types/global.type';
+import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { PasswordChangeRequestDto } from './dto/password-change-req.dto';
 import { ResetPasswordDto } from './dto/resetPassword.dto';
 import { UpdateEmailDto } from './dto/update-email.dto';
+import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -70,6 +71,7 @@ export class AuthController {
     @ApiConsumes('multipart/form-data')
     @FormDataRequest()
     @UseGuards(RefreshTokenGuard)
+    @CheckAbilities({ subject: Role.USER, action: Action.READ })
     logout(@Req() req: FastifyRequest, @Res({ passthrough: true }) res: FastifyReply) {
         return this.authService.logout(req, res);
     }

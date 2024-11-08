@@ -19,10 +19,7 @@ export class FilesController {
   @Post()
   @FormDataRequest({ limits: { fileSize: 5 * 1024 * 1024, files: 10 } })
   @ApiConsumes('multipart/formdata')
-  @CheckAbilities(
-    { action: Action.CREATE, subject: Role.ADMIN },
-    { action: Action.CREATE, subject: Role.STUDENT }
-  )  
+  @CheckAbilities({ action: Action.CREATE, subject: Role.USER })  
   upload(@Body() createFileDto: CreateFileDto) {
     return this.filesService.upload(createFileDto);
   }

@@ -13,10 +13,7 @@ export class AccountsController {
     ) { }
 
     @Get('me')
-    @CheckAbilities(
-        { subject: Role.ADMIN, action: Action.READ },
-        { subject: Role.STUDENT, action: Action.READ }
-    )
+    @CheckAbilities({ subject: Role.USER, action: Action.READ })
     me(@CurrentUser() currentUser: AuthUser) {
         return this.accountsService.me(currentUser);
     }

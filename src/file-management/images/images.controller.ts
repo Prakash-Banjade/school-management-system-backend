@@ -1,7 +1,6 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Query, Res } from '@nestjs/common';
 import { ImagesService } from './images.service';
 import { CreateImageDto } from './dto/create-image.dto';
-import { UpdateImageDto } from './dto/update-image.dto';
 import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { FormDataRequest } from 'nestjs-form-data';
 import { SkipThrottle } from '@nestjs/throttler';
@@ -23,7 +22,7 @@ export class ImagesController {
   @FormDataRequest({ limits: { fileSize: 5 * 1024 * 1024, files: 10 } })
   @ApiOperation({ description: 'Upload Images' })
   @ApiConsumes('multipart/formdata')
-  @CheckAbilities({ action: Action.CREATE, subject: Role.ADMIN })
+  @CheckAbilities({ action: Action.CREATE, subject: Role.USER })
   upload(@Body() createImageDto: CreateImageDto, @CurrentUser() currentUser: AuthUser) {
     return this.imagesService.upload(createImageDto, currentUser);
   }
@@ -38,7 +37,7 @@ export class ImagesController {
   @Public()
   @Get('get-image/:slug')
   @SkipThrottle()
-  getImage(@Param("slug") slug: string, @Query() queryDto: ImageQueryDto, @Res() res: FastifyReply, @CurrentUser() currentUser?: AuthUser) {
+  getImage(@Param("slug") slug: string, @Query() queryDto: ImageQueryDto, @Res() res: FastifyReply) {
     return this.imagesService.serveImage(slug, queryDto, res);
   }
 
