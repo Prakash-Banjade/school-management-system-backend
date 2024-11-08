@@ -11,6 +11,10 @@ import { AcademicYear } from 'src/academic-years/entities/academic-year.entity';
 import paginatedData from 'src/utils/paginatedData';
 import { ExamSubject } from '../exam-subjects/entities/exam-subject.entity';
 import { Subject } from 'src/subjects/entities/subject.entity';
+import { applySelectColumns } from 'src/utils/apply-select-cols';
+import { examSelectCols, singleExamSelectCols } from './helpers/exam-select-cols';
+import { PageMetaDto } from 'src/common/dto/pageMeta.dto';
+import { PageDto } from 'src/common/dto/page.dto.';
 
 @Injectable()
 export class ExamsService {
@@ -63,19 +67,40 @@ export class ExamsService {
   }
 
   async findAll(queryDto: ExamQueryDto) {
-    const querybuilder = this.examRepo.createQueryBuilder('exam');
+    const queryBuilder = this.examRepo.createQueryBuilder('exam');
 
-    querybuilder
+    queryBuilder
       .orderBy("exam.createdAt", queryDto.order)
-      .skip(queryDto.skip)
-      .take(queryDto.take)
+      .offset(queryDto.skip)
+      .limit(queryDto.take)
       .leftJoin('exam.examType', 'examType')
       .leftJoin('exam.classRoom', 'classRoom')
+      .leftJoin('classRoom.parent', 'parent')
       .where(new Brackets(qb => {
-        // queryDto.search && qb.andWhere("LOWER(exam.type) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
-      }))
+        queryDto.classRoomId && qb.andWhere(new Brackets(qb => { // if class room id, check in both section and class
+          qb.orWhere('parent.id = :classRoomId', { classRoomId: queryDto.classRoomId });
+          qb.orWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
+        }))
 
-    return paginatedData(queryDto, querybuilder);
+        queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId }); // the sectionId send by the frontend is the class room id
+
+        queryDto.examTypes?.length && qb.andWhere('examType.name IN (:...examTypes)', { examTypes: queryDto.examTypes });
+      }))
+      .select([
+        'exam.id as id',
+        'exam.createdAt as createdAt',
+        'examType.name as examType',
+        'classRoom.name as classRoom',
+        'parent.name as parentClass',
+      ])
+
+
+    const itemCount = await queryBuilder.getCount();
+    const data = await queryBuilder.getRawMany();
+
+    const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto: queryDto });
+
+    return new PageDto(data, pageMetaDto);
   }
 
   async findOne(id: string) {
@@ -85,9 +110,12 @@ export class ExamsService {
       },
       relations: {
         examType: true,
-        classRoom: true,
+        classRoom: {
+          parent: true,
+        },
         examSubjects: true,
-      }
+      },
+      select: singleExamSelectCols,
     })
 
     if (!existing) throw new Error('Exam not found');

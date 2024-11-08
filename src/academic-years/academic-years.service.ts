@@ -97,7 +97,10 @@ export class AcademicYearsService {
   }
 
   async getActive() {
-    const existing = await this.academicYearRepo.findOneBy({ isActive: true });
+    const existing = await this.academicYearRepo.findOne({
+      where: { isActive: true },
+      select: ['id', 'name']
+    });
     if (!existing) throw new BadRequestException('Academic year not found');
     return existing;
   }
@@ -114,7 +117,7 @@ export class AcademicYearsService {
     await this.cacheManager.set(CACHE_KEYS.CAY_ID, saved.id, 0); // update cache
 
     return {
-      message: "Active year changed",
+      message: "Academic year changed",
       academicYear: {
         id: saved.id,
         name: saved.name,

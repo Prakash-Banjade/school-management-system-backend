@@ -17,3 +17,34 @@ export const examSelectCols: FindOptionsSelect<Exam> = {
         name: true,
     }
 }
+
+export const singleExamSelectCols: FindOptionsSelect<Exam> = {
+    id: true,
+    createdAt: true,
+    examType: {
+        id: true,
+        name: true,
+    },
+    classRoom: {
+        id: true,
+        name: true,
+        parent: {
+            id: true,
+            name: true,
+        }
+    },
+    examSubjects: {
+        id: true,
+        subject: {
+            id: true,
+            subjectCode: true,
+            subjectName: true,
+        },
+        duration: true,
+        examDate: true,
+        startTime: true,
+        fullMark: true,
+        passMark: true,
+        venue: true,
+    }
+}

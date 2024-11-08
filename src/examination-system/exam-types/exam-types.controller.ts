@@ -25,6 +25,12 @@ export class ExamTypesController {
     return this.examTypesService.findAll(queryDto);
   }
 
+  @Get('options')
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  getOptions(@Query() queryDto: QueryDto) {
+    return this.examTypesService.getOptions(queryDto);
+  }
+
   @Get(':id')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findOne(@Param('id', ParseUUIDPipe) id: string) {

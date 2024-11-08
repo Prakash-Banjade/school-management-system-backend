@@ -31,6 +31,15 @@ export class AcademicYearsController {
   getOptions(@Query() queryDto: AcademicYearOptionsDto) {
     return this.academicYearsService.getOptions(queryDto);
   }
+  
+  @Get('active')
+  @CheckAbilities(
+    { action: Action.READ, subject: Role.ADMIN },
+    { action: Action.READ, subject: Role.STUDENT }
+  )
+  getActive() {
+    return this.academicYearsService.getActive();
+  }
 
   @Get(':id')
   @CheckAbilities({ action: Action.READ, subject: Role.ADMIN })

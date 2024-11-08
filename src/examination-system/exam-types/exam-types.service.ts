@@ -61,6 +61,7 @@ export class ExamTypesService {
       ])
       .getRawMany();
   }
+  
   async findOne(id: string) {
     const existing = await this.examTypeRepo.findOne({
       where: { id },

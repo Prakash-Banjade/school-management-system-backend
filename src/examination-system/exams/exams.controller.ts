@@ -14,27 +14,31 @@ export class ExamsController {
   constructor(private readonly examsService: ExamsService) { }
 
   @Post()
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
   create(@Body() createExamDto: CreateExamDto) {
     return this.examsService.create(createExamDto);
   }
 
   @Get()
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findAll(@Query() queryDto: ExamQueryDto) {
     return this.examsService.findAll(queryDto);
   }
 
   @Get(':id')
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
   findOne(@Param('id') id: string) {
     return this.examsService.findOne(id);
   }
 
   @Patch(':id')
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
   update(@Param('id') id: string, @Body() updateExamDto: UpdateExamDto) {
     return this.examsService.update(id, updateExamDto);
   }
 
   @Delete(':id')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.DELETE }) 
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.DELETE })
   remove(@Param('id') id: string) {
     return this.examsService.remove(id);
   }
