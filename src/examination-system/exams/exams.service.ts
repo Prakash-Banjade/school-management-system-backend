@@ -8,13 +8,13 @@ import { ClassRoomsService } from 'src/class-rooms/class-rooms.service';
 import { ExamTypesService } from '../exam-types/exam-types.service';
 import { ExamQueryDto } from './dto/exam-query.dto';
 import { AcademicYear } from 'src/academic-years/entities/academic-year.entity';
-import paginatedData from 'src/utils/paginatedData';
 import { ExamSubject } from '../exam-subjects/entities/exam-subject.entity';
 import { Subject } from 'src/subjects/entities/subject.entity';
-import { applySelectColumns } from 'src/utils/apply-select-cols';
-import { examSelectCols, singleExamSelectCols } from './helpers/exam-select-cols';
+import { singleExamSelectCols } from './helpers/exam-select-cols';
 import { PageMetaDto } from 'src/common/dto/pageMeta.dto';
 import { PageDto } from 'src/common/dto/page.dto.';
+import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
+import { EClassType } from 'src/common/types/global.type';
 
 @Injectable()
 export class ExamsService {
@@ -39,7 +39,7 @@ export class ExamsService {
       fullMark: examSubject.fullMark,
       passMark: examSubject.passMark,
       venue: examSubject.venue,
-      subject: await this.getSubject(examSubject.subjectId, classRoom.id)
+      subject: await this.getSubject(examSubject.subjectId, classRoom)
     })))
 
     const newExam = this.examRepo.create({
@@ -56,7 +56,10 @@ export class ExamsService {
     }
   }
 
-  async getSubject(subjectId: string, classRoomId: string): Promise<Subject> {
+  async getSubject(subjectId: string, classRoom: ClassRoom): Promise<Subject> {
+    const classRoomId = classRoom.classType === EClassType.SECTION ? classRoom.parent?.id : classRoom.id;
+    // classRoom can be section also so, while getting the subject look in parent class
+
     const subject = await this.subjectRepo.findOne({
       where: { id: subjectId, classRoom: { id: classRoomId } },
       select: { id: true }
@@ -70,30 +73,43 @@ export class ExamsService {
     const queryBuilder = this.examRepo.createQueryBuilder('exam');
 
     queryBuilder
-      .orderBy("exam.createdAt", queryDto.order)
-      .offset(queryDto.skip)
-      .limit(queryDto.take)
       .leftJoin('exam.examType', 'examType')
       .leftJoin('exam.classRoom', 'classRoom')
       .leftJoin('classRoom.parent', 'parent')
-      .where(new Brackets(qb => {
-        queryDto.classRoomId && qb.andWhere(new Brackets(qb => { // if class room id, check in both section and class
-          qb.orWhere('parent.id = :classRoomId', { classRoomId: queryDto.classRoomId });
-          qb.orWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
-        }))
+      .where(
+        new Brackets(qb => {
+          queryDto.classRoomId && qb.andWhere(
+            new Brackets(qb => {
+              qb.orWhere('parent.id = :classRoomId', { classRoomId: queryDto.classRoomId });
+              qb.orWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
+            })
+          );
 
-        queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId }); // the sectionId send by the frontend is the class room id
+          queryDto.sectionId &&
+            qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId });
 
-        queryDto.examTypes?.length && qb.andWhere('examType.name IN (:...examTypes)', { examTypes: queryDto.examTypes });
-      }))
-      .select([
-        'exam.id as id',
-        'exam.createdAt as createdAt',
+          queryDto.examTypes?.length &&
+            qb.andWhere('examType.name IN (:...examTypes)', { examTypes: queryDto.examTypes });
+        })
+      )
+      .addSelect([
         'examType.name as examType',
         'classRoom.name as classRoom',
         'parent.name as parentClass',
       ])
-
+      .addSelect(subQuery => {
+        return subQuery
+          .select("JSON_OBJECT('subjectName', subject.subjectName, 'examDate', es.examDate)")
+          .from("ExamSubject", "es")
+          .leftJoin("es.subject", "subject")
+          .where("es.examId = exam.id")
+          .andWhere("es.examDate > CURRENT_DATE()")
+          .orderBy("es.examDate", "ASC")
+          .limit(1)
+      }, "upcomingSubject")
+      .orderBy("exam.createdAt", queryDto.order)
+      .offset(queryDto.skip)
+      .limit(queryDto.take);
 
     const itemCount = await queryBuilder.getCount();
     const data = await queryBuilder.getRawMany();
@@ -113,7 +129,9 @@ export class ExamsService {
         classRoom: {
           parent: true,
         },
-        examSubjects: true,
+        examSubjects: {
+          subject: true
+        },
       },
       select: singleExamSelectCols,
     })

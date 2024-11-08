@@ -15,13 +15,13 @@ export class LeaveRequestsController {
   constructor(private readonly leaveRequestsService: LeaveRequestsService) { }
 
   @Post()
-  // @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
   create(@Body() createLeaveRequestDto: CreateLeaveRequestDto, @CurrentUser() currentUser: AuthUser) {
     return this.leaveRequestsService.create(createLeaveRequestDto, currentUser);
   }
 
   @Get()
-  // @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findAll(@Query() queryDto: LeaveRequestQueryDto, @CurrentUser() currentUser: AuthUser) { // only for students leave request
     return this.leaveRequestsService.findAll(queryDto, currentUser);
   }
