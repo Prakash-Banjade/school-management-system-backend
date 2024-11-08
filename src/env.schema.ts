@@ -3,13 +3,8 @@ import * as Joi from 'joi';
 export const envSchema = Joi.object({
     DATABASE_URL: Joi.string().uri().required(), // Validates that it's a valid URL
     DB_SYNCHRONIZE: Joi.string().valid('true', 'false').required(), // Validates that it's a boolean
-
-    REDIS_HOST: Joi.string().required(),
-    REDIS_PORT: Joi.string()
-        .pattern(/^\d+$/, { name: 'number' }) // Validates as a numeric pattern
-        .messages({ 'string.pattern.name': 'Must be a number' })
-        .required(),
-    REDIS_PASSWORD: Joi.string().required(),
+    
+    REDIS_URL: Joi.string().uri().required(), // Validates that it's a valid URL
 
     ACCESS_TOKEN_SECRET: Joi.string().required(),
     ACCESS_TOKEN_EXPIRATION_SEC: Joi.string()

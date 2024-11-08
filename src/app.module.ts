@@ -63,10 +63,7 @@ import { redisStore } from 'cache-manager-redis-yet';
       isGlobal: true,
       useFactory: async (configService: ConfigService) => {
         const store = await redisStore({
-          socket: {
-            host: configService.get<string>('REDIS_HOST'),
-            port: configService.get<number>('REDIS_PORT'),
-          },
+          url: configService.get<string>('REDIS_URL'),
         });
 
         return {
