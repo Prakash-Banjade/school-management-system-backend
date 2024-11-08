@@ -1,5 +1,6 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
-import { IsEnum, IsOptional, IsString } from "class-validator";
+import { Transform } from "class-transformer";
+import { IsBoolean, IsEnum, IsOptional, IsString } from "class-validator";
 import { QueryDto } from "src/common/dto/query.dto";
 import { ETask } from "src/common/types/global.type";
 
@@ -23,4 +24,10 @@ export class TaskQueryDto extends QueryDto {
     @IsEnum(ETask)
     @IsOptional()
     taskType?: ETask;
+
+    @ApiPropertyOptional()
+    @IsBoolean()
+    @IsOptional()
+    @Transform(({ value }) => value === "true")
+    overdue?: boolean;
 }

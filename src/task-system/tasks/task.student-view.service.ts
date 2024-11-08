@@ -42,6 +42,9 @@ export class TaskStudentViewService {
                 queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId }); // section is the class room
                 queryDto.subjectId && qb.andWhere('subject.id = :subjectId', { subjectId: queryDto.subjectId });
                 queryDto.taskType && qb.andWhere('task.taskType = :taskType', { taskType: queryDto.taskType });
+                queryDto.overdue
+                    ? qb.andWhere('DATE(task.deadline) < CURRENT_DATE()')
+                    : qb.andWhere('DATE(task.deadline) >= CURRENT_DATE()');
             }))
             .select([
                 "task.id as id",
@@ -76,6 +79,7 @@ export class TaskStudentViewService {
             .leftJoin('task.setBy', 'setBy')
             .leftJoin('task.attachments', 'attachments')
             .leftJoin('task.submissions', 'submissions', 'submissions.studentId = :studentId', { studentId: currentUser.studentId })
+            .leftJoin('submissions.attachments', 'submissionAttachments')
             .leftJoin('submissions.evaluation', 'evaluation')
             .where(new Brackets(qb => {
                 qb.andWhere('task.id = :id', { id }); // filter by id

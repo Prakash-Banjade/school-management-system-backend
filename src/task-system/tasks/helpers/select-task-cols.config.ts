@@ -34,15 +34,21 @@ export const selectTaskCols: FindOptionsSelect<Task> = {
     }
 }
 
-export const selectTaskCols_student = {
+export const selectTaskCols_student = { 
     ...selectTaskCols,
     submissions: {
         id: true,
         status: true,
+        content: true,
         evaluation: {
             id: true,
             score: true,
             feedback: true,
+        },
+        submissionAttachments: {
+            id: true,
+            url: true,
+            originalName: true,
         }
     }
 }
