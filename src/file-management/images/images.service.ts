@@ -88,22 +88,6 @@ export class ImagesService {
   async serveImage(filename: string, queryDto: ImageQueryDto, @Res() reply: FastifyReply) {
     const imagePath = path.join(process.cwd(), 'public', filename);
 
-    // If a thumbnail is requested
-    if (queryDto.thumbnail === 'true') {
-      const thumbnailPath = path.join(process.cwd(), 'public', filename.replace(/(\.[\w\d_-]+)$/i, '-thumbnail.webp'));
-
-      try {
-        const thumbnailBuffer = await sharp(thumbnailPath).toBuffer();
-        reply.header('Content-Type', 'image/webp');
-        reply.send(thumbnailBuffer);
-        return;
-      } catch (err) {
-        console.error('Thumbnail not found:', err);
-        reply.status(404).send('Thumbnail not found');
-        return;
-      }
-    }
-
     try {
       // Create a readable stream from the original image file
       const readStream = fs.createReadStream(imagePath);

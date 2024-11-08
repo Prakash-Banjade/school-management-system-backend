@@ -11,10 +11,4 @@ export class ImageQueryDto {
     @IsString()
     @IsOptional()
     q?: string;
-
-    @ApiPropertyOptional({ enum: ['true', 'false'] })
-    @IsString()
-    @IsOptional()
-    @IsEnum(['true', 'false'])
-    thumbnail?: string;
 }
