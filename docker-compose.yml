@@ -1,8 +1,5 @@
 version: '3.9'
 
-# below is the format of DATABASE_URL in .env file
-# DATABASE_URL=mysql://root:mySQL@db:3306/testdb
-
 services:
   db:
     image: mysql:latest
@@ -30,12 +27,13 @@ services:
   #   build:
   #     context: .
   #     dockerfile: Dockerfile
-  #   container_name: nestjs_starter
+  #   container_name: sms-backend
   #   restart: always # on crash restart the container
   #   env_file:
   #     - .env
+  #     - .env.local
   #   ports:
-  #     - "3000:3000"
+  #     - "3001:3001" # as in Dockerfile
   #   depends_on:
   #     - db
   #     - redis
