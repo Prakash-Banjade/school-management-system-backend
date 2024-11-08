@@ -142,9 +142,50 @@ export class ExamsService {
   }
 
   async update(id: string, updateExamDto: UpdateExamDto) {
-    return `This action updates a #${id} exam`;
-  }
+    const existing = await this.examRepo.findOne({
+      where: { id },
+      relations: {
+        examType: true,
+        classRoom: {
+          parent: true
+        }
+      },
+      select: {
+        id: true,
+        examType: { id: true },
+        classRoom: {
+          id: true,
+          classType: true,
+          parent: {
+            id: true,
+          }
+        }
+      }
+    });
+    if (!existing) throw new NotFoundException('Exam not found');
 
+    if (updateExamDto.examTypeId && (updateExamDto.examTypeId !== existing.examType?.id || !existing.examType)) {
+      existing.examType = await this.examTypesService.findOne(updateExamDto.examTypeId);
+    }
+
+    const examSubjects: Partial<ExamSubject>[] = await Promise.all(updateExamDto.examSubjects.map(async (examSubject) => ({
+      examDate: examSubject.examDate,
+      startTime: examSubject.startTime,
+      duration: examSubject.duration,
+      fullMark: examSubject.fullMark,
+      passMark: examSubject.passMark,
+      venue: examSubject.venue,
+      subject: await this.getSubject(examSubject.subjectId, existing.classRoom)
+    })))
+
+    Object.assign(existing, { examSubjects });
+
+    await this.examRepo.save(existing);
+
+    return {
+      message: 'Exam updated',
+    }
+  }
   async remove(id: string) {
     const existing = await this.findOne(id);
     return await this.examRepo.remove(existing);
