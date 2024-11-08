@@ -23,12 +23,14 @@ export class ImagesController {
   @FormDataRequest({ limits: { fileSize: 5 * 1024 * 1024, files: 10 } })
   @ApiOperation({ description: 'Upload Images' })
   @ApiConsumes('multipart/formdata')
+  @CheckAbilities({ action: Action.CREATE, subject: Role.ADMIN })
   upload(@Body() createImageDto: CreateImageDto, @CurrentUser() currentUser: AuthUser) {
     return this.imagesService.upload(createImageDto, currentUser);
   }
 
   @Get()
   @ApiBearerAuth()
+  @CheckAbilities({ action: Action.CREATE, subject: Role.ADMIN })
   findAll(@Query() queryDto: QueryDto, @CurrentUser() currentUser: AuthUser) {
     return this.imagesService.findAll(queryDto, currentUser);
   }
