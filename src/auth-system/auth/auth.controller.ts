@@ -16,6 +16,7 @@ import { PasswordChangeRequestDto } from './dto/password-change-req.dto';
 import { ResetPasswordDto } from './dto/resetPassword.dto';
 import { UpdateEmailDto } from './dto/update-email.dto';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
+import { VerifyTokenDto } from './dto/verify-token.dto';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -97,8 +98,8 @@ export class AuthController {
     @Public()
     @Post('verify-token')
     @HttpCode(HttpStatus.OK)
-    verifyResetToken(@Body('token') token: string) {
-        return this.authService.verifyResetToken(token)
+    verifyResetToken(@Body() verifyTokenDto: VerifyTokenDto) {
+        return this.authService.verifyResetToken(verifyTokenDto.token)
     }
 
     @Public()
