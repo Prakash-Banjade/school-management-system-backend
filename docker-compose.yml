@@ -23,20 +23,19 @@ services:
     command: redis-server --save 20 1 --loglevel warning
     volumes:
       - cache:/data
-  # app:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   container_name: sms-backend
-  #   restart: always # on crash restart the container
-  #   env_file:
-  #     - .env
-  #     - .env.local
-  #   ports:
-  #     - "3001:3001" # as in Dockerfile
-  #   depends_on:
-  #     - db
-  #     - redis
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sms-backend
+    restart: always # on crash restart the container
+    env_file:
+      - .env.local
+    ports:
+      - "3001:3001" # as in Dockerfile
+    depends_on:
+      - db
+      - redis
 
 volumes:
   mysql:
