@@ -1,13 +1,19 @@
 import { Injectable, Logger, LoggerService } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createTransport, Transporter } from 'nodemailer';
-import { Account } from 'src/auth-system/accounts/entities/account.entity';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
-import { emailConfig, ITemplatedData, ITemplates } from './mail-service.config';
+import { emailConfig, ITemplates } from './mail-service.config';
 import { readFileSync } from 'fs';
 import * as nodemailer from 'nodemailer';
 import Handlebars from 'handlebars';
 import { join } from 'path';
+import { OnEvent } from '@nestjs/event-emitter';
+import { ConfirmationMailEventDto, ResetPasswordMailEventDto } from './dto/events.dto';
+
+export enum MailEvents {
+    CONFIRMATION = 'mail.confirmation',
+    RESET_PASSWORD = 'mail.reset-password',
+}
 
 @Injectable()
 export class MailService {
@@ -19,8 +25,8 @@ export class MailService {
 
     constructor(private readonly configService: ConfigService) {
         this.transport = createTransport(emailConfig);
-        this.email = `"Nest Fastify" <${emailConfig.auth.user}>`;
-        this.domain = this.configService.get<string>('domain');
+        this.email = `"SMS Backend" <${emailConfig.auth.user}>`;
+        this.domain = this.configService.get<string>('CLIENT_URL');
         this.loggerService = new Logger(MailService.name);
 
         this.templates = {
@@ -29,21 +35,20 @@ export class MailService {
         };
     }
 
-    private static parseTemplate(
+    private static parseTemplate<T>(
         templateName: string,
-    ): Handlebars.TemplateDelegate<ITemplatedData> {
+    ): Handlebars.TemplateDelegate<T> {
         const templateText = readFileSync(
             join(__dirname, 'templates', templateName),
             'utf-8',
         );
-        return Handlebars.compile<ITemplatedData>(templateText, { strict: true });
+        return Handlebars.compile<T>(templateText, { strict: true });
     }
 
     public async sendEmail(
         to: string,
         subject: string,
         html: string,
-        log?: string,
     ): Promise<void> {
         const result = await this.transport.sendMail({
             from: this.email,
@@ -53,33 +58,33 @@ export class MailService {
         });
 
         const previewUrl = nodemailer.getTestMessageUrl(result);
-
-        console.log(previewUrl);
+        console.log(previewUrl)
     }
 
-    public async sendConfirmationEmail(account: Account, token: string, otp: number) {
-        const { email, firstName, lastName } = account;
+    @OnEvent(MailEvents.CONFIRMATION)
+    public async sendConfirmationEmail(dto: ConfirmationMailEventDto) {
+        const { email, firstName, lastName } = dto.account;
         const subject = 'Confirm your email';
         const html = this.templates.confirmation({
             name: firstName + ' ' + lastName,
-            link: `https://${this.domain}/auth/confirm/${token}`,
-            otp: String(otp),
+            link: `${this.domain}/auth/confirm/${dto.token}`,
+            otp: String(dto.otp),
         });
-        this.sendEmail(email, subject, html, 'A new confirmation email was sent.');
+        this.sendEmail(email, subject, html);
     }
 
-    public async sendResetPasswordLink(account: Account, token: string) {
-        const { email, firstName, lastName } = account;
+    @OnEvent(MailEvents.RESET_PASSWORD)
+    public async sendResetPasswordLink(dto: ResetPasswordMailEventDto) {
+        const { email, firstName, lastName } = dto.account;
         const subject = 'Reset your password';
         const html = this.templates.resetPassword({
             name: firstName + ' ' + lastName,
-            link: `https://${this.domain}/auth/reset-password/${token}`,
+            resetLink: `${this.domain}/auth/reset-password/${dto.token}`,
         });
         this.sendEmail(
             email,
             subject,
             html,
-            'A new reset password link was sent.',
         );
     }
 }

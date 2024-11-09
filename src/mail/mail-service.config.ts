@@ -23,13 +23,7 @@ export const emailConfig: IEmailConfig = {
     },
 }
 
-export interface ITemplatedData {
-    name: string;
-    link: string;
-}
-
-
-export interface ITemplates {
-    confirmation: TemplateDelegate<ITemplatedData & { otp: string }>;
-    resetPassword: TemplateDelegate<ITemplatedData>;
+export interface ITemplates<T = any> {
+    confirmation: TemplateDelegate<T>;
+    resetPassword: TemplateDelegate<T>;
 }

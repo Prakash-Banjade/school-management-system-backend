@@ -36,6 +36,7 @@ import { LibrarySystemModule } from './library-system/library-system.module';
 import { TaskSystemModule } from './task-system/task-system.module';
 import { CacheModule, CacheStore } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-redis-yet';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
@@ -74,6 +75,7 @@ import { redisStore } from 'cache-manager-redis-yet';
       },
       inject: [ConfigService],
     }),
+    EventEmitterModule.forRoot(),
     TypeOrmModule,
     AuthSystemModule,
     FileManagementModule,

@@ -1,6 +1,5 @@
 import { BadRequestException, Inject, Injectable, Scope, UnauthorizedException } from "@nestjs/common";
 import { Account } from "src/auth-system/accounts/entities/account.entity";
-import { MailService } from "src/mail/mail.service";
 import { generateOtp } from "src/utils/generateOPT";
 import * as crypto from 'crypto'
 import { BaseRepository } from "src/common/repository/base-repository";
@@ -8,22 +7,25 @@ import { DataSource } from "typeorm";
 import { FastifyRequest } from "fastify";
 import { REQUEST } from "@nestjs/core";
 import { EmailVerificationPending } from "../entities/email-verification-pending.entity";
-import { JwtService } from "@nestjs/jwt";
+import { JwtService, TokenExpiredError } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
 import { EmailVerificationDto } from "../dto/email-verification.dto";
 import * as bcrypt from 'bcrypt';
 import { EncryptionService } from "src/auth-system/encryption/encryption.service";
 import { INVALID_AUTH_CREDENTIALS_MSG } from "src/common/CONSTANTS";
+import { EventEmitter2 } from "@nestjs/event-emitter";
+import { MailEvents } from "src/mail/mail.service";
+import { ConfirmationMailEventDto } from "src/mail/dto/events.dto";
 
 @Injectable({ scope: Scope.REQUEST })
 export class AuthHelper extends BaseRepository {
     constructor(
         private readonly datasource: DataSource,
         @Inject(REQUEST) req: FastifyRequest,
-        private readonly mailService: MailService,
         private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
         private readonly encryptionService: EncryptionService,
+        private readonly eventEmitter: EventEmitter2,
     ) {
         super(datasource, req);
     }
@@ -76,7 +78,7 @@ export class AuthHelper extends BaseRepository {
             await this.emailVerificationPendingRepo.save(emailVerificationPending);
         }
 
-        await this.mailService.sendConfirmationEmail(account, encryptedVerificationToken, otp);
+        this.eventEmitter.emit(MailEvents.CONFIRMATION, new ConfirmationMailEventDto(account, encryptedVerificationToken, otp));
 
         return {
             message: "An OTP has been sent to your email. Please use the OTP to verify your account."
@@ -152,8 +154,8 @@ export class AuthHelper extends BaseRepository {
         const token = await this.jwtService.signAsync(
             payload,
             {
-                secret: this.configService.getOrThrow('EMAIL_VERIFICATION_SECRET'),
-                expiresIn: parseInt(this.configService.getOrThrow('EMAIL_VERIFICATION_EXPIRATION_SEC')),
+                secret,
+                expiresIn: expiration,
             }
         );
 
@@ -167,7 +169,7 @@ export class AuthHelper extends BaseRepository {
         return [encryptedToken, hashedToken];
     }
 
-    async verifyEncryptedHashTokenPair<T>(encryptedToken: string, secret: string): Promise<{ payload: T; tokenHash: string } | null> {
+    async verifyEncryptedHashTokenPair<T>(encryptedToken: string, secret: string): Promise<{ payload: T | null; tokenHash: string | null; error: Error | null }> {
         const tokenHash = crypto
             .createHash('sha256')
             .update(encryptedToken)
@@ -179,9 +181,9 @@ export class AuthHelper extends BaseRepository {
                 secret,
             });
 
-            return { payload, tokenHash };
+            return { payload, tokenHash, error: null };
         } catch (e) {
-            return null;
+            return { payload: null, tokenHash: null, error: e };
         }
     }
 }
