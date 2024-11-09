@@ -23,7 +23,6 @@ import { AuthUser } from 'src/common/types/global.type';
 import { MAX_PREV_PASSWORDS, PASSWORD_SALT_COUNT, Tokens } from 'src/common/CONSTANTS';
 import { RegisterDto } from './dto/register.dto';
 import { SignInDto } from './dto/signIn.dto';
-import { MailService } from 'src/mail/mail.service';
 import { AuthHelper } from './helpers/auth.helper';
 import { JwtService } from '../jwt/jwt.service';
 import { EmailVerificationDto } from './dto/email-verification.dto';
@@ -32,6 +31,10 @@ import { ChangePasswordDto } from './dto/changePassword.dto';
 import * as bcrypt from 'bcrypt';
 import { ResetPasswordDto } from './dto/resetPassword.dto';
 import { UpdateEmailDto } from './dto/update-email.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { MailEvents } from 'src/mail/mail.service';
+import { ResetPasswordMailEventDto } from 'src/mail/dto/events.dto';
+import { TokenExpiredError } from '@nestjs/jwt';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AuthService extends BaseRepository {
@@ -40,8 +43,8 @@ export class AuthService extends BaseRepository {
     @Inject(REQUEST) req: FastifyRequest,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    private readonly mailService: MailService,
     private readonly authHelper: AuthHelper,
+    private readonly eventEmitter: EventEmitter2
   ) { super(datasource, req) }
 
   private readonly accountsRepo = this.datasource.getRepository<Account>(Account)
@@ -193,8 +196,10 @@ export class AuthService extends BaseRepository {
       if (isMatch) throw new ForbiddenException(`New password cannot be one of the last ${MAX_PREV_PASSWORDS} passwords`)
     }
 
-    account.password = changePasswordDto.newPassword;
-    account.prevPasswords.push(bcrypt.hashSync(changePasswordDto.newPassword, PASSWORD_SALT_COUNT));
+    const hashedPwd = bcrypt.hashSync(changePasswordDto.newPassword, PASSWORD_SALT_COUNT);
+
+    account.password = hashedPwd;
+    account.prevPasswords.push(hashedPwd);
     account.passwordUpdatedAt = new Date();
 
     // maintain prev passwords of size MAX_PREV_PASSWORDS
@@ -216,7 +221,7 @@ export class AuthService extends BaseRepository {
     const [resetToken, hashedResetToken] = await this.authHelper.getEncryptedHashTokenPair(
       { email: foundAccount.email },
       this.configService.getOrThrow('FORGOT_PASSWORD_SECRET'),
-      this.configService.getOrThrow('FORGOT_PASSWORD_EXPIRATION_SEC')
+      parseInt(this.configService.getOrThrow('FORGOT_PASSWORD_EXPIRATION_SEC'))
     )
 
     // existing request
@@ -236,10 +241,10 @@ export class AuthService extends BaseRepository {
     await this.passwordChangeRequestRepo.save(changeRequest);
 
     // send reset password link
-    await this.mailService.sendResetPasswordLink(foundAccount, resetToken);
+    this.eventEmitter.emit(MailEvents.RESET_PASSWORD, new ResetPasswordMailEventDto(foundAccount, resetToken));
 
     return {
-      message: `Token is valid for ${Number(this.configService.getOrThrow('FORGOT_PASSWORD_EXPIRATION_SEC')) / 60} minutes`,
+      message: `Link is valid for ${Number(this.configService.getOrThrow('FORGOT_PASSWORD_EXPIRATION_SEC')) / 60} minutes`,
     };
   }
 
@@ -248,23 +253,27 @@ export class AuthService extends BaseRepository {
 
     // hash the provided token to check in database
     const result = await this.authHelper.verifyEncryptedHashTokenPair<{ email: string }>(providedResetToken, this.configService.getOrThrow('FORGOT_PASSWORD_SECRET'));
-    if (!result || !result?.payload || !result?.tokenHash || !result?.payload?.email) throw new BadRequestException('Invalid reset token');
+    if (result?.error) {
+      // Todo: if token is not valid, remove the password change request from the database
+      if (result.error instanceof TokenExpiredError) throw new BadRequestException('Link has been expired');
+      throw new BadRequestException(result.error?.message || 'Invalid reset token');
+    };
 
     const { payload, tokenHash } = result;
 
     // Retrieve the hashed reset token from the database
     const passwordChangeRequest = await this.passwordChangeRequestRepo.findOneBy({ hashedResetToken: tokenHash, email: payload.email });
 
-    if (!passwordChangeRequest) throw new NotFoundException('Invalid reset token');
+    if (!passwordChangeRequest) throw new NotFoundException('Invalid request');
 
-    // Check if the reset token has expired
-    const now = new Date();
-    const resetTokenExpiration = new Date(passwordChangeRequest.createdAt);
-    resetTokenExpiration.setSeconds(resetTokenExpiration.getSeconds() + parseInt(this.configService.getOrThrow('FORGOT_PASSWORD_EXPIRATION_SEC')));
-    if (now > resetTokenExpiration) {
-      await this.passwordChangeRequestRepo.remove(passwordChangeRequest);
-      throw new BadRequestException('Reset token has expired');
-    }
+    // Check if the reset token has expired # JWT WILL VERIFY THE EXPIRATION
+    //// const now = new Date();
+    //// const resetTokenExpiration = new Date(passwordChangeRequest.createdAt);
+    //// resetTokenExpiration.setSeconds(resetTokenExpiration.getSeconds() + parseInt(this.configService.getOrThrow('FORGOT_PASSWORD_EXPIRATION_SEC')));
+    //// if (now > resetTokenExpiration) {
+    ////   await this.passwordChangeRequestRepo.remove(passwordChangeRequest);
+    ////   throw new BadRequestException('Reset token has expired');
+    //// }
 
     // retrieve the user from the database
     const account = await this.accountsRepo.findOneBy({ email: passwordChangeRequest.email });
@@ -276,8 +285,10 @@ export class AuthService extends BaseRepository {
       if (isMatch) throw new ForbiddenException(`New password cannot be one of the last ${MAX_PREV_PASSWORDS} passwords`)
     }
 
-    account.password = password;
-    account.prevPasswords.push(bcrypt.hashSync(password, PASSWORD_SALT_COUNT));
+    const hashedPwd = bcrypt.hashSync(password, PASSWORD_SALT_COUNT);
+
+    account.password = hashedPwd;
+    account.prevPasswords.push(hashedPwd);
     account.passwordUpdatedAt = new Date();
 
     // maintain prev passwords of size MAX_PREV_PASSWORDS
