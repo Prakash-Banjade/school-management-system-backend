@@ -48,8 +48,6 @@ export async function getImageMetadata(memoryStoredFile: MemoryStoredFile) {
         if (err) {
             console.error('Error saving file:', err);
             throw err;
-        } else {
-            console.log('File saved successfully:', filePath);
         }
     });
 
