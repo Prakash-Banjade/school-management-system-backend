@@ -95,6 +95,13 @@ export class AuthController {
     }
 
     @Public()
+    @Post('verify-token')
+    @HttpCode(HttpStatus.OK)
+    verifyResetToken(@Body('token') token: string) {
+        return this.authService.verifyResetToken(token)
+    }
+
+    @Public()
     @Post('reset-password')
     @HttpCode(HttpStatus.OK)
     @ApiConsumes('multipart/form-data')

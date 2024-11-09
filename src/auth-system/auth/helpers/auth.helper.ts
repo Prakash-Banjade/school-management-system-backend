@@ -16,6 +16,7 @@ import { INVALID_AUTH_CREDENTIALS_MSG } from "src/common/CONSTANTS";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { MailEvents } from "src/mail/mail.service";
 import { ConfirmationMailEventDto } from "src/mail/dto/events.dto";
+import { IVerifyEncryptedHashTokenPairReturn } from "./interface";
 
 @Injectable({ scope: Scope.REQUEST })
 export class AuthHelper extends BaseRepository {
@@ -169,7 +170,7 @@ export class AuthHelper extends BaseRepository {
         return [encryptedToken, hashedToken];
     }
 
-    async verifyEncryptedHashTokenPair<T>(encryptedToken: string, secret: string): Promise<{ payload: T | null; tokenHash: string | null; error: Error | null }> {
+    async verifyEncryptedHashTokenPair<T>(encryptedToken: string, secret: string): Promise<IVerifyEncryptedHashTokenPairReturn<T>> {
         const tokenHash = crypto
             .createHash('sha256')
             .update(encryptedToken)

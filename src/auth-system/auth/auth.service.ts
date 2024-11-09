@@ -35,6 +35,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { MailEvents } from 'src/mail/mail.service';
 import { ResetPasswordMailEventDto } from 'src/mail/dto/events.dto';
 import { TokenExpiredError } from '@nestjs/jwt';
+import { IVerifyEncryptedHashTokenPairReturn } from './helpers/interface';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AuthService extends BaseRepository {
@@ -248,17 +249,25 @@ export class AuthService extends BaseRepository {
     };
   }
 
-  async resetPassword(resetPasswordDto: ResetPasswordDto) {
-    const { token: providedResetToken, password } = resetPasswordDto;
-
+  /**
+   * This service is also used in a controller, so frontend can verify the token before allowing for the reset password request
+   */
+  async verifyResetToken(providedResetToken: string, data = false) {
     // hash the provided token to check in database
     const result = await this.authHelper.verifyEncryptedHashTokenPair<{ email: string }>(providedResetToken, this.configService.getOrThrow('FORGOT_PASSWORD_SECRET'));
-    if (result?.error) {
+    if (result?.error || !result?.payload?.email) {
       // Todo: if token is not valid, remove the password change request from the database
       if (result.error instanceof TokenExpiredError) throw new BadRequestException('Link has been expired');
       throw new BadRequestException(result.error?.message || 'Invalid reset token');
     };
 
+    return data ? result : { message: "VALID TOKEN" };
+  }
+
+  async resetPassword(resetPasswordDto: ResetPasswordDto) {
+    const { token: providedResetToken, password } = resetPasswordDto;
+
+    const result = (await this.verifyResetToken(providedResetToken, true)) as IVerifyEncryptedHashTokenPairReturn<{ email: string }>;
     const { payload, tokenHash } = result;
 
     // Retrieve the hashed reset token from the database
