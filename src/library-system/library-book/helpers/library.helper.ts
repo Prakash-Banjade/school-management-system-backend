@@ -6,6 +6,7 @@ import { Brackets, DataSource } from "typeorm";
 import { LibraryBook } from "../entities/library-book.entity";
 import { BookTransaction } from "src/library-system/book-transactions/entities/book-transaction.entity";
 import { QueryDto } from "src/common/dto/query.dto";
+import { AuthUser } from "src/common/types/global.type";
 
 @Injectable()
 export class LibraryHelper extends BaseRepository {
@@ -64,6 +65,20 @@ export class LibraryHelper extends BaseRepository {
             issuedStudentCount: +data[2].issuedStudentCount,
             topBooks: data[3]
         };
+    }
+
+    async getDashboardCount_student(currentUser: AuthUser) {
+        const transactionCount = await this.getRepository(BookTransaction).createQueryBuilder("transaction")
+            .leftJoin("transaction.student", "student")
+            .select([
+                "COUNT(transaction.id) AS totalCount",
+                `COUNT(CASE WHEN transaction.returnedAt IS NULL AND DATE(transaction.dueDate) >= DATE(:today) THEN 1 END) AS issuedCount`,
+                `COUNT(CASE WHEN transaction.returnedAt IS NULL AND DATE(transaction.dueDate) < DATE(:today) THEN 1 END) AS overdueCount`,
+            ])
+            .setParameter("today", new Date().toISOString().split("T")[0])
+            .getRawOne();
+
+        return transactionCount;
     }
 
     async getOptions(queryDto: QueryDto) {

@@ -5,9 +5,11 @@ import { UpdateLibraryBookDto } from './dto/update-library-book.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { QueryDto } from 'src/common/dto/query.dto';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action, Role } from 'src/common/types/global.type';
+import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { LibraryBookQueryDto } from './dto/library-book.query.dto';
 import { LibraryHelper } from './helpers/library.helper';
+import { CurrentUser } from 'src/common/decorators/user.decorator';
+import { isStudent } from 'src/utils/isStudent';
 
 @ApiBearerAuth()
 @ApiTags('Library Book')
@@ -31,9 +33,14 @@ export class LibraryBookController {
   }
 
   @Get('count')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  getDashboardCount() {
-    return this.libraryHelper.getDashboardCount();
+  @CheckAbilities(
+    { subject: Role.ADMIN, action: Action.READ },
+    { subject: Role.STUDENT, action: Action.READ }
+  )
+  getDashboardCount(@CurrentUser() currentUser: AuthUser) {
+    return isStudent(currentUser)
+      ? this.libraryHelper.getDashboardCount_student(currentUser)
+      : this.libraryHelper.getDashboardCount();
   }
 
   @Get('options')
