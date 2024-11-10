@@ -19,12 +19,13 @@ export class LibraryBookController {
   ) { }
 
   @Post()
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
   create(@Body() createLibraryBookDto: CreateLibraryBookDto) {
     return this.libraryBookService.create(createLibraryBookDto);
   }
 
   @Get()
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findAll(@Query() queryDto: LibraryBookQueryDto) {
     return this.libraryBookService.findAll(queryDto);
   }

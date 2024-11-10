@@ -3,16 +3,22 @@ import { BookTransactionsService } from './book-transactions.service';
 import { CreateBookTransactionDto } from './dto/create-book-transaction.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action, Role } from 'src/common/types/global.type';
+import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 import { BookTransactionByStudentQueryDto, BookTransactionsQueryDto } from './dto/book-transactions-query.dto';
 import { RenewBookTransactionDto, ReturnBookTransactionDto } from './dto/update-book-transaction.dto';
+import { CurrentUser } from 'src/common/decorators/user.decorator';
+import { isStudent } from 'src/utils/isStudent';
+import { BookTransactionsStudentViewService } from './book-transactions-student-view.service';
 
 @ApiBearerAuth()
 @ApiTags('Library Book Transactions')
 @Controller('book-transactions')
 export class BookTransactionsController {
-  constructor(private readonly bookTransactionsService: BookTransactionsService) { }
+  constructor(
+    private readonly bookTransactionsService: BookTransactionsService,
+    private readonly bookTransactionsStudentViewService: BookTransactionsStudentViewService,
+  ) { }
 
   @Post()
   @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
@@ -22,9 +28,14 @@ export class BookTransactionsController {
   }
 
   @Get()
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  findAll(@Query() queryDto: BookTransactionsQueryDto) {
-    return this.bookTransactionsService.findAll(queryDto);
+  @CheckAbilities(
+    { subject: Role.ADMIN, action: Action.READ },
+    { subject: Role.STUDENT, action: Action.READ }
+  )
+  findAll(@Query() queryDto: BookTransactionsQueryDto, @CurrentUser() currentUser: AuthUser) {
+    return isStudent(currentUser)
+      ? this.bookTransactionsStudentViewService.findAll(queryDto, currentUser)
+      : this.bookTransactionsService.findAll(queryDto);
   }
 
   @Get('student')

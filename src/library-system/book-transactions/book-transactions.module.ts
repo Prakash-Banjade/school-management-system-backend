@@ -5,6 +5,7 @@ import { BookTransaction } from './entities/book-transaction.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { StudentsModule } from 'src/students/students.module';
 import { LibraryBookModule } from '../library-book/library-book.module';
+import { BookTransactionsStudentViewService } from './book-transactions-student-view.service';
 
 @Module({
   imports: [
@@ -15,6 +16,9 @@ import { LibraryBookModule } from '../library-book/library-book.module';
     LibraryBookModule
   ],
   controllers: [BookTransactionsController],
-  providers: [BookTransactionsService],
+  providers: [
+    BookTransactionsService,
+    BookTransactionsStudentViewService
+  ],
 })
 export class BookTransactionsModule { }
