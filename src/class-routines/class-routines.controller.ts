@@ -21,7 +21,10 @@ export class ClassRoutinesController {
   }
 
   @Get()
-  // @CheckAbilities({ action: Action.READ, subject: Role.ADMIN })
+  @CheckAbilities(
+    { action: Action.READ, subject: Role.ADMIN },
+    { action: Action.READ, subject: Role.STUDENT }
+  )
   findAll(@Query() queryDto: ClassRoutineQueryDto, @CurrentUser() currentUser: AuthUser) {
     return this.classRoutinesService.findAll(queryDto, currentUser);
   }

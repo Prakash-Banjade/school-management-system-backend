@@ -3,7 +3,7 @@ import { ClassRoomsService } from './class-rooms.service';
 import { CreateClassRoomDto } from './dto/create-class-room.dto';
 import { UpdateClassRoomDto } from './dto/update-class-room.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ClassRoomQueryDto } from './dto/classRoom-query.dto';
+import { ClassRoomOptionsQueryDto, ClassRoomQueryDto } from './dto/classRoom-query.dto';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 import { ApiPaginatedResponse } from 'src/common/decorators/apiPaginatedResponse.decorator';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
@@ -38,7 +38,7 @@ export class ClassRoomsController {
 
   @Get('options')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  findAllOptions(@Query() queryDto: ClassRoomQueryDto) {
+  findAllOptions(@Query() queryDto: ClassRoomOptionsQueryDto) {
     return this.classRoomsHelper.getClassRoomsOptions(queryDto);
   }
 

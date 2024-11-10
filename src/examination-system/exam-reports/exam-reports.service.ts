@@ -20,28 +20,38 @@ export class ExamReportsService {
   ) { }
 
   async create(createExamReportDto: CreateExamReportDto) {
-    const examSubject = await this.examSubjectsService.findOne(createExamReportDto.examSubjectId);
-    const student = await this.studentsService.findOne(createExamReportDto.studentId);
+    console.log(createExamReportDto)
 
-    // validate if obtained mark is greater that exam subject full mark
-    if (createExamReportDto.obtainedMarks > examSubject.fullMark) throw new BadRequestException('Obtained marks cannot be greater than exam subject full mark');
+    const examSubjects = await this.examSubjectsService.findByIds(createExamReportDto.evaluations[0]?.marks?.map(mark => mark.examSubjectId)); 
+    if (examSubjects.length !== createExamReportDto.evaluations.length) throw new BadRequestException('Exam subjects not found');
 
-    // EVALUATE PERCENTAGE
-    const percentage = (createExamReportDto.obtainedMarks / examSubject.fullMark) * 100;
+    const examReports = createExamReportDto.evaluations?.map(evaluation => {
+      const student = this.studentsService.findOne(evaluation.studentId);
+    })
 
-    // EVALUATE GPA
-    const { gpa, grade } = await this.getGpaAndGrade(percentage);
 
-    const newExamReport = this.examReportRepo.create({
-      ...createExamReportDto,
-      examSubject,
-      student,
-      percentage,
-      gpa,
-      grade,
-    });
+    // const examSubject = await this.examSubjectsService.findOne(createExamReportDto.examSubjectId);
+    // const student = await this.studentsService.findOne(createExamReportDto.studentId);
 
-    return this.examReportRepo.save(newExamReport);
+    // // validate if obtained mark is greater that exam subject full mark
+    // if (createExamReportDto.obtainedMarks > examSubject.fullMark) throw new BadRequestException('Obtained marks cannot be greater than exam subject full mark');
+
+    // // EVALUATE PERCENTAGE
+    // const percentage = (createExamReportDto.obtainedMarks / examSubject.fullMark) * 100;
+
+    // // EVALUATE GPA
+    // const { gpa, grade } = await this.getGpaAndGrade(percentage);
+
+    // const newExamReport = this.examReportRepo.create({
+    //   ...createExamReportDto,
+    //   examSubject,
+    //   student,
+    //   percentage,
+    //   gpa,
+    //   grade,
+    // });
+
+    // return this.examReportRepo.save(newExamReport);
   }
 
   async getGpaAndGrade(percentage: number) {
@@ -53,7 +63,7 @@ export class ExamReportsService {
     })
 
     return {
-      gpa:  0, // TODO: calculate gpa
+      gpa: 0, // TODO: calculate gpa
       grade: examGrade?.gradeName ?? 'F'
     }
   }

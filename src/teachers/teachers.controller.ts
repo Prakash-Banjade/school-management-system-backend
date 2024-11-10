@@ -7,10 +7,13 @@ import { TeacherQueryDto } from './dto/teacher-query.dto';
 import { ApiPaginatedResponse } from 'src/common/decorators/apiPaginatedResponse.decorator';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action, Role } from 'src/common/types/global.type';
+import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { EmployeeAttendanceQueryDto } from './dto/employee-attendance-query.dto';
 import { TeachersHelper } from './helpers/teacher.helper';
 import { QueryDto } from 'src/common/dto/query.dto';
+import { isStudent } from 'src/utils/isStudent';
+import { CurrentUser } from 'src/common/decorators/user.decorator';
+import { TeachersStudentViewService } from './teachers.student-view.service';
 
 @ApiBearerAuth()
 @ApiTags('Teachers')
@@ -18,7 +21,8 @@ import { QueryDto } from 'src/common/dto/query.dto';
 export class TeachersController {
   constructor(
     private readonly teachersService: TeachersService,
-    private readonly teachersHelper: TeachersHelper
+    private readonly teachersHelper: TeachersHelper,
+    private readonly teachersStudentViewService: TeachersStudentViewService
   ) { }
 
   @Post()
@@ -30,9 +34,14 @@ export class TeachersController {
 
   @Get()
   @ApiPaginatedResponse(CreateTeacherDto)
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  findAll(@Query() queryDto: TeacherQueryDto) {
-    return this.teachersService.findAll(queryDto);
+  @CheckAbilities(
+    { subject: Role.ADMIN, action: Action.READ },
+    { subject: Role.STUDENT, action: Action.READ }
+  )
+  findAll(@Query() queryDto: TeacherQueryDto, @CurrentUser() currentUser: AuthUser) {
+    return isStudent(currentUser)
+      ? this.teachersStudentViewService.findAll(queryDto, currentUser)
+      : this.teachersService.findAll(queryDto);
   }
 
   @Get('attendances')

@@ -7,6 +7,7 @@ import { ClassRoomsModule } from 'src/class-rooms/class-rooms.module';
 import { ExamTypesModule } from '../exam-types/exam-types.module';
 import { AcademicYear } from 'src/academic-years/entities/academic-year.entity';
 import { Subject } from 'src/subjects/entities/subject.entity';
+import { ExamsHelper } from './helpers/exams.helper';
 
 @Module({
   imports: [
@@ -19,7 +20,7 @@ import { Subject } from 'src/subjects/entities/subject.entity';
     ExamTypesModule,
   ],  
   controllers: [ExamsController],
-  providers: [ExamsService],
+  providers: [ExamsService, ExamsHelper],
   exports: [ExamsService],
 })
 export class ExamsModule {}

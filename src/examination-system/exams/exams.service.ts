@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateExamDto } from './dto/create-exam.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -15,6 +15,9 @@ import { PageMetaDto } from 'src/common/dto/pageMeta.dto';
 import { PageDto } from 'src/common/dto/page.dto.';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { EClassType } from 'src/common/types/global.type';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import { CACHE_KEYS } from 'src/common/CONSTANTS';
 
 @Injectable()
 export class ExamsService {
@@ -24,6 +27,7 @@ export class ExamsService {
     @InjectRepository(AcademicYear) private academicYearRepo: Repository<AcademicYear>,
     private readonly examTypesService: ExamTypesService,
     private readonly classRoomsService: ClassRoomsService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) { }
 
   async create(createExamDto: CreateExamDto) {
@@ -71,12 +75,14 @@ export class ExamsService {
 
   async findAll(queryDto: ExamQueryDto) {
     const queryBuilder = this.examRepo.createQueryBuilder('exam');
+    const currentAcademicYearId: string = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
     queryBuilder
       .leftJoin('exam.examType', 'examType')
       .leftJoin('exam.classRoom', 'classRoom')
       .leftJoin('classRoom.parent', 'parent')
-      .where(
+      .where("exam.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
+      .andWhere(
         new Brackets(qb => {
           queryDto.classRoomId && qb.andWhere(
             new Brackets(qb => {
@@ -120,9 +126,12 @@ export class ExamsService {
   }
 
   async findOne(id: string) {
+    const currentAcademicYearId: string = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+    
     const existing = await this.examRepo.findOne({
       where: {
-        id
+        id,
+        academicYear: { id: currentAcademicYearId }
       },
       relations: {
         examType: true,
@@ -136,7 +145,7 @@ export class ExamsService {
       select: singleExamSelectCols,
     })
 
-    if (!existing) throw new Error('Exam not found');
+    if (!existing) throw new NotFoundException('Exam not found');
 
     return existing
   }

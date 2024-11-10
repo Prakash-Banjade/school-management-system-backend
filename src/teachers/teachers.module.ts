@@ -6,6 +6,7 @@ import { Teacher } from './entities/teacher.entity';
 import { AccountsModule } from 'src/auth-system/accounts/accounts.module';
 import { ImagesModule } from 'src/file-management/images/images.module';
 import { TeachersHelper } from './helpers/teacher.helper';
+import { TeachersStudentViewService } from './teachers.student-view.service';
 
 @Module({
   imports: [
@@ -14,7 +15,7 @@ import { TeachersHelper } from './helpers/teacher.helper';
     ImagesModule,
   ],
   controllers: [TeachersController],
-  providers: [TeachersService, TeachersHelper],
+  providers: [TeachersService, TeachersHelper, TeachersStudentViewService],
   exports: [TeachersService],
 })
 export class TeachersModule { }

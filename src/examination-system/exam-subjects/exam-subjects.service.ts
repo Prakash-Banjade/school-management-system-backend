@@ -1,15 +1,18 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateExamSubjectDto } from './dto/create-exam-subject.dto';
 import { UpdateExamSubjectDto } from './dto/update-exam-subject.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ExamSubject } from './entities/exam-subject.entity';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, In, Repository } from 'typeorm';
 import { ExamsService } from '../exams/exams.service';
 import { SubjectsService } from 'src/subjects/subjects.service';
 import { ExamSubjectQueryDto } from './dto/exam-subject-query.dto';
 import paginatedData from 'src/utils/paginatedData';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { examSubjectSelectCols } from './helpers/exam-subject-select-cols';
+import { Cache } from 'cache-manager';
+import { CACHE_KEYS } from 'src/common/CONSTANTS';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 @Injectable()
 export class ExamSubjectsService {
@@ -17,6 +20,7 @@ export class ExamSubjectsService {
     @InjectRepository(ExamSubject) private examSubjectRepo: Repository<ExamSubject>,
     private readonly examsService: ExamsService,
     private readonly subjectsService: SubjectsService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) { }
 
   async create(createExamSubjectDto: CreateExamSubjectDto) {
@@ -42,12 +46,15 @@ export class ExamSubjectsService {
   async findAll(queryDto: ExamSubjectQueryDto) {
     const querybuilder = this.examSubjectRepo.createQueryBuilder('examSubject');
 
+    const currentAcademicYearId: string = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+
     querybuilder
       .orderBy("examSubject.createdAt", queryDto.order)
       .skip(queryDto.skip)
       .take(queryDto.take)
-      .leftJoinAndSelect('examSubject.exam', 'exam')
-      .where(new Brackets(qb => {
+      .leftJoin('examSubject.exam', 'exam')
+      .where("exam.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
+      .andWhere(new Brackets(qb => {
         queryDto.examId && qb.andWhere("exam.id = :examId", { examId: queryDto.examId })
       }))
 
@@ -56,10 +63,21 @@ export class ExamSubjectsService {
     return paginatedData(queryDto, querybuilder);
   }
 
+  async findByIds(ids: string[]) {
+    return this.examSubjectRepo.find({
+      where: { id: In(ids) },
+    });
+  }
+
   async findOne(id: string) {
+    const currentAcademicYearId: string = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+
     const existing = await this.examSubjectRepo.findOne({
       where: {
-        id
+        id,
+        exam: {
+          academicYear: { id: currentAcademicYearId } // fetch for only current academic year
+        }
       },
       relations: {
         exam: true,

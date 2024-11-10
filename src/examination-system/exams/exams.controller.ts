@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe } from '@nestjs/common';
 import { ExamsService } from './exams.service';
 import { CreateExamDto } from './dto/create-exam.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
@@ -6,12 +6,17 @@ import { ExamQueryDto } from './dto/exam-query.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, Role } from 'src/common/types/global.type';
+import { ExamsHelper } from './helpers/exams.helper';
+import { StudentQueryDto } from 'src/students/dto/student-query.dto';
 
 @ApiBearerAuth()
 @ApiTags('Exams')
 @Controller('exams')
 export class ExamsController {
-  constructor(private readonly examsService: ExamsService) { }
+  constructor(
+    private readonly examsService: ExamsService,
+    private readonly examsHelper: ExamsHelper,
+  ) { }
 
   @Post()
   @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
@@ -25,21 +30,27 @@ export class ExamsController {
     return this.examsService.findAll(queryDto);
   }
 
+  @Get(':id/students')
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
+  getExamStudents(@Param('id', ParseUUIDPipe) id: string, @Query() queryDto: StudentQueryDto) {
+    return this.examsHelper.getExamStudents(id, queryDto);
+  }
+
   @Get(':id')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.examsService.findOne(id);
   }
 
   @Patch(':id')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
-  update(@Param('id') id: string, @Body() updateExamDto: UpdateExamDto) {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateExamDto: UpdateExamDto) {
     return this.examsService.update(id, updateExamDto);
   }
 
   @Delete(':id')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.DELETE })
-  remove(@Param('id') id: string) {
+  remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.examsService.remove(id);
   }
 }

@@ -76,7 +76,10 @@ export class ClassRoomsService extends BaseRepository {
     if (updateClassRoomDto.classTeacherId && (updateClassRoomDto.classTeacherId !== existing.classTeacher?.id || !updateClassRoomDto.classTeacherId)) {
       const newClassTeacher = await this.teachersService.findOne(updateClassRoomDto.classTeacherId);
       existing.classTeacher = newClassTeacher;
+    } else if (updateClassRoomDto.classTeacherId === null) {
+      existing.classTeacher = null;
     }
+
     // update the class room
     Object.assign(existing, updateClassRoomDto);
     const savedClassRoom = await this.classRoomRepo.save(existing);

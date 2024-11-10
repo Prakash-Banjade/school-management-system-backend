@@ -14,21 +14,25 @@ export class ExamReportsController {
   constructor(private readonly examReportsService: ExamReportsService) { }
 
   @Post()
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
   create(@Body() createExamReportDto: CreateExamReportDto) {
     return this.examReportsService.create(createExamReportDto);
   }
 
   @Get()
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findAll(@Query() queryDto: ExamReportQueryDto) {
     return this.examReportsService.findAll(queryDto);
   }
 
   @Get(':id')
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findOne(@Param('id') id: string) {
     return this.examReportsService.findOne(id);
   }
 
   @Patch(':id')
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
   update(@Param('id') id: string, @Body() updateExamReportDto: UpdateExamReportDto) {
     return this.examReportsService.update(id, updateExamReportDto);
   }

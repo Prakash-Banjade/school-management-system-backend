@@ -2,12 +2,11 @@ import { Inject, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { ClassRoom } from "../entities/class-room.entity";
 import { Brackets, DataSource, Repository } from "typeorm";
-import { QueryDto } from "src/common/dto/query.dto";
 import { EClassType, Gender } from "src/common/types/global.type";
 import { applySelectColumns } from "src/utils/apply-select-cols";
 import { classRoomOptionsSelectCols } from "./class-room-select-cols.config";
 import paginatedData from "src/utils/paginatedData";
-import { ClassRoomQueryDto } from "../dto/classRoom-query.dto";
+import { ClassRoomOptionsQueryDto, ClassRoomQueryDto } from "../dto/classRoom-query.dto";
 import { CACHE_MANAGER } from "@nestjs/cache-manager";
 import { Cache } from "cache-manager";
 import { CACHE_KEYS } from "src/common/CONSTANTS";
@@ -67,7 +66,7 @@ export class ClassRoomsHelper extends BaseRepository {
         return new PageDto(data, pageMetaDto);
     }
 
-    async getClassRoomsOptions(queryDto: QueryDto) {
+    async getClassRoomsOptions(queryDto: ClassRoomOptionsQueryDto) {
         const queryBuilder = this.classRoomRepo.createQueryBuilder('classRoom');
 
         queryBuilder
@@ -76,6 +75,10 @@ export class ClassRoomsHelper extends BaseRepository {
             .take(queryDto.skipPagination ? undefined : queryDto.take)
             .leftJoin("classRoom.children", "children")
             .where('classRoom.classType = :classType', { classType: EClassType.PRIMARY })
+            .andWhere(new Brackets(qb => {
+                queryDto.classRoomId && qb.andWhere("classRoom.id = :search", { search: queryDto.search })
+                queryDto.search && qb.andWhere("LOWER(classRoom.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+            }))
 
         applySelectColumns(queryBuilder, classRoomOptionsSelectCols, 'classRoom');
 

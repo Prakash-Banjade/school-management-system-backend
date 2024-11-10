@@ -107,11 +107,15 @@ export class SubjectsService extends BaseRepository {
 
     const classRoom = updateSubjectDto.classRoomId
       ? await this.classRoomsService.findOne(updateSubjectDto.classRoomId)
-      : existing.classRoom;
+      : updateSubjectDto.classRoomId === null
+        ? null
+        : existing.classRoom;
 
     const teacher = updateSubjectDto.teacherId
       ? await this.teachersService.findOne(updateSubjectDto.teacherId)
-      : existing.teacher;
+      : updateSubjectDto.teacherId === null
+        ? null
+        : existing.teacher;
 
     Object.assign(existing, updateSubjectDto);
     existing.classRoom = classRoom;

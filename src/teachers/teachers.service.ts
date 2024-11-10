@@ -14,6 +14,7 @@ import { Deleted } from 'src/common/dto/query.dto';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { PageMetaDto } from 'src/common/dto/pageMeta.dto';
 import { PageDto } from 'src/common/dto/page.dto.';
+import paginatedData from 'src/utils/paginatedData';
 
 
 @Injectable({ scope: Scope.REQUEST })
@@ -48,14 +49,11 @@ export class TeachersService extends BaseRepository {
 
   async findAll(queryDto: TeacherQueryDto) {
     const queryBuilder = this.getRepository(Teacher).createQueryBuilder('teacher');
-    const deletedAt = queryDto.deleted === Deleted.ONLY ? Not(IsNull()) : queryDto.deleted === Deleted.NONE ? IsNull() : Or(IsNull(), Not(IsNull()));
 
     queryBuilder
       .orderBy("teacher.createdAt", queryDto.order)
       .skip(queryDto.skip)
       .take(queryDto.take)
-      .withDeleted()
-      .where({ deletedAt })
       .leftJoin("teacher.profileImage", "profileImage")
       .leftJoin('teacher.account', 'account')
       .andWhere(new Brackets(qb => {
@@ -65,28 +63,11 @@ export class TeachersService extends BaseRepository {
         }))
 
         queryDto.teacherId && qb.andWhere('teacher.teacherId = :teacherId', { teacherId: queryDto.teacherId });
-      }))
+      }));
 
     applySelectColumns(queryBuilder, teachersColumnsConfig, 'teacher');
 
-    queryBuilder.addSelect("CONCAT(teacher.firstName, ' ', teacher.lastName)", 'teacherFullName'); // this is done to simplify in frontend in dynamic select `labelKey` prop
-
-    const itemCount = await queryBuilder.getCount();
-    const { entities, raw } = await queryBuilder.getRawAndEntities();
-
-    // add teacher full name to each entity
-    entities.forEach((entity, index) => {
-      const rawData = raw[index];
-      if (rawData && rawData.teacherFullName) {
-        Object.assign(entity, {
-          teacherFullName: rawData.teacherFullName
-        })
-      }
-    });
-
-    const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto: queryDto });
-
-    return new PageDto(entities, pageMetaDto);
+    return paginatedData(queryDto, queryBuilder);
   }
 
   async findOne(id: string) {

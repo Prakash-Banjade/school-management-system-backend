@@ -1,20 +1,37 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsNumber, IsUUID, Min } from "class-validator";
+import { Type } from "class-transformer";
+import { ArrayMinSize, IsArray, IsNotEmpty, IsNumber, IsUUID, Min, ValidateNested } from "class-validator";
 
-export class CreateExamReportDto {
+class StudentMark {
     @ApiProperty({ format: 'uuid' })
     @IsUUID()
-    @IsNotEmpty()
     examSubjectId: string;
-
-    @ApiProperty({ format: 'uuid' })
-    @IsUUID()
-    @IsNotEmpty()
-    studentId: string;
 
     @ApiProperty({ type: Number, minimum: 0 })
     @IsNumber()
     @IsNotEmpty()
     @Min(0)
     obtainedMarks: number;
+}
+
+class ExamEvaluation {
+    @ApiProperty({ format: 'uuid' })
+    @IsUUID()
+    studentId: string;
+
+    @ApiProperty({ type: StudentMark, isArray: true })
+    @IsArray()
+    @ArrayMinSize(1)
+    @ValidateNested({ each: true })
+    @Type(() => StudentMark)
+    marks: StudentMark[];
+}
+
+export class CreateExamReportDto {
+    @ApiProperty({ type: ExamEvaluation, isArray: true })
+    @IsArray()
+    @ArrayMinSize(1)
+    @ValidateNested({ each: true })
+    @Type(() => ExamEvaluation)
+    evaluations: ExamEvaluation[];
 }
