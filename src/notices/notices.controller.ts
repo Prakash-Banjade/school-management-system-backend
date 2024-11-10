@@ -20,11 +20,13 @@ export class NoticesController {
   }
 
   @Get()
+  @CheckAbilities({ action: Action.READ, subject: Role.USER })
   findAll(@Query() queryDto: QueryDto) {
     return this.noticesService.findAll(queryDto);
   }
 
   @Get(':id')
+  @CheckAbilities({ action: Action.READ, subject: Role.USER })
   findOne(@Param('id') id: string) {
     return this.noticesService.findOne(id);
   }

@@ -66,6 +66,13 @@ export class ExamSubjectsService {
   async findByIds(ids: string[]) {
     return this.examSubjectRepo.find({
       where: { id: In(ids) },
+      relations: ['subject'],
+      select: {
+        subject: {
+          id: true,
+          subjectName: true,
+        }
+      }
     });
   }
 

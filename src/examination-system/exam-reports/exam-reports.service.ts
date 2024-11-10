@@ -1,75 +1,94 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateExamReportDto } from './dto/create-exam-report.dto';
 import { UpdateExamReportDto } from './dto/update-exam-report.dto';
-import { InjectRepository } from '@nestjs/typeorm';
 import { ExamReport } from './entities/exam-report.entity';
-import { Brackets, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
+import { Brackets, DataSource, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 import { ExamSubjectsService } from '../exam-subjects/exam-subjects.service';
 import { StudentsService } from 'src/students/students.service';
 import { ExamReportQueryDto } from './dto/exam-report-query.dto';
 import { MarksGrade } from '../marks-grades/entities/marks-grade.entity';
 import paginatedData from 'src/utils/paginatedData';
+import { BaseRepository } from 'src/common/repository/base-repository';
+import { FastifyRequest } from 'fastify';
+import { REQUEST } from '@nestjs/core';
+import { Student } from 'src/students/entities/student.entity';
 
 @Injectable()
-export class ExamReportsService {
+export class ExamReportsService extends BaseRepository {
   constructor(
-    @InjectRepository(ExamReport) private examReportRepo: Repository<ExamReport>,
-    @InjectRepository(MarksGrade) private readonly marksGradeRepo: Repository<MarksGrade>,
+    dataSource: DataSource,
+    @Inject(REQUEST) private req: FastifyRequest,
     private readonly examSubjectsService: ExamSubjectsService,
     private readonly studentsService: StudentsService,
-  ) { }
+  ) { super(dataSource, req); }
 
   async create(createExamReportDto: CreateExamReportDto) {
-    console.log(createExamReportDto)
+    /**
+    |--------------------------------------------------
+    | for each marks of each student, it is assumed that each has same subject
+    |--------------------------------------------------
+    */
 
-    const examSubjects = await this.examSubjectsService.findByIds(createExamReportDto.evaluations[0]?.marks?.map(mark => mark.examSubjectId)); 
-    if (examSubjects.length !== createExamReportDto.evaluations.length) throw new BadRequestException('Exam subjects not found');
+    const examSubjects = await this.examSubjectsService.findByIds(createExamReportDto.evaluations[0]?.marks?.map(mark => mark.examSubjectId));
+    if (examSubjects.length !== createExamReportDto.evaluations[0]?.marks?.length) throw new BadRequestException('Exam subjects not found');
 
-    const examReports = createExamReportDto.evaluations?.map(evaluation => {
-      const student = this.studentsService.findOne(evaluation.studentId);
-    })
+    // check if examsubject is being evaluated before exam date
+    // if (examSubjects.some(examSubject => new Date(examSubject.examDate) > new Date())) throw new BadRequestException('Cannot evaluate before exam date.'); 
 
+    const examReports = (await Promise.all(createExamReportDto.evaluations?.flatMap(async (evaluation) => {
+      const student = await this.getRepository(Student).findOne({ // TODO: it is assumed that student is of current academic year
+        where: { id: evaluation.studentId },
+        select: { id: true, rollNo: true }
+      });
+      if (!student) throw new NotFoundException('Student not found');
 
-    // const examSubject = await this.examSubjectsService.findOne(createExamReportDto.examSubjectId);
-    // const student = await this.studentsService.findOne(createExamReportDto.studentId);
+      return await Promise.all(examSubjects.map(async (examSubject, ind) => {
+        const obtainedMark = evaluation.marks[ind].obtainedMarks;
 
-    // // validate if obtained mark is greater that exam subject full mark
-    // if (createExamReportDto.obtainedMarks > examSubject.fullMark) throw new BadRequestException('Obtained marks cannot be greater than exam subject full mark');
+        if (obtainedMark > examSubject.fullMark) { // validate if obtained mark is greater that exam subject full mark
+          throw new BadRequestException(`Obtained mark of student with Roll no. ${student.rollNo} of subject ${examSubject.subject.subjectName} cannot be greater than exam subject full mark ${examSubject.fullMark}`);
+        }
 
-    // // EVALUATE PERCENTAGE
-    // const percentage = (createExamReportDto.obtainedMarks / examSubject.fullMark) * 100;
+        const percentage = (obtainedMark / examSubject.fullMark) * 100;
 
-    // // EVALUATE GPA
-    // const { gpa, grade } = await this.getGpaAndGrade(percentage);
+        const { gpa, grade } = await this.getGpaAndGrade(percentage);
 
-    // const newExamReport = this.examReportRepo.create({
-    //   ...createExamReportDto,
-    //   examSubject,
-    //   student,
-    //   percentage,
-    //   gpa,
-    //   grade,
-    // });
+        return this.getRepository(ExamReport).create({
+          examSubject,
+          student,
+          obtainedMarks: obtainedMark,
+          percentage: percentage,
+          gpa,
+          grade,
+        });
+      }));
+    }))).flat();
 
-    // return this.examReportRepo.save(newExamReport);
+    await this.getRepository(ExamReport).save(examReports);
+
+    return {
+      message: 'Evaluated Successfully',
+    }
   }
 
   async getGpaAndGrade(percentage: number) {
-    const examGrade = await this.marksGradeRepo.findOne({
+    const examGrade = await this.getRepository(MarksGrade).findOne({
       where: {
         percentFrom: LessThanOrEqual(percentage),
         percentTo: MoreThanOrEqual(percentage),
       }
-    })
+    });
+
+    if (!examGrade) return { gpa: 0, grade: 'N/A' };
 
     return {
-      gpa: 0, // TODO: calculate gpa
-      grade: examGrade?.gradeName ?? 'F'
+      gpa: (percentage / 100) * examGrade.gradeScale,
+      grade: examGrade?.gradeName
     }
   }
 
   async findAll(queryDto: ExamReportQueryDto) {
-    const querybuilder = this.examReportRepo.createQueryBuilder('examReport');
+    const querybuilder = this.getRepository(ExamReport).createQueryBuilder('examReport');
 
     querybuilder
       .orderBy("examReport.createdAt", queryDto.order)
@@ -83,7 +102,7 @@ export class ExamReportsService {
   }
 
   async findOne(id: string) {
-    const existing = await this.examReportRepo.findOne({
+    const existing = await this.getRepository(ExamReport).findOne({
       where: { id },
       relations: {
         examSubject: {
@@ -111,7 +130,7 @@ export class ExamReportsService {
 
     Object.assign(existing, updateExamReportDto);
 
-    const savedExamReport = await this.examReportRepo.save(existing);
+    const savedExamReport = await this.getRepository(ExamReport).save(existing);
 
     return {
       message: 'Exam report updated successfully',
@@ -125,7 +144,7 @@ export class ExamReportsService {
 
   async remove(id: string) {
     const existing = await this.findOne(id);
-    const deleted = await this.examReportRepo.remove(existing);
+    const deleted = await this.getRepository(ExamReport).remove(existing);
 
     return {
       message: 'Exam report deleted successfully',

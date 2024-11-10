@@ -21,7 +21,7 @@ export class LeaveRequestsController {
   }
 
   @Get()
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @CheckAbilities({ subject: Role.USER, action: Action.READ })
   findAll(@Query() queryDto: LeaveRequestQueryDto, @CurrentUser() currentUser: AuthUser) { // only for students leave request
     return this.leaveRequestsService.findAll(queryDto, currentUser);
   }
