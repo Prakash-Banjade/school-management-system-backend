@@ -1,9 +1,8 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateExamDto } from './dto/create-exam.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
-import { InjectRepository } from '@nestjs/typeorm';
 import { Exam } from './entities/exam.entity';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, DataSource } from 'typeorm';
 import { ClassRoomsService } from 'src/class-rooms/class-rooms.service';
 import { ExamTypesService } from '../exam-types/exam-types.service';
 import { ExamQueryDto } from './dto/exam-query.dto';
@@ -18,22 +17,24 @@ import { EClassType } from 'src/common/types/global.type';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { CACHE_KEYS } from 'src/common/CONSTANTS';
+import { applySelectColumns } from 'src/utils/apply-select-cols';
+import { BaseRepository } from 'src/common/repository/base-repository';
+import { FastifyRequest } from 'fastify';
+import { REQUEST } from '@nestjs/core';
 
 @Injectable()
-export class ExamsService {
+export class ExamsService extends BaseRepository {
   constructor(
-    @InjectRepository(Exam) private examRepo: Repository<Exam>,
-    @InjectRepository(Subject) private subjectRepo: Repository<Subject>,
-    @InjectRepository(AcademicYear) private academicYearRepo: Repository<AcademicYear>,
+    dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
     private readonly examTypesService: ExamTypesService,
     private readonly classRoomsService: ClassRoomsService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
-  ) { }
+  ) { super(dataSource, req); }
 
   async create(createExamDto: CreateExamDto) {
     const examType = await this.examTypesService.findOne(createExamDto.examTypeId);
     const classRoom = await this.classRoomsService.findOne(createExamDto.classRoomId);
-    const academicYear = await this.academicYearRepo.findOneBy({ isActive: true });
+    const academicYear = await this.getRepository(AcademicYear).findOneBy({ isActive: true });
 
     // evaluate exam subjects
     const examSubjects: Partial<ExamSubject>[] = await Promise.all(createExamDto.examSubjects.map(async (examSubject) => ({
@@ -46,14 +47,14 @@ export class ExamsService {
       subject: await this.getSubject(examSubject.subjectId, classRoom)
     })))
 
-    const newExam = this.examRepo.create({
+    const newExam = this.getRepository(Exam).create({
       examType,
       classRoom,
       academicYear,
       examSubjects,
     });
 
-    await this.examRepo.save(newExam);
+    await this.getRepository(Exam).save(newExam);
 
     return {
       message: 'Exam created',
@@ -64,7 +65,7 @@ export class ExamsService {
     const classRoomId = classRoom.classType === EClassType.SECTION ? classRoom.parent?.id : classRoom.id;
     // classRoom can be section also so, while getting the subject look in parent class
 
-    const subject = await this.subjectRepo.findOne({
+    const subject = await this.getRepository(Subject).findOne({
       where: { id: subjectId, classRoom: { id: classRoomId } },
       select: { id: true }
     })
@@ -74,7 +75,7 @@ export class ExamsService {
   }
 
   async findAll(queryDto: ExamQueryDto) {
-    const queryBuilder = this.examRepo.createQueryBuilder('exam');
+    const queryBuilder = this.getRepository(Exam).createQueryBuilder('exam');
     const currentAcademicYearId: string = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
     queryBuilder
@@ -125,39 +126,38 @@ export class ExamsService {
     return new PageDto(data, pageMetaDto);
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, queryDto?: ExamQueryDto) {
     const currentAcademicYearId: string = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
-    
-    const existing = await this.examRepo.findOne({
-      where: {
-        id,
-        academicYear: { id: currentAcademicYearId }
-      },
-      relations: {
-        examType: true,
-        classRoom: {
-          parent: true,
-        },
-        examSubjects: {
-          subject: true
-        },
-      },
-      select: singleExamSelectCols,
-    })
+
+    const queryBuilder = this.getRepository(Exam).createQueryBuilder('exam')
+      .where('exam.id = :id', { id })
+      .andWhere('exam.academicYearId = :academicYearId', { academicYearId: currentAcademicYearId })
+      .leftJoin('exam.examType', 'examType')
+      .leftJoin('exam.classRoom', 'classRoom')
+      .leftJoin('classRoom.parent', 'parent')
+      .leftJoin('exam.examSubjects', 'examSubjects', (
+        queryDto.onlyPastExamSubjects ? 'DATE(examSubjects.examDate) < CURRENT_DATE()' : undefined
+      ))
+      .leftJoin('examSubjects.subject', 'subject')
+
+    applySelectColumns(queryBuilder, singleExamSelectCols, 'exam');
+
+    const existing = await queryBuilder.getOne();
 
     if (!existing) throw new NotFoundException('Exam not found');
 
-    return existing
+    return existing;
   }
 
   async update(id: string, updateExamDto: UpdateExamDto) {
-    const existing = await this.examRepo.findOne({
+    const existing = await this.getRepository(Exam).findOne({
       where: { id },
       relations: {
         examType: true,
         classRoom: {
           parent: true
-        }
+        },
+        examSubjects: true
       },
       select: {
         id: true,
@@ -168,7 +168,8 @@ export class ExamsService {
           parent: {
             id: true,
           }
-        }
+        },
+        examSubjects: { id: true }
       }
     });
     if (!existing) throw new NotFoundException('Exam not found');
@@ -178,6 +179,7 @@ export class ExamsService {
     }
 
     const examSubjects: Partial<ExamSubject>[] = await Promise.all(updateExamDto.examSubjects.map(async (examSubject) => ({
+      id: examSubject.id,
       examDate: examSubject.examDate,
       startTime: examSubject.startTime,
       duration: examSubject.duration,
@@ -187,16 +189,29 @@ export class ExamsService {
       subject: await this.getSubject(examSubject.subjectId, existing.classRoom)
     })))
 
+    // remove discarded subjects
+    await this.removeDiscardedSubjects(
+      existing.examSubjects.map(examSubject => examSubject.id),
+      updateExamDto.examSubjects.map(examSubject => examSubject.id)
+    );
+
     Object.assign(existing, { examSubjects });
 
-    await this.examRepo.save(existing);
+    await this.getRepository(Exam).save(existing);
+
 
     return {
       message: 'Exam updated',
     }
   }
+
+  private async removeDiscardedSubjects(previousExamSubjectIds: string[], currentExamSubjectIds: string[]) {
+    const removedSubjectIds = previousExamSubjectIds.filter(previousSubjectId => !currentExamSubjectIds.includes(previousSubjectId));
+    removedSubjectIds?.length && await this.getRepository(ExamSubject).delete(removedSubjectIds);
+  }
+
   async remove(id: string) {
     const existing = await this.findOne(id);
-    return await this.examRepo.remove(existing);
+    return await this.getRepository(Exam).remove(existing);
   }
 }

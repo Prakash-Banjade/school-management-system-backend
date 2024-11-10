@@ -3,8 +3,7 @@ import { CreateExamSubjectDto } from './dto/create-exam-subject.dto';
 import { UpdateExamSubjectDto } from './dto/update-exam-subject.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ExamSubject } from './entities/exam-subject.entity';
-import { Brackets, In, Repository } from 'typeorm';
-import { ExamsService } from '../exams/exams.service';
+import { Brackets, DataSource, In, Repository } from 'typeorm';
 import { SubjectsService } from 'src/subjects/subjects.service';
 import { ExamSubjectQueryDto } from './dto/exam-subject-query.dto';
 import paginatedData from 'src/utils/paginatedData';
@@ -13,18 +12,29 @@ import { examSubjectSelectCols } from './helpers/exam-subject-select-cols';
 import { Cache } from 'cache-manager';
 import { CACHE_KEYS } from 'src/common/CONSTANTS';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { BaseRepository } from 'src/common/repository/base-repository';
+import { FastifyRequest } from 'fastify';
+import { REQUEST } from '@nestjs/core';
+import { Exam } from '../exams/entities/exam.entity';
 
 @Injectable()
-export class ExamSubjectsService {
+export class ExamSubjectsService extends BaseRepository {
   constructor(
+    dataSource: DataSource, @Inject(REQUEST) private req: FastifyRequest,
     @InjectRepository(ExamSubject) private examSubjectRepo: Repository<ExamSubject>,
-    private readonly examsService: ExamsService,
     private readonly subjectsService: SubjectsService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
-  ) { }
+  ) { super(dataSource, req); }
 
   async create(createExamSubjectDto: CreateExamSubjectDto) {
-    const exam = await this.examsService.findOne(createExamSubjectDto.examId);
+    const exam = await this.getRepository(Exam).findOneOrFail({
+      where: { id: createExamSubjectDto.examId },
+      relations: ['classRoom'],
+      select: {
+        id: true,
+        classRoom: { id: true }
+      }
+    });
     const subject = await this.subjectsService.findOne(createExamSubjectDto.subjectId);
 
     // validate if the subject is in the class room

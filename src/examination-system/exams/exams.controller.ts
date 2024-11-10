@@ -38,8 +38,8 @@ export class ExamsController {
 
   @Get(':id')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.examsService.findOne(id);
+  findOne(@Param('id', ParseUUIDPipe) id: string, @Query() queryDto: ExamQueryDto) {
+    return this.examsService.findOne(id, queryDto);
   }
 
   @Patch(':id')

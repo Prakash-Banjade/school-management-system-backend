@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
-import { IsOptional, IsString } from "class-validator";
+import { IsBoolean, IsOptional, IsString } from "class-validator";
 import { ClassWithSectionQueryDto } from "src/common/dto/classWithSectionQuery.dto";
 
 export class ExamQueryDto extends ClassWithSectionQueryDto {
@@ -12,4 +12,10 @@ export class ExamQueryDto extends ClassWithSectionQueryDto {
         return [];
     })
     examTypes?: string[]; // exam type name array
+
+    @ApiPropertyOptional({ type: Boolean, default: false })
+    @IsBoolean()
+    @IsOptional()
+    @Transform(({ value }) => value === 'true')
+    onlyPastExamSubjects?: boolean = false;
 }

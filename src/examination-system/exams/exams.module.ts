@@ -11,11 +11,6 @@ import { ExamsHelper } from './helpers/exams.helper';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      Exam,
-      AcademicYear,
-      Subject
-    ]),
     ClassRoomsModule,
     ExamTypesModule,
   ],  
