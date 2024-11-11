@@ -19,7 +19,7 @@ export class LibraryBookService {
   ) { }
 
   async create(createLibraryBookDto: CreateLibraryBookDto) {
-    const existingWithSameCode = await this.libraryBookRepo.findOne({ where: { bookCode: createLibraryBookDto.bookCode } });
+    const existingWithSameCode = await this.libraryBookRepo.findOne({ where: { bookCode: createLibraryBookDto.bookCode?.trim() } });
     if (existingWithSameCode) throw new ConflictException('Book code already exists');
 
     const category = await this.bookCategoriesService.findOne(createLibraryBookDto.categoryId);
