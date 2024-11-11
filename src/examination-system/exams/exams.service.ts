@@ -100,20 +100,12 @@ export class ExamsService extends BaseRepository {
         })
       )
       .addSelect([
+        'exam.id as id',
+        'exam.createdAt as createdAt',
         'examType.name as examType',
         'classRoom.name as classRoom',
         'parent.name as parentClass',
       ])
-      .addSelect(subQuery => {
-        return subQuery
-          .select("JSON_OBJECT('subjectName', subject.subjectName, 'examDate', es.examDate)")
-          .from("ExamSubject", "es")
-          .leftJoin("es.subject", "subject")
-          .where("es.examId = exam.id")
-          .andWhere("es.examDate > CURRENT_DATE()")
-          .orderBy("es.examDate", "ASC")
-          .limit(1)
-      }, "upcomingSubject")
       .orderBy("exam.createdAt", queryDto.order)
       .offset(queryDto.skip)
       .limit(queryDto.take);
