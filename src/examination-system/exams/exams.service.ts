@@ -10,8 +10,6 @@ import { AcademicYear } from 'src/academic-years/entities/academic-year.entity';
 import { ExamSubject } from '../exam-subjects/entities/exam-subject.entity';
 import { Subject } from 'src/subjects/entities/subject.entity';
 import { singleExamSelectCols } from './helpers/exam-select-cols';
-import { PageMetaDto } from 'src/common/dto/pageMeta.dto';
-import { PageDto } from 'src/common/dto/page.dto.';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { EClassType } from 'src/common/types/global.type';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
@@ -21,6 +19,7 @@ import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { FastifyRequest } from 'fastify';
 import { REQUEST } from '@nestjs/core';
+import { paginatedRawData } from 'src/utils/paginatedData';
 
 @Injectable()
 export class ExamsService extends BaseRepository {
@@ -79,6 +78,9 @@ export class ExamsService extends BaseRepository {
     const currentAcademicYearId: string = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
     queryBuilder
+      .orderBy("exam.createdAt", queryDto.order)
+      .offset(queryDto.skip)
+      .limit(queryDto.take)
       .leftJoin('exam.examType', 'examType')
       .leftJoin('exam.classRoom', 'classRoom')
       .leftJoin('classRoom.parent', 'parent')
@@ -99,23 +101,15 @@ export class ExamsService extends BaseRepository {
             qb.andWhere('examType.name IN (:...examTypes)', { examTypes: queryDto.examTypes });
         })
       )
-      .addSelect([
+      .select([
         'exam.id as id',
         'exam.createdAt as createdAt',
         'examType.name as examType',
         'classRoom.name as classRoom',
         'parent.name as parentClass',
       ])
-      .orderBy("exam.createdAt", queryDto.order)
-      .offset(queryDto.skip)
-      .limit(queryDto.take);
 
-    const itemCount = await queryBuilder.getCount();
-    const data = await queryBuilder.getRawMany();
-
-    const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto: queryDto });
-
-    return new PageDto(data, pageMetaDto);
+      return paginatedRawData(queryDto, queryBuilder);
   }
 
   async findOne(id: string, queryDto?: ExamQueryDto) {
