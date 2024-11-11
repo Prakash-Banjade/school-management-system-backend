@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { BookTransaction } from './entities/book-transaction.entity';
-import { Brackets, DataSource, In, IsNull, LessThan } from 'typeorm';
+import { Brackets, DataSource, In, IsNull } from 'typeorm';
 import { LibraryBookService } from '../library-book/library-book.service';
 import { CreateBookTransactionDto } from './dto/create-book-transaction.dto';
 import { REQUEST } from '@nestjs/core';
@@ -47,6 +47,7 @@ export class BookTransactionsService extends BaseRepository {
       dueDate: createBookTransactionDto.dueDate,
       book,
       student,
+      renewals: []
     });
 
     await this.getRepository(BookTransaction).save(transaction);
@@ -183,7 +184,7 @@ export class BookTransactionsService extends BaseRepository {
       return bookTransaction.book;
     })
     await this.getRepository(LibraryBook).save(updatedBooks);
-    
+
     return this.bookTransactionMutationReturn('returned');
   }
 
@@ -191,19 +192,20 @@ export class BookTransactionsService extends BaseRepository {
     // check if any book transaction has lowered the due date
     const bookTransactions = await this.getRepository(BookTransaction).createQueryBuilder('transaction')
       .whereInIds(ids)
-      .andWhere("DATE(transaction.dueDate) > :dueDate", { dueDate })
+      .andWhere("DATE(transaction.dueDate) >= :dueDate", { dueDate })
       .andWhere("returnedAt IS NULL")
       .getMany();
 
-    if (bookTransactions.length > 0) throw new BadRequestException('Cannot renew book transactions with lowered due date');
-    
+    if (bookTransactions.length > 0) throw new BadRequestException('Due date must be greater than the current due date');
+
     const updatedTransactions = await this.getRepository(BookTransaction).createQueryBuilder()
       .update(BookTransaction)
       .set({
         dueDate,
-        renewals: () => "renewals + 1" // Increment renewals by 1
+        ////renewals: () => "renewals + 1" // Increment renewals by 1
+        renewals: () => `IF(renewals IS NULL OR renewals = '', '${new Date().toISOString().split('T')[0]}', CONCAT(renewals, ',', '${new Date().toISOString().split('T')[0]}'))`
       })
-      .where("id IN (:...ids)", { ids })
+      .whereInIds(ids)
       .andWhere("returnedAt IS NULL")
       .execute();
 

@@ -17,6 +17,6 @@ export class BookTransaction extends BaseEntity {
     @Column({ nullable: true, type: 'datetime' })
     returnedAt: string | null;
 
-    @Column({ type: 'int', default: 0 })
-    renewals: number;
+    @Column({ type: 'simple-array' })
+    renewals: string[];
 }
