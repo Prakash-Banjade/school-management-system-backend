@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateSubjectDto } from './dto/create-subject.dto';
 import { UpdateSubjectDto } from './dto/update-subject.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -28,6 +28,9 @@ export class SubjectsService extends BaseRepository {
   ) { super(dataSource, req); }
 
   async create(createSubjectDto: CreateSubjectDto) {
+    const founcSubjectWithSameCode = await this.subjectsRepo.findOneBy({ subjectCode: createSubjectDto.subjectCode });
+    if (founcSubjectWithSameCode) throw new ConflictException('Subject with same code already exists');
+    
     const teacher = createSubjectDto.teacherId
       ? await this.teachersService.findOne(createSubjectDto.teacherId)
       : null;
@@ -104,6 +107,12 @@ export class SubjectsService extends BaseRepository {
 
   async update(id: string, updateSubjectDto: UpdateSubjectDto, currentUser: AuthUser) {
     const existing = await this.findOne(id, currentUser);
+
+    // evaluate if subject code is already taken
+    if (updateSubjectDto.subjectCode && updateSubjectDto.subjectCode !== existing.subjectCode) {
+      const founcSubjectWithSameCode = await this.subjectsRepo.findOneBy({ subjectCode: updateSubjectDto.subjectCode });
+      if (founcSubjectWithSameCode) throw new ConflictException('Subject with same code already exists');
+    }
 
     const classRoom = updateSubjectDto.classRoomId
       ? await this.classRoomsService.findOne(updateSubjectDto.classRoomId)
