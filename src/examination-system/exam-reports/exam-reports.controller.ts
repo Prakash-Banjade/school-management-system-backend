@@ -13,10 +13,10 @@ import { Action, Role } from 'src/common/types/global.type';
 export class ExamReportsController {
   constructor(private readonly examReportsService: ExamReportsService) { }
 
-  @Post()
+  @Patch()
   @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
-  create(@Body() createExamReportDto: CreateExamReportDto) {
-    return this.examReportsService.create(createExamReportDto);
+  mutate(@Body() createExamReportDto: CreateExamReportDto) {
+    return this.examReportsService.mutate(createExamReportDto);
   }
 
   @Get()
@@ -29,12 +29,6 @@ export class ExamReportsController {
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findOne(@Param('id') id: string) {
     return this.examReportsService.findOne(id);
-  }
-
-  @Patch(':id')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
-  update(@Param('id') id: string, @Body() updateExamReportDto: UpdateExamReportDto) {
-    return this.examReportsService.update(id, updateExamReportDto);
   }
 
   @Delete(':id')

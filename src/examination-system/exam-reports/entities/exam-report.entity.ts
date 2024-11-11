@@ -5,7 +5,7 @@ import { Column, Entity, ManyToOne } from "typeorm";
 
 @Entity()
 export class ExamReport extends BaseEntity {
-    @ManyToOne(() => ExamSubject, (examSubject) => examSubject.examReports)
+    @ManyToOne(() => ExamSubject, (examSubject) => examSubject.examReports, { nullable: false })
     examSubject: ExamSubject
 
     @ManyToOne(() => Student, (student) => student.examReports)

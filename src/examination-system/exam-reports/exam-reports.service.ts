@@ -19,7 +19,7 @@ export class ExamReportsService extends BaseRepository {
     @Inject(REQUEST) private req: FastifyRequest,
   ) { super(dataSource, req); }
 
-  async create(createExamReportDto: CreateExamReportDto) {
+  async mutate(createExamReportDto: CreateExamReportDto) {
     /**
     |--------------------------------------------------
     | for each evaluation, it is assumed that each has same subject
@@ -56,6 +56,7 @@ export class ExamReportsService extends BaseRepository {
       const { gpa, grade } = await this.getGpaAndGrade(percentage);
 
       return this.getRepository(ExamReport).create({
+        id: evaluation.reportId,
         examSubject,
         student,
         obtainedMarks: obtainedMark,
@@ -93,11 +94,22 @@ export class ExamReportsService extends BaseRepository {
 
     querybuilder
       .orderBy("examReport.createdAt", queryDto.order)
-      .skip(queryDto.skip)
-      .take(queryDto.take)
+      .skip(queryDto.skipPagination ? undefined : queryDto.skip)
+      .take(queryDto.skipPagination ? undefined : queryDto.take)
+      .leftJoin("examReport.examSubject", "examSubject")
+      .leftJoin("examReport.student", "student")
       .where(new Brackets(qb => {
-
+        queryDto.examSubjectId && qb.andWhere("examSubject.id = :examSubjectId", { examSubjectId: queryDto.examSubjectId });
       }))
+      .select([
+        "examReport.id",
+        "examReport.createdAt",
+        "examReport.obtainedMarks",
+        "examReport.percentage",
+        "examReport.gpa",
+        "examReport.grade",
+        "student.id",
+      ])
 
     return paginatedData(queryDto, querybuilder);
   }
@@ -124,23 +136,6 @@ export class ExamReportsService extends BaseRepository {
     if (!existing) throw new NotFoundException('Exam report not found');
 
     return existing;
-  }
-
-  async update(id: string, updateExamReportDto: UpdateExamReportDto) {
-    const existing = await this.findOne(id);
-
-    Object.assign(existing, updateExamReportDto);
-
-    const savedExamReport = await this.getRepository(ExamReport).save(existing);
-
-    return {
-      message: 'Exam report updated successfully',
-      examReport: {
-        id: savedExamReport.id,
-        marksObtained: savedExamReport.obtainedMarks,
-      }
-    };
-
   }
 
   async remove(id: string) {
