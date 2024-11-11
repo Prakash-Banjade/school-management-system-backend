@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { BookTransaction } from './entities/book-transaction.entity';
-import { Brackets, DataSource, In, IsNull } from 'typeorm';
+import { Brackets, DataSource, In, IsNull, LessThan } from 'typeorm';
 import { LibraryBookService } from '../library-book/library-book.service';
 import { CreateBookTransactionDto } from './dto/create-book-transaction.dto';
 import { REQUEST } from '@nestjs/core';
@@ -188,6 +188,15 @@ export class BookTransactionsService extends BaseRepository {
   }
 
   async renewBookTransaction(ids: string[], dueDate: string) {
+    // check if any book transaction has lowered the due date
+    const bookTransactions = await this.getRepository(BookTransaction).createQueryBuilder('transaction')
+      .whereInIds(ids)
+      .andWhere("DATE(transaction.dueDate) > :dueDate", { dueDate })
+      .andWhere("returnedAt IS NULL")
+      .getMany();
+
+    if (bookTransactions.length > 0) throw new BadRequestException('Cannot renew book transactions with lowered due date');
+    
     const updatedTransactions = await this.getRepository(BookTransaction).createQueryBuilder()
       .update(BookTransaction)
       .set({
