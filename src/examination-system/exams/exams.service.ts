@@ -121,13 +121,17 @@ export class ExamsService extends BaseRepository {
   async findOne(id: string, queryDto?: ExamQueryDto) {
     const currentAcademicYearId: string = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
+    const examSubjectJoinCondition = queryDto.onlyPast
+      ? 'DATE(examSubjects.examDate) < CURRENT_DATE()'
+      : queryDto.includeExamSubjects ? '1 = 1' : "1 = 0";
+
     const queryBuilder = this.getRepository(Exam).createQueryBuilder('exam')
       .where('exam.id = :id', { id })
       .andWhere('exam.academicYearId = :academicYearId', { academicYearId: currentAcademicYearId })
       .leftJoin('exam.examType', 'examType')
       .leftJoin('exam.classRoom', 'classRoom')
       .leftJoin('classRoom.parent', 'parent')
-      .leftJoin('exam.examSubjects', 'examSubjects', queryDto.includeExamSubjects ? '1 = 1' : "1 = 0")
+      .leftJoin('exam.examSubjects', 'examSubjects', examSubjectJoinCondition)
       .leftJoin('examSubjects.subject', 'subject')
 
     applySelectColumns(queryBuilder, singleExamSelectCols, 'exam');

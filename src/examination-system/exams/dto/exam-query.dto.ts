@@ -18,4 +18,10 @@ export class ExamQueryDto extends ClassWithSectionQueryDto {
     @IsOptional()
     @Transform(({ value }) => value === 'true')
     includeExamSubjects?: boolean = false;
+
+    @ApiPropertyOptional({ type: Boolean, default: false })
+    @IsBoolean()
+    @IsOptional()
+    @Transform(({ value }) => value === 'true')
+    onlyPast?: boolean = false
 }

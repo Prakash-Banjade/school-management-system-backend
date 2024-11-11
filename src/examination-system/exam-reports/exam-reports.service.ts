@@ -35,7 +35,7 @@ export class ExamReportsService extends BaseRepository {
     if (!examSubject) throw new NotFoundException('Exam subject not found');
 
     // check if examsubject is being evaluated before exam date
-    // if (new Date(examSubject.examDate) > new Date()) throw new BadRequestException('Cannot evaluate before exam date.');
+    if (new Date(examSubject.examDate) > new Date()) throw new BadRequestException('Cannot evaluate before exam date.');
 
     // create instances of exam reports
     const examReports = await Promise.all(createExamReportDto.evaluations?.map(async (evaluation) => {
