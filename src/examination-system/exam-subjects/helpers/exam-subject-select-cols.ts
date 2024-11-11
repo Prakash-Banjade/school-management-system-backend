@@ -14,5 +14,5 @@ export const examSubjectSelectCols: FindOptionsSelect<ExamSubject> = {
         id: true,
         subjectName: true,
         subjectCode: true,
-    }
+    },
 }
