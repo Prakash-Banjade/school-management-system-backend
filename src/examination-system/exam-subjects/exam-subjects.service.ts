@@ -6,7 +6,7 @@ import { ExamSubject } from './entities/exam-subject.entity';
 import { Brackets, DataSource, In, Repository } from 'typeorm';
 import { SubjectsService } from 'src/subjects/subjects.service';
 import { ExamSubjectQueryDto } from './dto/exam-subject-query.dto';
-import paginatedData from 'src/utils/paginatedData';
+import paginatedData, { paginatedRawData } from 'src/utils/paginatedData';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { examSubjectSelectCols } from './helpers/exam-subject-select-cols';
 import { Cache } from 'cache-manager';
@@ -59,23 +59,24 @@ export class ExamSubjectsService extends BaseRepository {
     const currentAcademicYearId: string = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
     querybuilder
-      .orderBy("examSubject.createdAt", queryDto.order)
-      .skip(queryDto.skip)
-      .take(queryDto.take)
+      .orderBy("examSubject.examDate", queryDto.order)
+      .offset(queryDto.skip)
+      .limit(queryDto.take)
       .leftJoin('examSubject.exam', 'exam')
       .where("exam.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
       .leftJoin('exam.classRoom', 'classRoom')
+      .leftJoin('exam.examType', 'examType')
+      .leftJoin('classRoom.parent', 'parent')
       .leftJoin('examSubject.subject', 'subject')
       .andWhere(new Brackets(qb => {
         queryDto.examId && qb.andWhere("exam.id = :examId", { examId: queryDto.examId })
         queryDto.onlyPast && qb.andWhere("DATE(exam.examDate) < CURRENT_DATE()")
         queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId })
         queryDto.examTypeId && qb.andWhere('exam.examTypeId = :examTypeId', { examTypeId: queryDto.examTypeId })
-      }));
+      }))
+      .select(examSubjectSelectCols)
 
-    applySelectColumns(querybuilder, examSubjectSelectCols, 'examSubject');
-
-    return paginatedData(queryDto, querybuilder);
+      return paginatedRawData(queryDto, querybuilder);
   }
 
   async findByIds(ids: string[]) {

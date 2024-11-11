@@ -1,18 +1,14 @@
-import { FindOptionsSelect } from "typeorm";
-import { ExamSubject } from "../entities/exam-subject.entity";
+export const examSubjectSelectCols = [
+    'examSubject.id as id',
+    'examSubject.examDate as examDate',
+    'examSubject.startTime as startTime',
+    'examSubject.duration as duration',
+    'examSubject.fullMark as fullMark',
+    'examSubject.passMark as passMark',
+    'examSubject.venue as venue',
+    'subject.subjectName as subjectName',
+    'examType.name as examType',
+    'classRoom.name as classRoomName',
+    'parent.name as parentClassName',
+]
 
-export const examSubjectSelectCols: FindOptionsSelect<ExamSubject> = {
-    id: true,
-    examDate: true,
-    startTime: true,
-    duration: true,
-    fullMark: true,
-    passMark: true,
-    venue: true,
-    createdAt: true,
-    subject: {
-        id: true,
-        subjectName: true,
-        subjectCode: true,
-    },
-}
