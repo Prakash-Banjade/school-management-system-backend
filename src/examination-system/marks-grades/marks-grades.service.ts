@@ -30,7 +30,7 @@ export class MarksGradesService {
     const queryBuilder = this.marksGradeRepo.createQueryBuilder('marksGrade');
 
     queryBuilder
-      .orderBy('marksGrade.gradeName', queryDto.order)
+      .orderBy('marksGrade.percentTo', queryDto.order)
       .skip(queryDto.skip)
       .take(queryDto.take)
       .where(new Brackets(qb => {

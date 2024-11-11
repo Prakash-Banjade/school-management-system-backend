@@ -135,9 +135,7 @@ export class ExamsService extends BaseRepository {
       .leftJoin('exam.examType', 'examType')
       .leftJoin('exam.classRoom', 'classRoom')
       .leftJoin('classRoom.parent', 'parent')
-      .leftJoin('exam.examSubjects', 'examSubjects', (
-        queryDto.onlyPastExamSubjects ? 'DATE(examSubjects.examDate) < CURRENT_DATE()' : undefined
-      ))
+      .leftJoin('exam.examSubjects', 'examSubjects', queryDto.includeExamSubjects ? '1 = 1' : "1 = 0")
       .leftJoin('examSubjects.subject', 'subject')
 
     applySelectColumns(queryBuilder, singleExamSelectCols, 'exam');

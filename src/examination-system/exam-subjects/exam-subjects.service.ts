@@ -64,9 +64,11 @@ export class ExamSubjectsService extends BaseRepository {
       .take(queryDto.take)
       .leftJoin('examSubject.exam', 'exam')
       .where("exam.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
+      .leftJoin('examSubject.subject', 'subject')
       .andWhere(new Brackets(qb => {
         queryDto.examId && qb.andWhere("exam.id = :examId", { examId: queryDto.examId })
-      }))
+        queryDto.onlyPast && qb.andWhere("DATE(exam.examDate) < CURRENT_DATE()")
+      }));
 
     applySelectColumns(querybuilder, examSubjectSelectCols, 'examSubject');
 

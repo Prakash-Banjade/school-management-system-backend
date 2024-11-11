@@ -17,5 +17,5 @@ export class ExamQueryDto extends ClassWithSectionQueryDto {
     @IsBoolean()
     @IsOptional()
     @Transform(({ value }) => value === 'true')
-    onlyPastExamSubjects?: boolean = false;
+    includeExamSubjects?: boolean = false;
 }

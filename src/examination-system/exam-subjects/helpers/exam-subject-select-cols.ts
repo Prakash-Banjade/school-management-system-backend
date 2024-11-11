@@ -10,4 +10,9 @@ export const examSubjectSelectCols: FindOptionsSelect<ExamSubject> = {
     passMark: true,
     venue: true,
     createdAt: true,
+    subject: {
+        id: true,
+        subjectName: true,
+        subjectCode: true,
+    }
 }
