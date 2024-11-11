@@ -1,6 +1,5 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateExamReportDto } from './dto/create-exam-report.dto';
-import { UpdateExamReportDto } from './dto/update-exam-report.dto';
 import { ExamReport } from './entities/exam-report.entity';
 import { Brackets, DataSource, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 import { ExamReportQueryDto } from './dto/exam-report-query.dto';
@@ -84,7 +83,7 @@ export class ExamReportsService extends BaseRepository {
     if (!examGrade) return { gpa: 0, grade: 'N/A' };
 
     return {
-      gpa: (percentage / 100) * examGrade.gradeScale,
+      gpa: +((percentage / 100) * examGrade.gradeScale).toFixed(2),
       grade: examGrade?.gradeName
     }
   }

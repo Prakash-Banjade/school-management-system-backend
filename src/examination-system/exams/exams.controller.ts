@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe
 import { ExamsService } from './exams.service';
 import { CreateExamDto } from './dto/create-exam.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
-import { ExamQueryDto } from './dto/exam-query.dto';
+import { ExamQueryDto, ExamReportByStudentQueryDto } from './dto/exam-query.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, Role } from 'src/common/types/global.type';
@@ -28,6 +28,12 @@ export class ExamsController {
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findAll(@Query() queryDto: ExamQueryDto) {
     return this.examsService.findAll(queryDto);
+  }
+
+  @Get('report/by-student')
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  getExamReportByStudent(@Query() queryDto: ExamReportByStudentQueryDto) {
+    return this.examsHelper.getExamReportByStudent(queryDto.studentId, queryDto.examTypeId);
   }
 
   @Get(':id/students')

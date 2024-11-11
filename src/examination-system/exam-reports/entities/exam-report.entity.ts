@@ -17,7 +17,7 @@ export class ExamReport extends BaseEntity {
     @Column({ type: 'float', precision: 10, scale: 2 })
     percentage: number;
 
-    @Column({ type: 'float' })
+    @Column({ type: 'float', precision: 10, scale: 2 })
     gpa: number;
 
     @Column({ type: 'varchar' })

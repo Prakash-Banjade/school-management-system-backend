@@ -1,6 +1,6 @@
-import { ApiPropertyOptional } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
-import { IsBoolean, IsOptional, IsString } from "class-validator";
+import { IsBoolean, IsOptional, IsString, IsUUID } from "class-validator";
 import { ClassWithSectionQueryDto } from "src/common/dto/classWithSectionQuery.dto";
 
 export class ExamQueryDto extends ClassWithSectionQueryDto {
@@ -24,4 +24,14 @@ export class ExamQueryDto extends ClassWithSectionQueryDto {
     @IsOptional()
     @Transform(({ value }) => value === 'true')
     onlyPast?: boolean = false
+}
+
+export class ExamReportByStudentQueryDto {
+    @ApiProperty({ type: String })
+    @IsString()
+    studentId: string;
+
+    @ApiProperty({ type: String, format: 'uuid' })
+    @IsUUID()
+    examTypeId: string;
 }

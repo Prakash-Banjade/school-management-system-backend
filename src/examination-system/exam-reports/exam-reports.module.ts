@@ -11,5 +11,6 @@ import { StudentsModule } from 'src/students/students.module';
   ],
   controllers: [ExamReportsController],
   providers: [ExamReportsService],
+  exports: [ExamReportsService],
 })
 export class ExamReportsModule {}
