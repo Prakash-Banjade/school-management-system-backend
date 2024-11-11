@@ -82,7 +82,7 @@ export class ClassRoomsHelper extends BaseRepository {
 
         applySelectColumns(queryBuilder, classRoomOptionsSelectCols, 'classRoom');
 
-        return paginatedData(queryDto, queryBuilder);
+        return queryBuilder.getMany();
     }
 
     // this is used in single class room page in frontend
