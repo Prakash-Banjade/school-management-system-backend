@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException, Res } from '@nestjs/common';
 import { CreateImageDto } from './dto/create-image.dto';
-import { UpdateImageDto } from './dto/update-image.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Image } from './entities/image.entity';
 import { Brackets, In, Repository } from 'typeorm';
@@ -104,7 +103,6 @@ export class ImagesService {
       reply.send(readStream.pipe(transform));
 
     } catch (err) {
-      console.error('Original image not found:', err);
       reply.status(404).send('Original image not found');
     }
   }
