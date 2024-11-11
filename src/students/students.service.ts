@@ -23,6 +23,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { CACHE_KEYS } from 'src/common/CONSTANTS';
 import { RouteStopsService } from 'src/transportation-system/route-stops/route-stops.service';
+import { applySelectColumns } from 'src/utils/apply-select-cols';
 
 @Injectable({ scope: Scope.REQUEST })
 export class StudentsService extends BaseRepository {
@@ -103,25 +104,31 @@ export class StudentsService extends BaseRepository {
   }
 
   async findOne(id: string) {
-    const existing = await this.getRepository<Student>(Student).findOne({
-      where: { id },
-      relations: {
-        classRoom: {
-          parent: true,
-        },
-        profileImage: true,
-        guardians: true,
-        dormitoryRoom: true,
-        documentAttachments: true,
-        routeStop: {
-          vehicle: true,
-        },
-      },
-      select: singleStudentColumnsConfig,
-    })
+    const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+
+    const querybuilder = this.getRepository<Student>(Student).createQueryBuilder('student')
+      .leftJoin('student.profileImage', 'profileImage')
+      .leftJoin('student.enrollments', 'enrollments', "enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
+      .leftJoin('enrollments.classRoom', 'classRoom')
+      .leftJoin('classRoom.parent', 'parent')
+      .leftJoin('student.guardians', 'guardians')
+      .leftJoin('student.dormitoryRoom', 'dormitoryRoom')
+      .leftJoin('student.documentAttachments', 'documentAttachments')
+      .leftJoin('student.routeStop', 'routeStop')
+      .leftJoin('routeStop.vehicle', 'vehicle')
+      .where('student.id = :id', { id })
+
+    applySelectColumns(querybuilder, singleStudentColumnsConfig, 'student');
+
+    const existing = await querybuilder.getOne();
+
     if (!existing) throw new NotFoundException('Student not found')
 
-    return existing
+    // map the enrollment classroom to the student classroom
+    existing.classRoom = existing.enrollments[0].classRoom;
+    delete existing.enrollments;
+
+    return existing;
   }
 
   async findOneByAccountId(accountId: string) {

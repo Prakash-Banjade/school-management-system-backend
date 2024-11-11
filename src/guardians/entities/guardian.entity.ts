@@ -30,7 +30,7 @@ export class Guardian extends BaseEntity {
     @OneToOne(() => Image, image => image.guardian_profileImage, { nullable: true })
     profileImage: Image
 
-    @ManyToMany(() => Student, (student) => student.guardians)
+    @ManyToMany(() => Student, (student) => student.guardians, { onDelete: 'CASCADE' })
     @JoinTable({ name: 'student_guardians' })
     students: Student[]
 }

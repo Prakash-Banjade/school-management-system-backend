@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable } from "@nestjs/common";
-import { Brackets, Not, Repository, SelectQueryBuilder } from "typeorm";
+import { Brackets, Not, Repository } from "typeorm";
 import { Student } from "../entities/student.entity";
 import { StudentQueryDto, StudentSortBy } from "../dto/student-query.dto";
 import { CreateStudentDto } from "../dto/create-student.dto";
@@ -22,7 +22,7 @@ export class StudentsHelper {
 
     async setQuery(queryDto: StudentQueryDto) {
         const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
-        
+
         const queryBuilder = this.studentRepo.createQueryBuilder('student')
             .where("FIND_IN_SET(:academicYearId, student.academicYearIds) > 0", { academicYearId: currentAcademicYearId })
             .offset(queryDto.skipPagination ? undefined : queryDto.skip)
@@ -30,9 +30,10 @@ export class StudentsHelper {
             .addSelect("CONCAT(student.firstName, ' ', student.lastName) AS fullName")
             .orderBy(this.getOrderByKey(queryDto), queryDto.order)
             .leftJoin('student.routeStop', 'routeStop')
-            .leftJoin('student.classRoom', 'classRoom')
-            .leftJoin('student.profileImage', 'profileImage')
+            .leftJoin('student.enrollments', 'enrollments', "enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
+            .leftJoin('enrollments.classRoom', 'classRoom')
             .leftJoin('classRoom.parent', 'parent')
+            .leftJoin('student.profileImage', 'profileImage')
             .andWhere(new Brackets(qb => {
                 if (queryDto.search) {
                     qb.andWhere(new Brackets(qb => {
@@ -130,7 +131,7 @@ export class StudentsHelper {
 
     async getStudentsWithAttendance(queryDto: StudentAttendanceQueryDto) {
         const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
-        
+
         const studentsWithAttendance = await this.studentRepo.createQueryBuilder('student')
             .where("FIND_IN_SET(:academicYearId, student.academicYearIds) > 0", { academicYearId: currentAcademicYearId })
             .leftJoin("student.account", "account")

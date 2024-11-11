@@ -29,13 +29,13 @@ export class AttendancesController {
 
   @Get()
   @ApiPaginatedResponse(CreateAttendanceDto)
-  // @CheckAbilities({ action: Action.CREATE, subject: Role.ADMIN })
+  @CheckAbilities({ action: Action.CREATE, subject: Role.ADMIN })
   findAll(@Query() queryDto: AttendanceQueryDto, @CurrentUser() currentUser: AuthUser) {
     return this.attendancesService.findAll(queryDto, currentUser);
   }
 
   @Get('count')
-  // @CheckAbilities({ action: Action.READ, subject: Role.ADMIN })
+  @CheckAbilities({ action: Action.READ, subject: Role.ADMIN })
   getCount(@Query() queryDto: AttendanceCountQueryDto, @CurrentUser() currentUser: AuthUser) {
     return this.attendancesHelper.getCount(queryDto, currentUser);
   }
