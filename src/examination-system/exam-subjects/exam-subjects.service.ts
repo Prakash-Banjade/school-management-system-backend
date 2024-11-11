@@ -6,8 +6,7 @@ import { ExamSubject } from './entities/exam-subject.entity';
 import { Brackets, DataSource, In, Repository } from 'typeorm';
 import { SubjectsService } from 'src/subjects/subjects.service';
 import { ExamSubjectQueryDto } from './dto/exam-subject-query.dto';
-import paginatedData, { paginatedRawData } from 'src/utils/paginatedData';
-import { applySelectColumns } from 'src/utils/apply-select-cols';
+import { paginatedRawData } from 'src/utils/paginatedData';
 import { examSubjectSelectCols } from './helpers/exam-subject-select-cols';
 import { Cache } from 'cache-manager';
 import { CACHE_KEYS } from 'src/common/CONSTANTS';
@@ -76,7 +75,7 @@ export class ExamSubjectsService extends BaseRepository {
       }))
       .select(examSubjectSelectCols)
 
-      return paginatedRawData(queryDto, querybuilder);
+    return paginatedRawData(queryDto, querybuilder);
   }
 
   async findByIds(ids: string[]) {
