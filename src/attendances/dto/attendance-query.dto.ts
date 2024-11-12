@@ -15,15 +15,10 @@ export class AttendanceQueryDto extends QueryDto {
     @IsOptional()
     status?: EAttendanceStatus;
 
-    @ApiPropertyOptional({ type: String, format: 'uuid', description: 'Class room id' })
+    @ApiPropertyOptional({ type: String, format: 'uuid', description: 'Account id' })
     @IsUUID()
     @IsOptional()
-    classRoomId?: string;
-
-    @ApiPropertyOptional({ type: String, format: 'uuid', description: 'Student room id' })
-    @IsUUID()
-    @IsOptional()
-    studentId?: string;
+    accountId?: string;
 
     @ApiPropertyOptional({ type: Number, description: 'Month of the attendance' })
     @IsNumber()

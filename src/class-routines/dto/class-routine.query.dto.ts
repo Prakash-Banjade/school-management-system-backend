@@ -1,7 +1,6 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import { IsOptional, IsString } from "class-validator";
 import { ClassWithSectionQueryDto } from "src/common/dto/classWithSectionQuery.dto";
-import { QueryDto } from "src/common/dto/query.dto";
 import { EDayOfWeek, ERoutineType } from "src/common/types/global.type";
 
 export class ClassRoutineQueryDto extends ClassWithSectionQueryDto {

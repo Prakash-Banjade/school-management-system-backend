@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors, ParseUUIDPipe } from '@nestjs/common';
 import { TeachersService } from './teachers.service';
 import { CreateTeacherDto } from './dto/create-teacher.dto';
 import { UpdateTeacherDto } from './dto/update-teacher.dto';
@@ -56,22 +56,34 @@ export class TeachersController {
     return this.teachersHelper.getTeacherOptions(queryDto);
   }
 
+  @Get(':id/details') // used in single teacher page in frontend
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  getDetails(@Param('id', ParseUUIDPipe) id: string) {
+    return this.teachersHelper.getDetails(id);
+  }
+
+  @Get(':id/class-schedule') // used in single teacher page in frontend
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  getClassSchedule(@Param('id', ParseUUIDPipe) id: string, @Query('dayOfTheWeek') dayOfTheWeek?: string) {
+    return this.teachersHelper.getClassSchedule(id, dayOfTheWeek);
+  }
+
   @Get(':id')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.teachersService.findOne(id);
   }
 
   @Patch(':id')
   @UseInterceptors(TransactionInterceptor)
   @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
-  update(@Param('id') id: string, @Body() updateTeacherDto: UpdateTeacherDto) {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateTeacherDto: UpdateTeacherDto) {
     return this.teachersService.update(id, updateTeacherDto);
   }
 
   @Delete(':id')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.DELETE })
-  remove(@Param('id') id: string) {
+  remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.teachersService.remove(id);
   }
 }

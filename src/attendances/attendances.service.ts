@@ -46,16 +46,12 @@ export class AttendancesService {
       .skip(queryDto.skip)
       .take(queryDto.take)
       .leftJoin("attendance.account", "account")
-      .leftJoin("account.student", "student")
-      .leftJoin("student.classRoom", "classRoom")
       .andWhere(new Brackets(qb => {
         queryDto.status && qb.andWhere('attendance.status = :status', { status: queryDto.status })
         queryDto.month && qb.andWhere('MONTH(attendance.date) = :month', { month: queryDto.month });
 
         if (currentUser.role === Role.ADMIN) { // admin access
-          queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId })
-          queryDto.studentId && qb.andWhere('student.id = :studentId', { studentId: queryDto.studentId })
-          queryDto.search && qb.andWhere("LOWER(CONCAT(student.firstName, ' ', student.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+          queryDto.accountId && qb.andWhere('account.id = :accountId', { accountId: queryDto.accountId })
         } else { // student access
           qb.andWhere('account.id = :accountId', { accountId: currentUser.accountId })
         }
