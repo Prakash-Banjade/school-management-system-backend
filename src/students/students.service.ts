@@ -193,7 +193,7 @@ export class StudentsService extends BaseRepository {
     if (existing.profileImage?.id && updateStudentDto.profileImageId !== undefined) {
       await this.imageService.update(existing.profileImage.id, updateStudentDto.profileImageId);
     } else if (updateStudentDto.profileImageId !== undefined) { // this will execute only when student has no profile image before
-      existing.profileImage = await this.imageService.findOne(updateStudentDto.profileImageId); // setting new profile image
+      existing.profileImage = updateStudentDto.profileImageId ? await this.imageService.findOne(updateStudentDto.profileImageId) : null;
     }
 
     /**

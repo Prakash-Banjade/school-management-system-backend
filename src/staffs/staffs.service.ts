@@ -116,7 +116,7 @@ export class StaffsService extends BaseRepository {
     if (existingStaff.profileImage?.id && updateStaffDto.profileImageId !== undefined) {
       await this.imageService.update(existingStaff.profileImage.id, updateStaffDto.profileImageId);
     } else if (updateStaffDto.profileImageId !== undefined) { // this will execute only when teacher has no profile image before
-      existingStaff.profileImage = await this.imageService.findOne(updateStaffDto.profileImageId); // setting new profile image
+      existingStaff.profileImage = updateStaffDto.profileImageId ? await this.imageService.findOne(updateStaffDto.profileImageId) : null; // setting new profile image
     }
 
     Object.assign(existingStaff, { ...updateStaffDto });

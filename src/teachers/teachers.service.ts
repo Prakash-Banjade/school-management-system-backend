@@ -103,7 +103,7 @@ export class TeachersService extends BaseRepository {
     if (existingTeacher.profileImage?.id && updateTeacherDto.profileImageId !== undefined) {
       await this.imageService.update(existingTeacher.profileImage.id, updateTeacherDto.profileImageId);
     } else if (updateTeacherDto.profileImageId !== undefined) { // this will execute only when teacher has no profile image before
-      existingTeacher.profileImage = await this.imageService.findOne(updateTeacherDto.profileImageId); // setting new profile image
+      existingTeacher.profileImage = updateTeacherDto.profileImageId ? await this.imageService.findOne(updateTeacherDto.profileImageId) : null; // setting new profile image
     }
 
     Object.assign(existingTeacher, {
