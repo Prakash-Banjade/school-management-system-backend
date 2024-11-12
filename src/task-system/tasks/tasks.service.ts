@@ -104,7 +104,12 @@ export class TasksService extends BaseRepository {
       .groupBy("task.id");
 
     const itemCount = await queryBuilder.getCount();
-    const data = await queryBuilder.getRawMany();
+    const data = (await queryBuilder.getRawMany()).map(task => {
+      return {
+        ...task,
+        classRooms: JSON.parse(task.classRooms), // convert stringified JSON to array of objects
+      }
+    })
 
     const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto: queryDto });
 
