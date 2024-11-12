@@ -38,10 +38,10 @@ export class ExamReportsHelper extends BaseRepository {
             .andWhere("enrollment.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
             .andWhere('examReport.examSubjectId = :examSubjectId', { examSubjectId })
             .andWhere('exam.classRoomId = :classRoomId', { classRoomId })
-            .andWhere('CASE WHEN parent.id IS NULL THEN enrollmentClassRoom.id = :classRoomId ELSE parent.id = :classRoomId END', { classRoomId })
             .andWhere('examType.id = :examTypeId', { examTypeId })
 
         const count = await queryBuilder.clone()
+            .andWhere('CASE WHEN parent.id IS NULL THEN enrollmentClassRoom.id = :classRoomId ELSE parent.id = :classRoomId END', { classRoomId }) // ensure the student is also in the same classRoom
             .select([
                 'COUNT(DISTINCT CASE WHEN examReport.obtainedMarks >= examSubject.passMark THEN examReport.id END) as totalPassed',
                 'COUNT(DISTINCT CASE WHEN examReport.obtainedMarks < examSubject.passMark THEN examReport.id END) as totalFailed',
@@ -50,7 +50,11 @@ export class ExamReportsHelper extends BaseRepository {
         const reportQueryBuilder = queryBuilder
             .andWhere(new Brackets(qb => {
                 queryDto.search && qb.andWhere("LOWER(CONCAT(student.firstName, ' ', student.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
-                queryDto.sectionId && queryDto.sectionId !== 'all' && qb.andWhere('CASE WHEN parent.id IS NULL THEN 0 ELSE enrollmentClassRoom.id = :sectionId END', { sectionId: queryDto.sectionId })
+                if (queryDto.sectionId && queryDto.sectionId !== 'all') {
+                    qb.andWhere('CASE WHEN parent.id IS NULL THEN 0 ELSE enrollmentClassRoom.id = :sectionId END', { sectionId: queryDto.sectionId }) // if sectionId is provided look in the class room the student is if it's a section
+                } else {
+                    qb.andWhere('CASE WHEN parent.id IS NULL THEN enrollmentClassRoom.id = :classRoomId ELSE parent.id = :classRoomId END', { classRoomId }) // ensure the student is also in the same classRoom
+                }
             }))
             .select([
                 'examReport.id as id',
