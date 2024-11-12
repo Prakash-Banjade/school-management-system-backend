@@ -72,5 +72,8 @@ export const singleStudentColumnsConfig: FindOptionsSelect<Student> = {
             id: true,
             vehicleNumber: true
         }
+    },
+    account: {
+        id: true,
     }
 }

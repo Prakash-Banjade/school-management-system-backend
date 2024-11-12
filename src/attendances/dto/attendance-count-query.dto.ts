@@ -1,17 +1,17 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
-import { IsNumber, IsOptional } from "class-validator";
+import { IsNumber, IsOptional, IsString } from "class-validator";
 
 export class AttendanceCountQueryDto {
     @ApiPropertyOptional()
     @IsOptional()
-    @IsNumber()
+    @IsString()
     accountId?: string;
 
     @ApiPropertyOptional()
     @IsOptional()
     @IsNumber()
-    @Transform(({value}) => {
+    @Transform(({ value }) => {
         return !isNaN(Number(value))
             ? Math.abs(Number(value))
             : undefined;
@@ -21,7 +21,7 @@ export class AttendanceCountQueryDto {
     @ApiPropertyOptional()
     @IsOptional()
     @IsNumber()
-    @Transform(({value}) => {
+    @Transform(({ value }) => {
         return !isNaN(Number(value))
             ? Math.abs(Number(value))
             : undefined;

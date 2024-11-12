@@ -108,6 +108,7 @@ export class StudentsService extends BaseRepository {
     const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
     const querybuilder = this.getRepository<Student>(Student).createQueryBuilder('student')
+      .leftJoin('student.account', 'account')
       .leftJoin('student.profileImage', 'profileImage')
       .leftJoin('student.enrollments', 'enrollments', "enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
       .leftJoin('enrollments.classRoom', 'classRoom')

@@ -12,17 +12,17 @@ export class AttendancesHelper {
         @InjectRepository(Attendance) private attendanceRepo: Repository<Attendance>,
     ) { }
 
-    async getCount(attendanceCountQueryDto: AttendanceCountQueryDto, currentUser: AuthUser) {
+    async getCount(queryDto: AttendanceCountQueryDto, currentUser: AuthUser) {
         const monthlyQuery = this.attendanceRepo.createQueryBuilder('attendance')
             .leftJoin('attendance.account', 'account')
             .select('attendance.status', 'status')
             .addSelect('COUNT(attendance.id)', 'attendanceCount')
             .where(new Brackets(qb => {
-                attendanceCountQueryDto.month && qb.andWhere('MONTH(attendance.date) = :month', { month: attendanceCountQueryDto.month });
-                attendanceCountQueryDto.year && qb.andWhere('YEAR(attendance.date) = :year', { year: attendanceCountQueryDto.year });
+                queryDto.month && qb.andWhere('MONTH(attendance.date) = :month', { month: queryDto.month });
+                queryDto.year && qb.andWhere('YEAR(attendance.date) = :year', { year: queryDto.year });
 
                 if (currentUser.role === Role.ADMIN) { // admin access
-                    attendanceCountQueryDto.accountId && qb.andWhere('account.id = :accountId', { accountId: attendanceCountQueryDto.accountId });
+                    queryDto.accountId && qb.andWhere('account.id = :accountId', { accountId: queryDto.accountId });
                 } else { // other user can access their attendances only
                     qb.andWhere('account.id = :accountId', { accountId: currentUser.accountId });
                 }
@@ -34,10 +34,10 @@ export class AttendancesHelper {
             .select('attendance.status', 'status')
             .addSelect('COUNT(attendance.id)', 'attendanceCount')
             .where(new Brackets(qb => {
-                attendanceCountQueryDto.year && qb.andWhere('YEAR(attendance.date) = :year', { year: attendanceCountQueryDto.year });
+                queryDto.year && qb.andWhere('YEAR(attendance.date) = :year', { year: queryDto.year });
 
                 if (currentUser.role === Role.ADMIN) { // admin access
-                    attendanceCountQueryDto.accountId && qb.andWhere('account.id = :accountId', { accountId: attendanceCountQueryDto.accountId });
+                    queryDto.accountId && qb.andWhere('account.id = :accountId', { accountId: queryDto.accountId });
                 } else { // other user can access their attendances only
                     qb.andWhere('account.id = :accountId', { accountId: currentUser.accountId });
                 }
@@ -62,13 +62,13 @@ export class AttendancesHelper {
         const finalResult = {
             monthly: {
                 ...formatResult(monthlyResult),
-                total: countDaysInMonth(attendanceCountQueryDto.year, attendanceCountQueryDto.month),
-                month: attendanceCountQueryDto.month,
+                total: countDaysInMonth(queryDto.year, queryDto.month),
+                month: queryDto.month,
             },
             yearly: {
                 ...formatResult(yearlyResult),
-                year: attendanceCountQueryDto.year,
-                total: countDaysInYear(attendanceCountQueryDto.year),
+                year: queryDto.year,
+                total: countDaysInYear(queryDto.year),
             },
         };
 
