@@ -20,10 +20,7 @@ export class LeaveRequestsService {
   ) { }
 
   async create(createLeaveRequestDto: CreateLeaveRequestDto, currentUser: AuthUser) {
-    if (currentUser.role === Role.ADMIN && !createLeaveRequestDto.accountId) throw new BadRequestException('Account id is required');
-    const accountId = currentUser.role === Role.ADMIN ? createLeaveRequestDto.accountId : currentUser.accountId;
-
-    const account = await this.accountsService.findOne(accountId);
+    const account = await this.accountsService.findOne(currentUser.accountId);
 
     const newLeaveRequest = this.leaveRequestRepo.create({
       ...createLeaveRequestDto,

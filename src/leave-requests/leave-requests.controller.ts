@@ -15,7 +15,10 @@ export class LeaveRequestsController {
   constructor(private readonly leaveRequestsService: LeaveRequestsService) { }
 
   @Post()
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
+  @CheckAbilities(
+    { subject: Role.STUDENT, action: Action.CREATE },
+    { subject: Role.TEACHER, action: Action.CREATE }
+  )
   create(@Body() createLeaveRequestDto: CreateLeaveRequestDto, @CurrentUser() currentUser: AuthUser) {
     return this.leaveRequestsService.create(createLeaveRequestDto, currentUser);
   }
