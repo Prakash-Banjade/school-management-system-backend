@@ -2,13 +2,14 @@ import { Inject, Injectable } from "@nestjs/common";
 import { REQUEST } from "@nestjs/core";
 import { FastifyRequest } from "fastify";
 import { BaseRepository } from "src/common/repository/base-repository";
-import { DataSource } from "typeorm";
+import { Brackets, DataSource } from "typeorm";
 import { ExamReport } from "../entities/exam-report.entity";
 import { CACHE_MANAGER } from "@nestjs/cache-manager";
 import { Cache } from "cache-manager";
 import { CACHE_KEYS } from "src/common/CONSTANTS";
 import { paginatedRawData } from "src/utils/paginatedData";
 import { ExamReportBySubjectQueryDto } from "../dto/exam-report-query.dto";
+import { PageMetaDto } from "src/common/dto/pageMeta.dto";
 
 @Injectable()
 export class ExamReportsHelper extends BaseRepository {
@@ -21,8 +22,6 @@ export class ExamReportsHelper extends BaseRepository {
         const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
         const { classRoomId, examTypeId, examSubjectId } = queryDto;
 
-        
-
         const queryBuilder = this.getRepository(ExamReport).createQueryBuilder('examReport')
             .orderBy('examReport.percentage', 'DESC')
             .offset(queryDto.skip)
@@ -32,13 +31,17 @@ export class ExamReportsHelper extends BaseRepository {
             .leftJoin('examSubject.exam', 'exam')
             .leftJoin('exam.classRoom', 'classRoom')
             .leftJoin('exam.examType', 'examType')
-            .leftJoin('student.enrollments', 'enrollment', "enrollment.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
+            .leftJoin('student.enrollments', 'enrollment')
             .leftJoin('enrollment.classRoom', 'enrollmentClassRoom')
             .leftJoin('enrollmentClassRoom.parent', 'parent')
             .where('exam.academicYearId = :academicYearId', { academicYearId: currentAcademicYearId })
-            .where('examReport.examSubjectId = :examSubjectId', { examSubjectId })
+            .andWhere("enrollment.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
+            .andWhere('examReport.examSubjectId = :examSubjectId', { examSubjectId })
             .andWhere('exam.classRoomId = :classRoomId', { classRoomId })
             .andWhere('examType.id = :examTypeId', { examTypeId })
+            .andWhere(new Brackets(qb => {
+                queryDto.search && qb.andWhere("LOWER(CONCAT(student.firstName, ' ', student.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+            }))
             .select([
                 'examReport.id as id',
                 'examReport.obtainedMarks as obtainedMarks',
@@ -48,11 +51,35 @@ export class ExamReportsHelper extends BaseRepository {
                 'examSubject.fullMark as fullMark',
                 'examSubject.passMark as passMark',
                 'student.id as studentId',
+                'enrollment.rollNo as rollNo',
                 'CONCAT(student.firstName, \' \', student.lastName) as fullName',
                 'CASE WHEN parent.id IS NULL THEN enrollmentClassRoom.name ELSE CONCAT(parent.name, \' - \' , enrollmentClassRoom.name) END as classRoomName',
-
             ]);
 
-        return paginatedRawData(queryDto, queryBuilder);
+        const count = await this.getRepository(ExamReport).createQueryBuilder('examReport')
+            .leftJoin('examReport.examSubject', 'examSubject')
+            .leftJoin('examSubject.exam', 'exam')
+            .leftJoin('exam.classRoom', 'classRoom')
+            .leftJoin('exam.examType', 'examType')
+            .where('exam.academicYearId = :academicYearId', { academicYearId: currentAcademicYearId })
+            .andWhere('examSubject.id = :examSubjectId', { examSubjectId })
+            .andWhere('exam.classRoomId = :classRoomId', { classRoomId })
+            .andWhere('examType.id = :examTypeId', { examTypeId })
+            .select([
+                'COUNT(DISTINCT CASE WHEN examReport.obtainedMarks >= examSubject.passMark THEN examReport.id END) as totalPassed',
+                'COUNT(DISTINCT CASE WHEN examReport.obtainedMarks < examSubject.passMark THEN examReport.id END) as totalFailed',
+            ]).getRawOne();
+
+
+        const itemCount = await queryBuilder.getCount();
+        const data = await queryBuilder.getRawMany();
+
+        const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto: queryDto });
+
+        return {
+            data,
+            count,
+            meta: pageMetaDto
+        }
     }
 }

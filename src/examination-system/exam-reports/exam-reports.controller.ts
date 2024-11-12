@@ -31,7 +31,7 @@ export class ExamReportsController {
 
   @Get('report/by-subject')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  getExamReportBySubject(@Query() queryDto: ExamReportBySubjectQueryDto) {
+  getExamReportBySubject(@Query() queryDto: ExamReportBySubjectQueryDto) { // used in Examination Report Subject-wise page
     return this.examReportsHelper.getExamReportBySubject(queryDto);
   }
 
