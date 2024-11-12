@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateExamDto } from './dto/create-exam.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
 import { Exam } from './entities/exam.entity';
@@ -34,6 +34,17 @@ export class ExamsService extends BaseRepository {
     const examType = await this.examTypesService.findOne(createExamDto.examTypeId);
     const classRoom = await this.classRoomsService.findOne(createExamDto.classRoomId);
     const academicYear = await this.getRepository(AcademicYear).findOneBy({ isActive: true });
+
+    // check if exam exists
+    const existing = await this.getRepository(Exam).findOne({
+      where: {
+        examType: { id: examType.id },
+        classRoom: { id: classRoom.id },
+        academicYear: { id: academicYear.id }
+      },
+      select: { id: true }
+    });
+    if (existing) throw new ConflictException(`${examType.name} exam of class ${classRoom.name} already exists for this academic year`);
 
     // evaluate exam subjects
     const examSubjects: Partial<ExamSubject>[] = await Promise.all(createExamDto.examSubjects.map(async (examSubject) => ({
