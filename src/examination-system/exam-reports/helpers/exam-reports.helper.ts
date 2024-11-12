@@ -7,7 +7,6 @@ import { ExamReport } from "../entities/exam-report.entity";
 import { CACHE_MANAGER } from "@nestjs/cache-manager";
 import { Cache } from "cache-manager";
 import { CACHE_KEYS } from "src/common/CONSTANTS";
-import { paginatedRawData } from "src/utils/paginatedData";
 import { ExamReportBySubjectQueryDto } from "../dto/exam-report-query.dto";
 import { PageMetaDto } from "src/common/dto/pageMeta.dto";
 
@@ -28,6 +27,7 @@ export class ExamReportsHelper extends BaseRepository {
             .limit(queryDto.take)
             .leftJoin('examReport.student', 'student')
             .leftJoin('examReport.examSubject', 'examSubject')
+            .leftJoin('examSubject.subject', 'subject')
             .leftJoin('examSubject.exam', 'exam')
             .leftJoin('exam.classRoom', 'classRoom')
             .leftJoin('exam.examType', 'examType')
@@ -41,6 +41,8 @@ export class ExamReportsHelper extends BaseRepository {
             .andWhere('examType.id = :examTypeId', { examTypeId })
             .andWhere(new Brackets(qb => {
                 queryDto.search && qb.andWhere("LOWER(CONCAT(student.firstName, ' ', student.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+                console.log(queryDto.sectionId)
+                queryDto.sectionId && queryDto.sectionId !== 'all' && qb.andWhere('CASE WHEN parent.id IS NULL THEN 0 ELSE enrollmentClassRoom.id = :sectionId END', { sectionId: queryDto.sectionId })
             }))
             .select([
                 'examReport.id as id',
@@ -50,6 +52,7 @@ export class ExamReportsHelper extends BaseRepository {
                 'examReport.grade as grade',
                 'examSubject.fullMark as fullMark',
                 'examSubject.passMark as passMark',
+                'subject.subjectName as subjectName',
                 'student.id as studentId',
                 'enrollment.rollNo as rollNo',
                 'CONCAT(student.firstName, \' \', student.lastName) as fullName',

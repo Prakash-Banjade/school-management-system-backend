@@ -21,4 +21,10 @@ export class ExamReportBySubjectQueryDto extends QueryDto {
     @ApiProperty()
     @IsUUID()
     examSubjectId: string;
+
+
+    @ApiPropertyOptional()
+    @IsString()
+    @IsOptional()
+    sectionId?: string;
 }
