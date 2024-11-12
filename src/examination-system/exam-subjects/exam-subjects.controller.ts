@@ -25,6 +25,12 @@ export class ExamSubjectsController {
     return this.examSubjectsService.findAll(queryDto);
   }
 
+  @Get('options')
+  @CheckAbilities({ action: Action.READ, subject: Role.ADMIN })
+  getOptions(@Query() queryDto: ExamSubjectQueryDto) {
+    return this.examSubjectsService.findAll({ ...queryDto, asOptions: true } as ExamSubjectQueryDto);
+  }
+
   @Get(':id')
   @CheckAbilities({ action: Action.READ, subject: Role.ADMIN })
   findOne(@Param('id') id: string) {

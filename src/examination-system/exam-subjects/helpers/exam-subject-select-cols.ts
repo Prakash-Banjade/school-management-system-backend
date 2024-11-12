@@ -10,5 +10,10 @@ export const examSubjectSelectCols = [
     'examType.name as examType',
     'classRoom.name as classRoomName',
     'parent.name as parentClassName',
+];
+
+export const examSubjectOptionsSelectCols = [
+    'examSubject.id as value',
+    'subject.subjectName as label',
 ]
 

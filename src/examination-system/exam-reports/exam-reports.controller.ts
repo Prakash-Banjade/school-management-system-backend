@@ -2,16 +2,20 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestj
 import { ExamReportsService } from './exam-reports.service';
 import { CreateExamReportDto } from './dto/create-exam-report.dto';
 import { UpdateExamReportDto } from './dto/update-exam-report.dto';
-import { ExamReportQueryDto } from './dto/exam-report-query.dto';
+import { ExamReportBySubjectQueryDto, ExamReportQueryDto } from './dto/exam-report-query.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, Role } from 'src/common/types/global.type';
+import { ExamReportsHelper } from './helpers/exam-reports.helper';
 
 @ApiBearerAuth()
 @ApiTags('Exam Reports')
 @Controller('exam-reports')
 export class ExamReportsController {
-  constructor(private readonly examReportsService: ExamReportsService) { }
+  constructor(
+    private readonly examReportsService: ExamReportsService,
+    private readonly examReportsHelper: ExamReportsHelper,
+  ) { }
 
   @Patch()
   @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
@@ -23,6 +27,12 @@ export class ExamReportsController {
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findAll(@Query() queryDto: ExamReportQueryDto) {
     return this.examReportsService.findAll(queryDto);
+  }
+
+  @Get('report/by-subject')
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  getExamReportBySubject(@Query() queryDto: ExamReportBySubjectQueryDto) {
+    return this.examReportsHelper.getExamReportBySubject(queryDto);
   }
 
   @Get(':id')

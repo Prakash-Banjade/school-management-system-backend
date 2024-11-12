@@ -7,7 +7,7 @@ import { Brackets, DataSource, In, Repository } from 'typeorm';
 import { SubjectsService } from 'src/subjects/subjects.service';
 import { ExamSubjectQueryDto } from './dto/exam-subject-query.dto';
 import { paginatedRawData } from 'src/utils/paginatedData';
-import { examSubjectSelectCols } from './helpers/exam-subject-select-cols';
+import { examSubjectOptionsSelectCols, examSubjectSelectCols } from './helpers/exam-subject-select-cols';
 import { Cache } from 'cache-manager';
 import { CACHE_KEYS } from 'src/common/CONSTANTS';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
@@ -59,8 +59,8 @@ export class ExamSubjectsService extends BaseRepository {
 
     querybuilder
       .orderBy("examSubject.examDate", queryDto.order)
-      .offset(queryDto.skip)
-      .limit(queryDto.take)
+      .offset((queryDto.asOptions || queryDto.skipPagination) ? undefined : queryDto.skip)
+      .limit((queryDto.asOptions || queryDto.skipPagination) ? undefined : queryDto.take)
       .leftJoin('examSubject.exam', 'exam')
       .where("exam.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
       .leftJoin('exam.classRoom', 'classRoom')
@@ -68,12 +68,17 @@ export class ExamSubjectsService extends BaseRepository {
       .leftJoin('classRoom.parent', 'parent')
       .leftJoin('examSubject.subject', 'subject')
       .andWhere(new Brackets(qb => {
+        queryDto.search && qb.andWhere('LOWER(subject.subjectName) LIKE LOWER(:search)', { search: `%${queryDto.search}%` })
         queryDto.examId && qb.andWhere("exam.id = :examId", { examId: queryDto.examId })
         queryDto.onlyPast && qb.andWhere("DATE(exam.examDate) < CURRENT_DATE()")
         queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId })
         queryDto.examTypeId && qb.andWhere('exam.examTypeId = :examTypeId', { examTypeId: queryDto.examTypeId })
       }))
-      .select(examSubjectSelectCols)
+      .select(queryDto.asOptions ? examSubjectOptionsSelectCols : examSubjectSelectCols);
+
+    if (queryDto.asOptions) {
+      return querybuilder.getRawMany();
+    }
 
     return paginatedRawData(queryDto, querybuilder);
   }

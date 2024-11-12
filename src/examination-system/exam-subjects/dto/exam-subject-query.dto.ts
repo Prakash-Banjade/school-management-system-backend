@@ -24,4 +24,10 @@ export class ExamSubjectQueryDto extends QueryDto {
     @IsOptional()
     @IsString()
     examTypeId?: string;
+
+    @ApiPropertyOptional({ type: Boolean, default: false })
+    @IsBoolean()
+    @IsOptional()
+    @Transform(({ value }) => value === 'true')
+    asOptions?: boolean;
 }
