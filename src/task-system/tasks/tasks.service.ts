@@ -107,7 +107,7 @@ export class TasksService extends BaseRepository {
     const data = (await queryBuilder.getRawMany()).map(task => {
       return {
         ...task,
-        classRooms: JSON.parse(task.classRooms), // convert stringified JSON to array of objects
+        classRooms: typeof task.classRooms === 'string' ? JSON.parse(task.classRooms) : task.classRooms, // convert stringified JSON to array of objects
       }
     })
 
