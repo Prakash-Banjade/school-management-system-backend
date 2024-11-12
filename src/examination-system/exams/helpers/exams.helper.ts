@@ -39,12 +39,10 @@ export class ExamsHelper extends BaseRepository {
         if (!exam) throw new BadRequestException('Exam not found');
 
         const querybuilder = this.getRepository<Student>(Student).createQueryBuilder('student')
-            .where("FIND_IN_SET(:academicYearId, student.academicYearIds) > 0", { academicYearId: currentAcademicYearId })
-            .addSelect("CONCAT(student.firstName, ' ', student.lastName) AS fullName")
-            .orderBy('student.rollNo', 'ASC')
-            .leftJoin('student.classRoom', 'classRoom')
-            .leftJoin('student.profileImage', 'profileImage')
+            .leftJoin('student.enrollments', 'enrollments', "enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
+            .leftJoin('enrollments.classRoom', 'classRoom')
             .leftJoin('classRoom.parent', 'parent')
+            .leftJoin('student.profileImage', 'profileImage')
             .andWhere(new Brackets(qb => {
                 if (queryDto.search) {
                     qb.andWhere(new Brackets(qb => {
@@ -67,6 +65,7 @@ export class ExamsHelper extends BaseRepository {
                 "student.rollNo as rollNo",
                 "profileImage.url as profileImageUrl",
             ])
+            .orderBy('student.rollNo', 'ASC');
 
         return querybuilder.getRawMany();
     }

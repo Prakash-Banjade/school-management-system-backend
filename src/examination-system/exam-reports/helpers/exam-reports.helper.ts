@@ -38,10 +38,18 @@ export class ExamReportsHelper extends BaseRepository {
             .andWhere("enrollment.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
             .andWhere('examReport.examSubjectId = :examSubjectId', { examSubjectId })
             .andWhere('exam.classRoomId = :classRoomId', { classRoomId })
+            .andWhere('CASE WHEN parent.id IS NULL THEN enrollmentClassRoom.id = :classRoomId ELSE parent.id = :classRoomId END', { classRoomId })
             .andWhere('examType.id = :examTypeId', { examTypeId })
+
+        const count = await queryBuilder.clone()
+            .select([
+                'COUNT(DISTINCT CASE WHEN examReport.obtainedMarks >= examSubject.passMark THEN examReport.id END) as totalPassed',
+                'COUNT(DISTINCT CASE WHEN examReport.obtainedMarks < examSubject.passMark THEN examReport.id END) as totalFailed',
+            ]).getRawOne();
+
+        const reportQueryBuilder = await queryBuilder
             .andWhere(new Brackets(qb => {
                 queryDto.search && qb.andWhere("LOWER(CONCAT(student.firstName, ' ', student.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
-                console.log(queryDto.sectionId)
                 queryDto.sectionId && queryDto.sectionId !== 'all' && qb.andWhere('CASE WHEN parent.id IS NULL THEN 0 ELSE enrollmentClassRoom.id = :sectionId END', { sectionId: queryDto.sectionId })
             }))
             .select([
@@ -57,25 +65,10 @@ export class ExamReportsHelper extends BaseRepository {
                 'enrollment.rollNo as rollNo',
                 'CONCAT(student.firstName, \' \', student.lastName) as fullName',
                 'CASE WHEN parent.id IS NULL THEN enrollmentClassRoom.name ELSE CONCAT(parent.name, \' - \' , enrollmentClassRoom.name) END as classRoomName',
-            ]);
+            ])
 
-        const count = await this.getRepository(ExamReport).createQueryBuilder('examReport')
-            .leftJoin('examReport.examSubject', 'examSubject')
-            .leftJoin('examSubject.exam', 'exam')
-            .leftJoin('exam.classRoom', 'classRoom')
-            .leftJoin('exam.examType', 'examType')
-            .where('exam.academicYearId = :academicYearId', { academicYearId: currentAcademicYearId })
-            .andWhere('examSubject.id = :examSubjectId', { examSubjectId })
-            .andWhere('exam.classRoomId = :classRoomId', { classRoomId })
-            .andWhere('examType.id = :examTypeId', { examTypeId })
-            .select([
-                'COUNT(DISTINCT CASE WHEN examReport.obtainedMarks >= examSubject.passMark THEN examReport.id END) as totalPassed',
-                'COUNT(DISTINCT CASE WHEN examReport.obtainedMarks < examSubject.passMark THEN examReport.id END) as totalFailed',
-            ]).getRawOne();
-
-
-        const itemCount = await queryBuilder.getCount();
-        const data = await queryBuilder.getRawMany();
+        const itemCount = await reportQueryBuilder.getCount();
+        const data = await reportQueryBuilder.getRawMany();
 
         const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto: queryDto });
 
