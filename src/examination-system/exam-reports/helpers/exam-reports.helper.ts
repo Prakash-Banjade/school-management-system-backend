@@ -47,7 +47,7 @@ export class ExamReportsHelper extends BaseRepository {
                 'COUNT(DISTINCT CASE WHEN examReport.obtainedMarks < examSubject.passMark THEN examReport.id END) as totalFailed',
             ]).getRawOne();
 
-        const reportQueryBuilder = await queryBuilder
+        const reportQueryBuilder = queryBuilder
             .andWhere(new Brackets(qb => {
                 queryDto.search && qb.andWhere("LOWER(CONCAT(student.firstName, ' ', student.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
                 queryDto.sectionId && queryDto.sectionId !== 'all' && qb.andWhere('CASE WHEN parent.id IS NULL THEN 0 ELSE enrollmentClassRoom.id = :sectionId END', { sectionId: queryDto.sectionId })
