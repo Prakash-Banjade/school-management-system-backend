@@ -109,7 +109,7 @@ export class ExamsService extends BaseRepository {
         'parent.name as parentClass',
       ])
 
-      return paginatedRawData(queryDto, queryBuilder);
+    return paginatedRawData(queryDto, queryBuilder);
   }
 
   async findOne(id: string, queryDto?: ExamQueryDto) {
@@ -199,7 +199,12 @@ export class ExamsService extends BaseRepository {
   }
 
   async remove(id: string) {
-    const existing = await this.findOne(id);
+    const existing = await this.getRepository(Exam).findOne({
+      where: { id },
+      select: { id: true }
+    });
+    if (!existing) throw new NotFoundException('Exam not found');
+
     return await this.getRepository(Exam).remove(existing);
   }
 }
