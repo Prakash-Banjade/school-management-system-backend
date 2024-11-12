@@ -3,7 +3,6 @@ import { BookTransactionsService } from './book-transactions.service';
 import { BookTransactionsController } from './book-transactions.controller';
 import { BookTransaction } from './entities/book-transaction.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { StudentsModule } from 'src/students/students.module';
 import { LibraryBookModule } from '../library-book/library-book.module';
 import { BookTransactionsStudentViewService } from './book-transactions-student-view.service';
 
@@ -12,7 +11,6 @@ import { BookTransactionsStudentViewService } from './book-transactions-student-
     TypeOrmModule.forFeature([
       BookTransaction,
     ]),
-    StudentsModule,
     LibraryBookModule
   ],
   controllers: [BookTransactionsController],

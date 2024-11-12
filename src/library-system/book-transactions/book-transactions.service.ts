@@ -10,8 +10,8 @@ import { PageMetaDto } from 'src/common/dto/pageMeta.dto';
 import { PageDto } from 'src/common/dto/page.dto.';
 import { BookTransactionByStudentQueryDto, BookTransactionsQueryDto } from './dto/book-transactions-query.dto';
 import { EBookTransactionStatus } from 'src/common/types/global.type';
-import { StudentsService } from 'src/students/students.service';
 import { LibraryBook } from '../library-book/entities/library-book.entity';
+import { Student } from 'src/students/entities/student.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class BookTransactionsService extends BaseRepository {
@@ -19,14 +19,17 @@ export class BookTransactionsService extends BaseRepository {
     datasource: DataSource,
     @Inject(REQUEST) req: FastifyRequest,
     private readonly libraryBookService: LibraryBookService,
-    private readonly studentsService: StudentsService
   ) {
     super(datasource, req);
   }
 
   async create(createBookTransactionDto: CreateBookTransactionDto) {
     const book = await this.libraryBookService.findOne(createBookTransactionDto.bookId);
-    const student = await this.studentsService.findOne(createBookTransactionDto.studentId);
+    const student = await this.getRepository(Student).findOne({
+      where: { id: createBookTransactionDto.studentId },
+      select: { id: true }
+    });
+    if (!student) throw new NotFoundException('Student not found');
 
     // check if student has already issued this book
     const bookTransactions = await this.getRepository(BookTransaction).find({
