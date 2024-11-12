@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
 import { Enrollment } from './entities/enrollment.entity';
-import { DataSource, In } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { ClassRoomsService } from 'src/class-rooms/class-rooms.service';
 import { AcademicYear } from 'src/academic-years/entities/academic-year.entity';
 import { EnrollmentQueryDto } from './dto/enrollment-query.dto';
@@ -30,6 +30,9 @@ export class EnrollmentsService extends BaseRepository {
   async create(createEnrollmentDto: CreateEnrollmentDto) {
     const currentAcademicYearId: string | undefined = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
+    // check if any of the student is aready enrolled in the academic year
+    await this.checkIfEnrollmentExists(createEnrollmentDto.academicYearId, createEnrollmentDto.studentsWithRollNo.map(student => student.studentId));
+
     const newAcademicYear = await this.getRepository<AcademicYear>(AcademicYear).findOneBy({ id: createEnrollmentDto.academicYearId }); // enroll in current academic year
     if (!newAcademicYear) throw new NotFoundException('Academic year not found');
 
@@ -44,25 +47,27 @@ export class EnrollmentsService extends BaseRepository {
       ])
       .getMany();
 
-    if (!students?.length) throw new NotFoundException('Student not found');
+    if (students.length !== createEnrollmentDto.studentsWithRollNo?.length) throw new NotFoundException('Student not found');
 
     const newClassRoom = await this.classRoomService.findOne(createEnrollmentDto.classRoomId);
 
     // create the enrollment
-    const enrollments = this.getRepository<Enrollment>(Enrollment).create(students.map(student => ({
+    const enrollments = this.getRepository<Enrollment>(Enrollment).create(students.map((student, ind) => ({
       student,
       classRoom: newClassRoom,
       academicYear: newAcademicYear,
       enrollmentDate: createEnrollmentDto.enrollmentDate,
       registrationNumber: getRegistrationNumber(newAcademicYear),
+      rollNo: createEnrollmentDto.studentsWithRollNo[ind].newRollNo,
     })))
 
     await this.getRepository<Enrollment>(Enrollment).save(enrollments);
 
     // update student classroom
-    const promotedStudents = students.map(student => {
+    const promotedStudents = students.map((student, ind) => {
       student.classRoom = newClassRoom;
       student.academicYearIds = [...(student.academicYearIds ?? []), newAcademicYear.id];
+      student.rollNo = createEnrollmentDto.studentsWithRollNo[ind].newRollNo;
       return student;
     });
 
@@ -71,6 +76,15 @@ export class EnrollmentsService extends BaseRepository {
     return {
       message: "Promotion Successful",
     }
+  };
+
+  private async checkIfEnrollmentExists(academicYearId: string, studentIds: string[]) {
+    const existingEnrollment = await this.getRepository<Enrollment>(Enrollment).createQueryBuilder('enrollment')
+      .where("enrollment.academicYearId = :academicYearId", { academicYearId })
+      .andWhereInIds(studentIds)
+      .getOne();
+
+    if (existingEnrollment) throw new ConflictException('Enrollment already exists');
   }
 
   async findAll(queryDto: EnrollmentQueryDto) {
@@ -88,41 +102,5 @@ export class EnrollmentsService extends BaseRepository {
     applySelectColumns(queryBuilder, enrollmentSelectColumns, 'enrollment');
 
     return paginatedData(queryDto, queryBuilder);
-  }
-
-  async findOne(id: string) {
-    const existingEnrollment = await this.getRepository<Enrollment>(Enrollment).findOne({
-      where: { id },
-      relations: {
-        student: true,
-        classRoom: true,
-        academicYear: true
-      },
-      select: enrollmentSelectColumns,
-    });
-
-    if (!existingEnrollment) throw new ConflictException('Enrollment not found');
-
-    return existingEnrollment;
-  }
-
-  // async update(id: number, updateEnrollmentDto: UpdateEnrollmentDto) {
-  //   return `This action updates a #${id} enrollment`;
-  // }
-
-  // async remove(id: number) {
-  //   return `This action removes a #${id} enrollment`;
-  // }
-
-  private enrollmentMutationReturn = (enrollment: Enrollment, type: 'created' | 'updated' | 'deleted') => {
-    return {
-      message: type === 'created' ? 'Enrollment created successfully' : type === 'deleted' ? 'Enrollment deleted successfully' : 'Enrollment updated successfully',
-      enrollment: {
-        id: enrollment.id,
-        student: enrollment.student.firstName + ' ' + enrollment.student.lastName,
-        classRoom: enrollment.classRoom.name,
-        academicYear: enrollment.academicYear.name,
-      }
-    }
   }
 }

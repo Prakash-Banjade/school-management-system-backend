@@ -60,6 +60,7 @@ export const singleStudentColumnsConfig: FindOptionsSelect<Student> = {
     permanentAddress: true,
     enrollments: {
         id: true,
+        rollNo: true,
         classRoom: {
             id: true,
             name: true,
@@ -67,7 +68,7 @@ export const singleStudentColumnsConfig: FindOptionsSelect<Student> = {
                 id: true,
                 name: true,
             }
-        }  
+        }
     },
     documentAttachments: {
         id: true,

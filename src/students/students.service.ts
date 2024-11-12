@@ -77,6 +77,7 @@ export class StudentsService extends BaseRepository {
       classRoom,
       academicYear,
       enrollmentDate: createStudentDto.admissionDate,
+      rollNo: createStudentDto.rollNo,
       registrationNumber: getRegistrationNumber(academicYear),
     });
 
@@ -126,6 +127,7 @@ export class StudentsService extends BaseRepository {
 
     // map the enrollment classroom to the student classroom
     existing.classRoom = existing.enrollments[0].classRoom;
+    existing.rollNo = existing.enrollments[0].rollNo;
     delete existing.enrollments;
 
     return existing;
@@ -184,7 +186,8 @@ export class StudentsService extends BaseRepository {
   }
 
   async update(id: string, updateStudentDto: UpdateStudentDto) {
-    const existing = await this.findOne(id)
+    const existing = await this.findOne(id);
+    const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
     // check if credentials are already taken
     await this.studentsHelper.checkIfStudentExists(updateStudentDto, existing);
@@ -231,6 +234,16 @@ export class StudentsService extends BaseRepository {
     });
 
     const savedStudent = await this.getRepository<Student>(Student).save(existing);
+
+    // update roll no in enrollment
+    const updatedEnrollment = await this.getRepository<Enrollment>(Enrollment).createQueryBuilder()
+      .update(Enrollment)
+      .set({ rollNo: updateStudentDto.rollNo })
+      .where("studentId = :studentId", { studentId: existing.id })
+      .andWhere("academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
+      .execute();
+
+    if (updatedEnrollment.affected === 0) throw new NotFoundException('Student not found');
 
     return this.studentMutationReturn(savedStudent, 'updated');
   }

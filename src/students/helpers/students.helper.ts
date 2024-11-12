@@ -24,16 +24,16 @@ export class StudentsHelper {
         const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
         const queryBuilder = this.studentRepo.createQueryBuilder('student')
-            .where("FIND_IN_SET(:academicYearId, student.academicYearIds) > 0", { academicYearId: currentAcademicYearId })
             .offset(queryDto.skipPagination ? undefined : queryDto.skip)
             .limit(queryDto.skipPagination ? undefined : queryDto.take)
             .addSelect("CONCAT(student.firstName, ' ', student.lastName) AS fullName")
             .orderBy(this.getOrderByKey(queryDto), queryDto.order)
             .leftJoin('student.routeStop', 'routeStop')
-            .leftJoin('student.enrollments', 'enrollments', "enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
+            .leftJoin('student.enrollments', 'enrollments')
             .leftJoin('enrollments.classRoom', 'classRoom')
             .leftJoin('classRoom.parent', 'parent')
             .leftJoin('student.profileImage', 'profileImage')
+            .where("enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId }) 
             .andWhere(new Brackets(qb => {
                 if (queryDto.search) {
                     qb.andWhere(new Brackets(qb => {
@@ -54,7 +54,7 @@ export class StudentsHelper {
             .select([
                 "student.id as id",
                 "CONCAT(student.firstName, ' ', student.lastName) AS fullName",
-                "student.rollNo as rollNo",
+                "enrollments.rollNo as rollNo",
                 "student.phone as phone",
                 "student.email as email",
                 "student.dob as dob",
