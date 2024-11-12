@@ -37,6 +37,7 @@ import { TaskSystemModule } from './task-system/task-system.module';
 import { CacheModule, CacheStore } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-redis-yet';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -102,6 +103,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     TransportationSystemModule,
     LibrarySystemModule,
     TaskSystemModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [
