@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateDormitoryRoomDto } from './dto/create-dormitory-room.dto';
 import { UpdateDormitoryRoomDto } from './dto/update-dormitory-room.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -10,6 +10,8 @@ import { QueryDto } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { dormitoryRoomSelectCols } from './helpers/dormitory-select-cols.config';
+import { AuthUser } from 'src/common/types/global.type';
+import { isStudent } from 'src/utils/isStudent';
 
 @Injectable()
 export class DormitoryRoomsService {
@@ -71,6 +73,48 @@ export class DormitoryRoomsService {
         'dormitoryRoom.roomNumber as label',
       ])
       .getRawMany();
+  }
+
+  async getStudentDormitory(currentUser: AuthUser) {
+    if (!isStudent(currentUser)) throw new ForbiddenException();
+
+    const dormitoryRoom = await this.dormitoryRoomRepo.createQueryBuilder('dormitoryRoom')
+      .leftJoin('dormitoryRoom.students', 'students')
+      .where('students.id = :id', { id: currentUser.studentId })
+      .select('dormitoryRoom.id')
+      .getOne();
+
+    if (!dormitoryRoom) throw new NotFoundException('Dormitory room not found');
+
+    const roomDetail = await this.dormitoryRoomRepo.createQueryBuilder('dormitoryRoom')
+      .where('dormitoryRoom.id = :id', { id: dormitoryRoom.id })
+      .leftJoin('dormitoryRoom.students', 'students', 'students.id != :studentId', { studentId: currentUser.studentId })
+      .leftJoin('students.classRoom', 'classRoom')
+      .leftJoin('classRoom.parent', 'parent')
+      .leftJoin('dormitoryRoom.dormitory', 'dormitory')
+      .leftJoin('dormitoryRoom.roomType', 'roomType')
+      .select([
+        'dormitoryRoom.id as id',
+        'dormitoryRoom.roomNumber as roomNumber',
+        'dormitoryRoom.costPerBed as costPerBed',
+        'dormitoryRoom.noOfBeds as noOfBeds',
+        'dormitory.name as dormitoryName',
+        'roomType.name as roomTypeName',
+        `
+          CASE WHEN students.id IS NOT NULL THEN
+            JSON_ARRAYAGG(JSON_OBJECT("id", students.id, "name", CONCAT(students.firstName, " ", students.lastName), "classroomName", CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, \' - \', classRoom.name) END))
+          ELSE
+            NULL
+          END as roomMates
+        `
+      ])
+      .groupBy('students.id')
+      .getRawOne();
+
+    return {
+      ...roomDetail,
+      roomMates: typeof roomDetail.roomMates === 'string' ? JSON.parse(roomDetail.roomMates) : roomDetail.roomMates,
+    };
   }
 
   async findOne(id: string) {

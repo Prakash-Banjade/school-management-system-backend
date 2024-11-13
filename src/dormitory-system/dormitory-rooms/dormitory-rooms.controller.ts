@@ -5,7 +5,8 @@ import { UpdateDormitoryRoomDto } from './dto/update-dormitory-room.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { QueryDto } from 'src/common/dto/query.dto';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action, Role } from 'src/common/types/global.type';
+import { Action, AuthUser, Role } from 'src/common/types/global.type';
+import { CurrentUser } from 'src/common/decorators/user.decorator';
 
 @ApiBearerAuth()
 @ApiTags('Dormitory Rooms')
@@ -29,6 +30,12 @@ export class DormitoryRoomsController {
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   getOptions(@Query() queryDto: QueryDto) {
     return this.dormitoryRoomsService.getOptions(queryDto);
+  }
+
+  @Get('me')
+  @CheckAbilities({ subject: Role.STUDENT, action: Action.READ })
+  getStudentDormitory(@CurrentUser() currentUser: AuthUser) {
+    return this.dormitoryRoomsService.getStudentDormitory(currentUser);
   }
 
   @Get(':id')
