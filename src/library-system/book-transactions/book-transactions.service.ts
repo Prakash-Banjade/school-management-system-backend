@@ -8,10 +8,11 @@ import { FastifyRequest } from 'fastify';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { PageMetaDto } from 'src/common/dto/pageMeta.dto';
 import { PageDto } from 'src/common/dto/page.dto.';
-import { BookTransactionByStudentQueryDto, BookTransactionsQueryDto } from './dto/book-transactions-query.dto';
+import { BookTransactionByStudentQueryDto, BookTransactionsQueryDto, EBookTransactionPeriod } from './dto/book-transactions-query.dto';
 import { EBookTransactionStatus } from 'src/common/types/global.type';
 import { LibraryBook } from '../library-book/entities/library-book.entity';
 import { Student } from 'src/students/entities/student.entity';
+import { paginatedRawData } from 'src/utils/paginatedData';
 
 @Injectable({ scope: Scope.REQUEST })
 export class BookTransactionsService extends BaseRepository {
@@ -71,23 +72,20 @@ export class BookTransactionsService extends BaseRepository {
       .leftJoin("classRoom.parent", "parent")
       .where(new Brackets(qb => {
         if (queryDto.search) {
-          qb.andWhere(new Brackets(qb => {
-            qb.orWhere("LOWER(book.bookName) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
-            qb.orWhere("book.bookCode = :search", { search: queryDto.search })
-            qb.orWhere("student.studentId = :search", { search: queryDto.search })
+          qb.andWhere(new Brackets(subQb => {
+            subQb.orWhere("LOWER(book.bookName) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+              .orWhere("TRIM(book.bookCode) = TRIM(:exactSearch)", { exactSearch: queryDto.search })
+              .orWhere("TRIM(student.studentId) = TRIM(:exactSearch)", { exactSearch: queryDto.search })
           }))
-        }
+        };
 
-        if (queryDto.status) {
-          if (queryDto.status === EBookTransactionStatus.Issued) {
-            qb.andWhere("transaction.returnedAt IS NULL")
-            qb.andWhere("DATE(transaction.dueDate) >= DATE(:today)", { today: new Date().toISOString() })
-          } else if (queryDto.status === EBookTransactionStatus.Returned) {
-            qb.andWhere("transaction.returnedAt IS NOT NULL")
-          } else if (queryDto.status === EBookTransactionStatus.Overdue) {
-            qb.andWhere("DATE(transaction.dueDate) < DATE(:today) AND transaction.returnedAt IS NULL", { today: new Date().toISOString() }) // look for next day, today is not due date
-          }
-        }
+        if (queryDto.status && queryDto.status in this.transactionByStatusQuery) {
+          qb.andWhere(this.transactionByStatusQuery[queryDto.status])
+        };
+
+        if (queryDto.period && queryDto.period in this.transactionByPeriodQuery) {
+          qb.andWhere(this.transactionByPeriodQuery[queryDto.period])
+        };
       }))
       .select([
         "transaction.id AS id",
@@ -102,12 +100,20 @@ export class BookTransactionsService extends BaseRepository {
         "classRoom.name AS classRoomName",
       ])
 
-    const itemCount = await queryBuilder.getCount();
-    const data = await queryBuilder.getRawMany();
+    return paginatedRawData(queryDto, queryBuilder);
+  }
 
-    const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto: queryDto });
+  private transactionByStatusQuery = {
+    [EBookTransactionStatus.Issued]: 'transaction.returnedAt IS NULL',
+    [EBookTransactionStatus.Returned]: 'transaction.returnedAt IS NOT NULL',
+    [EBookTransactionStatus.Overdue]: 'DATE(transaction.dueDate) < CURRENT_DATE() AND transaction.returnedAt IS NULL',
+  }
 
-    return new PageDto(data, pageMetaDto);
+  private transactionByPeriodQuery = {
+    [EBookTransactionPeriod.TODAY]: 'DATE(transaction.updatedAt) = CURRENT_DATE()',
+    [EBookTransactionPeriod.LAST_WEEK]: 'DATE(transaction.updatedAt) >= DATE_SUB(CURRENT_DATE(), INTERVAL 1 WEEK)',
+    [EBookTransactionPeriod.THIS_MONTH]: 'MONTH(transaction.updatedAt) = MONTH(CURRENT_DATE()) AND YEAR(transaction.updatedAt) = YEAR(CURRENT_DATE())',
+    [EBookTransactionPeriod.LAST_MONTH]: 'DATE(transaction.updatedAt) >= DATE_SUB(CURRENT_DATE(), INTERVAL 1 MONTH)',
   }
 
   /**

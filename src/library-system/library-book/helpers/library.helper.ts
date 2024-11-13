@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { ForbiddenException, Inject, Injectable } from "@nestjs/common";
 import { REQUEST } from "@nestjs/core";
 import { FastifyRequest } from "fastify";
 import { BaseRepository } from "src/common/repository/base-repository";
@@ -7,6 +7,7 @@ import { LibraryBook } from "../entities/library-book.entity";
 import { BookTransaction } from "src/library-system/book-transactions/entities/book-transaction.entity";
 import { QueryDto } from "src/common/dto/query.dto";
 import { AuthUser } from "src/common/types/global.type";
+import { isStudent } from "src/utils/isStudent";
 
 @Injectable()
 export class LibraryHelper extends BaseRepository {
@@ -26,19 +27,17 @@ export class LibraryHelper extends BaseRepository {
             .leftJoin("transaction.student", "student")
             .select([
                 "COUNT(transaction.id) AS totalCount",
-                `COUNT(CASE WHEN transaction.returnedAt IS NULL AND DATE(transaction.dueDate) >= DATE(:today) THEN 1 END) AS issuedCount`,
-                `COUNT(CASE WHEN transaction.returnedAt IS NULL AND DATE(transaction.dueDate) < DATE(:today) THEN 1 END) AS overdueCount`,
+                `COUNT(CASE WHEN transaction.returnedAt IS NULL THEN 1 END) AS issuedCount`,
+                `COUNT(CASE WHEN transaction.returnedAt IS NULL AND DATE(transaction.dueDate) < CURRENT_DATE() THEN 1 END) AS overdueCount`,
             ])
-            .setParameter("today", new Date().toISOString().split("T")[0])
             .getRawOne();
 
         const studentsCount = this.getRepository(BookTransaction).createQueryBuilder("transaction")
             .leftJoin("transaction.student", "student")
             .select([
                 "COUNT(DISTINCT student.id) AS totalStudentCount",
-                `COUNT(DISTINCT CASE WHEN transaction.returnedAt IS NULL AND DATE(transaction.dueDate) >= DATE(:today) THEN student.id END) AS issuedStudentCount`
+                `COUNT(DISTINCT CASE WHEN transaction.returnedAt IS NULL THEN student.id END) AS issuedStudentCount`
             ])
-            .setParameter("today", new Date().toISOString().split("T")[0])
             .getRawOne();
 
         const topBooks = await this.getRepository(BookTransaction).createQueryBuilder("transaction")
@@ -68,8 +67,11 @@ export class LibraryHelper extends BaseRepository {
     }
 
     async getDashboardCount_student(currentUser: AuthUser) {
+        if (!isStudent(currentUser)) throw new ForbiddenException();
+        
         const transactionCount = await this.getRepository(BookTransaction).createQueryBuilder("transaction")
             .leftJoin("transaction.student", "student")
+            .where("student.id = :studentId", { studentId: currentUser.studentId })
             .select([
                 "COUNT(transaction.id) AS totalCount",
                 `COUNT(CASE WHEN transaction.returnedAt IS NULL AND DATE(transaction.dueDate) >= DATE(:today) THEN 1 END) AS issuedCount`,
