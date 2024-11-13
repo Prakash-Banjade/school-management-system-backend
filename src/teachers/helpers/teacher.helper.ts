@@ -96,7 +96,10 @@ export class TeachersHelper extends BaseRepository {
 
         if (!teacher) throw new NotFoundException('Teacher not found');
 
-        return teacher;
+        return {
+            ...teacher,
+            assignedClassRooms: typeof teacher.assignedClassRooms === 'string' ? JSON.parse(teacher.assignedClassRooms) : teacher.assignedClassRooms,
+        };
     }
 
     async getClassSchedule(id: string, dayOfTheWeek?: string) { // used in single teacher page in frontend
