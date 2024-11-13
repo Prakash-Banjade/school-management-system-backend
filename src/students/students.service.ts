@@ -215,7 +215,7 @@ export class StudentsService extends BaseRepository {
     // evaluate dormitory room
     if (updateStudentDto.dormitoryRoomId && (updateStudentDto.dormitoryRoomId !== existing.dormitoryRoom?.id || !existing.dormitoryRoom)) {
       // set new dormitory room
-      existing.dormitoryRoom = await this.dormitoryRoomsService.findOne(updateStudentDto.dormitoryRoomId);
+      existing.dormitoryRoom = await this.dormitoryRoomsService.findOneWithAvailableBed(updateStudentDto.dormitoryRoomId);
     } else if (updateStudentDto.dormitoryRoomId === null) {
       // unsetting dormitory room
       existing.dormitoryRoom = null;
@@ -224,7 +224,7 @@ export class StudentsService extends BaseRepository {
     // evaluate routeStop
     if (updateStudentDto.routeStopId && (updateStudentDto.routeStopId !== existing.routeStop?.id || !existing.routeStop)) {
       // set new dormitory room
-      existing.routeStop = await this.routeStopsService.findOne(updateStudentDto.routeStopId);
+      existing.routeStop = await this.routeStopsService.findOneWithAvailableSeats(updateStudentDto.routeStopId);
     } else if (updateStudentDto.routeStopId === null) {
       // unsetting dormitory room
       existing.routeStop = null;

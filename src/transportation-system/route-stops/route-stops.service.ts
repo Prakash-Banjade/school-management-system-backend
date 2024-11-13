@@ -112,7 +112,7 @@ export class RouteStopsService {
       id: existing.id,
       name: existing.name,
       capacity: existing.capacity,
-    } as Partial<RouteStop>;
+    } as unknown as RouteStop;
   }
 
   async update(id: string, updateRouteStopDto: UpdateRouteStopDto) {
