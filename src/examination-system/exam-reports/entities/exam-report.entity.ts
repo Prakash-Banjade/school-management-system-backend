@@ -5,10 +5,10 @@ import { Column, Entity, ManyToOne } from "typeorm";
 
 @Entity()
 export class ExamReport extends BaseEntity {
-    @ManyToOne(() => ExamSubject, (examSubject) => examSubject.examReports, { nullable: false })
+    @ManyToOne(() => ExamSubject, (examSubject) => examSubject.examReports, { nullable: false, onDelete: 'CASCADE' })
     examSubject: ExamSubject
 
-    @ManyToOne(() => Student, (student) => student.examReports)
+    @ManyToOne(() => Student, (student) => student.examReports, { onDelete: 'CASCADE' })
     student: Student
 
     @Column({ type: 'float', precision: 10, scale: 2 })

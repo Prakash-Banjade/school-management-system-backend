@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
 import { Enrollment } from './entities/enrollment.entity';
 import { DataSource } from 'typeorm';
@@ -13,34 +13,29 @@ import { FastifyRequest } from 'fastify';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import paginatedData from 'src/utils/paginatedData';
 import { getRegistrationNumber } from 'src/utils/get-registration-number';
-import { Cache } from 'cache-manager';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { CACHE_KEYS } from 'src/common/CONSTANTS';
 
 @Injectable({ scope: Scope.REQUEST })
 export class EnrollmentsService extends BaseRepository {
   constructor(
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
     private readonly classRoomService: ClassRoomsService,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {
     super(dataSource, req);
   }
 
   async create(createEnrollmentDto: CreateEnrollmentDto) {
-    const currentAcademicYearId: string | undefined = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
-
-    // check if any of the student is aready enrolled in the academic year
-    await this.checkIfEnrollmentExists(createEnrollmentDto.academicYearId, createEnrollmentDto.studentsWithRollNo.map(student => student.studentId));
+    const currentAcademicYear = await this.getRepository<AcademicYear>(AcademicYear).findOneBy({ isActive: true });
+    if (!currentAcademicYear) throw new NotFoundException('Academic year not found');
 
     const newAcademicYear = await this.getRepository<AcademicYear>(AcademicYear).findOneBy({ id: createEnrollmentDto.academicYearId }); // enroll in current academic year
     if (!newAcademicYear) throw new NotFoundException('Academic year not found');
 
-    if (currentAcademicYearId === newAcademicYear.id) throw new BadRequestException('Cannot enroll in current academic year');
+    // check if any of the student is aready enrolled in the academic year or is not begin demoted
+    await this.validateEnrollmentYear(currentAcademicYear, newAcademicYear, createEnrollmentDto.studentsWithRollNo.map(student => student.studentId),);
 
     const students = await this.getRepository<Student>(Student).createQueryBuilder('student')
       .whereInIds(createEnrollmentDto.studentsWithRollNo.map(student => student.studentId))
-      .andWhere('FIND_IN_SET(:currentAcademicYearId, student.academicYearIds)', { currentAcademicYearId }) // The FIND_IN_SET function in MySQL returns the position (index) of the specified item (tag) within the comma-separated list (tags).
+      .andWhere('FIND_IN_SET(:currentAcademicYearId, student.academicYearIds)', { currentAcademicYearId: currentAcademicYear.id }) // The FIND_IN_SET function in MySQL returns the position (index) of the specified item (tag) within the comma-separated list (tags).
       .select([
         'student.id',
         'student.academicYearIds',
@@ -78,13 +73,16 @@ export class EnrollmentsService extends BaseRepository {
     }
   };
 
-  private async checkIfEnrollmentExists(academicYearId: string, studentIds: string[]) {
+  private async validateEnrollmentYear(currentAcademicYear: AcademicYear, newAcademicYear: AcademicYear, studentIds: string[],) {
     const existingEnrollment = await this.getRepository<Enrollment>(Enrollment).createQueryBuilder('enrollment')
-      .where("enrollment.academicYearId = :academicYearId", { academicYearId })
-      .andWhereInIds(studentIds)
+      .where("enrollment.academicYearId = :academicYearId", { academicYearId: newAcademicYear.id })
+      .leftJoin('enrollment.student', 'student')
+      .andWhere("student.id IN (:...studentIds)", { studentIds })
       .getOne();
 
     if (existingEnrollment) throw new ConflictException('Enrollment already exists');
+
+    if (new Date(currentAcademicYear.startDate) > new Date(newAcademicYear.startDate)) throw new ConflictException('Cannot enroll in previous academic year');
   }
 
   async findAll(queryDto: EnrollmentQueryDto) {

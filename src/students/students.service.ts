@@ -157,11 +157,12 @@ export class StudentsService extends BaseRepository {
     const currentAcademicYearId = this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
     const student = await this.getRepository<Student>(Student).createQueryBuilder('student')
-      .where("FIND_IN_SET(:currentAcademicYearId, student.academicYearIds) > 0", { currentAcademicYearId })
+      .leftJoin("student.enrollments", "enrollments")
+      .where("enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
+      .leftJoin('enrollments.classRoom', 'classRoom')
+      .leftJoin("classRoom.parent", "parent")
       .leftJoin("student.profileImage", "profileImage")
       .leftJoin("student.bookTransactions", "bookTransactions")
-      .leftJoin("student.classRoom", "classRoom")
-      .leftJoin("classRoom.parent", "parent")
       .where("student.studentId = :studentId", { studentId })
       .groupBy("student.id")
       .select([
