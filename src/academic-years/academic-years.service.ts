@@ -79,6 +79,8 @@ export class AcademicYearsService {
         !!queryDto.search && qb.where("LOWER(academicYear.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` });
 
         !queryDto.withActive && qb.andWhere('academicYear.isActive = :isActive', { isActive: false });
+
+        queryDto.onlyFuture && qb.andWhere('DATE(academicYear.startDate) > CURRENT_DATE()');
       }))
       .select([
         "academicYear.id as value",

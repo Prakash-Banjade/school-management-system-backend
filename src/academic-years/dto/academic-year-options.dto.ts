@@ -9,4 +9,10 @@ export class AcademicYearOptionsDto extends QueryDto {
     @IsOptional()
     @Transform(({ value }) => value === 'true')
     withActive: boolean;
+
+    @ApiPropertyOptional({ type: Boolean, default: false, description: "Only future academic years" })
+    @IsBoolean()
+    @IsOptional()
+    @Transform(({ value }) => value === 'true')
+    onlyFuture: boolean = false;
 }
