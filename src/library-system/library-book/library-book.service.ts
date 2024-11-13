@@ -4,7 +4,6 @@ import { UpdateLibraryBookDto } from './dto/update-library-book.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LibraryBook } from './entities/library-book.entity';
 import { Brackets, Repository } from 'typeorm';
-import { QueryDto } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { libraryBookRequestSelectCols } from './helpers/library-book-request-select-cols';
