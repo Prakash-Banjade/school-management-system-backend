@@ -20,7 +20,10 @@ export class VehiclesController {
   }
 
   @Get()
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @CheckAbilities(
+    { subject: Role.ADMIN, action: Action.READ },
+    { subject: Role.STUDENT, action: Action.READ }
+  )
   findAll(@Query() queryDto: VehiclesQueryDto) {
     return this.vehiclesService.findAll(queryDto);
   }
