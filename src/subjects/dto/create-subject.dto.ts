@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Min } from "class-validator";
+import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Min } from "class-validator";
+import { ESubjectType } from "src/common/types/global.type";
 
 export class CreateSubjectDto {
     @ApiProperty({ type: String, description: 'Subject name' })
@@ -16,6 +17,10 @@ export class CreateSubjectDto {
     @IsString()
     @IsNotEmpty()
     content: string;
+
+    @ApiProperty({ type: 'enum', enum: ESubjectType, description: 'Subject type' })
+    @IsEnum(ESubjectType)
+    type: ESubjectType;
 
     @ApiProperty({ type: Number, description: 'Theory pass marks' })
     @IsInt()

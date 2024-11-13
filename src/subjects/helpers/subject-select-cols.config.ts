@@ -11,6 +11,7 @@ export const subjectSelectCols: FindOptionsSelect<Subject> = {
     theoryFM: true,
     practicalPM: true,
     practicalFM: true,
+    type: true,
     classRoom: {
         id: true,
         name: true,

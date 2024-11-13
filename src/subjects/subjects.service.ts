@@ -30,7 +30,7 @@ export class SubjectsService extends BaseRepository {
   async create(createSubjectDto: CreateSubjectDto) {
     const founcSubjectWithSameCode = await this.subjectsRepo.findOneBy({ subjectCode: createSubjectDto.subjectCode });
     if (founcSubjectWithSameCode) throw new ConflictException('Subject with same code already exists');
-    
+
     const teacher = createSubjectDto.teacherId
       ? await this.teachersService.findOne(createSubjectDto.teacherId)
       : null;
@@ -59,12 +59,16 @@ export class SubjectsService extends BaseRepository {
     queryBuilder
       .skip(queryDto.skipPagination ? undefined : queryDto.skip)
       .take(queryDto.skipPagination ? undefined : queryDto.take)
-      .orderBy("subject.createdAt", queryDto.order)
-      .withDeleted()
+      .orderBy(queryDto.sortBy, queryDto.order)
       .leftJoin('subject.classRoom', 'classRoom')
       .leftJoin('subject.teacher', 'teacher')
       .andWhere(new Brackets(qb => {
-        queryDto.search && qb.andWhere("LOWER(subject.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+        if (queryDto.search) {
+          qb.orWhere("TRIM(LOWER(subject.subjectCode)) = TRIM(LOWER(:search))", { search: queryDto.search })
+            .orWhere("LOWER(subject.subjectName) LIKE LOWER(:nameSearch)", { nameSearch: `%${queryDto.search}%` })
+        }
+
+        queryDto.types && qb.andWhere("subject.type IN (:...types)", { types: queryDto.types });
 
         if (currentUser.role === Role.ADMIN) { // admin access
           queryDto.classRoomId && qb.andWhere("classRoom.id = :classRoomId", { classRoomId: queryDto.classRoomId })

@@ -1,17 +1,35 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
+import { Transform } from "class-transformer";
 import { IsOptional, IsString, IsUUID } from "class-validator";
 import { QueryDto } from "src/common/dto/query.dto";
 
-export class SubjectQueryDto extends QueryDto {
-    @ApiPropertyOptional({ type: String })
-    @IsOptional()
-    @IsString()
-    subjectCode: string;
+const subjectSortByQuery = {
+    name: 'subject.subjectName',
+}
 
+export class SubjectQueryDto extends QueryDto {
     @ApiPropertyOptional({ type: String, format: 'uuid' })
     @IsUUID()
     @IsOptional()
-    classRoomId: string;
+    classRoomId?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    @Transform(({ value }) => {
+        if (value in subjectSortByQuery) return subjectSortByQuery[value];
+        return 'subject.createdAt';
+    })
+    sortBy?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString({ each: true })
+    @Transform(({ value }) => {
+        if (value) return value.split(',');
+        return [];
+    })
+    types?: string[];
 }
 
 export class SubjectOptionsQueryDto {
