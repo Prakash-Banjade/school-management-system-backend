@@ -20,7 +20,7 @@ export class SubjectQueryDto extends QueryDto {
         if (value in subjectSortByQuery) return subjectSortByQuery[value];
         return 'subject.createdAt';
     })
-    sortBy?: string;
+    sortBy?: string = 'subject.createdAt';
 
     @ApiPropertyOptional()
     @IsOptional()

@@ -107,7 +107,6 @@ export class ExamsService extends BaseRepository {
         'exam.createdAt as createdAt',
         'examType.name as examType',
         'classRoom.name as classRoom',
-        'parent.name as parentClass',
       ])
 
     return paginatedRawData(queryDto, queryBuilder);
