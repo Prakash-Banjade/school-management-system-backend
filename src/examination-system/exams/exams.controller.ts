@@ -5,9 +5,11 @@ import { UpdateExamDto } from './dto/update-exam.dto';
 import { ExamQueryDto, ExamReportByStudentQueryDto } from './dto/exam-query.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action, Role } from 'src/common/types/global.type';
+import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { ExamsHelper } from './helpers/exams.helper';
 import { StudentQueryDto } from 'src/students/dto/student-query.dto';
+import { CurrentUser } from 'src/common/decorators/user.decorator';
+import { isStudent } from 'src/utils/isStudent';
 
 @ApiBearerAuth()
 @ApiTags('Exams')
@@ -25,14 +27,18 @@ export class ExamsController {
   }
 
   @Get()
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  findAll(@Query() queryDto: ExamQueryDto) {
-    return this.examsService.findAll(queryDto);
+  @CheckAbilities({ subject: Role.USER, action: Action.READ })
+  findAll(@Query() queryDto: ExamQueryDto, @CurrentUser() currentUser: AuthUser) {
+    return this.examsService.findAll(queryDto, currentUser);
   }
 
   @Get('report/by-student')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  getExamReportByStudent(@Query() queryDto: ExamReportByStudentQueryDto) {
+  @CheckAbilities(
+    { subject: Role.ADMIN, action: Action.READ },
+    { subject: Role.STUDENT, action: Action.READ }
+  )
+  getExamReportByStudent(@Query() queryDto: ExamReportByStudentQueryDto, currentUser: AuthUser) {
+    if (isStudent(currentUser)) queryDto.studentId = currentUser.studentId;
     return this.examsHelper.getExamReportByStudent(queryDto.studentId, queryDto.examTypeId);
   }
 

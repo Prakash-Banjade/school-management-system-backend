@@ -11,7 +11,7 @@ import { ExamSubject } from '../exam-subjects/entities/exam-subject.entity';
 import { Subject } from 'src/subjects/entities/subject.entity';
 import { singleExamSelectCols } from './helpers/exam-select-cols';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
-import { EClassType } from 'src/common/types/global.type';
+import { AuthUser, EClassType, Role } from 'src/common/types/global.type';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { CACHE_KEYS } from 'src/common/CONSTANTS';
@@ -20,6 +20,7 @@ import { BaseRepository } from 'src/common/repository/base-repository';
 import { FastifyRequest } from 'fastify';
 import { REQUEST } from '@nestjs/core';
 import { paginatedRawData } from 'src/utils/paginatedData';
+import { isStudent } from 'src/utils/isStudent';
 
 @Injectable()
 export class ExamsService extends BaseRepository {
@@ -84,9 +85,11 @@ export class ExamsService extends BaseRepository {
     return subject;
   }
 
-  async findAll(queryDto: ExamQueryDto) {
+  async findAll(queryDto: ExamQueryDto, currentUser: AuthUser) {
     const queryBuilder = this.getRepository(Exam).createQueryBuilder('exam');
     const currentAcademicYearId: string = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+
+    if (isStudent(currentUser)) queryDto.classRoomId = currentUser.classRoomId;
 
     queryBuilder
       .orderBy("exam.createdAt", queryDto.order)
@@ -94,24 +97,11 @@ export class ExamsService extends BaseRepository {
       .limit(queryDto.take)
       .leftJoin('exam.examType', 'examType')
       .leftJoin('exam.classRoom', 'classRoom')
-      .leftJoin('classRoom.parent', 'parent')
       .where("exam.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
-      .andWhere(
-        new Brackets(qb => {
-          queryDto.classRoomId && qb.andWhere(
-            new Brackets(qb => {
-              qb.orWhere('parent.id = :classRoomId', { classRoomId: queryDto.classRoomId });
-              qb.orWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
-            })
-          );
-
-          queryDto.sectionId &&
-            qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId });
-
-          queryDto.examTypes?.length &&
-            qb.andWhere('examType.name IN (:...examTypes)', { examTypes: queryDto.examTypes });
-        })
-      )
+      .andWhere(new Brackets(qb => {
+        queryDto.examTypes?.length && qb.andWhere('examType.name IN (:...examTypes)', { examTypes: queryDto.examTypes });
+        queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
+      }))
       .select([
         'exam.id as id',
         'exam.createdAt as createdAt',

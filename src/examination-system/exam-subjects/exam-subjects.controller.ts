@@ -5,7 +5,8 @@ import { UpdateExamSubjectDto } from './dto/update-exam-subject.dto';
 import { ExamSubjectQueryDto } from './dto/exam-subject-query.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action, Role } from 'src/common/types/global.type';
+import { Action, AuthUser, Role } from 'src/common/types/global.type';
+import { isStudent } from 'src/utils/isStudent';
 
 @ApiBearerAuth()
 @ApiTags('Exam Subjects')
@@ -20,8 +21,12 @@ export class ExamSubjectsController {
   }
 
   @Get()
-  @CheckAbilities({ action: Action.READ, subject: Role.ADMIN })
-  findAll(@Query() queryDto: ExamSubjectQueryDto) {
+  @CheckAbilities(
+    { action: Action.READ, subject: Role.ADMIN },
+    { action: Action.READ, subject: Role.STUDENT }
+  )
+  findAll(@Query() queryDto: ExamSubjectQueryDto, currentUser: AuthUser) {
+    if (isStudent(currentUser)) queryDto.classRoomId = currentUser.classRoomId;
     return this.examSubjectsService.findAll(queryDto);
   }
 
