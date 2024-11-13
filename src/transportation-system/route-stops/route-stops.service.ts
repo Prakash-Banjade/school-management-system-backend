@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateRouteStopDto } from './dto/create-route-stop.dto';
 import { UpdateRouteStopDto } from './dto/update-route-stop.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -90,6 +90,29 @@ export class RouteStopsService {
     if (!existing) throw new NotFoundException('Route stop not found')
 
     return existing;
+  };
+
+  async findOneWithAvailableSeats(id: string) {
+    const existing = await this.routeStopRepo.createQueryBuilder('routeStop')
+      .leftJoin('routeStop.vehicle', 'vehicle')
+      .leftJoin('routeStop.students', 'students')
+      .where('routeStop.id = :id', { id })
+      .select([
+        'routeStop.id as id',
+        'routeStop.name as name',
+        'vehicle.capacity as capacity',
+        'COUNT(students.id) as studentsCount'
+      ]).getRawOne();
+
+    if (!existing) throw new NotFoundException('Route stop not found');
+
+    if (existing.capacity && (existing.studentsCount >= existing.capacity)) throw new BadRequestException('No available seats in vehicle of route stop ' + existing.name);
+
+    return {
+      id: existing.id,
+      name: existing.name,
+      capacity: existing.capacity,
+    } as Partial<RouteStop>;
   }
 
   async update(id: string, updateRouteStopDto: UpdateRouteStopDto) {

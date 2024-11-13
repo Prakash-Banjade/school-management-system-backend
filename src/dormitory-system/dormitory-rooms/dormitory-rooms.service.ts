@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateDormitoryRoomDto } from './dto/create-dormitory-room.dto';
 import { UpdateDormitoryRoomDto } from './dto/update-dormitory-room.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -27,7 +27,7 @@ export class DormitoryRoomsService {
     })
 
     if (existingDormitoryRoom) throw new ConflictException('Room number already exists')
-    
+
     const dormitory = await this.dormitoriesService.findOne(createDormitoryRoomDto.dormitoryId)
     const roomType = await this.doomTypesService.findOne(createDormitoryRoomDto.roomTypeId)
 
@@ -88,6 +88,29 @@ export class DormitoryRoomsService {
     if (!existingDormitoryRoom) throw new BadRequestException('Dormitory Room not found')
 
     return existingDormitoryRoom
+  }
+
+  async findOneWithAvailableBed(id: string) {
+    const existing = await this.dormitoryRoomRepo.createQueryBuilder('dormitoryRoom')
+      .leftJoin('dormitoryRoom.students', 'students')
+      .where('dormitoryRoom.id = :id', { id })
+      .select([
+        'dormitoryRoom.id as id',
+        'dormitoryRoom.roomNumber as roomNumber',
+        'dormitoryRoom.noOfBeds as noOfBeds',
+        'COUNT(DISTINCT students.id) as studentsCount'
+      ])
+      .getRawOne();
+
+    if (!existing) throw new NotFoundException('Dormitory room not found');
+
+    if (existing.noOfBeds <= +existing.studentsCount) throw new BadRequestException('No available beds in room number ' + existing.roomNumber);
+
+    return {
+      id: existing.id,
+      roomNumber: existing.roomNumber,
+      noOfBeds: existing.noOfBeds,
+    } as DormitoryRoom;
   }
 
   async update(id: string, updateDormitoryRoomDto: UpdateDormitoryRoomDto) {

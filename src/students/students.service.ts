@@ -63,12 +63,12 @@ export class StudentsService extends BaseRepository {
 
     // evaluate dormitory room
     const dormitoryRoom = createStudentDto.dormitoryRoomId
-      ? await this.dormitoryRoomsService.findOne(createStudentDto.dormitoryRoomId)
+      ? await this.dormitoryRoomsService.findOneWithAvailableBed(createStudentDto.dormitoryRoomId)
       : null;
 
     // evaluate routeStop
     const routeStop = createStudentDto.routeStopId
-      ? await this.routeStopsService.findOne(createStudentDto.routeStopId)
+      ? await this.routeStopsService.findOneWithAvailableSeats(createStudentDto.routeStopId)
       : null;
 
     const academicYear = await this.getRepository<AcademicYear>(AcademicYear).findOneBy({ isActive: true }); // enroll in current academic year

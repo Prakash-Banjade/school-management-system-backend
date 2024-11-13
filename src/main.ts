@@ -49,11 +49,10 @@ async function bootstrap() {
     whitelist: true,
     stopAtFirstError: true,
   }));
+  app.setGlobalPrefix('api');
 
   // swagger docs setup
   setupSwagger(app);
-
-  app.setGlobalPrefix('api');
 
   await app.listen(configService.get('PORT'), '0.0.0.0', (err, address) => {
     if (err) {

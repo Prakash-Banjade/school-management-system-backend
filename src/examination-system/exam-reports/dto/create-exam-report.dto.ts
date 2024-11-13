@@ -10,7 +10,7 @@ class ExamEvaluationDto {
     @ApiProperty({ type: Number, minimum: 0 })
     @IsNumber()
     @IsNotEmpty()
-    @Min(0)
+    @Min(1, { message: 'Marks must be greater than 0' })
     obtainedMarks: number;
 
     @ApiPropertyOptional({ format: 'uuid' })
