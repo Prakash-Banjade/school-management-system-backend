@@ -16,16 +16,6 @@ export const vehicleSelectCols: FindOptionsSelect<Vehicle> = {
         lastName: true,
         phone: true,
         type: true,
-    },
-    stops: {
-        id: true,
-        distance: true,
-        pickUpTime: true,
-        dropOffTime: true,
-        sequence: true,
-        fare: true,
-        name: true,
-        location: true,
     }
 }
 

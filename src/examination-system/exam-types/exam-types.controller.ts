@@ -20,7 +20,7 @@ export class ExamTypesController {
   }
 
   @Get()
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @CheckAbilities({ subject: Role.USER, action: Action.READ })
   findAll(@Query() queryDto: QueryDto) {
     return this.examTypesService.findAll(queryDto);
   }

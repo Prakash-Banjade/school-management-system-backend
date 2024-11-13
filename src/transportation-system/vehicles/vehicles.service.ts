@@ -40,7 +40,6 @@ export class VehiclesService {
       .skip(queryDto.skip)
       .take(queryDto.take)
       .leftJoin('vehicle.driver', 'driver')
-      .leftJoin('vehicle.stops', 'stops')
       .where(new Brackets(qb => {
         queryDto.search && qb.andWhere({ vehicleNumber: ILike(`%${queryDto.search}%`) })
         queryDto.types?.length && qb.andWhere('vehicle.type IN (:...types)', { types: queryDto.types })
