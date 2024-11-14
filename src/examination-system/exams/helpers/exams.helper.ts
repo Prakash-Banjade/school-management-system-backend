@@ -74,7 +74,7 @@ export class ExamsHelper extends BaseRepository {
         const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
         const student = await this.getRepository(Student).createQueryBuilder('student')
-            .where("student.studentId = :studentId", { studentId })
+            .where("student.studentId = :studentId OR student.id = :studentId", { studentId }) // the second condition of is due to when student request this api, we check of student.id from the currentUser
             .leftJoin('student.enrollments', 'enrollment', "enrollment.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
             .leftJoin('enrollment.classRoom', 'classRoom')
             .leftJoin('classRoom.parent', 'parent')
