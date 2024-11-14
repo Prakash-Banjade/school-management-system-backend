@@ -24,4 +24,10 @@ export class QueryDto extends PageOptionsDto {
     @IsOptional()
     @Transform(({ value }) => value === 'true')
     skipPagination?: boolean = false;
+
+    @ApiPropertyOptional({ type: Boolean, description: 'Only basic info' })
+    @IsOptional()
+    @IsBoolean()
+    @Transform(({ value }) => value === 'true')
+    onlyBasicInfo?: boolean = false;
 }

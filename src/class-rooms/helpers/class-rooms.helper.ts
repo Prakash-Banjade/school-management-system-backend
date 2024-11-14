@@ -5,7 +5,7 @@ import { Brackets, DataSource, Repository } from "typeorm";
 import { EClassType, Gender } from "src/common/types/global.type";
 import { applySelectColumns } from "src/utils/apply-select-cols";
 import { classRoomOptionsSelectCols } from "./class-room-select-cols.config";
-import paginatedData from "src/utils/paginatedData";
+import paginatedData, { paginatedRawData } from "src/utils/paginatedData";
 import { ClassRoomOptionsQueryDto, ClassRoomQueryDto } from "../dto/classRoom-query.dto";
 import { CACHE_MANAGER } from "@nestjs/cache-manager";
 import { Cache } from "cache-manager";
@@ -39,7 +39,9 @@ export class ClassRoomsHelper extends BaseRepository {
             .leftJoin('classRoom.classTeacher', 'classTeacher')
             .leftJoin('classRoom.students', 'student', 'FIND_IN_SET(:currentAcademicYearId, student.academicYearIds) > 0', { currentAcademicYearId })
             .leftJoin('classRoom.children', 'childClass')
+            .leftJoin('classRoom.parent', 'parentClass', queryDto.classType === EClassType.SECTION ? '1 = 1' : '1 = 0')
             .leftJoin('childClass.students', 'childClassStudent', 'FIND_IN_SET(:currentAcademicYearId, childClassStudent.academicYearIds) > 0', { currentAcademicYearId })
+            .leftJoin('childClass.classTeacher', 'childClassTeacher')
             .select([
                 "classRoom.id as id",
                 "classRoom.name as name",
@@ -50,6 +52,18 @@ export class ClassRoomsHelper extends BaseRepository {
                 "classRoom.classType as classType",
                 "classTeacher.id as classTeacherId",
                 "CONCAT(classTeacher.firstName, ' ', classTeacher.lastName) as classTeacherName",
+                'parentClass.name as parentClassName',
+                `(SELECT JSON_ARRAYAGG(
+                    JSON_OBJECT(
+                      'teacherName', CONCAT(childClassTeacher.firstName, ' ', childClassTeacher.lastName),
+                      'className', childClass.name
+                    )
+                  )
+                  FROM class_room childClass
+                  LEFT JOIN teacher childClassTeacher ON childClass.classTeacherId = childClassTeacher.id
+                  WHERE childClass.parentId = classRoom.id
+                  AND childClassTeacher.id IS NOT NULL
+                ) as childClassTeachers`,
             ])
             .addSelect([
                 'COUNT(DISTINCT student.id) + COUNT(DISTINCT childClassStudent.id) AS totalStudentsCount',
@@ -58,12 +72,7 @@ export class ClassRoomsHelper extends BaseRepository {
             ])
             .groupBy('classRoom.id')  // Ensure group by to aggregate counts per classRoom
 
-        const itemCount = await queryBuilder.getCount();
-        const data = await queryBuilder.getRawMany();
-
-        const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto: queryDto });
-
-        return new PageDto(data, pageMetaDto);
+        return paginatedRawData(queryDto, queryBuilder);
     }
 
     async getClassRoomsOptions(queryDto: ClassRoomOptionsQueryDto) {
