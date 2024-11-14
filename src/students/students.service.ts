@@ -267,6 +267,17 @@ export class StudentsService extends BaseRepository {
 
     if (result.affected === 0) throw new NotFoundException('Student not found');
 
+    // update the enrollment also
+    const enrollmentQuerybuilder = this.getRepository<Enrollment>(Enrollment).createQueryBuilder()
+      .update(Enrollment)
+      .set({ classRoom: classRoom })
+      .where("academicYearId = :currentAcademicYearId", { currentAcademicYearId: await this.cacheManager.get(CACHE_KEYS.CAY_ID) })
+      .andWhere("enrollment.studentId IN (:...studentIds)", { studentIds: updateStudentClassDto.studentIds });
+
+    const enrollmentResult = await enrollmentQuerybuilder.execute();
+
+    if (enrollmentResult.affected === 0) throw new NotFoundException('Unable to update enrollment');
+
     return {
       message: 'Class Updated',
     }

@@ -6,6 +6,7 @@ import { DataSource } from 'typeorm';
 import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
 import { Subject } from 'rxjs';
+import { OptionalSubject } from './entities/optional-subject.entity';
 
 @Injectable()
 export class OptionalSubjectService extends BaseRepository {
@@ -14,11 +15,13 @@ export class OptionalSubjectService extends BaseRepository {
   ) { super(datasource, req) }
 
   async assignStudents() {
-    
+
   }
 
   findAll() {
-    return `This action returns all optionalSubject`;
+    return this.getRepository(OptionalSubject).find({
+      relations: ['subject', 'classRoom'],
+    });
   }
 
   findOne(id: number) {
