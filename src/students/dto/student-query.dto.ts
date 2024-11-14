@@ -1,5 +1,6 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
-import { IsEnum, IsOptional, IsString, IsUUID } from "class-validator";
+import { Transform } from "class-transformer";
+import { IsBoolean, IsEnum, IsOptional, IsString, IsUUID } from "class-validator";
 import { ClassWithSectionQueryDto } from "src/common/dto/classWithSectionQuery.dto";
 
 export enum StudentSortBy {

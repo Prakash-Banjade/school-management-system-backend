@@ -27,8 +27,9 @@ export class ExamQueryDto extends ClassWithSectionQueryDto {
 }
 
 export class ExamReportByStudentQueryDto {
-    @ApiProperty({ type: String })
+    @ApiPropertyOptional({ type: String })
     @IsString()
+    @IsOptional()
     studentId: string;
 
     @ApiProperty({ type: String, format: 'uuid' })

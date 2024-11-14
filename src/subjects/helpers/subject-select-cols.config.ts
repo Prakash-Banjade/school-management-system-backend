@@ -1,12 +1,15 @@
 import { FindOptionsSelect } from "typeorm";
 import { Subject } from "../entities/subject.entity";
 
-export const subjectSelectCols: FindOptionsSelect<Subject> = {
+export const subjectSelectCols_basic: FindOptionsSelect<Subject> = {
     id: true,
-    createdAt: true,
-    updatedAt: true,
     subjectName: true,
     subjectCode: true,
+    createdAt: true,
+}
+
+export const subjectSelectCols: FindOptionsSelect<Subject> = {
+    ...subjectSelectCols_basic,
     theoryPM: true,
     theoryFM: true,
     practicalPM: true,
@@ -27,4 +30,5 @@ export const subjectSelectCols: FindOptionsSelect<Subject> = {
 export const singleSubjectSelelctCols: FindOptionsSelect<Subject> = {
     ...subjectSelectCols,
     content: true,
+    optionalSubject: { id: true }
 }

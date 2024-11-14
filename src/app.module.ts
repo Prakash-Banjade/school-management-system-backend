@@ -38,7 +38,7 @@ import { CacheModule, CacheStore } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-redis-yet';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { DashboardModule } from './dashboard/dashboard.module';
-import { StudentOptionalSubjectModule } from './student-optional-subject/student-optional-subject.module';
+import { OptionalSubjectModule } from './optional-subject/optional-subject.module';
 
 @Module({
   imports: [
@@ -105,7 +105,7 @@ import { StudentOptionalSubjectModule } from './student-optional-subject/student
     LibrarySystemModule,
     TaskSystemModule,
     DashboardModule,
-    StudentOptionalSubjectModule,
+    OptionalSubjectModule,
   ],
   controllers: [AppController],
   providers: [

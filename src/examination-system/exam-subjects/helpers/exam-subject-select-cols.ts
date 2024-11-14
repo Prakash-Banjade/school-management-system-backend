@@ -9,7 +9,6 @@ export const examSubjectSelectCols = [
     'subject.subjectName as subjectName',
     'examType.name as examType',
     'classRoom.name as classRoomName',
-    'parent.name as parentClassName',
 ];
 
 export const examSubjectOptionsSelectCols = [

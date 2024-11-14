@@ -7,11 +7,10 @@ import { UpdateStudentDto } from "../dto/update-student.dto";
 import { InjectRepository } from "@nestjs/typeorm";
 import { StudentAttendanceQueryDto } from "../dto/student-attendance-query.dto";
 import { Attendance } from "src/attendances/entities/attendance.entity";
-import { PageMetaDto } from "src/common/dto/pageMeta.dto";
-import { PageDto } from "src/common/dto/page.dto.";
 import { Cache } from "cache-manager";
 import { CACHE_MANAGER } from "@nestjs/cache-manager";
 import { CACHE_KEYS } from "src/common/CONSTANTS";
+import { paginatedRawData } from "src/utils/paginatedData";
 
 @Injectable()
 export class StudentsHelper {
@@ -33,7 +32,7 @@ export class StudentsHelper {
             .leftJoin('enrollments.classRoom', 'classRoom')
             .leftJoin('classRoom.parent', 'parent')
             .leftJoin('student.profileImage', 'profileImage')
-            .where("enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId }) 
+            .where("enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
             .andWhere(new Brackets(qb => {
                 if (queryDto.search) {
                     qb.andWhere(new Brackets(qb => {
@@ -51,10 +50,22 @@ export class StudentsHelper {
 
                 queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId }); // the sectionId send by the frontend is the class room id
             }))
-            .select([
-                "student.id as id",
-                "CONCAT(student.firstName, ' ', student.lastName) AS fullName",
-                "enrollments.rollNo as rollNo",
+            .select(this.getStudentsSelectCols(queryDto.onlyBasicInfo));
+
+        return paginatedRawData(queryDto, queryBuilder);
+    }
+
+    private getStudentsSelectCols(onlyBasicInfo: boolean) {
+        const basicCols = [
+            "student.id as id",
+            "CONCAT(student.firstName, ' ', student.lastName) AS fullName",
+            "enrollments.rollNo as rollNo",
+        ];
+
+        return onlyBasicInfo
+            ? basicCols
+            : [
+                ...basicCols,
                 "student.phone as phone",
                 "student.email as email",
                 "student.dob as dob",
@@ -67,14 +78,7 @@ export class StudentsHelper {
                 "parent.name as parentClass",
                 "routeStop.id as routeStopId",
                 "routeStop.name as routeStop",
-            ])
-
-        const count = await queryBuilder.getCount();
-        const data = await queryBuilder.getRawMany();
-
-        const pageMetaDto = new PageMetaDto({ itemCount: count, pageOptionsDto: queryDto });
-
-        return new PageDto(data, pageMetaDto);
+            ]
     }
 
     private getOrderByKey(queryDto: StudentQueryDto) {

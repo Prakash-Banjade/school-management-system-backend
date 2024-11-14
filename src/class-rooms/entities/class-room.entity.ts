@@ -5,7 +5,7 @@ import { EClassType } from "src/common/types/global.type";
 import { Enrollment } from "src/enrollments/entities/enrollment.entity";
 import { Exam } from "src/examination-system/exams/entities/exam.entity";
 import { FeesGroup } from "src/finance-system/fees-system/fees-groups/entities/fees-group.entity";
-import { StudentOptionalSubject } from "src/student-optional-subject/entities/student-optional-subject.entity";
+import { OptionalSubject } from "src/optional-subject/entities/optional-subject.entity";
 import { Student } from "src/students/entities/student.entity";
 import { Subject } from "src/subjects/entities/subject.entity";
 import { Task } from "src/task-system/tasks/entities/task.entity";
@@ -66,8 +66,8 @@ export class ClassRoom extends BaseEntity {
     @OneToMany(() => Subject, (subject) => subject.classRoom)
     subjects: Subject[]
 
-    @OneToMany(() => StudentOptionalSubject, (optionalSubject) => optionalSubject.classroom)
-    optionalSubjects: StudentOptionalSubject[];
+    @OneToMany(() => OptionalSubject, (optionalSubject) => optionalSubject.classRoom)
+    optionalSubjects: OptionalSubject[];
 
     @ManyToMany(() => Task, (task) => task.classRooms)
     tasks: Task[]

@@ -10,7 +10,7 @@ import { Image } from "src/file-management/images/entities/image.entity";
 import { FeesInvoice } from "src/finance-system/fees-system/fees-invoices/entities/fees-invoice.entity";
 import { Guardian } from "src/guardians/entities/guardian.entity";
 import { BookTransaction } from "src/library-system/book-transactions/entities/book-transaction.entity";
-import { StudentOptionalSubject } from "src/student-optional-subject/entities/student-optional-subject.entity";
+import { OptionalSubject } from "src/optional-subject/entities/optional-subject.entity";
 import { TaskSubmission } from "src/task-system/task-submissions/entities/task-submission.entity";
 import { RouteStop } from "src/transportation-system/route-stops/entities/route-stop.entity";
 import { generateTeacherId } from "src/utils/generate-teacher-id";
@@ -33,8 +33,8 @@ export class Student extends BaseEntity {
     @ManyToOne(() => ClassRoom, (classRoom) => classRoom.students, { onDelete: 'RESTRICT' })
     classRoom: ClassRoom;
 
-    @OneToMany(() => StudentOptionalSubject, (optionalSubject) => optionalSubject.student)
-    optionalSubjects: StudentOptionalSubject[];
+    @ManyToMany(() => OptionalSubject, (optionalSubject) => optionalSubject.students)
+    optionalSubjects: OptionalSubject[];
 
     @Column({ type: 'int' })
     rollNo: number;

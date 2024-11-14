@@ -71,6 +71,7 @@ export class ExamsHelper extends BaseRepository {
     }
 
     async getExamReportByStudent(studentId: string, examTypeId: string) {
+        if (!studentId) throw new BadRequestException('Student id is required'); // studentId is optional because student can request this api without student id
         const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
         const student = await this.getRepository(Student).createQueryBuilder('student')

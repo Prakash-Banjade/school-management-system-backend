@@ -46,10 +46,9 @@ export class CreateSubjectDto {
     @Min(0)
     practicalFM: number;
 
-    @ApiPropertyOptional({ type: 'enum', format: 'emum', description: 'Class room id' })
+    @ApiProperty({ type: 'enum', format: 'emum', description: 'Class room id' })
     @IsUUID()
-    @IsOptional()
-    classRoomId?: string;
+    classRoomId: string;
 
     @ApiPropertyOptional({ type: 'enum', format: 'emum', description: 'Teacher id' })
     @IsUUID()
