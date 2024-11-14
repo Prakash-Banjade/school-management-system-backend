@@ -5,7 +5,7 @@ import { Brackets, DataSource, Repository } from "typeorm";
 import { EClassType, Gender } from "src/common/types/global.type";
 import { applySelectColumns } from "src/utils/apply-select-cols";
 import { classRoomOptionsSelectCols } from "./class-room-select-cols.config";
-import paginatedData, { paginatedRawData } from "src/utils/paginatedData";
+import { paginatedRawData } from "src/utils/paginatedData";
 import { ClassRoomOptionsQueryDto, ClassRoomQueryDto } from "../dto/classRoom-query.dto";
 import { CACHE_MANAGER } from "@nestjs/cache-manager";
 import { Cache } from "cache-manager";
@@ -13,8 +13,6 @@ import { CACHE_KEYS } from "src/common/CONSTANTS";
 import { BaseRepository } from "src/common/repository/base-repository";
 import { FastifyRequest } from "fastify";
 import { REQUEST } from "@nestjs/core";
-import { PageMetaDto } from "src/common/dto/pageMeta.dto";
-import { PageDto } from "src/common/dto/page.dto.";
 
 @Injectable()
 export class ClassRoomsHelper extends BaseRepository {
