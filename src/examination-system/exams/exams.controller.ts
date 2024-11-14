@@ -37,7 +37,7 @@ export class ExamsController {
     { subject: Role.ADMIN, action: Action.READ },
     { subject: Role.STUDENT, action: Action.READ }
   )
-  getExamReportByStudent(@Query() queryDto: ExamReportByStudentQueryDto, currentUser: AuthUser) {
+  getExamReportByStudent(@Query() queryDto: ExamReportByStudentQueryDto, @CurrentUser() currentUser: AuthUser) {
     if (isStudent(currentUser)) queryDto.studentId = currentUser.studentId;
     return this.examsHelper.getExamReportByStudent(queryDto.studentId, queryDto.examTypeId);
   }

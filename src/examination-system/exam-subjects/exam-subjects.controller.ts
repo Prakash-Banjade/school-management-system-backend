@@ -7,6 +7,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { isStudent } from 'src/utils/isStudent';
+import { CurrentUser } from 'src/common/decorators/user.decorator';
 
 @ApiBearerAuth()
 @ApiTags('Exam Subjects')
@@ -25,7 +26,7 @@ export class ExamSubjectsController {
     { action: Action.READ, subject: Role.ADMIN },
     { action: Action.READ, subject: Role.STUDENT }
   )
-  findAll(@Query() queryDto: ExamSubjectQueryDto, currentUser: AuthUser) {
+  findAll(@Query() queryDto: ExamSubjectQueryDto, @CurrentUser() currentUser: AuthUser) {
     if (isStudent(currentUser)) queryDto.classRoomId = currentUser.classRoomId;
     return this.examSubjectsService.findAll(queryDto);
   }
