@@ -131,7 +131,7 @@ export class SubjectsService extends BaseRepository {
         });
         existing.optionalSubject = optionalSubject;
       } else { // changing subject to regular
-        await this.getRepository(OptionalSubject).remove(existing.optionalSubject); // remove optional subject
+        existing.optionalSubject && await this.getRepository(OptionalSubject).remove(existing.optionalSubject); // remove optional subject
         existing.optionalSubject = null;
       }
     }

@@ -36,3 +36,10 @@ export class ExamReportByStudentQueryDto {
     @IsUUID()
     examTypeId: string;
 }
+
+export class ExamStudentsQueryDto {
+    @ApiPropertyOptional({ type: String, format: 'uuid' })
+    @IsUUID()
+    @IsOptional()
+    optionalSubjectId?: string;
+}

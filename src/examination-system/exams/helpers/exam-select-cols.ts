@@ -39,6 +39,7 @@ export const singleExamSelectCols: FindOptionsSelect<Exam> = {
             id: true,
             subjectCode: true,
             subjectName: true,
+            type: true
         },
         duration: true,
         examDate: true,

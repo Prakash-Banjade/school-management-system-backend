@@ -35,13 +35,12 @@ export class StudentsHelper {
             .where("enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
             .andWhere(new Brackets(qb => {
                 if (queryDto.search) {
-                    qb.andWhere(new Brackets(qb => {
-                        qb.orWhere("LOWER(CONCAT(student.firstName, ' ', student.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
-                        qb.orWhere("LOWER(student.email) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+                    qb.andWhere(new Brackets(subQb => {
+                        subQb.orWhere("LOWER(CONCAT(student.firstName, ' ', student.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+                            .orWhere("LOWER(student.email) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+                            .orWhere("TRIM(student.studentId) = TRIM(:exactSearch)", { exactSearch: queryDto.search })
                     }))
                 }
-
-                queryDto.studentId && qb.andWhere('student.studentId = :studentId', { studentId: queryDto.studentId });
 
                 queryDto.classRoomId && qb.andWhere(new Brackets(qb => { // if class room id, check in both section and class
                     qb.orWhere('parent.id = :classRoomId', { classRoomId: queryDto.classRoomId });
@@ -60,6 +59,7 @@ export class StudentsHelper {
             "student.id as id",
             "CONCAT(student.firstName, ' ', student.lastName) AS fullName",
             "enrollments.rollNo as rollNo",
+            "student.studentId as studentId",
         ];
 
         return onlyBasicInfo

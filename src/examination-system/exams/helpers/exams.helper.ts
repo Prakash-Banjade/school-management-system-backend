@@ -5,12 +5,12 @@ import { Cache } from "cache-manager";
 import { FastifyRequest } from "fastify";
 import { CACHE_KEYS } from "src/common/CONSTANTS";
 import { BaseRepository } from "src/common/repository/base-repository";
-import { StudentQueryDto } from "src/students/dto/student-query.dto";
 import { Student } from "src/students/entities/student.entity";
 import { Brackets, DataSource } from "typeorm";
 import { Exam } from "../entities/exam.entity";
-import { EClassType } from "src/common/types/global.type";
 import { ExamReportsService } from "src/examination-system/exam-reports/exam-reports.service";
+import { ExamStudentsQueryDto } from "../dto/exam-query.dto";
+import { ESubjectType } from "src/common/types/global.type";
 
 @Injectable()
 export class ExamsHelper extends BaseRepository {
@@ -21,19 +21,13 @@ export class ExamsHelper extends BaseRepository {
         @Inject(CACHE_MANAGER) private cacheManager: Cache,
     ) { super(dataSource, req) }
 
-    async getExamStudents(examId: string, queryDto: StudentQueryDto) {
+    async getExamStudents(examId: string, queryDto: ExamStudentsQueryDto) {
         const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
         const exam = await this.getRepository<Exam>(Exam).findOne({
             where: { id: examId },
             relations: ['classRoom'],
-            select: {
-                id: true,
-                classRoom: {
-                    id: true,
-                    classType: true,
-                }
-            }
+            select: { id: true, classRoom: { id: true } }
         });
 
         if (!exam) throw new BadRequestException('Exam not found');
@@ -42,30 +36,19 @@ export class ExamsHelper extends BaseRepository {
             .leftJoin('student.enrollments', 'enrollments', "enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
             .leftJoin('enrollments.classRoom', 'classRoom')
             .leftJoin('classRoom.parent', 'parent')
-            .leftJoin('student.profileImage', 'profileImage')
+            .leftJoin('student.optionalSubjects', 'optionalSubjects', 'optionalSubjects.classRoomId = :classRoomId', { classRoomId: exam.classRoom.id })
+            .where('CASE WHEN parent.id IS NULL THEN classRoom.id ELSE parent.id END = :classRoomId', { classRoomId: exam.classRoom.id })
             .andWhere(new Brackets(qb => {
-                if (queryDto.search) {
-                    qb.andWhere(new Brackets(qb => {
-                        qb.orWhere("LOWER(CONCAT(student.firstName, ' ', student.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
-                        qb.orWhere("LOWER(student.email) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
-                    }))
-                }
-
-                exam.classRoom.classType === EClassType.PRIMARY && qb.andWhere(new Brackets(qb => { // if class room is primary, we are also checking if the parent classroom matches
-                    qb.orWhere('parent.id = :classRoomId', { classRoomId: exam.classRoom.id });
-                    qb.orWhere('classRoom.id = :classRoomId', { classRoomId: exam.classRoom.id });
-                }));
-                exam.classRoom.classType === EClassType.SECTION && qb.andWhere('classRoom.id = :sectionId', { sectionId: exam.classRoom.id });
-
-                queryDto.studentId && qb.andWhere('student.studentId = :studentId', { studentId: queryDto.studentId });
+                queryDto.optionalSubjectId && qb.andWhere('optionalSubjects.subjectId = :optionalSubjectId', { optionalSubjectId: queryDto.optionalSubjectId });
             }))
             .select([
                 "student.id as id",
                 "CONCAT(student.firstName, ' ', student.lastName) AS fullName",
-                "student.rollNo as rollNo",
-                "profileImage.url as profileImageUrl",
+                "enrollments.rollNo as rollNo",
             ])
-            .orderBy('student.rollNo', 'ASC');
+            .orderBy('student.rollNo', 'ASC')
+            .groupBy('student.id')
+            .addGroupBy('enrollments.rollNo')
 
         return querybuilder.getRawMany();
     }
@@ -80,6 +63,7 @@ export class ExamsHelper extends BaseRepository {
             .leftJoin('enrollment.classRoom', 'classRoom')
             .leftJoin('classRoom.parent', 'parent')
             .leftJoin('student.profileImage', 'profileImage')
+            .leftJoin('student.optionalSubjects', 'optionalSubjects')
             .select([
                 'student.id as id',
                 'student.firstName as firstName',
@@ -92,7 +76,11 @@ export class ExamsHelper extends BaseRepository {
                 'classRoom.name as classRoomName',
                 'parent.name as parentClassName',
                 'profileImage.url as profileImageUrl',
-            ]).getRawOne();
+                'JSON_ARRAYAGG(optionalSubjects.subjectId) as optionalSubjectIds',
+            ])
+            .groupBy('student.id')
+            .addGroupBy('classRoom.id')
+            .getRawOne();
 
         if (!student) throw new NotFoundException('Student not found');
 
@@ -104,6 +92,7 @@ export class ExamsHelper extends BaseRepository {
             .andWhere("classRoom.id = :classRoomId", { classRoomId: student.parentClassId ?? student.classRoomId })
             .leftJoin('exam.examSubjects', 'examSubjects')
             .leftJoin('examSubjects.subject', 'subject')
+            .andWhere("CASE WHEN subject.type = :optional THEN subject.id IN (:...optionalSubjectIds) ELSE 1 = 1 END", { optional: ESubjectType.OPTIONAL, optionalSubjectIds: student.optionalSubjectIds })
             .leftJoin('examSubjects.examReports', 'examReports', 'examReports.studentId = :studentId', { studentId: student.id })
             .select([
                 "exam.id",
@@ -115,6 +104,7 @@ export class ExamsHelper extends BaseRepository {
                 "subject.id",
                 "subject.subjectName",
                 "subject.subjectCode",
+                "subject.type",
                 "examReports.id",
                 "examReports.obtainedMarks",
                 "examReports.percentage",
