@@ -54,7 +54,6 @@ export class ExamSubjectsService extends BaseRepository {
 
   async findAll(queryDto: ExamSubjectQueryDto) {
     const querybuilder = this.examSubjectRepo.createQueryBuilder('examSubject');
-
     const currentAcademicYearId: string = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
     querybuilder
@@ -64,16 +63,17 @@ export class ExamSubjectsService extends BaseRepository {
       .leftJoin('examSubject.exam', 'exam')
       .where("exam.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
       .leftJoin('exam.classRoom', 'classRoom')
+      .leftJoin('classRoom.children', 'children')
       .leftJoin('exam.examType', 'examType')
-      .leftJoin('classRoom.parent', 'parent')
       .leftJoin('examSubject.subject', 'subject')
       .andWhere(new Brackets(qb => {
         queryDto.search && qb.andWhere('LOWER(subject.subjectName) LIKE LOWER(:search)', { search: `%${queryDto.search}%` })
         queryDto.examId && qb.andWhere("exam.id = :examId", { examId: queryDto.examId })
         queryDto.onlyPast && qb.andWhere("DATE(exam.examDate) < CURRENT_DATE()")
-        queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId })
+        queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId OR children.id = :classRoomId', { classRoomId: queryDto.classRoomId }) // this is done because student can be in section and the exam is in primary class, so look in children; this is done when student queries the exam-subjects
         queryDto.examTypeId && qb.andWhere('exam.examTypeId = :examTypeId', { examTypeId: queryDto.examTypeId })
       }))
+      .groupBy('examSubject.id')
       .select(queryDto.asOptions ? examSubjectOptionsSelectCols : examSubjectSelectCols);
 
     if (queryDto.asOptions) {
