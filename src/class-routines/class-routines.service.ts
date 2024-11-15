@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateClassRoutineDto } from './dto/create-class-routine.dto';
 import { UpdateClassRoutineDto } from './dto/update-class-routine.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -80,7 +80,6 @@ export class ClassRoutinesService {
 
     applySelectColumns(querybuilder, classRoutinesSelectCols, 'classRoutine');
 
-    // TODO: send routines in ascending order of time
     return paginatedData(queryDto, querybuilder);
   }
 
@@ -95,9 +94,20 @@ export class ClassRoutinesService {
   }
 
   async update(id: string, updateClassRoutineDto: UpdateClassRoutineDto) {
-    const existing = await this.classRoutineRepo.findOneBy({ id });
+    const existing = await this.classRoutineRepo.findOne({
+      where: { id },
+      relations: ['classRoom'],
+      select: { classRoom: { id: true } }
+    });
+    if (!existing) throw new NotFoundException('Class routine not found');
 
-    // classroom and subject are note update
+    // subject is not updated
+
+    // update class room
+    if (updateClassRoutineDto.classRoomId && (updateClassRoutineDto.classRoomId !== existing.classRoom?.id || !existing.classRoom)) {
+      const classRoom = await this.classRoomsService.findOne(updateClassRoutineDto.classRoomId);
+      existing.classRoom = classRoom;
+    }
 
     Object.assign(existing, {
       ...updateClassRoutineDto,
@@ -110,6 +120,7 @@ export class ClassRoutinesService {
 
   async remove(id: string) {
     const existing = await this.classRoutineRepo.findOneBy({ id });
+    if (!existing) throw new NotFoundException('Class routine not found');
 
     await this.classRoutineRepo.remove(existing);
 
@@ -119,9 +130,6 @@ export class ClassRoutinesService {
   private classRoutineMutationReturn = (classRoutine: ClassRoutine, type: 'created' | 'updated' | 'deleted') => {
     return {
       message: type === 'created' ? 'Class routine created successfully' : type === 'deleted' ? 'Class routine deleted successfully' : 'Class routine updated successfully',
-      classRoutine: {
-        id: classRoutine.id,
-      }
     }
   }
 }
