@@ -12,7 +12,10 @@ export class ExamReport extends BaseEntity {
     student: Student
 
     @Column({ type: 'float', precision: 10, scale: 2 })
-    obtainedMarks!: number;
+    theoryOM!: number; 
+
+    @Column({ type: 'float', precision: 10, scale: 2 })
+    practicalOM!: number; 
 
     @Column({ type: 'float', precision: 10, scale: 2 })
     percentage: number;

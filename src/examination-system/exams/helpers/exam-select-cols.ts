@@ -44,8 +44,10 @@ export const singleExamSelectCols: FindOptionsSelect<Exam> = {
         duration: true,
         examDate: true,
         startTime: true,
-        fullMark: true,
-        passMark: true,
+        theoryFM: true,
+        theoryPM: true,
+        practicalFM: true,
+        practicalPM: true,
         venue: true
     }
 }

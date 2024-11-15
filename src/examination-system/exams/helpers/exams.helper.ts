@@ -106,14 +106,17 @@ export class ExamsHelper extends BaseRepository {
                 "examType.id",
                 "examType.name",
                 "examSubjects.id",
-                "examSubjects.fullMark",
-                "examSubjects.passMark",
+                "examSubjects.theoryFM",
+                "examSubjects.theoryPM",
+                "examSubjects.practicalFM",
+                "examSubjects.practicalPM",
                 "subject.id",
                 "subject.subjectName",
                 "subject.subjectCode",
                 "subject.type",
                 "examReports.id",
-                "examReports.obtainedMarks",
+                "examReports.theoryOM",
+                "examReports.practicalOM",
                 "examReports.percentage",
                 "examReports.gpa",
                 "examReports.grade",
@@ -129,15 +132,19 @@ export class ExamsHelper extends BaseRepository {
 
 
         exam.examSubjects?.forEach(examSubject => {
-            fullMarks += examSubject.fullMark;
-            totalObtainedMarks += examSubject.examReports[0] ? examSubject.examReports[0].obtainedMarks : 0;
+            fullMarks += examSubject.theoryFM + examSubject.practicalFM;
+            totalObtainedMarks += examSubject.examReports[0]
+                ? (examSubject.examReports[0].theoryOM + examSubject.examReports[0].practicalOM)
+                : 0;
         });
 
         const percentage = +((totalObtainedMarks / fullMarks) * 100).toFixed(2);
 
         const { gpa, grade } = await this.examReportsService.getGpaAndGrade(percentage);
 
-        const failedSubjectsCount = exam.examSubjects?.filter(examSubject => examSubject.examReports[0]?.obtainedMarks < examSubject.passMark).length;
+        const failedSubjectsCount = exam.examSubjects?.filter(examSubject => (
+            (examSubject.examReports[0]?.theoryOM + examSubject.examReports[0]?.practicalOM) < (examSubject.theoryPM + examSubject.practicalPM)
+        )).length;
 
         const weakestSubject = exam.examSubjects?.sort((a, b) => a.examReports[0]?.percentage - b.examReports[0]?.percentage)[0]?.subject?.subjectName;
 

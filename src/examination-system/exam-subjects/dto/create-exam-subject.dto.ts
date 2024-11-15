@@ -1,8 +1,10 @@
+import { BadRequestException } from "@nestjs/common";
 import { ApiProperty } from "@nestjs/swagger";
 import { IsDateString, IsInt, IsMilitaryTime, IsNotEmpty, IsNumber, IsString, IsUUID, Min, ValidateIf } from "class-validator";
 import { IsFutureDate } from "src/common/decorators/isFutureDate.decorator";
+import { SubjectMarksDto } from "src/subjects/dto/create-subject.dto";
 
-export class CreateExamSubjectDto {
+export class CreateExamSubjectDto extends SubjectMarksDto {
     @ApiProperty({ format: 'date-time' })
     @IsDateString()
     @IsFutureDate()
@@ -16,17 +18,6 @@ export class CreateExamSubjectDto {
     @ApiProperty()
     @IsInt({ message: 'Duration must be a number' })
     duration: number;
-
-    @ApiProperty({ type: Number })
-    @IsInt()
-    @Min(1, { message: 'Full mark must be a number greater than 0' })
-    fullMark: number;
-
-    @ApiProperty({ type: Number })
-    @IsInt()
-    @Min(1, { message: 'Pass mark must be a number greater than 0' })
-    @ValidateIf((dto: CreateExamSubjectDto) => dto.fullMark >= dto.passMark, { message: 'Full mark must be greater than or equal to pass mark' })
-    passMark: number;
 
     @ApiProperty()
     @IsNotEmpty()

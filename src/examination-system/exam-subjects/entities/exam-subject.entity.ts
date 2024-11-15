@@ -16,10 +16,16 @@ export class ExamSubject extends BaseEntity {
     duration: number;
 
     @Column({ type: 'int' })
-    fullMark: number;
+    theoryPM: number;
 
     @Column({ type: 'int' })
-    passMark: number;
+    theoryFM: number;
+
+    @Column({ type: 'int' })
+    practicalPM: number;
+
+    @Column({ type: 'int' })
+    practicalFM: number;
 
     @Column({ type: 'varchar' })
     venue: string;

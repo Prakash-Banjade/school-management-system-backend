@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe, UseInterceptors } from '@nestjs/common';
 import { ExamsService } from './exams.service';
 import { CreateExamDto } from './dto/create-exam.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
@@ -9,6 +9,7 @@ import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { ExamsHelper } from './helpers/exams.helper';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
 import { isStudent } from 'src/utils/isStudent';
+import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 
 @ApiBearerAuth()
 @ApiTags('Exams')
@@ -20,6 +21,7 @@ export class ExamsController {
   ) { }
 
   @Post()
+  @UseInterceptors(TransactionInterceptor)
   @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
   create(@Body() createExamDto: CreateExamDto) {
     return this.examsService.create(createExamDto);
@@ -54,6 +56,7 @@ export class ExamsController {
   }
 
   @Patch(':id')
+  @UseInterceptors(TransactionInterceptor)
   @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
   update(@Param('id', ParseUUIDPipe) id: string, @Body() updateExamDto: UpdateExamDto) {
     return this.examsService.update(id, updateExamDto);

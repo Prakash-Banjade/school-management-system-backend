@@ -29,7 +29,7 @@ export class ExamReportsService extends BaseRepository {
     const examSubject = await this.getRepository(ExamSubject).findOne({
       where: { id: createExamReportDto.examSubjectId },
       relations: { subject: true },
-      select: { id: true, fullMark: true, examDate: true, subject: { id: true, subjectName: true } }
+      select: { id: true, theoryFM: true, practicalFM: true, examDate: true, subject: { id: true, subjectName: true } }
     });
     if (!examSubject) throw new NotFoundException('Exam subject not found');
 
@@ -44,13 +44,18 @@ export class ExamReportsService extends BaseRepository {
       });
       if (!student) throw new NotFoundException('Student not found');
 
-      const obtainedMark = evaluation.obtainedMarks;
+      const theoryOM = evaluation.theoryOM;
+      const practicalOM = evaluation.practicalOM;
 
-      if (obtainedMark > examSubject.fullMark) { // validate if obtained mark is greater that exam subject full mark
-        throw new BadRequestException(`Obtained mark of student with Roll no. ${student.rollNo} of subject ${examSubject.subject.subjectName} cannot be greater than exam subject full mark ${examSubject.fullMark}`);
+      // validate if obtained mark is greater that exam subject full mark
+      if (theoryOM > examSubject.theoryFM) {
+        throw new BadRequestException(`Theory obtained mark of student with Roll no. ${student.rollNo} of subject ${examSubject.subject.subjectName} cannot be greater than full mark ${examSubject.theoryFM}`);
+      }
+      if (practicalOM > examSubject.practicalFM) {
+        throw new BadRequestException(`Practical obtained mark of student with Roll no. ${student.rollNo} of subject ${examSubject.subject.subjectName} cannot be greater than full mark ${examSubject.practicalFM}`);
       }
 
-      const percentage = (obtainedMark / examSubject.fullMark) * 100;
+      const percentage = ((theoryOM + practicalOM) / (examSubject.theoryFM + examSubject.practicalFM)) * 100;
 
       const { gpa, grade } = await this.getGpaAndGrade(percentage);
 
@@ -58,7 +63,8 @@ export class ExamReportsService extends BaseRepository {
         id: evaluation.reportId,
         examSubject,
         student,
-        obtainedMarks: obtainedMark,
+        theoryOM,
+        practicalOM,
         percentage: percentage,
         gpa,
         grade,
@@ -103,7 +109,8 @@ export class ExamReportsService extends BaseRepository {
       .select([
         "examReport.id",
         "examReport.createdAt",
-        "examReport.obtainedMarks",
+        "examReport.theoryOM",
+        "examReport.practicalOM",
         "examReport.percentage",
         "examReport.gpa",
         "examReport.grade",

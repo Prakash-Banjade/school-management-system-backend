@@ -1,8 +1,39 @@
+import { BadRequestException } from "@nestjs/common";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Min } from "class-validator";
+import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Min, ValidateIf } from "class-validator";
 import { ESubjectType } from "src/common/types/global.type";
 
-export class CreateSubjectDto {
+export class SubjectMarksDto {
+    @ApiProperty({ type: Number, description: 'Theory full marks' })
+    @IsInt()
+    @Min(0)
+    theoryFM: number;
+
+    @ApiProperty({ type: Number, description: 'Theory pass marks' })
+    @IsInt()
+    @Min(0)
+    @ValidateIf((o: SubjectMarksDto) => {
+        if (o.theoryFM < o.theoryPM) throw new BadRequestException('Theory full mark must be greater than theory pass mark');
+        return true;
+    })
+    theoryPM: number;
+
+    @ApiProperty({ type: Number, description: 'Practical full marks' })
+    @IsInt()
+    @Min(0)
+    practicalFM: number;
+
+    @ApiProperty({ type: Number, description: 'Practical pass marks' })
+    @IsInt()
+    @Min(0)
+    @ValidateIf((o: SubjectMarksDto) => {
+        if (o.practicalFM < o.practicalPM) throw new BadRequestException('Practical full mark must be greater than practical pass mark');
+        return true;
+    })
+    practicalPM: number;
+}
+
+export class CreateSubjectDto extends SubjectMarksDto {
     @ApiProperty({ type: String, description: 'Subject name' })
     @IsString()
     @IsNotEmpty()
@@ -21,30 +52,6 @@ export class CreateSubjectDto {
     @ApiProperty({ type: 'enum', enum: ESubjectType, description: 'Subject type' })
     @IsEnum(ESubjectType)
     type: ESubjectType;
-
-    @ApiProperty({ type: Number, description: 'Theory pass marks' })
-    @IsInt()
-    @IsNotEmpty()
-    @Min(0)
-    theoryPM: number;
-
-    @ApiProperty({ type: Number, description: 'Theory full marks' })
-    @IsInt()
-    @IsNotEmpty()
-    @Min(0)
-    theoryFM: number;
-
-    @ApiProperty({ type: Number, description: 'Practical pass marks' })
-    @IsInt()
-    @IsNotEmpty()
-    @Min(0)
-    practicalPM: number;
-
-    @ApiProperty({ type: Number, description: 'Practical full marks' })
-    @IsInt()
-    @IsNotEmpty()
-    @Min(0)
-    practicalFM: number;
 
     @ApiProperty({ type: 'enum', format: 'emum', description: 'Class room id' })
     @IsUUID()

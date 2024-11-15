@@ -1,4 +1,4 @@
-import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateExamDto } from './dto/create-exam.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
 import { Exam } from './entities/exam.entity';
@@ -48,15 +48,24 @@ export class ExamsService extends BaseRepository {
     if (existing) throw new ConflictException(`${examType.name} exam of class ${classRoom.name} already exists for this academic year`);
 
     // evaluate exam subjects
-    const examSubjects: Partial<ExamSubject>[] = await Promise.all(createExamDto.examSubjects.map(async (examSubject) => ({
-      examDate: examSubject.examDate,
-      startTime: examSubject.startTime,
-      duration: examSubject.duration,
-      fullMark: examSubject.fullMark,
-      passMark: examSubject.passMark,
-      venue: examSubject.venue,
-      subject: await this.getSubject(examSubject.subjectId, classRoom)
-    })))
+    const examSubjects: Partial<ExamSubject>[] = await Promise.all(createExamDto.examSubjects.map(async (examSubject) => {
+      const subject = await this.getSubject(examSubject.subjectId, classRoom);
+
+      // validate if marks are greater than defined in the subject
+      this.validateSubjectMarks(examSubject, subject);
+
+      return ({
+        examDate: examSubject.examDate,
+        startTime: examSubject.startTime,
+        duration: examSubject.duration,
+        theoryFM: examSubject.theoryFM,
+        theoryPM: examSubject.theoryPM,
+        practicalFM: examSubject.practicalFM,
+        practicalPM: examSubject.practicalPM,
+        venue: examSubject.venue,
+        subject
+      })
+    }))
 
     const newExam = this.getRepository(Exam).create({
       examType,
@@ -78,11 +87,18 @@ export class ExamsService extends BaseRepository {
 
     const subject = await this.getRepository(Subject).findOne({
       where: { id: subjectId, classRoom: { id: classRoomId } },
-      select: { id: true }
+      select: { id: true, theoryFM: true, theoryPM: true, practicalFM: true, practicalPM: true }
     })
     if (!subject) throw new NotFoundException('Subject not found');
 
     return subject;
+  }
+
+  private validateSubjectMarks(examSubject: CreateExamDto['examSubjects'][0], subject: Subject) {
+    if (examSubject.theoryFM > subject.theoryFM) throw new BadRequestException(`Theory full mark of subject ${subject.subjectName} cannot be greater than ${subject.theoryFM}.`);
+    if (examSubject.theoryPM > subject.theoryPM) throw new BadRequestException(`Theory pass mark of subject ${subject.subjectName} cannot be greater than ${subject.theoryPM}.`);
+    if (examSubject.practicalFM > subject.practicalFM) throw new BadRequestException(`Practical full mark of subject ${subject.subjectName} cannot be greater than ${subject.practicalFM}.`);
+    if (examSubject.practicalPM > subject.practicalPM) throw new BadRequestException(`Practical pass mark of subject ${subject.subjectName} cannot be greater than ${subject.practicalFM}.`);
   }
 
   async findAll(queryDto: ExamQueryDto, currentUser: AuthUser) {
@@ -105,7 +121,9 @@ export class ExamsService extends BaseRepository {
       .select([
         'exam.id as id',
         'exam.createdAt as createdAt',
+        'examType.id as examTypeId', // required in frontend in exam columns
         'examType.name as examType',
+        'classRoom.id as classRoomId', // required in frontend in exam columns
         'classRoom.name as classRoom',
       ])
 
@@ -171,8 +189,10 @@ export class ExamsService extends BaseRepository {
       examDate: examSubject.examDate,
       startTime: examSubject.startTime,
       duration: examSubject.duration,
-      fullMark: examSubject.fullMark,
-      passMark: examSubject.passMark,
+      theoryFM: examSubject.theoryFM,
+      theoryPM: examSubject.theoryPM,
+      practicalFM: examSubject.practicalFM,
+      practicalPM: examSubject.practicalPM,
       venue: examSubject.venue,
       subject: await this.getSubject(examSubject.subjectId, existing.classRoom)
     })))

@@ -1,12 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors } from '@nestjs/common';
 import { ExamReportsService } from './exam-reports.service';
 import { CreateExamReportDto } from './dto/create-exam-report.dto';
-import { UpdateExamReportDto } from './dto/update-exam-report.dto';
 import { ExamReportBySubjectQueryDto, ExamReportQueryDto } from './dto/exam-report-query.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, Role } from 'src/common/types/global.type';
 import { ExamReportsHelper } from './helpers/exam-reports.helper';
+import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 
 @ApiBearerAuth()
 @ApiTags('Exam Reports')
@@ -18,6 +18,7 @@ export class ExamReportsController {
   ) { }
 
   @Patch()
+  @UseInterceptors(TransactionInterceptor)
   @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
   mutate(@Body() createExamReportDto: CreateExamReportDto) {
     return this.examReportsService.mutate(createExamReportDto);
