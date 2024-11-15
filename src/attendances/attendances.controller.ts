@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors } from '@nestjs/common';
 import { AttendancesService } from './attendances.service';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 import { UpdateAttendanceDto } from './dto/update-attendance.dto';
@@ -11,6 +11,7 @@ import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { AttendanceCountQueryDto } from './dto/attendance-count-query.dto';
 import { AttendancesHelper } from './helpers/attendances.helper';
 import { UpdateAttendanceBatchDto } from './dto/update-attendance-batch.dto';
+import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 
 @ApiBearerAuth()
 @ApiTags('Attendances')
@@ -48,6 +49,7 @@ export class AttendancesController {
 
   @Patch('batch')
   @CheckAbilities({ action: Action.UPDATE, subject: Role.ADMIN })
+  @UseInterceptors(TransactionInterceptor)
   updateInBatch(@Body() updateAttendanceBatchDto: UpdateAttendanceBatchDto) {
     return this.attendancesService.updateInBatch(updateAttendanceBatchDto);
   }
@@ -56,11 +58,5 @@ export class AttendancesController {
   @CheckAbilities({ action: Action.UPDATE, subject: Role.ADMIN })
   update(@Param('id') id: string, @Body() updateAttendanceDto: UpdateAttendanceDto) {
     return this.attendancesService.update(id, updateAttendanceDto);
-  }
-
-  @Delete(':id')
-  @CheckAbilities({ action: Action.DELETE, subject: Role.ADMIN })
-  remove(@Param('id') id: string) {
-    return this.attendancesService.remove(id);
   }
 }
