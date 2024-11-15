@@ -1,35 +1,28 @@
-import { BadRequestException } from "@nestjs/common";
 import { ApiProperty } from "@nestjs/swagger";
-import { Transform, Type } from "class-transformer";
-import { ArrayMinSize, IsArray, IsUUID, ValidateNested } from "class-validator";
+import { Type } from "class-transformer";
+import { ArrayMinSize, IsArray, IsBoolean, IsUUID, ValidateNested } from "class-validator";
 
-export class CreateOptionalSubjectDto {
-    @ApiProperty({ format: "uuid" })
+export class StudentIdWithCheckStatus {
+    @ApiProperty({ type: String, format: "uuid" })
     @IsUUID()
-    classRoomId: string;
+    id: string;
 
-    @ApiProperty({ format: "uuid" })
-    @IsUUID()
-    subjectId: string;
-
-    @ApiProperty({ format: 'uuid' })
-    @IsUUID()
-    studentId: string;
+    @ApiProperty({ type: Boolean })
+    @IsBoolean()
+    isChecked: boolean
 }
 
 class OptionalSubjectSelection {
-    @ApiProperty({ format: "uuid" })
+    @ApiProperty({ type: String, format: "uuid" })
     @IsUUID()
-    subjectId: string;
+    optionalSubjectId: string;
 
-    @ApiProperty({ format: "uuid", isArray: true })
+    @ApiProperty({ type: StudentIdWithCheckStatus, isArray: true })
     @IsArray()
-    @IsUUID('all', { each: true })
-    @Transform(({ value }) => {
-        if (Array.isArray(value)) return Array.from(new Set(value));
-        throw new BadRequestException('Student ids must be an array');
-    })
-    studentIds: string[];
+    @ArrayMinSize(1)
+    @ValidateNested({ each: true })
+    @Type(() => StudentIdWithCheckStatus)
+    studentIds: StudentIdWithCheckStatus[];
 }
 
 export class AssignOptionalSubjectDto {
