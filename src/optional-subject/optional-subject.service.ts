@@ -49,8 +49,6 @@ export class OptionalSubjectService extends BaseRepository {
 
       if (students.length === 0) throw new NotFoundException('No students found');
 
-      console.log(students)
-
       // update optional subject students
 
       optionalSubject.students = students;
