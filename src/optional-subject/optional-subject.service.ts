@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { AssignOptionalSubjectDto } from './dto/create-optional-subject.dto';
 import { UpdateOptionalSubjectDto } from './dto/update-optional-subject.dto';
 import { BaseRepository } from 'src/common/repository/base-repository';
@@ -11,6 +11,14 @@ import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { CACHE_KEYS } from 'src/common/CONSTANTS';
 import { OptionalSubjectQueryDto } from './dto/optional-subject-query.dto';
+import { AcademicYear } from 'src/academic-years/entities/academic-year.entity';
+
+type OptionalSubjectQuery = {
+  optionalSubjectId: string,
+  classRoomId: string,
+  studentIds: string[] | null,
+  studentIdsOtherAcademicYear: string[] | null
+}
 
 @Injectable()
 export class OptionalSubjectService extends BaseRepository {
@@ -20,40 +28,48 @@ export class OptionalSubjectService extends BaseRepository {
   ) { super(datasource, req) }
 
   async assignSubjects(dto: AssignOptionalSubjectDto) {
-    const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+    const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID); // this is one that is currently active
+    const latestAcademicYear = await this.getRepository(AcademicYear).createQueryBuilder('academicYear') // this is one which is last added
+      .orderBy('academicYear.startDate', 'DESC')
+      .limit(1)
+      .getOne();
+
+    if (!latestAcademicYear) throw new NotFoundException('Latest academic year not found');
+    if (currentAcademicYearId !== latestAcademicYear.id) throw new BadRequestException('Cannot modify optional subject of past students');
+
     const { selections } = dto;
 
     for (const selection of selections) {
       const { studentIds, subjectId } = selection;
 
-      const optionalSubject = await this.getRepository(OptionalSubject).createQueryBuilder('optionalSubject')
+      const optionalSubject: OptionalSubjectQuery = await this.getRepository(OptionalSubject).createQueryBuilder('optionalSubject')
         .leftJoin('optionalSubject.subject', 'subject')
         .leftJoin('optionalSubject.classRoom', 'classRoom')
         .leftJoin('optionalSubject.students', 'students')
+        .leftJoin('students.enrollments', 'enrollments')
         .where("subject.id = :subjectId", { subjectId })
-        .select(['optionalSubject.id', 'classRoom.id', 'students.id']) // the classRoom here is `primary` class
-        .getOne();
+        .select([
+          'optionalSubject.id as optionalSubjectId',
+          'classRoom.id as classRoomId',
+        ])
+        .addSelect(`CASE WHEN enrollments.academicYearId = '${currentAcademicYearId}' THEN JSON_ARRAYAGG(students.id) END as studentIds`)
+        .addSelect(`CASE WHEN enrollments.academicYearId != '${currentAcademicYearId}' THEN JSON_ARRAYAGG(students.id) END as studentIdsOtherAcademicYear`)
+        .groupBy('enrollments.academicYearId')
+        .getRawOne();
 
-      if (!optionalSubject || !optionalSubject.classRoom) throw new NotFoundException('Optional subject not found');
+      console.log(optionalSubject)
 
-      const uniqueStudentIds = Array.from([...new Set(optionalSubject.students?.map(student => student.id)), ...studentIds]); // ensuring no duplicate students
+      if (!optionalSubject || !optionalSubject.classRoomId) throw new NotFoundException('Optional subject not found');
 
-      const students = await this.getRepository(Student).createQueryBuilder('student')
-        .leftJoin('student.enrollments', 'enrollments', 'enrollments.academicYearId = :academicYearId', { academicYearId: currentAcademicYearId })
-        .leftJoin('enrollments.classRoom', 'classRoom')
-        .leftJoin('classRoom.parent', 'parent')
-        .where("CASE WHEN parent.id IS NULL THEN classRoom.id ELSE parent.id END = :classRoomId", { classRoomId: optionalSubject.classRoom?.id })
-        .andWhereInIds(uniqueStudentIds)
-        .select(['student.id'])
-        .getMany();
-
-      if (students.length === 0) throw new NotFoundException('No students found');
+      const updatedStudentIds = Array.from(new Set(studentIds)); // ensuring no duplicate students
+      const pastStudentIds = Array.from(new Set(optionalSubject.studentIdsOtherAcademicYear ?? [])); // ensuring no duplicate students
 
       // update optional subject students
 
-      optionalSubject.students = students;
-
-      await this.getRepository(OptionalSubject).save(optionalSubject);
+      await this.getRepository(OptionalSubject).createQueryBuilder()
+        .relation(OptionalSubject, 'students')
+        .of(optionalSubject.optionalSubjectId) // ID of the new parent
+        .set([...pastStudentIds, ...updatedStudentIds])
     }
 
 
@@ -71,14 +87,20 @@ export class OptionalSubjectService extends BaseRepository {
         "optionalSubject.id as id",
         "subject.id as subjectId",
         "subject.subjectName as subjectName",
-        `JSON_ARRAYAGG(students.id) as studentIds`,
+        `CASE WHEN enrollments.academicYearId = '${currentAcademicYearId}' THEN JSON_ARRAYAGG(students.id) END as studentIds`,
       ])
-      .groupBy("optionalSubject.id");
+      .groupBy("optionalSubject.id")
+      .addGroupBy("enrollments.academicYearId")
 
     const data = await querybuilder.getRawMany();
 
     const dataWithNoNullStudentIds = data.map(optionalSubject => {
-      const studentIds: string[] = (typeof optionalSubject.studentIds === 'string' ? JSON.parse(optionalSubject.studentIds) : optionalSubject.studentIds).filter(Boolean);
+      const studentIds: string[] = (
+        typeof optionalSubject.studentIds === 'string'
+          ? JSON.parse(optionalSubject.studentIds)
+          : optionalSubject.studentIds === null // can be null when no students has been assigned to the optinoal subject
+            ? [] : optionalSubject.studentIds
+      ).filter(Boolean);
 
       return {
         ...optionalSubject,

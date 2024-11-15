@@ -23,7 +23,6 @@ class OptionalSubjectSelection {
 
     @ApiProperty({ format: "uuid", isArray: true })
     @IsArray()
-    @ArrayMinSize(1)
     @IsUUID('all', { each: true })
     studentIds: string[];
 }

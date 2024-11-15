@@ -6,7 +6,7 @@ import { Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToOne } from "
 
 @Entity()
 export class OptionalSubject extends BaseEntity {
-    @ManyToMany(() => Student, (student) => student.optionalSubjects, { onDelete: 'CASCADE' })
+    @ManyToMany(() => Student, (student) => student.optionalSubjects, { onDelete: 'CASCADE', cascade: true })
     @JoinTable()
     students: Student[];
 
