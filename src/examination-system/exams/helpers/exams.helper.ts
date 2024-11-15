@@ -85,6 +85,8 @@ export class ExamsHelper extends BaseRepository {
 
         if (!student) throw new NotFoundException('Student not found');
 
+        const studentOptionalSubjectIds = (typeof student.optionalSubjectIds === 'string' ? JSON.parse(student.optionalSubjectIds) : student.optionalSubjectIds).filter(Boolean);
+
         const querybuilder = this.getRepository(Exam).createQueryBuilder('exam')
             .where("exam.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
             .leftJoin("exam.examType", "examType")
@@ -93,7 +95,11 @@ export class ExamsHelper extends BaseRepository {
             .andWhere("classRoom.id = :classRoomId", { classRoomId: student.parentClassId ?? student.classRoomId })
             .leftJoin('exam.examSubjects', 'examSubjects')
             .leftJoin('examSubjects.subject', 'subject')
-            .andWhere("CASE WHEN subject.type = :optional THEN subject.id IN (:...optionalSubjectIds) ELSE 1 = 1 END", { optional: ESubjectType.OPTIONAL, optionalSubjectIds: student.optionalSubjectIds })
+            .andWhere(new Brackets(qb => {
+                studentOptionalSubjectIds?.length && (
+                    qb.andWhere("CASE WHEN subject.type = :optional THEN subject.id IN (:...optionalSubjectIds) ELSE 1 = 1 END", { optional: ESubjectType.OPTIONAL, optionalSubjectIds: studentOptionalSubjectIds })
+                )
+            }))
             .leftJoin('examSubjects.examReports', 'examReports', 'examReports.studentId = :studentId', { studentId: student.id })
             .select([
                 "exam.id",
@@ -120,6 +126,7 @@ export class ExamsHelper extends BaseRepository {
         // sum the obtained marks of all exam subjects and evaluate corresponding percentage, grade and gpa
         let totalObtainedMarks = 0;
         let fullMarks = 0;
+
 
         exam.examSubjects?.forEach(examSubject => {
             fullMarks += examSubject.fullMark;
