@@ -13,6 +13,7 @@ import { EBookTransactionStatus } from 'src/common/types/global.type';
 import { LibraryBook } from '../library-book/entities/library-book.entity';
 import { Student } from 'src/students/entities/student.entity';
 import { paginatedRawData } from 'src/utils/paginatedData';
+import { MAX_BOOK_ISSUE_LIMIT } from 'src/common/CONSTANTS';
 
 @Injectable({ scope: Scope.REQUEST })
 export class BookTransactionsService extends BaseRepository {
@@ -32,15 +33,18 @@ export class BookTransactionsService extends BaseRepository {
     });
     if (!student) throw new NotFoundException('Student not found');
 
-    // check if student has already issued this book
-    const bookTransactions = await this.getRepository(BookTransaction).find({
-      where: {
-        book: { id: book.id },
-        student: { id: student.id },
-        returnedAt: IsNull(),
-      }
-    });
-    if (bookTransactions.length > 0) throw new BadRequestException('Book is already issued. Please renew or return.');
+    const transactionsCount = await this.getRepository(BookTransaction).createQueryBuilder('transaction')
+      .where("transaction.studentId = :studentId", { studentId: student.id })
+      .andWhere("transaction.returnedAt IS NULL")
+      .select([
+        `COUNT(DISTINCT CASE WHEN transaction.bookId = '${book.id}' THEN transaction.id END) AS currentBookTransactionsCount`,
+        "COUNT(DISTINCT transaction.id) AS totalIssuedCount",
+      ]).getRawOne();
+
+      console.log(transactionsCount)
+
+    if (+transactionsCount.currentBookTransactionsCount > 0) throw new BadRequestException('Book is already issued. Please renew or return.');
+    if (+transactionsCount.totalIssuedCount >= MAX_BOOK_ISSUE_LIMIT) throw new BadRequestException(`Maximum of ${MAX_BOOK_ISSUE_LIMIT} book issues allowed.`); 
 
     // check if book is available
     if (!(book.issuedCount < book.copiesCount)) throw new BadRequestException('Book is not available');

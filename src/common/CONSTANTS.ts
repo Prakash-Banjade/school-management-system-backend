@@ -20,6 +20,8 @@ export const PASSWORD_SALT_COUNT = 10 as const;
 
 export const GRADE_REGEX = /^[A-F](\+|-|\*)*$/;
 
+export const MAX_BOOK_ISSUE_LIMIT = 5;
+
 // CACHE KEYS
 export const enum CACHE_KEYS {
     CAY_ID = 'currentAcademicYearId'
