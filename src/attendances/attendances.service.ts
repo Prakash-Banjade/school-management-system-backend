@@ -93,8 +93,6 @@ export class AttendancesService extends BaseRepository {
   }
 
   async updateInBatch(updateAttendanceBatchDto: UpdateAttendanceBatchDto) {
-    console.log(updateAttendanceBatchDto)
-
     const attendancesToRemove = updateAttendanceBatchDto.updatedAttendances?.map(attendance => attendance.status === null ? attendance.id : null).filter(Boolean);
 
     const attendances = await Promise.all(updateAttendanceBatchDto.updatedAttendances.filter(a => a.status !== null)?.map(async attendance => {
