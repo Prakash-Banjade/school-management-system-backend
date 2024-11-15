@@ -70,6 +70,7 @@ export class AcademicYearsService {
 
   async getOptions(queryDto: AcademicYearOptionsDto) {
     const queryBuilder = this.academicYearRepo.createQueryBuilder('academicYear');
+    const active = queryDto.onlyFuture ? await this.getActive() : undefined;
 
     queryBuilder
       .orderBy("academicYear.createdAt", queryDto.order)
@@ -80,7 +81,7 @@ export class AcademicYearsService {
 
         !queryDto.withActive && qb.andWhere('academicYear.isActive = :isActive', { isActive: false });
 
-        queryDto.onlyFuture && qb.andWhere('DATE(academicYear.startDate) > CURRENT_DATE()');
+        queryDto.onlyFuture && qb.andWhere('DATE(academicYear.startDate) > DATE(:activeYearStartDate)', { activeYearStartDate: active.startDate });
       }))
       .select([
         "academicYear.id as value",
@@ -101,7 +102,7 @@ export class AcademicYearsService {
   async getActive() {
     const existing = await this.academicYearRepo.findOne({
       where: { isActive: true },
-      select: ['id', 'name']
+      select: ['id', 'name', 'startDate']
     });
     if (!existing) throw new BadRequestException('Academic year not found');
     return existing;
