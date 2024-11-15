@@ -41,6 +41,7 @@ export class StudentsHelper {
                             .orWhere("TRIM(student.studentId) = TRIM(:exactSearch)", { exactSearch: queryDto.search })
                     }))
                 }
+                queryDto.studentId && qb.andWhere('student.studentId = :studentId', { studentId: queryDto.studentId });
 
                 queryDto.classRoomId && qb.andWhere(new Brackets(qb => { // if class room id, check in both section and class
                     qb.orWhere('parent.id = :classRoomId', { classRoomId: queryDto.classRoomId });

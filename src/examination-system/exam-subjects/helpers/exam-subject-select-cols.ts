@@ -8,7 +8,9 @@ export const examSubjectSelectCols = [
     'examSubject.venue as venue',
     'subject.subjectName as subjectName',
     'examType.name as examType',
+    'examType.id as examTypeId',
     'classRoom.name as classRoomName',
+    'exam.academicYearId as academicYearId',
 ];
 
 export const examSubjectOptionsSelectCols = [

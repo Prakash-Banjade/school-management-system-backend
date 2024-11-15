@@ -172,10 +172,11 @@ export class StudentsService extends BaseRepository {
         "student.phone AS phone",
         "student.email AS email",
         "profileImage.url AS profileImageUrl",
-        "classRoom.name AS classRoom",
-        "parent.name AS parentClass",
+        "CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, ' - ', classRoom.name) END AS classRoomName",
         "COUNT(bookTransactions.id) AS transactionCount"
       ])
+      .groupBy('student.id')
+      .addGroupBy('classRoom.id')
       .getRawOne();
 
     if (!student) throw new NotFoundException('Student not found');

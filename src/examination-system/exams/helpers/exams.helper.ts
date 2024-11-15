@@ -70,7 +70,7 @@ export class ExamsHelper extends BaseRepository {
                 'student.lastName as lastName',
                 'student.phone as phone',
                 'student.email as email',
-                'student.rollNo as rollNo',
+                'enrollment.rollNo as rollNo',
                 'classRoom.id as classRoomId',
                 'parent.id as parentClassId',
                 'classRoom.name as classRoomName',
@@ -80,6 +80,7 @@ export class ExamsHelper extends BaseRepository {
             ])
             .groupBy('student.id')
             .addGroupBy('classRoom.id')
+            .addGroupBy('enrollment.rollNo')
             .getRawOne();
 
         if (!student) throw new NotFoundException('Student not found');

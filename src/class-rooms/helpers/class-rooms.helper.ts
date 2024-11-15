@@ -69,6 +69,7 @@ export class ClassRoomsHelper extends BaseRepository {
                 `COUNT(DISTINCT CASE WHEN student.gender = '${Gender.FEMALE}' THEN student.id END) + COUNT(DISTINCT CASE WHEN childClassStudent.gender = '${Gender.FEMALE}' THEN childClassStudent.id END) AS totalFemaleStudentsCount`
             ])
             .groupBy('classRoom.id')  // Ensure group by to aggregate counts per classRoom
+            .addGroupBy('parentClass.name')
 
         return paginatedRawData(queryDto, queryBuilder);
     }
