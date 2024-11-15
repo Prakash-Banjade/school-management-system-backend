@@ -1,6 +1,5 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { ExamSubjectsService } from './exam-subjects.service';
-import { CreateExamSubjectDto } from './dto/create-exam-subject.dto';
 import { UpdateExamSubjectDto } from './dto/update-exam-subject.dto';
 import { ExamSubjectQueryDto } from './dto/exam-subject-query.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -14,12 +13,6 @@ import { CurrentUser } from 'src/common/decorators/user.decorator';
 @Controller('exam-subjects')
 export class ExamSubjectsController {
   constructor(private readonly examSubjectsService: ExamSubjectsService) { }
-
-  @Post()
-  @CheckAbilities({ action: Action.CREATE, subject: Role.ADMIN })
-  create(@Body() createExamSubjectDto: CreateExamSubjectDto) {
-    return this.examSubjectsService.create(createExamSubjectDto);
-  }
 
   @Get()
   @CheckAbilities(

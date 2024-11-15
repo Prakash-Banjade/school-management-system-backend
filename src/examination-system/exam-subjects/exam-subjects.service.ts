@@ -14,43 +14,14 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { FastifyRequest } from 'fastify';
 import { REQUEST } from '@nestjs/core';
-import { Exam } from '../exams/entities/exam.entity';
 
 @Injectable()
 export class ExamSubjectsService extends BaseRepository {
   constructor(
     dataSource: DataSource, @Inject(REQUEST) private req: FastifyRequest,
     @InjectRepository(ExamSubject) private examSubjectRepo: Repository<ExamSubject>,
-    private readonly subjectsService: SubjectsService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) { super(dataSource, req); }
-
-  async create(createExamSubjectDto: CreateExamSubjectDto) {
-    const exam = await this.getRepository(Exam).findOneOrFail({
-      where: { id: createExamSubjectDto.examId },
-      relations: ['classRoom'],
-      select: {
-        id: true,
-        classRoom: { id: true }
-      }
-    });
-    const subject = await this.subjectsService.findOne(createExamSubjectDto.subjectId);
-
-    // validate if the subject is in the class room
-    if (subject.classRoom?.id !== exam.classRoom?.id) throw new BadRequestException('Subject is not in the class room of the exam');
-
-    const newExamSubject = this.examSubjectRepo.create({
-      ...createExamSubjectDto,
-      exam,
-      subject,
-    });
-
-    await this.examSubjectRepo.save(newExamSubject);
-
-    return {
-      message: 'Exam subject created',
-    }
-  }
 
   async findAll(queryDto: ExamSubjectQueryDto) {
     const querybuilder = this.examSubjectRepo.createQueryBuilder('examSubject');
