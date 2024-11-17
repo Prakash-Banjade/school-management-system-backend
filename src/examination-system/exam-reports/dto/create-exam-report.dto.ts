@@ -10,13 +10,13 @@ class ExamEvaluationDto {
     @ApiProperty({ type: Number, minimum: 0 })
     @IsNumber()
     @IsNotEmpty()
-    @Min(1, { message: 'Theory marks must be greater than 0' })
+    @Min(0, { message: 'Theory marks must be greater than 0' })
     theoryOM: number;
 
     @ApiProperty({ type: Number, minimum: 0 })
     @IsNumber()
     @IsNotEmpty()
-    @Min(1, { message: 'Practical marks must be greater than 0' })
+    @Min(0, { message: 'Practical marks must be greater than 0' })
     practicalOM: number;
 
     @ApiPropertyOptional({ format: 'uuid' })
