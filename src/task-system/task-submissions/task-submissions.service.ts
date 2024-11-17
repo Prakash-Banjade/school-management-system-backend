@@ -10,7 +10,7 @@ import { TaskSubmission } from './entities/task-submission.entity';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { taskSubmissionSelectCols } from './helpers/task-submission-select-cols.config';
 import paginatedData from 'src/utils/paginatedData';
-import { AuthUser, EFileMimeType, ETaskSubmissionStatus } from 'src/common/types/global.type';
+import { AuthUser, EFileMimeType, ETask, ETaskSubmissionStatus } from 'src/common/types/global.type';
 import { StudentsService } from 'src/students/students.service';
 import { FilesService } from 'src/file-management/files/files.service';
 import { Task } from '../tasks/entities/task.entity';
@@ -28,12 +28,6 @@ export class TaskSubmissionsService extends BaseRepository {
   async create(createTaskSubmissionDto: CreateTaskSubmissionDto, currentUser: AuthUser) {
     if (!isStudent(currentUser)) throw new NotFoundException('Access Denied');
 
-    const attachments = createTaskSubmissionDto.attachmentIds?.length
-      ? await this.filesService.findAllByIds(createTaskSubmissionDto.attachmentIds)
-      : [];
-
-    if (createTaskSubmissionDto.attachmentIds?.length && !attachments.length) throw new NotFoundException('Attachments not found');
-
     const student = await this.studentsService.findOneByAccountId(currentUser.accountId); // getting the student
 
     const task = await this.getRepository(Task).createQueryBuilder('task')
@@ -42,10 +36,17 @@ export class TaskSubmissionsService extends BaseRepository {
       .where('task.id = :taskId', { taskId: createTaskSubmissionDto.taskId }) // Get the task by ID
       .andWhere('classRoom.id = :classRoomId', { classRoomId: currentUser.classRoomId }) // Ensure task is assigned to the student's classroom
       .andWhere('submission.id IS NULL') // Ensure no existing submission by this student
+      .andWhere('task.taskType = :taskType', { taskType: ETask.ASSIGNMENT })
       .select(['task.id', 'task.deadline'])
       .getOne();
 
     if (!task) throw new NotFoundException('No such task found');
+
+    const attachments = createTaskSubmissionDto.attachmentIds?.length
+      ? await this.filesService.findAllByIds(createTaskSubmissionDto.attachmentIds)
+      : [];
+
+    if (createTaskSubmissionDto.attachmentIds?.length && !attachments.length) throw new NotFoundException('Attachments not found');
 
     const status = new Date(task.deadline) < new Date() ? ETaskSubmissionStatus.Late : ETaskSubmissionStatus.Submitted;
 
@@ -59,9 +60,7 @@ export class TaskSubmissionsService extends BaseRepository {
 
     await this.getRepository(TaskSubmission).save(newSubmission);
 
-    return {
-      message: 'Task submitted'
-    }
+    return { message: 'Task submitted' };
   }
 
   findAll(queryDto: TaskSubmissionQueryDto) {
@@ -108,17 +107,13 @@ export class TaskSubmissionsService extends BaseRepository {
 
     await this.getRepository(TaskSubmission).save(existing);
 
-    return {
-      message: 'Updated successfully',
-    };
+    return { message: 'Updated successfully' };
   }
 
   async remove(id: string) {
     const existing = await this.findOne(id);
     await this.getRepository(TaskSubmission).remove(existing);
 
-    return {
-      message: 'Removed successfully',
-    };
+    return { message: 'Removed successfully' };
   }
 }

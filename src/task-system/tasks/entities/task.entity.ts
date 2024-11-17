@@ -5,7 +5,7 @@ import { ETask } from "src/common/types/global.type";
 import { File } from "src/file-management/files/entities/file.entity";
 import { Subject } from "src/subjects/entities/subject.entity";
 import { TaskSubmission } from "src/task-system/task-submissions/entities/task-submission.entity";
-import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany } from "typeorm";
+import { BeforeInsert, BeforeUpdate, Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany } from "typeorm";
 
 @Entity()
 export class Task extends BaseEntity {
@@ -17,6 +17,14 @@ export class Task extends BaseEntity {
 
     @Column({ type: 'datetime' })
     deadline: string;
+
+    @BeforeInsert()
+    @BeforeUpdate()
+    setDeadline() {
+        if (this.taskType !== ETask.ASSIGNMENT) {
+            this.deadline = new Date(new Date().setDate(new Date().getDate() + 1)).toISOString();
+        }
+    }
 
     @Column({ type: 'enum', enum: ETask })
     taskType: ETask;

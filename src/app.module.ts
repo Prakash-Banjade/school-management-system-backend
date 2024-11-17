@@ -39,6 +39,7 @@ import { redisStore } from 'cache-manager-redis-yet';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { OptionalSubjectModule } from './optional-subject/optional-subject.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -78,6 +79,7 @@ import { OptionalSubjectModule } from './optional-subject/optional-subject.modul
       inject: [ConfigService],
     }),
     EventEmitterModule.forRoot(),
+    ScheduleModule.forRoot(),
     TypeOrmModule,
     AuthSystemModule,
     FileManagementModule,

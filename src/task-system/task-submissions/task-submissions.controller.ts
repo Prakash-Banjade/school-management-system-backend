@@ -1,7 +1,6 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Query } from '@nestjs/common';
 import { TaskSubmissionsService } from './task-submissions.service';
 import { CreateTaskSubmissionDto } from './dto/create-task-submission.dto';
-import { UpdateTaskSubmissionDto } from './dto/update-task-submission.dto';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
 import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -32,11 +31,11 @@ export class TaskSubmissionsController {
     return this.taskSubmissionsService.findOne(id);
   }
 
-  @Patch(':id')
-  @CheckAbilities({ subject: Role.STUDENT, action: Action.UPDATE })
-  update(@Param('id') id: string, @Body() updateTaskSubmissionDto: UpdateTaskSubmissionDto) {
-    return this.taskSubmissionsService.update(id, updateTaskSubmissionDto);
-  }
+  // @Patch(':id')
+  // @CheckAbilities({ subject: Role.STUDENT, action: Action.UPDATE })
+  // update(@Param('id') id: string, @Body() updateTaskSubmissionDto: UpdateTaskSubmissionDto) {
+  //   return this.taskSubmissionsService.update(id, updateTaskSubmissionDto);
+  // }
 
   @Delete(':id')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.DELETE })

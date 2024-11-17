@@ -7,6 +7,7 @@ import { SubjectsModule } from 'src/subjects/subjects.module';
 import { AccountsModule } from 'src/auth-system/accounts/accounts.module';
 import { FilesModule } from 'src/file-management/files/files.module';
 import { TaskStudentViewService } from './task.student-view.service';
+import { TasksCron } from './tasks.cron';
 
 @Module({
   imports: [
@@ -18,7 +19,11 @@ import { TaskStudentViewService } from './task.student-view.service';
     SubjectsModule,
   ],
   controllers: [TasksController],
-  providers: [TasksService, TaskStudentViewService],
+  providers: [
+    TasksService,
+    TaskStudentViewService,
+    TasksCron
+  ],
   exports: [TasksService],
 })
 export class TasksModule { }

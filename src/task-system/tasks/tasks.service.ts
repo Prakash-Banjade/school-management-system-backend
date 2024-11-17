@@ -78,14 +78,9 @@ export class TasksService extends BaseRepository {
       .andWhere(new Brackets(qb => {
         queryDto.search && qb.andWhere("LOWER(task.title) LIKE LOWER(:search)", { search: `%${queryDto.search}%` });
 
-        if (queryDto.classRoomId) {
-          qb.andWhere(new Brackets(qb => { // if class room id, check in both section and class
-            qb.orWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
-            qb.orWhere('parent.id = :classRoomId', { classRoomId: queryDto.classRoomId });
-          }))
-        }
-
+        queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId OR parent.id = :classRoomId', { classRoomId: queryDto.classRoomId }); // check in both section and class
         queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId }); // section is the class room
+
         queryDto.subjectId && qb.andWhere('subject.id = :subjectId', { subjectId: queryDto.subjectId });
         queryDto.taskType && qb.andWhere('task.taskType = :taskType', { taskType: queryDto.taskType });
       }))
