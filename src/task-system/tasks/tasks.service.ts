@@ -43,7 +43,7 @@ export class TasksService extends BaseRepository {
       .select(['classRoom.id', 'subject.id', 'children.id'])
       .getOne();
 
-    if (!classRoomWithSubject) throw new NotFoundException('No class found or the subject is not in the class')
+    if (!classRoomWithSubject || !classRoomWithSubject.subjects[0]) throw new NotFoundException('No class found or the subject is not in the class')
 
     const classRoomsTheTaskFor = createTaskDto.classRoomIds?.length > 1 // if length is greater than one, then class room must be of type section, so we need to get children
       ? classRoomWithSubject.children?.filter(classRoom => createTaskDto.classRoomIds.includes(classRoom.id)) // getting only those childrens which has a match in classRoomIds

@@ -7,6 +7,7 @@ import { TeachersModule } from 'src/teachers/teachers.module';
 import { SubjectChapter } from './entities/subject-chapter.entity';
 import { SubjectChaptersController } from './subject-chapters.controller';
 import { SubjectChaptersService } from './subject-chapters.service';
+import { LessonPlansModule } from './lesson-plans/lesson-plans.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { SubjectChaptersService } from './subject-chapters.service';
       SubjectChapter
     ]),
     TeachersModule,
+    LessonPlansModule,
   ],
   controllers: [SubjectsController, SubjectChaptersController],
   providers: [SubjectsService, SubjectChaptersService],

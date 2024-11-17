@@ -8,6 +8,7 @@ import { ExamSubject } from "src/examination-system/exam-subjects/entities/exam-
 import { BaseEntity } from "src/common/entities/base.entity";
 import { ESubjectType } from "src/common/types/global.type";
 import { OptionalSubject } from "src/optional-subject/entities/optional-subject.entity";
+import { LessonPlan } from "../lesson-plans/entities/lesson-plan.entity";
 
 @Entity()
 export class Subject extends BaseEntity {
@@ -48,7 +49,7 @@ export class Subject extends BaseEntity {
     classRoom: ClassRoom;
 
     @OneToOne(() => OptionalSubject, (optionalSubject) => optionalSubject.subject, { cascade: true })
-    optionalSubject: OptionalSubject; 
+    optionalSubject: OptionalSubject;
 
     @OneToMany(() => SubjectChapter, chapter => chapter.subject)
     chapters: SubjectChapter[];
@@ -60,5 +61,8 @@ export class Subject extends BaseEntity {
     classRoutines: ClassRoutine[]
 
     @OneToMany(() => ExamSubject, examSubject => examSubject.subject)
-    examSubjects: ExamSubject[]
+    examSubjects: ExamSubject[];
+
+    @OneToMany(() => LessonPlan, lessonPlan => lessonPlan.subject)
+    lessonPlans: LessonPlan[]
 }

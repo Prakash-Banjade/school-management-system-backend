@@ -14,6 +14,7 @@ import { Salary } from "src/finance-system/salaries/entities/salary.entity";
 import { LeaveRequest } from "src/leave-requests/entities/leave-request.entity";
 import { Recommendation } from "src/recommendations/entities/recommendation.entity";
 import { Task } from "src/task-system/tasks/entities/task.entity";
+import { LessonPlan } from "src/subjects/lesson-plans/entities/lesson-plan.entity";
 
 @Entity()
 export class Account extends BaseEntity {
@@ -98,5 +99,8 @@ export class Account extends BaseEntity {
 
     @OneToMany(() => Task, task => task.setBy)
     tasks: Task[];
+
+    @OneToMany(() => LessonPlan, lessonPlan => lessonPlan.createdBy)
+    createdLessonPlans: LessonPlan[];
 
 }
