@@ -29,7 +29,7 @@ export class TaskSubmissionsService extends BaseRepository {
     if (!isStudent(currentUser)) throw new NotFoundException('Access Denied');
 
     const attachments = createTaskSubmissionDto.attachmentIds?.length
-      ? await this.filesService.findAllByIds(createTaskSubmissionDto.attachmentIds, EFileMimeType.PDF)
+      ? await this.filesService.findAllByIds(createTaskSubmissionDto.attachmentIds)
       : [];
 
     if (createTaskSubmissionDto.attachmentIds?.length && !attachments.length) throw new NotFoundException('Attachments not found');
