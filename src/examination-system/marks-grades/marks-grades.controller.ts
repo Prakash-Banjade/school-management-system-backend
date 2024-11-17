@@ -1,7 +1,6 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Query, ParseUUIDPipe } from '@nestjs/common';
 import { MarksGradesService } from './marks-grades.service';
 import { CreateMarksGradeDto } from './dto/create-marks-grade.dto';
-import { UpdateMarksGradeDto } from './dto/update-marks-grade.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { QueryDto } from 'src/common/dto/query.dto';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
@@ -31,11 +30,11 @@ export class MarksGradesController {
     return this.marksGradesService.findOne(id);
   }
 
-  @Patch(':id')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateMarksGradeDto: UpdateMarksGradeDto) {
-    return this.marksGradesService.update(id, updateMarksGradeDto);
-  }
+  // @Patch(':id')
+  // @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
+  // update(@Param('id', ParseUUIDPipe) id: string, @Body() updateMarksGradeDto: UpdateMarksGradeDto) {
+  //   return this.marksGradesService.update(id, updateMarksGradeDto);
+  // }
 
   @Delete(':id')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.DELETE })
