@@ -164,7 +164,7 @@ export class StudentsService extends BaseRepository {
       .leftJoin("classRoom.parent", "parent")
       .leftJoin("student.profileImage", "profileImage")
       .leftJoin("student.bookTransactions", "bookTransactions")
-      .where("student.studentId = :studentId", { studentId })
+      .andWhere("student.studentId = :studentId", { studentId })
       .groupBy("student.id")
       .select([
         "student.id AS id",
