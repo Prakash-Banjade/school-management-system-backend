@@ -13,6 +13,7 @@ import { LessonPlanQueryDto } from './dto/lesson-plan-query.dto';
 import { isStudent } from 'src/utils/isStudent';
 import { Account } from 'src/auth-system/accounts/entities/account.entity';
 import { lessonPlanSelectCols } from './helpers/lesson-plan-select-cols';
+import { paginatedRawData } from 'src/utils/paginatedData';
 
 @Injectable({ scope: Scope.REQUEST })
 export class LessonPlansService extends BaseRepository {
@@ -91,6 +92,9 @@ export class LessonPlansService extends BaseRepository {
         "MAX(parent.name) as parentClassName",
         "CONCAT(createdBy.firstName, ' ', createdBy.lastName) as createdByName",
       ])
+      .groupBy("lessonPlan.id")
+
+    return paginatedRawData(queryDto, queryBuilder);
   }
 
   async findOne(id: string) {
@@ -108,11 +112,13 @@ export class LessonPlansService extends BaseRepository {
     });
 
     if (!existing) throw new NotFoundException('Lesson plan not found');
+
+    return existing;
   }
 
   async update(id: string, updateLessonPlanDto: UpdateLessonPlanDto) {
     const existing = await this.findOne(id);
-    
+
   }
 
   async remove(id: string) {

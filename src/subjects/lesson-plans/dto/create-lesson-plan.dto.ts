@@ -33,11 +33,11 @@ export class CreateLessonPlanDto {
     @ApiProperty({ type: [String], format: 'uuid', isArray: true, description: 'Attachment ids or urls' })
     @IsUuidOrUrl({ each: true })
     @ArrayMaxSize(5, { message: 'Maximum 5 attachments allowed' })
+    @ArrayMinSize(1, { message: 'At least one attachment is required' })
     attachmentIds?: string[];
 
     @ApiProperty({ type: String, format: 'uuid', description: 'Subject id' })
     @IsUUID()
-    @IsNotEmpty()
     subjectId: string;
 
     @ApiProperty({ type: String, format: 'uuid', description: 'ClassRoom ids' })
