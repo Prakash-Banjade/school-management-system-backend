@@ -43,8 +43,21 @@ export class ExamReportsHelper extends BaseRepository {
         const count = await queryBuilder.clone()
             .andWhere('CASE WHEN parent.id IS NULL THEN enrollmentClassRoom.id = :classRoomId ELSE parent.id = :classRoomId END', { classRoomId }) // ensure the student is also in the same classRoom
             .select([
-                'COUNT(DISTINCT CASE WHEN examReport.obtainedMarks >= examSubject.passMark THEN examReport.id END) as totalPassed',
-                'COUNT(DISTINCT CASE WHEN examReport.obtainedMarks < examSubject.passMark THEN examReport.id END) as totalFailed',
+                'COUNT(DISTINCT CASE WHEN examReport.theoryOM >= examSubject.theoryPM AND examReport.practicalOM >= examSubject.practicalPM THEN examReport.id ELSE NULL END) as totalPassed',
+                'COUNT(DISTINCT CASE WHEN examReport.theoryOM < examSubject.theoryPM OR examReport.practicalOM < examSubject.practicalPM THEN examReport.id ELSE NULL END) as totalFailed',
+                'COUNT(DISTINCT CASE WHEN examReport.theoryOM >= examSubject.theoryPM THEN examReport.id END) as theoryPassed',
+                'COUNT(DISTINCT CASE WHEN examReport.theoryOM < examSubject.theoryPM THEN examReport.id END) as theoryFailed',
+                'COUNT(DISTINCT CASE WHEN examReport.practicalOM >= examSubject.practicalPM THEN examReport.id END) as practicalPassed',
+                'COUNT(DISTINCT CASE WHEN examReport.practicalOM < examSubject.practicalPM THEN examReport.id END) as practicalFailed',
+            ]).getRawOne();
+
+        const examSubject = await queryBuilder.clone()
+            .select([
+                'examSubject.theoryFM as theoryFM',
+                'examSubject.theoryPM as theoryPM',
+                'examSubject.practicalFM as practicalFM',
+                'examSubject.practicalPM as practicalPM',
+                'subject.subjectName as subjectName',
             ]).getRawOne();
 
         const reportQueryBuilder = queryBuilder
@@ -58,19 +71,16 @@ export class ExamReportsHelper extends BaseRepository {
             }))
             .select([
                 'examReport.id as id',
-                'examReport.obtainedMarks as obtainedMarks',
+                'examReport.theoryOM as theoryOM',
+                'examReport.practicalOM as practicalOM',
                 'examReport.percentage as percentage',
                 'examReport.gpa as gpa',
                 'examReport.grade as grade',
-                'examSubject.theoryFM as theoryFM',
-                'examSubject.theoryPM as theoryPM',
-                'examSubject.practicalFM as practicalFM',
-                'examSubject.practicalPM as practicalPM',
-                'subject.subjectName as subjectName',
                 'student.id as studentId',
                 'enrollment.rollNo as rollNo',
                 'CONCAT(student.firstName, \' \', student.lastName) as fullName',
                 'CASE WHEN parent.id IS NULL THEN enrollmentClassRoom.name ELSE CONCAT(parent.name, \' - \' , enrollmentClassRoom.name) END as classRoomName',
+                `CASE WHEN examReport.theoryOM >= examSubject.theoryPM AND examReport.practicalOM >= examSubject.practicalPM THEN 'PASS' ELSE 'FAIL' END as status`
             ])
 
         const itemCount = await reportQueryBuilder.getCount();
@@ -81,6 +91,7 @@ export class ExamReportsHelper extends BaseRepository {
         return {
             data,
             count,
+            examSubject,
             meta: pageMetaDto
         }
     }
