@@ -37,10 +37,10 @@ export class CreateClassRoomDto {
     @IsOptional()
     location?: string
 
-    @ApiPropertyOptional({ type: String, example: 'Primary', description: 'Type of the class room', default: EClassType.PRIMARY })
+    @ApiPropertyOptional({ type: String, example: 'Primary', description: 'Type of the class room' })
     @IsEnum(EClassType)
     @IsOptional()
-    classType: EClassType = EClassType.PRIMARY;
+    classType?: EClassType
 
     @ApiPropertyOptional({ type: String, format: 'uuid', example: 'Teacher ID', description: 'ID of the teacher' })
     @IsUUID()

@@ -37,14 +37,10 @@ export class ClassRoomsService extends BaseRepository {
       classTeacher,
     });
 
-    const savedClassRoom = await this.getRepository(ClassRoom).save(newClassRoom);
+    const savedClass = await this.getRepository(ClassRoom).save(newClassRoom);
 
     return {
-      message: 'Class room created',
-      classRoom: {
-        id: savedClassRoom.id,
-        name: savedClassRoom.name,
-      }
+      message: savedClass.classType === EClassType.SECTION ? 'Class section created' : 'Class room created',
     };
   }
 
@@ -85,11 +81,7 @@ export class ClassRoomsService extends BaseRepository {
     const savedClassRoom = await this.classRoomRepo.save(existing);
 
     return {
-      message: 'Class room updated',
-      classRoom: {
-        id: savedClassRoom.id,
-        name: savedClassRoom.name,
-      }
+      message: savedClassRoom.classType === EClassType.SECTION ? 'Class section updated' : 'Class room updated',
     }
   }
 
@@ -98,7 +90,7 @@ export class ClassRoomsService extends BaseRepository {
     await this.classRoomRepo.remove(existing);
 
     return {
-      message: 'Class room removed',
+      message: existing.classType === EClassType.SECTION ? 'Class section removed' : 'Class room removed',
     }
   }
 }
