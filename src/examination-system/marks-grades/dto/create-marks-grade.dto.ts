@@ -17,28 +17,16 @@ export class CreateMarksGradeDto {
     @ApiProperty()
     @IsNotEmpty()
     @IsNumber()
-    @Min(0)
-    @Max(99)
+    @Min(0, { message: 'Percent from cannot be less than 0' })
+    @Max(99, { message: 'Percent from cannot be greater than 99' })
     percentFrom: number;
 
     @ApiProperty()
     @IsNotEmpty()
     @IsNumber()
-    @Min(1)
-    @Max(100)
+    @Min(0, { message: 'Percent to cannot be less than 0' })
+    @Max(100, { message: 'Percent to cannot be greater than 100' })
     percentTo: number;
-
-    @ApiProperty()
-    @IsNotEmpty()
-    @IsNumber()
-    @Min(1)
-    gpaFrom: number;
-
-    @ApiProperty()
-    @IsNotEmpty()
-    @IsNumber()
-    @Min(1)
-    gpaTo: number;
 
     @ApiPropertyOptional()
     @IsOptional()

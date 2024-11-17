@@ -7,7 +7,5 @@ export const markGradeSelectCols: FindOptionsSelect<MarksGrade> = {
     gradeScale: true,
     percentFrom: true,
     percentTo: true,
-    gpaFrom: true,
-    gpaTo: true,
     description: true,
 }
