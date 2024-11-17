@@ -6,12 +6,12 @@ import { ESubjectType } from "src/common/types/global.type";
 export class SubjectMarksDto {
     @ApiProperty({ type: Number, description: 'Theory full marks' })
     @IsInt()
-    @Min(0)
+    @Min(1)
     theoryFM: number;
 
     @ApiProperty({ type: Number, description: 'Theory pass marks' })
     @IsInt()
-    @Min(0)
+    @Min(1)
     @ValidateIf((o: SubjectMarksDto) => {
         if (o.theoryFM < o.theoryPM) throw new BadRequestException('Theory full mark must be greater than theory pass mark');
         return true;
