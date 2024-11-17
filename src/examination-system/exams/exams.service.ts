@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { CreateExamDto } from './dto/create-exam.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
 import { Exam } from './entities/exam.entity';
@@ -22,7 +22,7 @@ import { REQUEST } from '@nestjs/core';
 import { paginatedRawData } from 'src/utils/paginatedData';
 import { isStudent } from 'src/utils/isStudent';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class ExamsService extends BaseRepository {
   constructor(
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,

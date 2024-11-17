@@ -4,12 +4,13 @@ import { Brackets, DataSource, Repository } from "typeorm";
 import { Attendance } from "src/attendances/entities/attendance.entity";
 import { EmployeeAttendanceQueryDto } from "../dto/employee-attendance-query.dto";
 import { QueryDto } from "src/common/dto/query.dto";
-import { Inject, NotFoundException } from "@nestjs/common";
+import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { BaseRepository } from "src/common/repository/base-repository";
 import { FastifyRequest } from "fastify";
 import { REQUEST } from "@nestjs/core";
 import { ClassRoutine } from "src/class-routines/entities/class-routine.entity";
 
+@Injectable()
 export class TeachersHelper extends BaseRepository {
     constructor(
         dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,

@@ -1,7 +1,7 @@
 import { BadRequestException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { CreateTeacherDto } from './dto/create-teacher.dto';
 import { UpdateTeacherDto } from './dto/update-teacher.dto';
-import { Brackets, DataSource, IsNull, Not, Or } from 'typeorm';
+import { Brackets, DataSource, Not } from 'typeorm';
 import { REQUEST } from '@nestjs/core';
 import { Teacher } from './entities/teacher.entity';
 import { TeacherQueryDto } from './dto/teacher-query.dto';
@@ -10,10 +10,7 @@ import { BaseRepository } from 'src/common/repository/base-repository';
 import { ImagesService } from 'src/file-management/images/images.service';
 import { AccountsService } from 'src/auth-system/accounts/accounts.service';
 import { FastifyRequest } from 'fastify';
-import { Deleted } from 'src/common/dto/query.dto';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
-import { PageMetaDto } from 'src/common/dto/pageMeta.dto';
-import { PageDto } from 'src/common/dto/page.dto.';
 import paginatedData from 'src/utils/paginatedData';
 
 

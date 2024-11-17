@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { CreateExamReportDto } from './dto/create-exam-report.dto';
 import { ExamReport } from './entities/exam-report.entity';
 import { Brackets, DataSource, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
@@ -11,7 +11,7 @@ import { REQUEST } from '@nestjs/core';
 import { Student } from 'src/students/entities/student.entity';
 import { ExamSubject } from '../exam-subjects/entities/exam-subject.entity';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class ExamReportsService extends BaseRepository {
   constructor(
     dataSource: DataSource,

@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, InternalServerErrorException, Scope } from '@nestjs/common';
 import { AssignOptionalSubjectDto } from './dto/create-optional-subject.dto';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { DataSource } from 'typeorm';
@@ -12,7 +12,7 @@ import { OptionalSubjectQueryDto } from './dto/optional-subject-query.dto';
 import { Student } from 'src/students/entities/student.entity';
 import { AcademicYearsService } from 'src/academic-years/academic-years.service';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class OptionalSubjectService extends BaseRepository {
   constructor(
     datasource: DataSource, @Inject(REQUEST) req: FastifyRequest,

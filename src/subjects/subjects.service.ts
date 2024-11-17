@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { CreateSubjectDto } from './dto/create-subject.dto';
 import { UpdateSubjectDto } from './dto/update-subject.dto';
 import { Subject } from './entities/subject.entity';
@@ -16,7 +16,7 @@ import { REQUEST } from '@nestjs/core';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { OptionalSubject } from 'src/optional-subject/entities/optional-subject.entity';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class SubjectsService extends BaseRepository {
   constructor(
     dataSource: DataSource,

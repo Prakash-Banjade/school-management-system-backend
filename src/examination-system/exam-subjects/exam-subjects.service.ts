@@ -1,10 +1,8 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { CreateExamSubjectDto } from './dto/create-exam-subject.dto';
+import { Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { UpdateExamSubjectDto } from './dto/update-exam-subject.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ExamSubject } from './entities/exam-subject.entity';
 import { Brackets, DataSource, In, Repository } from 'typeorm';
-import { SubjectsService } from 'src/subjects/subjects.service';
 import { ExamSubjectQueryDto } from './dto/exam-subject-query.dto';
 import { paginatedRawData } from 'src/utils/paginatedData';
 import { examSubjectOptionsSelectCols, examSubjectSelectCols } from './helpers/exam-subject-select-cols';
@@ -15,7 +13,7 @@ import { BaseRepository } from 'src/common/repository/base-repository';
 import { FastifyRequest } from 'fastify';
 import { REQUEST } from '@nestjs/core';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class ExamSubjectsService extends BaseRepository {
   constructor(
     dataSource: DataSource, @Inject(REQUEST) private req: FastifyRequest,
