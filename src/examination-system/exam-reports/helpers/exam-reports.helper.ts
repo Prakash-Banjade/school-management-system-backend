@@ -51,7 +51,9 @@ export class ExamReportsHelper extends BaseRepository {
                 'COUNT(DISTINCT CASE WHEN examReport.practicalOM < examSubject.practicalPM THEN examReport.id END) as practicalFailed',
             ]).getRawOne();
 
-        const examSubject = await queryBuilder.clone()
+        const examSubject = await this.getRepository(ExamReport).createQueryBuilder('examReport')
+            .leftJoin('examReport.examSubject', 'examSubject')
+            .leftJoin('examSubject.subject', 'subject')
             .select([
                 'examSubject.theoryFM as theoryFM',
                 'examSubject.theoryPM as theoryPM',

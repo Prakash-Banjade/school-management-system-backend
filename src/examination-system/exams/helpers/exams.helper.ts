@@ -33,11 +33,12 @@ export class ExamsHelper extends BaseRepository {
         if (!exam) throw new BadRequestException('Exam not found');
 
         const querybuilder = this.getRepository<Student>(Student).createQueryBuilder('student')
-            .leftJoin('student.enrollments', 'enrollments', "enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
+            .leftJoin('student.enrollments', 'enrollments')
             .leftJoin('enrollments.classRoom', 'classRoom')
             .leftJoin('classRoom.parent', 'parent')
             .leftJoin('student.optionalSubjects', 'optionalSubjects', 'optionalSubjects.classRoomId = :classRoomId', { classRoomId: exam.classRoom.id })
-            .where('CASE WHEN parent.id IS NULL THEN classRoom.id ELSE parent.id END = :classRoomId', { classRoomId: exam.classRoom.id })
+            .where("enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
+            .andWhere('CASE WHEN parent.id IS NULL THEN classRoom.id ELSE parent.id END = :classRoomId', { classRoomId: exam.classRoom.id })
             .andWhere(new Brackets(qb => {
                 queryDto.optionalSubjectId && qb.andWhere('optionalSubjects.subjectId = :optionalSubjectId', { optionalSubjectId: queryDto.optionalSubjectId });
             }))
