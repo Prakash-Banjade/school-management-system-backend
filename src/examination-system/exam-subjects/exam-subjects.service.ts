@@ -54,19 +54,6 @@ export class ExamSubjectsService extends BaseRepository {
     return paginatedRawData(queryDto, querybuilder);
   }
 
-  async findByIds(ids: string[]) {
-    return this.examSubjectRepo.find({
-      where: { id: In(ids) },
-      relations: ['subject'],
-      select: {
-        subject: {
-          id: true,
-          subjectName: true,
-        }
-      }
-    });
-  }
-
   async findOne(id: string) {
     const currentAcademicYearId: string = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
