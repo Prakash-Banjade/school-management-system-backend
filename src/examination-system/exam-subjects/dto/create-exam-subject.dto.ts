@@ -20,6 +20,26 @@ export class CreateExamSubjectDto extends SubjectMarksDto {
     duration: number;
 
     @ApiProperty()
+    @IsNumber()
+    @Min(0)
+    theoryPM: number;
+
+    @ApiProperty()
+    @IsNumber()
+    @Min(0)
+    theoryFM: number;
+
+    @ApiProperty()
+    @IsNumber()
+    @Min(0)
+    practicalPM: number;
+
+    @ApiProperty()
+    @IsNumber()
+    @Min(0)
+    practicalFM: number;
+
+    @ApiProperty()
     @IsNotEmpty()
     @IsString()
     venue: string;
