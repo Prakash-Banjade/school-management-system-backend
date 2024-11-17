@@ -155,17 +155,15 @@ export class StudentsService extends BaseRepository {
   }
 
   async findLibraryStudent(studentId: string) {
-    const currentAcademicYearId = this.cacheManager.get(CACHE_KEYS.CAY_ID);
+    const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
     const student = await this.getRepository<Student>(Student).createQueryBuilder('student')
-      .leftJoin("student.enrollments", "enrollments")
-      .where("enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
+      .leftJoin("student.enrollments", "enrollments", "enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
       .leftJoin('enrollments.classRoom', 'classRoom')
       .leftJoin("classRoom.parent", "parent")
       .leftJoin("student.profileImage", "profileImage")
       .leftJoin("student.bookTransactions", "bookTransactions")
-      .andWhere("student.studentId = :studentId", { studentId })
-      .groupBy("student.id")
+      .where("student.studentId = :studentId", { studentId })
       .select([
         "student.id AS id",
         "CONCAT(student.firstName, ' ', student.lastName) AS name",
@@ -180,7 +178,7 @@ export class StudentsService extends BaseRepository {
       .addGroupBy('classRoom.id')
       .getRawOne();
 
-    if (!student) throw new NotFoundException('Student not found');
+    if (!student || !student.classRoomName) throw new NotFoundException('Student not found');
 
     return student;
   }
@@ -274,7 +272,7 @@ export class StudentsService extends BaseRepository {
       .update(Enrollment)
       .set({ classRoom: classRoom })
       .where("academicYearId = :currentAcademicYearId", { currentAcademicYearId: await this.cacheManager.get(CACHE_KEYS.CAY_ID) })
-      .andWhere("enrollment.studentId IN (:...studentIds)", { studentIds: updateStudentClassDto.studentIds });
+      .andWhere("studentId IN (:...studentIds)", { studentIds: updateStudentClassDto.studentIds });
 
     const enrollmentResult = await enrollmentQuerybuilder.execute();
 
