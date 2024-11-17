@@ -138,9 +138,9 @@ export class StudentsHelper {
         const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
         const studentsWithAttendance = await this.studentRepo.createQueryBuilder('student')
-            .where("FIND_IN_SET(:academicYearId, student.academicYearIds) > 0", { academicYearId: currentAcademicYearId })
+            .leftJoin("student.enrollments", "enrollments")
             .leftJoin("student.account", "account")
-            .leftJoin("student.classRoom", "classRoom")
+            .leftJoin("enrollments.classRoom", "classRoom")
             .leftJoinAndMapOne(
                 "student.attendance",
                 Attendance,
@@ -148,6 +148,7 @@ export class StudentsHelper {
                 "attendance.accountId = account.id AND DATE(attendance.date) = :attendanceDate",
                 { attendanceDate: new Date(queryDto.date).toISOString().split('T')[0] }
             )
+            .where("enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
             .andWhere(new Brackets((qb) => {
                 if (!queryDto.sectionId) {
                     qb.where("classRoom.id = :classroomId", { classroomId: queryDto.classRoomId }); // if section id is not present look for class room id

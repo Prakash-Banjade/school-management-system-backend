@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateAcademicYearDto } from './dto/create-academic-year.dto';
 import { UpdateAcademicYearDto } from './dto/update-academic-year.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -143,6 +143,20 @@ export class AcademicYearsService {
       }
     }
 
+  }
+
+  async isPast() {
+    const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID); // this is one that is currently active
+    if (!currentAcademicYearId) throw new NotFoundException('Current academic year not found');
+
+    const latestAcademicYear = await this.academicYearRepo.createQueryBuilder('academicYear') // this is one which is last added
+      .orderBy('academicYear.startDate', 'DESC')
+      .limit(1)
+      .getOne();
+
+    if (!latestAcademicYear) throw new NotFoundException('Latest academic year not found');
+
+    return currentAcademicYearId !== latestAcademicYear.id;
   }
 
   async remove(id: string) {

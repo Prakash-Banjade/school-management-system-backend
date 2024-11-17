@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { AssignOptionalSubjectDto } from './dto/create-optional-subject.dto';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { DataSource } from 'typeorm';
@@ -9,25 +9,20 @@ import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { CACHE_KEYS } from 'src/common/CONSTANTS';
 import { OptionalSubjectQueryDto } from './dto/optional-subject-query.dto';
-import { AcademicYear } from 'src/academic-years/entities/academic-year.entity';
 import { Student } from 'src/students/entities/student.entity';
+import { AcademicYearsService } from 'src/academic-years/academic-years.service';
 
 @Injectable()
 export class OptionalSubjectService extends BaseRepository {
   constructor(
     datasource: DataSource, @Inject(REQUEST) req: FastifyRequest,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private readonly academicYearsService: AcademicYearsService,
   ) { super(datasource, req) }
 
   async assignSubjects(dto: AssignOptionalSubjectDto) {
-    const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID); // this is one that is currently active
-    const latestAcademicYear = await this.getRepository(AcademicYear).createQueryBuilder('academicYear') // this is one which is last added
-      .orderBy('academicYear.startDate', 'DESC')
-      .limit(1)
-      .getOne();
-
-    if (!latestAcademicYear) throw new NotFoundException('Latest academic year not found');
-    if (currentAcademicYearId !== latestAcademicYear.id) throw new BadRequestException('Cannot modify optional subject of past students');
+    const isPast = await this.academicYearsService.isPast();
+    if (isPast) throw new BadRequestException('Cannot assign optional subjects after the current academic year has ended');
 
     const relationName = this.getRepository(OptionalSubject).metadata.relations.find(
       (relation) => relation.inverseEntityMetadata.target === Student,

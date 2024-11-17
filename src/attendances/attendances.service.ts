@@ -1,9 +1,8 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 import { UpdateAttendanceDto } from './dto/update-attendance.dto';
-import { InjectRepository } from '@nestjs/typeorm';
 import { Attendance } from './entities/attendance.entity';
-import { Brackets, DataSource, Repository } from 'typeorm';
+import { Brackets, DataSource } from 'typeorm';
 import { AttendanceQueryDto } from './dto/attendance-query.dto';
 import paginatedData from 'src/utils/paginatedData';
 import { AccountsService } from 'src/auth-system/accounts/accounts.service';
