@@ -22,9 +22,6 @@ export class ExamReportsHelper extends BaseRepository {
         const { classRoomId, examTypeId, examSubjectId } = queryDto;
 
         const queryBuilder = this.getRepository(ExamReport).createQueryBuilder('examReport')
-            .orderBy('examReport.percentage', 'DESC')
-            .offset(queryDto.skip)
-            .limit(queryDto.take)
             .leftJoin('examReport.student', 'student')
             .leftJoin('examReport.examSubject', 'examSubject')
             .leftJoin('examSubject.subject', 'subject')
@@ -51,9 +48,7 @@ export class ExamReportsHelper extends BaseRepository {
                 'COUNT(DISTINCT CASE WHEN examReport.practicalOM < examSubject.practicalPM THEN examReport.id END) as practicalFailed',
             ]).getRawOne();
 
-        const examSubject = await this.getRepository(ExamReport).createQueryBuilder('examReport')
-            .leftJoin('examReport.examSubject', 'examSubject')
-            .leftJoin('examSubject.subject', 'subject')
+        const examSubject = await queryBuilder.clone()
             .select([
                 'examSubject.theoryFM as theoryFM',
                 'examSubject.theoryPM as theoryPM',
@@ -63,6 +58,9 @@ export class ExamReportsHelper extends BaseRepository {
             ]).getRawOne();
 
         const reportQueryBuilder = queryBuilder
+            .orderBy('examReport.percentage', 'DESC')
+            .offset(queryDto.skip)
+            .limit(queryDto.take)
             .andWhere(new Brackets(qb => {
                 queryDto.search && qb.andWhere("LOWER(CONCAT(student.firstName, ' ', student.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
                 if (queryDto.sectionId && queryDto.sectionId !== 'all') {
