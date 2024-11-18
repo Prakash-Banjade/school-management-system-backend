@@ -11,10 +11,10 @@ export class Event extends BaseEntity {
     @Column({ type: 'longtext', nullable: true })
     description: string;
 
-    @Column({ type: 'datetime' })
+    @Column({ type: 'timestamp' })
     dateFrom: Date;
 
-    @Column({ type: 'datetime' })
+    @Column({ type: 'timestamp' })
     dateTo: Date;
 
     @Column({ type: 'varchar' })
