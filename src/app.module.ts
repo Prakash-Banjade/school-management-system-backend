@@ -40,6 +40,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { OptionalSubjectModule } from './optional-subject/optional-subject.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
@@ -108,6 +109,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     TaskSystemModule,
     DashboardModule,
     OptionalSubjectModule,
+    EventsModule,
   ],
   controllers: [AppController],
   providers: [
