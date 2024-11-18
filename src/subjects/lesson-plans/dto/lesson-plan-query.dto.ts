@@ -1,11 +1,20 @@
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { ApiPropertyOptional } from "@nestjs/swagger";
+import { Transform } from "class-transformer";
 import { IsOptional, IsString } from "class-validator";
 import { ClassWithSectionQueryDto } from "src/common/dto/classWithSectionQuery.dto";
-import { QueryDto } from "src/common/dto/query.dto";
 
 export class LessonPlanQueryDto extends ClassWithSectionQueryDto {
     @ApiPropertyOptional()
     @IsString()
     @IsOptional()
     subjectId?: string;
+
+    @ApiPropertyOptional()
+    @IsString({ each: true })
+    @IsOptional()
+    @Transform(({ value }) => {
+        if (value) return value.split(',');
+        return [];
+    })
+    status?: string[]
 }

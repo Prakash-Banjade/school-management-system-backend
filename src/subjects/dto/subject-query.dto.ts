@@ -32,7 +32,7 @@ export class SubjectQueryDto extends QueryDto {
     types?: string[];
 }
 
-export class SubjectOptionsQueryDto {
+export class SubjectOptionsQueryDto extends QueryDto {
 
     @ApiPropertyOptional({ type: String, format: 'uuid' })
     @IsUUID()

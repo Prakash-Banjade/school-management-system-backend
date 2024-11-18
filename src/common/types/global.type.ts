@@ -211,3 +211,9 @@ export enum EVehicleType {
     Winger = 'winger',
     Force = 'force',
 }
+
+export enum ELessonPlanStatus {
+    Not_Started = 'not_started',
+    In_Progress = 'in_progress',
+    Completed = 'completed',
+}

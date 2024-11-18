@@ -8,6 +8,7 @@ export const lessonPlanSelectCols: FindOptionsSelect<LessonPlan> = {
     endDate: true,
     title: true,
     description: true,
+    status: true,
     subject: {
         id: true,
         subjectName: true,

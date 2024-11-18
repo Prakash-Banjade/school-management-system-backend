@@ -1,6 +1,7 @@
 import { Account } from "src/auth-system/accounts/entities/account.entity";
 import { ClassRoom } from "src/class-rooms/entities/class-room.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
+import { ELessonPlanStatus } from "src/common/types/global.type";
 import { File } from "src/file-management/files/entities/file.entity";
 import { Subject } from "src/subjects/entities/subject.entity";
 import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany } from "typeorm";
@@ -31,6 +32,9 @@ export class LessonPlan extends BaseEntity {
 
     @OneToMany(() => File, file => file.lessonPlan_attachments)
     attachments: File[];
+
+    @Column({ type: 'enum', enum: ELessonPlanStatus, default: ELessonPlanStatus.Not_Started })
+    status: ELessonPlanStatus;
 }
 
 

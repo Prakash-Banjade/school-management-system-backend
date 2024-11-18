@@ -1,19 +1,20 @@
-import { Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { CreateLessonPlanDto } from './dto/create-lesson-plan.dto';
-import { UpdateLessonPlanDto } from './dto/update-lesson-plan.dto';
+import { UpdateLessonPlanDto, UpdateLessonPlanStatusDto } from './dto/update-lesson-plan.dto';
 import { BaseRepository } from 'src/common/repository/base-repository';
-import { Brackets, DataSource } from 'typeorm';
+import { Brackets, DataSource, In } from 'typeorm';
 import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
 import { FilesService } from 'src/file-management/files/files.service';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { LessonPlan } from './entities/lesson-plan.entity';
-import { AuthUser, Role } from 'src/common/types/global.type';
+import { AuthUser, EClassType, ELessonPlanStatus } from 'src/common/types/global.type';
 import { LessonPlanQueryDto } from './dto/lesson-plan-query.dto';
 import { isStudent } from 'src/utils/isStudent';
 import { Account } from 'src/auth-system/accounts/entities/account.entity';
 import { lessonPlanSelectCols } from './helpers/lesson-plan-select-cols';
 import { paginatedRawData } from 'src/utils/paginatedData';
+import { Subject } from '../entities/subject.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class LessonPlansService extends BaseRepository {
@@ -80,6 +81,8 @@ export class LessonPlansService extends BaseRepository {
         queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId OR parent.id = :classRoomId', { classRoomId: sectionId ?? classRoomId }); // check in both section and class
 
         queryDto.subjectId && qb.andWhere('subject.id = :subjectId', { subjectId: queryDto.subjectId });
+
+        queryDto.status?.length && qb.andWhere('lessonPlan.status IN (:...status)', { status: queryDto.status });
       }))
       .select([
         "lessonPlan.id as id",
@@ -91,6 +94,7 @@ export class LessonPlansService extends BaseRepository {
         "JSON_ARRAYAGG(classRoom.name) as classRooms", // Aggregate classrooms as JSON
         "MAX(parent.name) as parentClassName",
         "CONCAT(createdBy.firstName, ' ', createdBy.lastName) as createdByName",
+        "lessonPlan.status as status",
       ])
       .groupBy("lessonPlan.id")
 
@@ -118,7 +122,64 @@ export class LessonPlansService extends BaseRepository {
 
   async update(id: string, updateLessonPlanDto: UpdateLessonPlanDto) {
     const existing = await this.findOne(id);
+    const attachments = updateLessonPlanDto.attachmentIds ?
+      await this.filesService.findAllByIds(updateLessonPlanDto.attachmentIds)
+      : existing.attachments;
 
+    // validate subject
+    const subject = updateLessonPlanDto.subjectId
+      ? await this.getSubject(updateLessonPlanDto.subjectId)
+      : existing.subject;
+
+    // validate class room
+    const classRooms = updateLessonPlanDto.classRoomIds?.length
+      ? await this.getRepository(ClassRoom).find({
+        where: {
+          id: In(updateLessonPlanDto.classRoomIds)
+        },
+        relations: ['parent']
+      })
+      : existing.classRooms;
+
+    // validate if class room have the subject
+    if (!classRooms?.length) throw new BadRequestException('No class room found with the given ids');
+
+    if (classRooms[0].classType === EClassType.SECTION) {
+      const parentClassId = classRooms[0].parent?.id;
+      if (parentClassId !== subject.classRoom?.id) throw new BadRequestException('Subject doesn\'t belong to the class room');
+    } else if (subject.classRoom?.id !== classRooms[0].id) throw new BadRequestException('Subject doesn\'t belong to the class room');
+
+    existing.attachments = attachments;
+    existing.subject = subject;
+    existing.classRooms = classRooms;
+
+    const updatedTask = this.getRepository(LessonPlan).merge(existing, updateLessonPlanDto);
+    await this.getRepository(LessonPlan).save(updatedTask);
+
+    return { message: 'Lesson plan updated successfully' };
+  }
+
+  async updateStatus(id: string, dto: UpdateLessonPlanStatusDto) {
+    const existing = await this.findOne(id);
+
+    if (existing.status === ELessonPlanStatus.Completed) throw new BadRequestException('Lesson plan already completed');
+    if (existing.status === ELessonPlanStatus.Not_Started && dto.status === ELessonPlanStatus.Completed) throw new BadRequestException('Lesson plan not started yet');
+
+    existing.status = dto.status;
+
+    await this.getRepository(LessonPlan).save(existing);
+    return { message: 'Status updated' };
+  }
+
+  private async getSubject(id: string) {
+    const existing = await this.getRepository(Subject).findOne({
+      where: { id },
+      relations: { classRoom: true },
+      select: { id: true, classRoom: { id: true } }
+    })
+    if (!existing) throw new NotFoundException(`Subject with id ${id} not found`);
+
+    return existing;
   }
 
   async remove(id: string) {

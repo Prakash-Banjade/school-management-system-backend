@@ -88,7 +88,7 @@ export class SubjectsService extends BaseRepository {
 
   async getOptions(queryDto: SubjectOptionsQueryDto) {
     return this.getRepository(Subject).createQueryBuilder('subject')
-      .orderBy("subject.createdAt", 'DESC')
+      .orderBy("subject.createdAt", queryDto.order)
       .where('subject.classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId })
       .select(["subject.id", "subject.subjectName"])
       .getMany();

@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { LessonPlansService } from './lesson-plans.service';
 import { CreateLessonPlanDto } from './dto/create-lesson-plan.dto';
-import { UpdateLessonPlanDto } from './dto/update-lesson-plan.dto';
+import { UpdateLessonPlanDto, UpdateLessonPlanStatusDto } from './dto/update-lesson-plan.dto';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
 import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
@@ -33,6 +33,15 @@ export class LessonPlansController {
   @CheckAbilities({ subject: Role.USER, action: Action.READ })
   findOne(@Param('id') id: string) {
     return this.lessonPlansService.findOne(id);
+  }
+
+  @Patch(':id/change-status')
+  @CheckAbilities(
+    { subject: Role.ADMIN, action: Action.CREATE },
+    { subject: Role.TEACHER, action: Action.CREATE },
+  )
+  updateStatus(@Param('id') id: string, @Body() updateLessonPlanDto: UpdateLessonPlanStatusDto) {
+    return this.lessonPlansService.updateStatus(id, updateLessonPlanDto);
   }
 
   @Patch(':id')
