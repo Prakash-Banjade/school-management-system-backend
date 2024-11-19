@@ -14,5 +14,5 @@ export class AcademicYearOptionsDto extends QueryDto {
     @IsBoolean()
     @IsOptional()
     @Transform(({ value }) => value === 'true')
-    onlyFuture: boolean = false;
+    onlyPast: boolean = false;
 }

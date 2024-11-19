@@ -11,6 +11,7 @@ import { CACHE_MANAGER } from "@nestjs/cache-manager";
 import { CACHE_KEYS } from "src/common/CONSTANTS";
 import { paginatedRawData } from "src/utils/paginatedData";
 import { AcademicYearsService } from "src/academic-years/academic-years.service";
+import { Enrollment } from "src/enrollments/entities/enrollment.entity";
 
 @Injectable()
 export class StudentsHelper {
@@ -175,35 +176,50 @@ export class StudentsHelper {
     }
 
     async getPastStudents(queryDto: PastStudentsQueryDto) {
-        const latest = await this.academicYearsService.latest();
-
         const queryBuilder = this.studentRepo.createQueryBuilder('student')
             .offset(queryDto.skipPagination ? undefined : queryDto.skip)
             .limit(queryDto.skipPagination ? undefined : queryDto.take)
-            .orderBy('student.rollNO', 'ASC')
-            .leftJoin('student.enrollments', 'enrollments', 'enrollments.academicYearId = :academicYearId', { academicYearId: latest.id })
+            .orderBy('student.rollNo', 'ASC')
             .leftJoin('student.classRoom', 'classRoom')
             .leftJoin('classRoom.parent', 'parent')
+            .leftJoin(
+                // Subquery to get the latest enrollment using ROW_NUMBER
+                qb => qb
+                    .select('enrollment.studentId', 'studentId')
+                    .addSelect('enrollment.id', 'id')
+                    .addSelect('enrollment.academicYearId', 'academicYearId')
+                    .addSelect('ROW_NUMBER() OVER (PARTITION BY enrollment.studentId ORDER BY enrollment.createdAt DESC) AS rowNumber')
+                    .from('enrollment', 'enrollment'),
+                'latestEnrollment',
+                'latestEnrollment.studentId = student.id AND latestEnrollment.rowNumber = 1' // Filter to only include the latest enrollment
+            )
             .andWhere(new Brackets(qb => {
                 if (queryDto.search) {
                     qb.andWhere(new Brackets(subQb => {
                         subQb.orWhere("LOWER(CONCAT(student.firstName, ' ', student.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
                             .orWhere("LOWER(student.email) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
-                            .orWhere("TRIM(student.studentId) = TRIM(:exactSearch)", { exactSearch: queryDto.search })
-                    }))
+                            .orWhere("TRIM(student.studentId) = TRIM(:exactSearch)", { exactSearch: queryDto.search });
+                    }));
                 }
+
                 queryDto.studentId && qb.andWhere('student.studentId = :studentId', { studentId: queryDto.studentId });
 
-                queryDto.classRoomId && qb.andWhere('parent.id = :classRoomId OR classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId }); // if section id is present look for section id
-                queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId }); // the sectionId send by the frontend is the class room id
+                queryDto.classRoomId && qb.andWhere('parent.id = :classRoomId OR classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
+                queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId });
+
+                // Add filter for academicYearId
+                queryDto.academicYearId && qb.andWhere('latestEnrollment.academicYearId = :academicYearId', { academicYearId: queryDto.academicYearId });
             }))
             .select([
-                "student.id as id",
+                "student.id AS id",
                 "CONCAT(student.firstName, ' ', student.lastName) AS fullName",
-                "student.rollNo as rollNo",
-                "student.studentId as studentId",
+                "student.rollNo AS rollNo",
+                "student.studentId AS studentId",
                 "CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, ' - ', classRoom.name) END AS classRoomName",
+                "latestEnrollment.id AS enrollmentId",
             ]);
+
+
 
         return paginatedRawData(queryDto, queryBuilder);
     }
