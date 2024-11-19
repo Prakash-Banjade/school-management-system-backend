@@ -4,7 +4,6 @@ import { BaseEntity } from "src/common/entities/base.entity";
 import { EClassType } from "src/common/types/global.type";
 import { Enrollment } from "src/enrollments/entities/enrollment.entity";
 import { Exam } from "src/examination-system/exams/entities/exam.entity";
-import { FeesGroup } from "src/finance-system/fees-system/fees-groups/entities/fees-group.entity";
 import { OptionalSubject } from "src/optional-subject/entities/optional-subject.entity";
 import { Student } from "src/students/entities/student.entity";
 import { Subject } from "src/subjects/entities/subject.entity";
@@ -72,9 +71,6 @@ export class ClassRoom extends BaseEntity {
 
     @ManyToMany(() => Task, (task) => task.classRooms)
     tasks: Task[]
-
-    @OneToMany(() => FeesGroup, (feesGroup) => feesGroup.classRoom)
-    feesGroups: FeesGroup[]
 
     @OneToMany(() => ClassRoutine, (classRoutine) => classRoutine.classRoom)
     classRoutines: ClassRoutine[]

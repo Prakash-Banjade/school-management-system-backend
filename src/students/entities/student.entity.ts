@@ -7,7 +7,6 @@ import { Enrollment } from "src/enrollments/entities/enrollment.entity";
 import { ExamReport } from "src/examination-system/exam-reports/entities/exam-report.entity";
 import { File } from "src/file-management/files/entities/file.entity";
 import { Image } from "src/file-management/images/entities/image.entity";
-import { FeesInvoice } from "src/finance-system/fees-system/fees-invoices/entities/fees-invoice.entity";
 import { Guardian } from "src/guardians/entities/guardian.entity";
 import { BookTransaction } from "src/library-system/book-transactions/entities/book-transaction.entity";
 import { OptionalSubject } from "src/optional-subject/entities/optional-subject.entity";
@@ -38,9 +37,6 @@ export class Student extends BaseEntity {
 
     @Column({ type: 'int' })
     rollNo: number;
-
-    @OneToMany(() => FeesInvoice, (feesInvoice) => feesInvoice.student)
-    feesInvoices: FeesInvoice[];
 
     @ManyToOne(() => DormitoryRoom, (dormitoryRoom) => dormitoryRoom.students, { onDelete: 'RESTRICT' })
     dormitoryRoom: DormitoryRoom;

@@ -10,7 +10,6 @@ import { Student } from "src/students/entities/student.entity";
 import { Teacher } from "src/teachers/entities/teacher.entity";
 import { Staff } from "src/staffs/entities/staff.entity";
 import { Attendance } from "src/attendances/entities/attendance.entity";
-import { Salary } from "src/finance-system/salaries/entities/salary.entity";
 import { LeaveRequest } from "src/leave-requests/entities/leave-request.entity";
 import { Recommendation } from "src/recommendations/entities/recommendation.entity";
 import { Task } from "src/task-system/tasks/entities/task.entity";
@@ -83,10 +82,6 @@ export class Account extends BaseEntity {
     // studentAttendances and teacherAttendances, i created a single attendances relation.
     @OneToMany(() => Attendance, attendance => attendance.account)
     attendances: Attendance[];
-
-    // Both staff and teacher can have salaries, so instead of creating a separate relations i.e staffSalaries and teacherSalaries, i created a single salaries relation.
-    @OneToMany(() => Salary, salary => salary.account)
-    salaries: Salary[];
 
     @OneToMany(() => LeaveRequest, leaveRequest => leaveRequest.account)
     leaveRequests: LeaveRequest[];
