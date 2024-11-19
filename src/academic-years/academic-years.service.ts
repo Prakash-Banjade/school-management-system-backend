@@ -145,6 +145,17 @@ export class AcademicYearsService {
 
   }
 
+  async latest() {
+    const latestAcademicYear = await this.academicYearRepo.createQueryBuilder('academicYear') // this is one which is last added
+      .orderBy('academicYear.startDate', 'DESC')
+      .limit(1)
+      .getOne();
+
+    if (!latestAcademicYear) throw new NotFoundException('Latest academic year not found');
+
+    return latestAcademicYear;
+  }
+
   async isPast() {
     const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID); // this is one that is currently active
     if (!currentAcademicYearId) throw new NotFoundException('Current academic year not found');

@@ -3,7 +3,7 @@ import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentClassDto, UpdateStudentDto } from './dto/update-student.dto';
 import { Student } from './entities/student.entity';
 import { DataSource } from 'typeorm';
-import { StudentQueryDto } from './dto/student-query.dto';
+import { StudentAttendanceQueryDto, StudentQueryDto } from './dto/student-query.dto';
 import { ClassRoomsService } from 'src/class-rooms/class-rooms.service';
 import { REQUEST } from '@nestjs/core';
 import { singleStudentColumnsConfig } from './helpers/studentsColumnsConfig';
@@ -14,7 +14,6 @@ import { AccountsService } from 'src/auth-system/accounts/accounts.service';
 import { FastifyRequest } from 'fastify';
 import { StudentsHelper } from './helpers/students.helper';
 import { EClassType } from 'src/common/types/global.type';
-import { StudentAttendanceQueryDto } from './dto/student-attendance-query.dto';
 import { FilesService } from 'src/file-management/files/files.service';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { AcademicYear } from 'src/academic-years/entities/academic-year.entity';
@@ -99,11 +98,7 @@ export class StudentsService extends BaseRepository {
 
     return this.studentMutationReturn(savedStudent, 'created');
   }
-
-  async findAll(queryDto: StudentQueryDto) {
-    return this.studentsHelper.setQuery(queryDto);
-  }
-
+  
   async findOne(id: string) {
     const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 

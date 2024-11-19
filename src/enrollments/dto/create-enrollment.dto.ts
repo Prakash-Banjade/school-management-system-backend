@@ -31,9 +31,5 @@ export class CreateEnrollmentDto {
     @IsDateString()
     @IsNotFutureDate()
     enrollmentDate: string;
-
-    @ApiProperty({ format: 'uuid' })
-    @IsUUID()
-    academicYearId: string;
 }
 

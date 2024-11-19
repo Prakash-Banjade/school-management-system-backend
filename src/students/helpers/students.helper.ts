@@ -1,26 +1,27 @@
 import { BadRequestException, Inject, Injectable } from "@nestjs/common";
 import { Brackets, Not, Repository } from "typeorm";
 import { Student } from "../entities/student.entity";
-import { StudentQueryDto, StudentSortBy } from "../dto/student-query.dto";
+import { PastStudentsQueryDto, StudentAttendanceQueryDto, StudentQueryDto, StudentSortBy } from "../dto/student-query.dto";
 import { CreateStudentDto } from "../dto/create-student.dto";
 import { UpdateStudentDto } from "../dto/update-student.dto";
 import { InjectRepository } from "@nestjs/typeorm";
-import { StudentAttendanceQueryDto } from "../dto/student-attendance-query.dto";
 import { Attendance } from "src/attendances/entities/attendance.entity";
 import { Cache } from "cache-manager";
 import { CACHE_MANAGER } from "@nestjs/cache-manager";
 import { CACHE_KEYS } from "src/common/CONSTANTS";
 import { paginatedRawData } from "src/utils/paginatedData";
+import { AcademicYearsService } from "src/academic-years/academic-years.service";
 
 @Injectable()
 export class StudentsHelper {
     constructor(
         @InjectRepository(Student) private readonly studentRepo: Repository<Student>,
         @Inject(CACHE_MANAGER) private cacheManager: Cache,
+        private readonly academicYearsService: AcademicYearsService,
     ) { }
 
-    async setQuery(queryDto: StudentQueryDto) {
-        const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+    async findAll(queryDto: StudentQueryDto) {
+        const academicYearId = queryDto.academicYearId || await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
         const queryBuilder = this.studentRepo.createQueryBuilder('student')
             .offset(queryDto.skipPagination ? undefined : queryDto.skip)
@@ -32,7 +33,7 @@ export class StudentsHelper {
             .leftJoin('enrollments.classRoom', 'classRoom')
             .leftJoin('classRoom.parent', 'parent')
             .leftJoin('student.profileImage', 'profileImage')
-            .where("enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
+            .where("enrollments.academicYearId = :academicYearId", { academicYearId: academicYearId })
             .andWhere(new Brackets(qb => {
                 if (queryDto.search) {
                     qb.andWhere(new Brackets(subQb => {
@@ -61,6 +62,7 @@ export class StudentsHelper {
             "CONCAT(student.firstName, ' ', student.lastName) AS fullName",
             "enrollments.rollNo as rollNo",
             "student.studentId as studentId",
+            "CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, ' - ', classRoom.name) END AS classRoomName",
         ];
 
         return onlyBasicInfo
@@ -170,5 +172,39 @@ export class StudentsHelper {
 
         return studentsWithAttendance;
 
+    }
+
+    async getPastStudents(queryDto: PastStudentsQueryDto) {
+        const latest = await this.academicYearsService.latest();
+
+        const queryBuilder = this.studentRepo.createQueryBuilder('student')
+            .offset(queryDto.skipPagination ? undefined : queryDto.skip)
+            .limit(queryDto.skipPagination ? undefined : queryDto.take)
+            .orderBy('student.rollNO', 'ASC')
+            .leftJoin('student.enrollments', 'enrollments', 'enrollments.academicYearId = :academicYearId', { academicYearId: latest.id })
+            .leftJoin('student.classRoom', 'classRoom')
+            .leftJoin('classRoom.parent', 'parent')
+            .andWhere(new Brackets(qb => {
+                if (queryDto.search) {
+                    qb.andWhere(new Brackets(subQb => {
+                        subQb.orWhere("LOWER(CONCAT(student.firstName, ' ', student.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+                            .orWhere("LOWER(student.email) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+                            .orWhere("TRIM(student.studentId) = TRIM(:exactSearch)", { exactSearch: queryDto.search })
+                    }))
+                }
+                queryDto.studentId && qb.andWhere('student.studentId = :studentId', { studentId: queryDto.studentId });
+
+                queryDto.classRoomId && qb.andWhere('parent.id = :classRoomId OR classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId }); // if section id is present look for section id
+                queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId }); // the sectionId send by the frontend is the class room id
+            }))
+            .select([
+                "student.id as id",
+                "CONCAT(student.firstName, ' ', student.lastName) AS fullName",
+                "student.rollNo as rollNo",
+                "student.studentId as studentId",
+                "CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, ' - ', classRoom.name) END AS classRoomName",
+            ]);
+
+        return paginatedRawData(queryDto, queryBuilder);
     }
 }

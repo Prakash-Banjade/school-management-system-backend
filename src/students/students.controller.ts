@@ -1,22 +1,25 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors, ClassSerializerInterceptor, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors, ForbiddenException } from '@nestjs/common';
 import { StudentsService } from './students.service';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentClassDto, UpdateStudentDto } from './dto/update-student.dto';
-import { StudentQueryDto } from './dto/student-query.dto';
+import { PastStudentsQueryDto, StudentAttendanceQueryDto, StudentQueryDto } from './dto/student-query.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 import { ApiPaginatedResponse } from 'src/common/decorators/apiPaginatedResponse.decorator';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, AuthUser, Role } from 'src/common/types/global.type';
-import { StudentAttendanceQueryDto } from './dto/student-attendance-query.dto';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
 import { isStudent } from 'src/utils/isStudent';
+import { StudentsHelper } from './helpers/students.helper';
 
 @ApiBearerAuth()
 @ApiTags('Students')
 @Controller('students')
 export class StudentsController {
-  constructor(private readonly studentsService: StudentsService) { }
+  constructor(
+    private readonly studentsService: StudentsService,
+    private readonly studentsHelper: StudentsHelper,
+  ) { }
 
   @Post()
   @UseInterceptors(TransactionInterceptor)
@@ -29,7 +32,14 @@ export class StudentsController {
   @ApiPaginatedResponse(CreateStudentDto)
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findAll(@Query() queryDto: StudentQueryDto) {
-    return this.studentsService.findAll(queryDto);
+    return this.studentsHelper.findAll(queryDto);
+  }
+
+  @Get('past')
+  @ApiPaginatedResponse(CreateStudentDto)
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  findAllFromPast(@Query() queryDto: PastStudentsQueryDto) {
+    return this.studentsHelper.getPastStudents(queryDto);
   }
 
   @Get('attendances')

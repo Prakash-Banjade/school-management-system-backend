@@ -1,7 +1,8 @@
-import { ApiPropertyOptional } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
-import { IsBoolean, IsEnum, IsOptional, IsString, IsUUID } from "class-validator";
+import { IsBoolean, IsDateString, IsEnum, IsOptional, IsString, IsUUID } from "class-validator";
 import { ClassWithSectionQueryDto } from "src/common/dto/classWithSectionQuery.dto";
+import { QueryDto } from "src/common/dto/query.dto";
 
 export enum StudentSortBy {
     NAME = "name",
@@ -27,4 +28,35 @@ export class StudentQueryDto extends ClassWithSectionQueryDto {
     @IsOptional()
     @IsEnum(StudentSortBy)
     sortBy: string;
+
+    @ApiPropertyOptional({ type: String, format: 'uuid', description: 'Academic year id' })
+    @IsUUID()
+    @IsOptional()
+    academicYearId?: string;
+}
+
+export class StudentAttendanceQueryDto extends QueryDto {
+    @ApiProperty({ type: String, format: 'uuid', description: 'Class room id' })
+    @IsUUID()
+    classRoomId: string;
+
+    @ApiProperty({ type: String, format: 'uuid', description: 'Section id' })
+    @IsUUID()
+    @IsOptional()
+    sectionId?: string;
+
+    @ApiProperty({ type: String, format: 'date', description: 'Date' })
+    @IsDateString()
+    date: string;
+}
+
+export class PastStudentsQueryDto extends ClassWithSectionQueryDto {
+    @ApiPropertyOptional({ type: String, format: 'uuid', description: 'Academic year id' })
+    @IsUUID()
+    @IsOptional()
+    academicYearId?: string;
+
+    @ApiPropertyOptional({ type: String, description: 'Search by student ID' })
+    @IsOptional()
+    studentId: string;
 }
