@@ -29,7 +29,7 @@ export class EventsService {
       .where(new Brackets(qb => {
         queryDto.search && qb.andWhere('LOWER(event.title) LIKE LOWER(:search)', { search: `%${queryDto.search}%` });
         queryDto.dateFrom && qb.andWhere('DATE(event.dateFrom) >= DATE(:dateFrom)', { dateFrom: queryDto.dateFrom });
-        queryDto.dateTo && qb.andWhere('DATE(event.dateTo) <= DATE(:dateTo)', { dateTo: queryDto.dateTo });
+        queryDto.dateTo && qb.andWhere('DATE(event.dateTo) <= DATE_ADD(DATE(:dateTo), INTERVAL 1 DAY)', { dateTo: queryDto.dateTo });
       }))
       .select(['event.id', 'event.createdAt', 'event.title', 'event.description', 'event.dateFrom', 'event.dateTo', 'event.eventLocation', 'event.members'])
 
@@ -52,7 +52,7 @@ export class EventsService {
 
     await this.eventRepository.save(updatedEvent);
 
-    return { message: 'Event updated' };
+    return { message: 'Event updated', success: true };
   }
 
   async remove(id: string) {

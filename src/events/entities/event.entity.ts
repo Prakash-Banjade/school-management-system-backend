@@ -17,7 +17,7 @@ export class Event extends BaseEntity {
     @Column({ type: 'timestamp' })
     dateTo: Date;
 
-    @Column({ type: 'varchar' })
+    @Column({ type: 'varchar', default: '' })
     eventLocation: string;
 
     @Column('simple-array', { nullable: true })

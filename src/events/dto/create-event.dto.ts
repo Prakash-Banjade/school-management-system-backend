@@ -24,8 +24,8 @@ export class CreateEventDto {
 
     @ApiProperty({ example: 'City Park', description: 'Location of the event' })
     @IsString()
-    @IsNotEmpty()
-    eventLocation: string;
+    @IsOptional()
+    eventLocation?: string;
 
     @ApiProperty({ example: ['John Doe', 'Jane Smith'], description: 'List of members', required: false })
     @IsOptional()
