@@ -147,17 +147,6 @@ export enum EPaymentMethod {
     BANK = 'bank',
 }
 
-export enum EFeeInvoicePaymentStatus {
-    NOT_PAID = 'not_paid',
-    PARTIAL_PAID = 'partial_paid',
-    FULL_PAID = 'full_paid',
-}
-
-export enum EFeeGroupAppliedTo {
-    CLASS = 'class',
-    ALL = 'all'
-}
-
 export enum EDormitoryType {
     BOYS = 'boys',
     GIRLS = 'girls',

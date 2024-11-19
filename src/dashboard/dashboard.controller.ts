@@ -9,9 +9,15 @@ import { Action, Role } from 'src/common/types/global.type';
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) { }
 
-  @Get('admin')
+  @Get('admin/counts')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   getAdminDashboard() {
-    return this.dashboardService.getAdminDashboard();
+    return this.dashboardService.getAdminDashboardCounts();
+  }
+
+  @Get('leave-requests')
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  getLeaveRequests() {
+    return this.dashboardService.getLeaveRequests();
   }
 }
