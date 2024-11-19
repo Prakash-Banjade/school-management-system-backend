@@ -21,7 +21,7 @@ export class OptionalSubjectService extends BaseRepository {
   ) { super(datasource, req) }
 
   async assignSubjects(dto: AssignOptionalSubjectDto) {
-    const isPast = await this.academicYearsService.isPast();
+    const { isPast } = await this.academicYearsService.isPast();
     if (isPast) throw new BadRequestException('Cannot assign optional subjects after the current academic year has ended');
 
     const relationName = this.getRepository(OptionalSubject).metadata.relations.find(

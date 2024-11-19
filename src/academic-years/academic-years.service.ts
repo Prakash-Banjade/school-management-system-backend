@@ -156,7 +156,10 @@ export class AcademicYearsService {
 
     if (!latestAcademicYear) throw new NotFoundException('Latest academic year not found');
 
-    return currentAcademicYearId !== latestAcademicYear.id;
+    return {
+      isPast: currentAcademicYearId !== latestAcademicYear.id,
+      latestAcademicYear,
+    };
   }
 
   async remove(id: string) {
