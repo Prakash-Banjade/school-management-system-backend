@@ -1,6 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { IsBoolean, IsDateString, IsEnum, IsOptional, IsString, IsUUID } from "class-validator";
+import { IsDateString, IsEnum, IsOptional, IsString, IsUUID } from "class-validator";
 import { ClassWithSectionQueryDto } from "src/common/dto/classWithSectionQuery.dto";
 import { QueryDto } from "src/common/dto/query.dto";
 

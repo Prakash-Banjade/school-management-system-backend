@@ -4,6 +4,7 @@ import { BaseEntity } from "src/common/entities/base.entity";
 import { EClassType } from "src/common/types/global.type";
 import { Enrollment } from "src/enrollments/entities/enrollment.entity";
 import { Exam } from "src/examination-system/exams/entities/exam.entity";
+import { FeeStructure } from "src/finance-system/fee-management/fee-structures/entities/fee-structure.entity";
 import { OptionalSubject } from "src/optional-subject/entities/optional-subject.entity";
 import { Student } from "src/students/entities/student.entity";
 import { Subject } from "src/subjects/entities/subject.entity";
@@ -80,4 +81,7 @@ export class ClassRoom extends BaseEntity {
 
     @ManyToMany(() => LessonPlan, lessonPlan => lessonPlan.classRooms)
     lessonPlans: LessonPlan[];
+
+    @OneToMany(() => FeeStructure, feeStructure => feeStructure.classRoom)
+    feeStructures: FeeStructure[];
 }
