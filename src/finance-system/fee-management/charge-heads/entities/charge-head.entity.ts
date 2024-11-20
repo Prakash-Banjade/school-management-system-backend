@@ -4,7 +4,7 @@ import { FeeStructure } from "../../fee-structures/entities/fee-structure.entity
 
 @Entity()
 export class ChargeHead extends BaseEntity {
-    @Column({ type: 'text', unique: true })
+    @Column({ type: 'varchar', unique: true })
     name: string;
 
     @Column({ type: 'text', nullable: true })

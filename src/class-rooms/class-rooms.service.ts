@@ -10,6 +10,7 @@ import { FastifyRequest } from 'fastify';
 import { EClassType } from 'src/common/types/global.type';
 import { TeachersService } from 'src/teachers/teachers.service';
 import { classRoomColumnsConfig } from './helpers/class-room-select-cols.config';
+import { FeeStructuresService } from 'src/finance-system/fee-management/fee-structures/fee-structures.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class ClassRoomsService extends BaseRepository {
@@ -17,6 +18,7 @@ export class ClassRoomsService extends BaseRepository {
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
     @InjectRepository(ClassRoom) private classRoomRepo: Repository<ClassRoom>,
     private readonly teachersService: TeachersService,
+    private readonly feeStructuresService: FeeStructuresService,
   ) {
     super(dataSource, req);
   }
@@ -31,10 +33,17 @@ export class ClassRoomsService extends BaseRepository {
     // evaluate teacher
     const classTeacher = createClassRoomDto.classTeacherId ? await this.teachersService.findOne(createClassRoomDto.classTeacherId) : null;
 
+    // add mandatory charge heads structure for the class
+    const feeStructures = await this.feeStructuresService.createMandatoryFeeStructures({
+      admissionFee: createClassRoomDto.admissionFee,
+      monthlyFee: createClassRoomDto.monthlyFee,
+    });
+
     const newClassRoom = this.classRoomRepo.create({
       ...createClassRoomDto,
       parent: parentClass,
       classTeacher,
+      feeStructures,
     });
 
     const savedClass = await this.getRepository(ClassRoom).save(newClassRoom);

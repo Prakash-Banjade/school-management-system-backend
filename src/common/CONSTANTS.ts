@@ -22,6 +22,11 @@ export const GRADE_REGEX = /^[A-F](\+|-|\*)*$/;
 
 export const MAX_BOOK_ISSUE_LIMIT = 5;
 
+export const MANDATORY_CHARGE_HEADS = {
+    admissionFee: "Admission Fee",
+    monthlyFee: "Monthly Fee",
+}
+
 // CACHE KEYS
 export const enum CACHE_KEYS {
     CAY_ID = 'currentAcademicYearId'

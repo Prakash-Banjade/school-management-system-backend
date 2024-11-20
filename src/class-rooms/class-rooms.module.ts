@@ -8,6 +8,7 @@ import { Student } from 'src/students/entities/student.entity';
 import { AcademicYearsModule } from 'src/academic-years/academic-years.module';
 import { TeachersModule } from 'src/teachers/teachers.module';
 import { ClassRoomsStatistics } from './helpers/class-rooms.statistics';
+import { FeeStructuresModule } from 'src/finance-system/fee-management/fee-structures/fee-structures.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { ClassRoomsStatistics } from './helpers/class-rooms.statistics';
     ]),
     AcademicYearsModule,
     TeachersModule,
+    FeeStructuresModule,
   ],
   controllers: [ClassRoomsController],
   providers: [ClassRoomsService, ClassRoomsHelper, ClassRoomsStatistics],

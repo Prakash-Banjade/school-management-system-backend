@@ -10,6 +10,7 @@ import { QueryDto } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
 import { isBoolean } from 'class-validator';
 import { ChargeHeadOptionsQueryDto } from './dto/charge-head-query.dto';
+import { MANDATORY_CHARGE_HEADS } from 'src/common/CONSTANTS';
 
 @Injectable()
 export class ChargeHeadsService extends BaseRepository {
@@ -102,12 +103,12 @@ export class ChargeHeadsService extends BaseRepository {
   async addMandatoryHeads() {
     await this.getRepository(ChargeHead).save([
       {
-        name: 'Admission Fee',
+        name: MANDATORY_CHARGE_HEADS.admissionFee,
         description: 'Admission fee for the class room',
         isMandatory: true,
       },
       {
-        name: 'Monthly Fee',
+        name: MANDATORY_CHARGE_HEADS.monthlyFee,
         description: 'Monthly fee for the class room',
         isMandatory: true,
       }

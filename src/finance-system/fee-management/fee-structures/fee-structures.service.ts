@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, Inject, Injectable, NotFoundExc
 import { CreateFeeStructureDto } from './dto/create-fee-structure.dto';
 import { UpdateFeeStructureDto } from './dto/update-fee-structure.dto';
 import { BaseRepository } from 'src/common/repository/base-repository';
-import { Brackets, DataSource } from 'typeorm';
+import { Brackets, DataSource, In } from 'typeorm';
 import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
@@ -10,6 +10,7 @@ import { ChargeHead } from '../charge-heads/entities/charge-head.entity';
 import { FeeStructure } from './entities/fee-structure.entity';
 import { FeeStructureQueryDto } from './dto/fee-structure-query.dto';
 import paginatedData from 'src/utils/paginatedData';
+import { MANDATORY_CHARGE_HEADS } from 'src/common/CONSTANTS';
 
 @Injectable()
 export class FeeStructuresService extends BaseRepository {
@@ -41,6 +42,23 @@ export class FeeStructuresService extends BaseRepository {
     await this.getRepository(FeeStructure).save(newFeeStructure);
 
     return { message: 'Fee structure created' };
+  }
+
+  async createMandatoryFeeStructures(amounts: { admissionFee: number, monthlyFee: number }) {
+    const mandatoryChargeHeads = await this.getRepository(ChargeHead).find({
+      where: { name: In(Object.values(MANDATORY_CHARGE_HEADS)) },
+    });
+    if (mandatoryChargeHeads.length !== Object.values(MANDATORY_CHARGE_HEADS).length) throw new BadRequestException('Mandatory charge heads not spedified yet');
+
+    return mandatoryChargeHeads.map(chargeHead => {
+      const key = Object.entries(MANDATORY_CHARGE_HEADS).find(([_, value]) => value === chargeHead.name)?.[0];
+      if (!key) throw new BadRequestException('Mandatory charge head not found');
+
+      return this.getRepository(FeeStructure).create({
+        chargeHead: chargeHead,
+        amount: amounts[key],
+      })
+    });
   }
 
   findAll(queryDto: FeeStructureQueryDto) {

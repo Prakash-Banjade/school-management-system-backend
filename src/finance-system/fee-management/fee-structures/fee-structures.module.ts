@@ -12,5 +12,6 @@ import { FeeStructure } from './entities/fee-structure.entity';
   ],
   controllers: [FeeStructuresController],
   providers: [FeeStructuresService],
+  exports: [FeeStructuresService],
 })
 export class FeeStructuresModule { }
