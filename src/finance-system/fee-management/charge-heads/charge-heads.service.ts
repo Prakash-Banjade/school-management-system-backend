@@ -47,9 +47,8 @@ export class ChargeHeadsService extends BaseRepository {
 
     querybuilder
       .orderBy('chargeHead.createdAt', queryDto.order)
-      .skip(queryDto.skip)
-      .take(queryDto.take)
-      .leftJoin('chargeHead.feeStructures', 'feeStructure')
+      .offset(queryDto.skip)
+      .limit(queryDto.take)
       .where(new Brackets(qb => {
         queryDto.search && qb.andWhere("LOWER(chargeHead.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
       }))
