@@ -20,11 +20,11 @@ export class ChargeHeadsController {
     return this.chargeHeadsService.create(createChargeHeadDto);
   }
 
-  @Post('add-mandatory-heads') // TODO: Remove this after adding the ability to add mandatory charge heads
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
-  addMandatoryHeads() {
-    return this.chargeHeadsService.addMandatoryHeads();
-  }
+  // @Post('add-mandatory-heads') // TODO: Remove this after adding the ability to add mandatory charge heads
+  // @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
+  // addMandatoryHeads() {
+  //   return this.chargeHeadsService.addMandatoryHeads();
+  // }
 
   @Get()
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })

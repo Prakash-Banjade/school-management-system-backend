@@ -29,6 +29,12 @@ export class ClassRoomsController {
     return this.classRoomsService.create(createClassRoomDto);
   }
 
+  // @Post('create-fee-structures')
+  // @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
+  // createFeeStructures() {
+  //   return this.classRoomsService.createFeeStructures();
+  // }
+
   @Get()
   @ApiPaginatedResponse(CreateClassRoomDto)
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })

@@ -102,4 +102,21 @@ export class ClassRoomsService extends BaseRepository {
       message: existing.classType === EClassType.SECTION ? 'Class section removed' : 'Class room removed',
     }
   }
+
+  // async createFeeStructures() {
+  //   const classRooms = await this.classRoomRepo.find({
+  //     where: { classType: EClassType.PRIMARY },
+  //     select: { id: true }
+  //   });
+
+  //   await Promise.all(classRooms.map(async classRoom => {
+  //     const feeStructures = await this.feeStructuresService.createMandatoryFeeStructures({
+  //       admissionFee: classRoom.admissionFee,
+  //       monthlyFee: classRoom.monthlyFee,
+  //     });
+
+  //     classRoom.feeStructures = feeStructures;
+  //     await this.getRepository(ClassRoom).save(classRoom);
+  //   }))
+  // }
 }
