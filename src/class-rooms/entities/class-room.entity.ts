@@ -27,7 +27,7 @@ export class ClassRoom extends BaseEntity {
     description: string;
 
     @Column({ type: "real", default: 0 })
-    monthlyTutionFee: number;
+    admissionFee: number;
 
     @Column({ type: "real", default: 0 })
     monthlyFee: number;
@@ -82,6 +82,6 @@ export class ClassRoom extends BaseEntity {
     @ManyToMany(() => LessonPlan, lessonPlan => lessonPlan.classRooms)
     lessonPlans: LessonPlan[];
 
-    @OneToMany(() => FeeStructure, feeStructure => feeStructure.classRoom)
+    @OneToMany(() => FeeStructure, feeStructure => feeStructure.classRoom, { cascade: true })
     feeStructures: FeeStructure[];
 }

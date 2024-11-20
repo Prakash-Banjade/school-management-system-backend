@@ -4,7 +4,7 @@ import { ClassRoom } from "../entities/class-room.entity"
 export const classRoomColumnsConfig: FindOptionsSelect<ClassRoom> = {
     id: true,
     name: true,
-    monthlyTutionFee: true,
+    admissionFee: true,
     monthlyFee: true,
     location: true,
     createdAt: true,

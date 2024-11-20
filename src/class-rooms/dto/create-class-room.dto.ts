@@ -23,7 +23,7 @@ export class CreateClassRoomDto {
     @IsNumber()
     @Min(0)
     @IsOptional()
-    monthlyTutionFee: number;
+    admissionFee: number;
 
     @ApiProperty({ type: Number, example: 1000, description: 'Monthly fee of the class room' })
     @IsNotEmpty()
