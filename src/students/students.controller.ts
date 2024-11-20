@@ -55,6 +55,13 @@ export class StudentsController {
     return this.studentsService.findLibraryStudent(studentId);
   }
 
+  @Get('fee/:studentId')
+  @ApiOperation({ summary: 'Find fee student' })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  findFeeStudent(@Param('studentId') studentId: string) {
+    return this.studentsHelper.getFeeStudent(studentId);
+  }
+
   @Get('me')
   @CheckAbilities({ subject: Role.STUDENT, action: Action.READ })
   getMyInfo(@CurrentUser() currentUser: AuthUser) {

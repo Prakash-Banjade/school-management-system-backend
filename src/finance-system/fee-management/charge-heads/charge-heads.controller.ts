@@ -1,12 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors } from '@nestjs/common';
 import { ChargeHeadsService } from './charge-heads.service';
 import { CreateChargeHeadDto } from './dto/create-charge-head.dto';
 import { UpdateChargeHeadDto } from './dto/update-charge-head.dto';
 import { QueryDto } from 'src/common/dto/query.dto';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, Role } from 'src/common/types/global.type';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiExcludeEndpoint, ApiTags } from '@nestjs/swagger';
 import { ChargeHeadOptionsQueryDto } from './dto/charge-head-query.dto';
+import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 
 @ApiBearerAuth()
 @ApiTags('Charge Heads')
@@ -20,11 +21,13 @@ export class ChargeHeadsController {
     return this.chargeHeadsService.create(createChargeHeadDto);
   }
 
-  // @Post('add-mandatory-heads') // TODO: Remove this after adding the ability to add mandatory charge heads
-  // @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
-  // addMandatoryHeads() {
-  //   return this.chargeHeadsService.addMandatoryHeads();
-  // }
+  @Post('add-mandatory-heads') // TODO: Remove this after adding the ability to add mandatory charge heads
+  @ApiExcludeEndpoint()
+  @UseInterceptors(TransactionInterceptor)
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
+  addMandatoryHeads() {
+    return this.chargeHeadsService.addMandatoryHeads();
+  }
 
   @Get()
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })

@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { Brackets, Not, Repository } from "typeorm";
 import { Student } from "../entities/student.entity";
 import { PastStudentsQueryDto, StudentAttendanceQueryDto, StudentQueryDto, StudentSortBy } from "../dto/student-query.dto";
@@ -10,15 +10,12 @@ import { Cache } from "cache-manager";
 import { CACHE_MANAGER } from "@nestjs/cache-manager";
 import { CACHE_KEYS } from "src/common/CONSTANTS";
 import { paginatedRawData } from "src/utils/paginatedData";
-import { AcademicYearsService } from "src/academic-years/academic-years.service";
-import { Enrollment } from "src/enrollments/entities/enrollment.entity";
 
 @Injectable()
 export class StudentsHelper {
     constructor(
         @InjectRepository(Student) private readonly studentRepo: Repository<Student>,
         @Inject(CACHE_MANAGER) private cacheManager: Cache,
-        private readonly academicYearsService: AcademicYearsService,
     ) { }
 
     async findAll(queryDto: StudentQueryDto) {
@@ -109,13 +106,12 @@ export class StudentsHelper {
     }
 
     async checkIfStudentExists(studentDto: CreateStudentDto | UpdateStudentDto, student?: Student) {
-        const { rollNo, email, phone, bankAccountNumber, nationalIdCardNo } = studentDto;
+        const { rollNo, email, bankAccountNumber, nationalIdCardNo } = studentDto;
 
         const existingStudent = await this.studentRepo.createQueryBuilder('student')
             .where(new Brackets(qb => {
                 qb.where([
                     { email },
-                    { phone },
                     { rollNo },
                     { bankAccountNumber }
                 ])
@@ -125,14 +121,10 @@ export class StudentsHelper {
         if (existingStudent && !student) {
             if (existingStudent.email === email) throw new BadRequestException('Student with this email already exists');
             if (existingStudent.nationalIdCardNo === nationalIdCardNo) throw new BadRequestException('Student with this nationalIdCardNo already exists');
-            // if (existingStudent.phone === phone) throw new BadRequestException('Student with this phone already exists');
-            // if (existingStudent.rollNo === rollNo) throw new BadRequestException('Student with this rollNo already exists');
             if (existingStudent.bankAccountNumber === bankAccountNumber) throw new BadRequestException('Student with this bankAccountNumber already exists');
         } else if (existingStudent && student) {
             if (existingStudent.email === email && existingStudent.id !== student.id) throw new BadRequestException('Student with this email already exists');
             if (existingStudent.nationalIdCardNo === nationalIdCardNo && existingStudent.id !== student.id) throw new BadRequestException('Student with this nationalIdCardNo already exists');
-            // if (existingStudent.phone === phone && existingStudent.id !== student.id) throw new BadRequestException('Student with this phone already exists');
-            // if (existingStudent.rollNo === rollNo && existingStudent.id !== student.id) throw new BadRequestException('Student with this rollNo already exists');
             if (existingStudent.bankAccountNumber === bankAccountNumber && existingStudent.id !== student.id) throw new BadRequestException('Student with this bankAccountNumber already exists');
         }
     }
@@ -222,5 +214,32 @@ export class StudentsHelper {
 
 
         return paginatedRawData(queryDto, queryBuilder);
+    }
+
+    async getFeeStudent(studentId: string) {
+        const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+
+        const student = await this.studentRepo.createQueryBuilder('student')
+            .leftJoin("student.enrollments", "enrollments", "enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
+            .leftJoin('enrollments.classRoom', 'classRoom')
+            .leftJoin("classRoom.parent", "parent")
+            .leftJoin("student.profileImage", "profileImage")
+            .where("student.studentId = :studentId", { studentId })
+            .select([
+                "student.id AS id",
+                "CONCAT(student.firstName, ' ', student.lastName) AS name",
+                "student.rollNo AS rollNo",
+                "student.phone AS phone",
+                "student.email AS email",
+                "profileImage.url AS profileImageUrl",
+                "CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, ' - ', classRoom.name) END AS classRoomName",
+            ])
+            .groupBy('student.id')
+            .addGroupBy('classRoom.id')
+            .getRawOne();
+
+        if (!student || !student.classRoomName) throw new NotFoundException('Student not found');
+
+        return student;
     }
 }

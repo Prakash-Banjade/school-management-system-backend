@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { CreateChargeHeadDto } from './dto/create-charge-head.dto';
 import { UpdateChargeHeadDto } from './dto/update-charge-head.dto';
 import { BaseRepository } from 'src/common/repository/base-repository';
@@ -11,8 +11,11 @@ import paginatedData from 'src/utils/paginatedData';
 import { isBoolean } from 'class-validator';
 import { ChargeHeadOptionsQueryDto } from './dto/charge-head-query.dto';
 import { MANDATORY_CHARGE_HEADS } from 'src/common/CONSTANTS';
+import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
+import { EClassType } from 'src/common/types/global.type';
+import { FeeStructure } from '../fee-structures/entities/fee-structure.entity';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class ChargeHeadsService extends BaseRepository {
   constructor(
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest
@@ -22,9 +25,22 @@ export class ChargeHeadsService extends BaseRepository {
     const extingWithSameName = await this.getRepository(ChargeHead).findOneBy({ name: dto.name });
     if (extingWithSameName) throw new ConflictException('Charge head with same name already exists');
 
-    await this.getRepository(ChargeHead).save(dto);
+    const savedChargeHead = await this.getRepository(ChargeHead).save(dto);
+
+    if (dto.isMandatory) await this.createMandatoryFeeStructureForClassRooms(savedChargeHead);
 
     return { message: 'Charge head created successfully' };
+  }
+
+  async createMandatoryFeeStructureForClassRooms(chargeHead: ChargeHead) {
+    const classRooms = await this.getRepository(ClassRoom).find({
+      where: { classType: EClassType.PRIMARY },
+      select: ['id'],
+    });
+
+    const feeStructures = classRooms.map(classRoom => this.getRepository(FeeStructure).create({ amount: 0, chargeHead, classRoom }));
+
+    await this.getRepository(FeeStructure).save(feeStructures);
   }
 
   findAll(queryDto: QueryDto) {
@@ -100,17 +116,35 @@ export class ChargeHeadsService extends BaseRepository {
   }
 
   async addMandatoryHeads() {
-    await this.getRepository(ChargeHead).save([
+    const mandatoryHeads = [
       {
         name: MANDATORY_CHARGE_HEADS.admissionFee,
         description: 'Admission fee for the class room',
-        isMandatory: true,
       },
       {
         name: MANDATORY_CHARGE_HEADS.monthlyFee,
         description: 'Monthly fee for the class room',
-        isMandatory: true,
+      },
+      {
+        name: MANDATORY_CHARGE_HEADS.transportationFee,
+        description: 'Transportation fee of the student',
+      },
+      {
+        name: MANDATORY_CHARGE_HEADS.libraryFine,
+        description: 'Library fine of the student',
       }
-    ])
+    ]
+
+    for (const head of mandatoryHeads) {
+      await this.getRepository(ChargeHead)
+        .createQueryBuilder()
+        .insert()
+        .values({
+          ...head,
+          isMandatory: true
+        })
+        .orIgnore() // This will skip the record if the unique constraint fails
+        .execute();
+    }
   }
 }

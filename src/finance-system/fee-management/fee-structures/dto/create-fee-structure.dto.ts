@@ -12,6 +12,6 @@ export class CreateFeeStructureDto {
 
     @ApiProperty()
     @IsNumber()
-    @Min(1)
+    @Min(0)
     amount: number;
 }
