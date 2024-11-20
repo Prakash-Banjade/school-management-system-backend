@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, Inject, Injectable, NotFoundExc
 import { CreateChargeHeadDto } from './dto/create-charge-head.dto';
 import { UpdateChargeHeadDto } from './dto/update-charge-head.dto';
 import { BaseRepository } from 'src/common/repository/base-repository';
-import { Brackets, DataSource, QueryBuilder } from 'typeorm';
+import { Brackets, DataSource } from 'typeorm';
 import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
 import { ChargeHead } from './entities/charge-head.entity';
