@@ -98,4 +98,19 @@ export class ChargeHeadsService extends BaseRepository {
 
     return { message: 'Charge head removed' }
   }
+
+  async addMandatoryHeads() {
+    await this.getRepository(ChargeHead).save([
+      {
+        name: 'Admission Fee',
+        description: 'Admission fee for the class room',
+        isMandatory: true,
+      },
+      {
+        name: 'Monthly Fee',
+        description: 'Monthly fee for the class room',
+        isMandatory: true,
+      }
+    ])
+  }
 }
