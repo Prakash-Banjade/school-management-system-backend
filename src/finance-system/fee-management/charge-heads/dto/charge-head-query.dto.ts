@@ -16,4 +16,11 @@ export class ChargeHeadOptionsQueryDto extends QueryDto {
         return value === 'true';
     })
     onlyAvailable?: boolean = false;
+
+    @ApiPropertyOptional()
+    @IsBoolean()
+    @Transform(({ value }) => {
+        return value === 'true';
+    })
+    defaults?: boolean = true;
 }

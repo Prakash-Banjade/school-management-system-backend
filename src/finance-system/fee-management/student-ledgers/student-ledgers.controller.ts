@@ -1,0 +1,21 @@
+import { Controller, Post, UseInterceptors } from '@nestjs/common';
+import { StudentLedgersService } from './student-ledgers.service';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
+import { Action, Role } from 'src/common/types/global.type';
+import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
+
+@ApiBearerAuth()
+@ApiTags('Student Ledgers')
+@Controller('student-ledgers')
+export class StudentLedgersController {
+  constructor(private readonly studentLedgersService: StudentLedgersService) { }
+
+
+  // @Post('create-students-ledger')
+  // @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
+  // @UseInterceptors(TransactionInterceptor)
+  // createStudentsLedger() {
+  //   return this.studentLedgersService.createStudentsLedger();
+  // }
+}

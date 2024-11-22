@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsBoolean, IsNotEmpty, IsOptional, IsString, Length, Max } from "class-validator";
+import { IsBoolean, IsEnum, IsNotEmpty, IsOptional, IsString, Length, Max } from "class-validator";
+import { EChargeHeadPeriod } from "../entities/charge-head.entity";
 
 export class CreateChargeHeadDto {
     @ApiProperty()
@@ -17,4 +18,9 @@ export class CreateChargeHeadDto {
     @IsBoolean()
     @IsOptional()
     isMandatory?: boolean;
+
+    @ApiPropertyOptional()
+    @IsEnum(EChargeHeadPeriod)
+    @IsOptional()
+    period?: EChargeHeadPeriod;
 }

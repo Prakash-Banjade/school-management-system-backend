@@ -5,15 +5,15 @@ import { BaseRepository } from 'src/common/repository/base-repository';
 import { Brackets, DataSource } from 'typeorm';
 import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
-import { ChargeHead } from './entities/charge-head.entity';
+import { ChargeHead, EChargeHeadPeriod } from './entities/charge-head.entity';
 import { QueryDto } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
 import { isBoolean } from 'class-validator';
 import { ChargeHeadOptionsQueryDto } from './dto/charge-head-query.dto';
-import { MANDATORY_CHARGE_HEADS } from 'src/common/CONSTANTS';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { EClassType } from 'src/common/types/global.type';
 import { FeeStructure } from '../fee-structures/entities/fee-structure.entity';
+import { CHARGE_HEADS } from 'src/common/CONSTANTS';
 
 @Injectable({ scope: Scope.REQUEST })
 export class ChargeHeadsService extends BaseRepository {
@@ -53,7 +53,7 @@ export class ChargeHeadsService extends BaseRepository {
       .where(new Brackets(qb => {
         queryDto.search && qb.andWhere("LOWER(chargeHead.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
       }))
-      .select(['chargeHead.id', 'chargeHead.createdAt', 'chargeHead.name', 'chargeHead.description', 'chargeHead.isMandatory'])
+      .select(['chargeHead.id', 'chargeHead.createdAt', 'chargeHead.name', 'chargeHead.description', 'chargeHead.isMandatory', 'chargeHead.period'])
 
     return paginatedData(queryDto, querybuilder);
   }
@@ -67,6 +67,7 @@ export class ChargeHeadsService extends BaseRepository {
       .limit(queryDto.take)
       .where(new Brackets(qb => {
         queryDto.search && qb.andWhere("LOWER(chargeHead.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+        !queryDto.defaults && qb.andWhere("chargeHead.name NOT IN (:...defaultChargeHeads)", { defaultChargeHeads: Object.values(CHARGE_HEADS) })
       }))
       .select([
         'chargeHead.id as value',
@@ -116,35 +117,39 @@ export class ChargeHeadsService extends BaseRepository {
   }
 
   async addMandatoryHeads() {
-    const mandatoryHeads = [
+    const mandatoryHeads: Partial<ChargeHead>[] = [
       {
-        name: MANDATORY_CHARGE_HEADS.admissionFee,
+        name: CHARGE_HEADS.admissionFee,
         description: 'Admission fee for the class room',
+        isMandatory: true,
+        period: EChargeHeadPeriod.One_Time,
       },
       {
-        name: MANDATORY_CHARGE_HEADS.monthlyFee,
+        name: CHARGE_HEADS.monthlyFee,
         description: 'Monthly fee for the class room',
+        isMandatory: true,
+        period: EChargeHeadPeriod.Monthly,
       },
       {
-        name: MANDATORY_CHARGE_HEADS.transportationFee,
+        name: CHARGE_HEADS.transportationFee,
         description: 'Transportation fee of the student',
+        isMandatory: true,
+        period: EChargeHeadPeriod.Monthly,
       },
       {
-        name: MANDATORY_CHARGE_HEADS.libraryFine,
+        name: CHARGE_HEADS.libraryFine,
         description: 'Library fine of the student',
+        isMandatory: true,
+        period: EChargeHeadPeriod.None,
+
       }
     ]
 
-    for (const head of mandatoryHeads) {
-      await this.getRepository(ChargeHead)
-        .createQueryBuilder()
-        .insert()
-        .values({
-          ...head,
-          isMandatory: true
-        })
-        .orIgnore() // This will skip the record if the unique constraint fails
-        .execute();
-    }
+    await this.getRepository(ChargeHead)
+      .createQueryBuilder()
+      .insert()
+      .values(mandatoryHeads)
+      .orIgnore() // This will skip the record if the unique constraint fails
+      .execute();
   }
 }

@@ -3,7 +3,7 @@ import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentClassDto, UpdateStudentDto } from './dto/update-student.dto';
 import { Student } from './entities/student.entity';
 import { DataSource } from 'typeorm';
-import { StudentAttendanceQueryDto, StudentQueryDto } from './dto/student-query.dto';
+import { StudentAttendanceQueryDto } from './dto/student-query.dto';
 import { ClassRoomsService } from 'src/class-rooms/class-rooms.service';
 import { REQUEST } from '@nestjs/core';
 import { singleStudentColumnsConfig } from './helpers/studentsColumnsConfig';
@@ -23,6 +23,7 @@ import { Cache } from 'cache-manager';
 import { CACHE_KEYS } from 'src/common/CONSTANTS';
 import { RouteStopsService } from 'src/transportation-system/route-stops/route-stops.service';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
+import { StudentLedger } from 'src/finance-system/fee-management/student-ledgers/entities/student-ledger.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class StudentsService extends BaseRepository {
@@ -78,6 +79,7 @@ export class StudentsService extends BaseRepository {
       enrollmentDate: createStudentDto.admissionDate,
       rollNo: createStudentDto.rollNo,
       registrationNumber: getRegistrationNumber(academicYear),
+      ledger: this.getRepository<StudentLedger>(StudentLedger).create()
     });
 
     const newStudent = this.getRepository<Student>(Student).create({
@@ -98,7 +100,7 @@ export class StudentsService extends BaseRepository {
 
     return this.studentMutationReturn(savedStudent, 'created');
   }
-  
+
   async findOne(id: string) {
     const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 

@@ -10,7 +10,7 @@ import { ChargeHead } from '../charge-heads/entities/charge-head.entity';
 import { FeeStructure } from './entities/fee-structure.entity';
 import { FeeStructureQueryDto } from './dto/fee-structure-query.dto';
 import paginatedData from 'src/utils/paginatedData';
-import { MANDATORY_CHARGE_HEADS } from 'src/common/CONSTANTS';
+import { CHARGE_HEADS } from 'src/common/CONSTANTS';
 
 @Injectable()
 export class FeeStructuresService extends BaseRepository {
@@ -45,18 +45,18 @@ export class FeeStructuresService extends BaseRepository {
   }
 
   async createMandatoryFeeStructures(amounts: { admissionFee: number, monthlyFee: number }) {
-    const mandatoryChargeHeads = await this.getRepository(ChargeHead).find({
-      where: { name: In(Object.values(MANDATORY_CHARGE_HEADS)) },
+    const chargeHeads = await this.getRepository(ChargeHead).find({
+      where: { name: In(Object.values([CHARGE_HEADS.admissionFee, CHARGE_HEADS.monthlyFee])) },
     });
-    if (mandatoryChargeHeads.length !== Object.values(MANDATORY_CHARGE_HEADS).length) throw new BadRequestException('Mandatory charge heads not spedified yet');
+    if (chargeHeads.length !== 2) throw new BadRequestException('Admission fee and monthly fee charge heads not spedified yet');
 
-    return mandatoryChargeHeads.map(chargeHead => {
-      const key = Object.entries(MANDATORY_CHARGE_HEADS).find(([_, value]) => value === chargeHead.name)?.[0];
-      if (!key) throw new BadRequestException('Mandatory charge head not found');
+    return chargeHeads.map(chargeHead => {
+      const key = Object.entries(CHARGE_HEADS).find(([_, value]) => value === chargeHead.name)?.[0];
+      if (!key) throw new BadRequestException('Charge head not found');
 
       return this.getRepository(FeeStructure).create({
         chargeHead: chargeHead,
-        amount: amounts[key],
+        amount: amounts[key] || 0,
       })
     });
   }

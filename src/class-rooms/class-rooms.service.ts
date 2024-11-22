@@ -103,20 +103,20 @@ export class ClassRoomsService extends BaseRepository {
     }
   }
 
-  // async createFeeStructures() {
-  //   const classRooms = await this.classRoomRepo.find({
-  //     where: { classType: EClassType.PRIMARY },
-  //     select: { id: true }
-  //   });
+  async createFeeStructures() {
+    const classRooms = await this.classRoomRepo.find({
+      where: { classType: EClassType.PRIMARY },
+      select: { id: true, admissionFee: true, monthlyFee: true }
+    });
 
-  //   await Promise.all(classRooms.map(async classRoom => {
-  //     const feeStructures = await this.feeStructuresService.createMandatoryFeeStructures({
-  //       admissionFee: classRoom.admissionFee,
-  //       monthlyFee: classRoom.monthlyFee,
-  //     });
+    await Promise.all(classRooms.map(async classRoom => {
+      const feeStructures = await this.feeStructuresService.createMandatoryFeeStructures({
+        admissionFee: classRoom.admissionFee,
+        monthlyFee: classRoom.monthlyFee,
+      });
 
-  //     classRoom.feeStructures = feeStructures;
-  //     await this.getRepository(ClassRoom).save(classRoom);
-  //   }))
-  // }
+      classRoom.feeStructures = feeStructures;
+      await this.getRepository(ClassRoom).save(classRoom);
+    }))
+  }
 }

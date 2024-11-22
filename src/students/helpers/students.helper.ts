@@ -1,5 +1,5 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { Brackets, Not, Repository } from "typeorm";
+import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import { Brackets, DataSource, Not, Repository } from "typeorm";
 import { Student } from "../entities/student.entity";
 import { PastStudentsQueryDto, StudentAttendanceQueryDto, StudentQueryDto, StudentSortBy } from "../dto/student-query.dto";
 import { CreateStudentDto } from "../dto/create-student.dto";
@@ -8,15 +8,22 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Attendance } from "src/attendances/entities/attendance.entity";
 import { Cache } from "cache-manager";
 import { CACHE_MANAGER } from "@nestjs/cache-manager";
-import { CACHE_KEYS } from "src/common/CONSTANTS";
+import { CACHE_KEYS, CHARGE_HEADS } from "src/common/CONSTANTS";
 import { paginatedRawData } from "src/utils/paginatedData";
+import { BaseRepository } from "src/common/repository/base-repository";
+import { REQUEST } from "@nestjs/core";
+import { FastifyRequest } from "fastify";
+import { FeeStructure } from "src/finance-system/fee-management/fee-structures/entities/fee-structure.entity";
+import { ChargeHead } from "src/finance-system/fee-management/charge-heads/entities/charge-head.entity";
+import { FeeInvoice } from "src/finance-system/fee-management/fee-invoice/entities/fee-invoice.entity";
 
 @Injectable()
-export class StudentsHelper {
+export class StudentsHelper extends BaseRepository {
     constructor(
+        dataSource: DataSource, @Inject(REQUEST) private req: FastifyRequest,
         @InjectRepository(Student) private readonly studentRepo: Repository<Student>,
         @Inject(CACHE_MANAGER) private cacheManager: Cache,
-    ) { }
+    ) { super(dataSource, req); }
 
     async findAll(queryDto: StudentQueryDto) {
         const academicYearId = queryDto.academicYearId || await this.cacheManager.get(CACHE_KEYS.CAY_ID);
@@ -224,22 +231,93 @@ export class StudentsHelper {
             .leftJoin('enrollments.classRoom', 'classRoom')
             .leftJoin("classRoom.parent", "parent")
             .leftJoin("student.profileImage", "profileImage")
+            .leftJoin("student.routeStop", "routeStop")
+            .leftJoin("enrollments.ledger", "ledger")
+            .leftJoin(
+                subQuery => subQuery
+                    .select('feeInvoices.id AS id')
+                    .addSelect('feeInvoices.month AS month')
+                    .addSelect('feeInvoices.studentLedgerId AS studentLedgerId')
+                    .from(FeeInvoice, 'feeInvoices')
+                    .orderBy('feeInvoices.month', 'DESC')
+                    .limit(1),
+                'feeInvoice',
+                'feeInvoice.studentLedgerId = ledger.id'
+            )
             .where("student.studentId = :studentId", { studentId })
             .select([
                 "student.id AS id",
+                "student.studentId AS studentId",
                 "CONCAT(student.firstName, ' ', student.lastName) AS name",
-                "student.rollNo AS rollNo",
+                "enrollments.rollNo AS rollNo",
                 "student.phone AS phone",
                 "student.email AS email",
                 "profileImage.url AS profileImageUrl",
+                "routeStop.fare AS transportationFare",
+                "routeStop.id AS routeStopId",
                 "CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, ' - ', classRoom.name) END AS classRoomName",
+                "CASE WHEN parent.id IS NULL THEN classRoom.id ELSE parent.id END AS classRoomId",
+                "CASE WHEN feeInvoice.id IS NULL THEN 0 ELSE feeInvoice.month END AS lastMonth",
+                "ledger.id AS ledgerId",
+                "ledger.amount AS previousDue",
             ])
             .groupBy('student.id')
             .addGroupBy('classRoom.id')
+            .addGroupBy('enrollments.rollNo')
+            .addGroupBy('feeInvoice.id')
+            .addGroupBy('ledger.id')
             .getRawOne();
 
         if (!student || !student.classRoomName) throw new NotFoundException('Student not found');
+        if (!student.ledgerId) throw new InternalServerErrorException('Ledger associated with student not found');
 
-        return student;
+        const feeStructures: {
+            amount: number;
+            chargeHeadId: string;
+        }[] = await this.getRepository(FeeStructure).createQueryBuilder('feeStructure')
+            .leftJoin('feeStructure.chargeHead', 'chargeHead')
+            .where('feeStructure.classRoomId = :classRoomId', { classRoomId: student.classRoomId })
+            .select([
+                'feeStructure.amount AS amount',
+                'chargeHead.id AS chargeHeadId',
+            ])
+            .getRawMany();
+
+        const chargeHeads: {
+            id: string;
+            name: string;
+            required: string;
+        }[] = await this.getRepository(ChargeHead).createQueryBuilder('chargeHead')
+            .select([
+                'chargeHead.id as id',
+                'chargeHead.name as name',
+                `CASE WHEN chargeHead.name = :monthlyFeeName THEN 'true' ELSE 'false' END as required`, // specifying requried field for monthly fee structure
+                'chargeHead.period as period',
+
+            ])
+            .setParameter('monthlyFeeName', CHARGE_HEADS.monthlyFee)
+            .getRawMany();
+
+        // Check if all charge heads are present
+        const missingChargeHeads = Object.values(CHARGE_HEADS).filter(hName => !chargeHeads.some(head => head.name === hName));
+
+        if (missingChargeHeads.length > 0) throw new InternalServerErrorException(`One or more charge heads are missing. Please contact customer support. Missing charge heads: ${missingChargeHeads.join(', ')}`);
+
+        // if student has a route stop, add transportation fee as required and with amount in feeStructures
+        return {
+            student,
+            feeStructures: !student.routeStopId
+                ? feeStructures
+                : [
+                    ...feeStructures,
+                    {
+                        amount: student.transportationFare,
+                        chargeHeadId: chargeHeads.find(head => head.name === CHARGE_HEADS.transportationFee)?.id,
+                    }
+                ],
+            chargeHeads: !student.routeStopId
+                ? chargeHeads
+                : chargeHeads.map(h => h.name === CHARGE_HEADS.transportationFee ? { ...h, required: 'true' } : h),
+        };
     }
 }
