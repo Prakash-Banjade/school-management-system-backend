@@ -1,6 +1,6 @@
 import { BadRequestException } from "@nestjs/common";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsDateString, IsNotEmpty, IsOptional, IsString, IsUUID, ValidateIf } from "class-validator";
+import { IsDateString, IsNotEmpty, IsOptional, IsString, IsUUID, Length, ValidateIf } from "class-validator";
 import { differenceInDays } from "date-fns";
 import { IsFutureDate } from "src/common/decorators/isFutureDate.decorator";
 
@@ -25,8 +25,9 @@ export class CreateLeaveRequestDto {
     @IsNotEmpty()
     title: string;
 
-    @ApiProperty({ type: String, description: 'Leave description' })
+    @ApiPropertyOptional({ type: String, description: 'Leave description' })
     @IsString()
-    @IsNotEmpty()
-    description: string;
+    @IsOptional()
+    @Length(0, 500, { message: 'Description must be less than 500 characters' })
+    description?: string;
 }
