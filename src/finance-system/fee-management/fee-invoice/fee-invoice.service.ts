@@ -72,7 +72,6 @@ export class FeeInvoiceService extends BaseRepository {
         const feeInvoice = this.getRepository(FeeInvoice).create({
             invoiceNo: await this.generateInvoiceNo(),
             month: dto.month,
-            studentLedger: ledger,
             totalAmount: grandTotal,
             dueDate: dto.dueDate,
             invoiceDate: dto.invoiceDate,
@@ -121,7 +120,6 @@ export class FeeInvoiceService extends BaseRepository {
             .leftJoin('feeInvoice.studentLedger', 'studentLedger')
             .leftJoin('studentLedger.enrollment', 'enrollment')
             .leftJoin('feeInvoice.items', 'items')
-            .leftJoin('feeInvoice.ledgerItem', 'ledgerItem')
             .leftJoin('items.chargeHead', 'chargeHead')
             .where('enrollment.studentId = :studentId', { studentId })
             .andWhere('enrollment.academicYearId = :academicYearId', { academicYearId: latestAcademicYear.id })

@@ -19,9 +19,6 @@ export class FeeInvoice extends BaseEntity {
     @Column({ type: 'varchar', unique: true })
     invoiceNo: string;
 
-    @ManyToOne(() => StudentLedger, studentLedger => studentLedger.feeInvoices, { onDelete: 'CASCADE' })
-    studentLedger: StudentLedger;
-
     @Column({ type: 'float' })
     totalAmount: number;
 

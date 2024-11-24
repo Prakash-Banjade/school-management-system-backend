@@ -16,6 +16,7 @@ import { FastifyRequest } from "fastify";
 import { FeeStructure } from "src/finance-system/fee-management/fee-structures/entities/fee-structure.entity";
 import { ChargeHead } from "src/finance-system/fee-management/charge-heads/entities/charge-head.entity";
 import { FeeInvoice } from "src/finance-system/fee-management/fee-invoice/entities/fee-invoice.entity";
+import { LedgerItem } from "src/finance-system/fee-management/student-ledgers/entities/ledger-item.entity";
 
 @Injectable()
 export class StudentsHelper extends BaseRepository {
@@ -233,16 +234,17 @@ export class StudentsHelper extends BaseRepository {
             .leftJoin("student.profileImage", "profileImage")
             .leftJoin("student.routeStop", "routeStop")
             .leftJoin("enrollments.ledger", "ledger")
-            .leftJoin(
+            .leftJoin( // joining only the latest fee invoice
                 subQuery => subQuery
-                    .select('feeInvoices.id AS id')
-                    .addSelect('feeInvoices.month AS month')
-                    .addSelect('feeInvoices.studentLedgerId AS studentLedgerId')
-                    .from(FeeInvoice, 'feeInvoices')
-                    .orderBy('feeInvoices.month', 'DESC')
+                    .select('ledgerItems.id AS id')
+                    .addSelect('ledgerItems.studentLedgerId AS studentLedgerId')
+                    .addSelect('feeInvoice.month AS month')
+                    .from(LedgerItem, 'ledgerItems')
+                    .leftJoin('ledgerItems.feeInvoice', 'feeInvoice')
+                    .orderBy('feeInvoice.month', 'DESC')
                     .limit(1),
-                'feeInvoice',
-                'feeInvoice.studentLedgerId = ledger.id'
+                'ledgerItem',
+                'ledgerItem.studentLedgerId = ledger.id'
             )
             .where("student.studentId = :studentId", { studentId })
             .select([
@@ -257,14 +259,14 @@ export class StudentsHelper extends BaseRepository {
                 "routeStop.id AS routeStopId",
                 "CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, ' - ', classRoom.name) END AS classRoomName",
                 "CASE WHEN parent.id IS NULL THEN classRoom.id ELSE parent.id END AS classRoomId",
-                "CASE WHEN feeInvoice.id IS NULL THEN 0 ELSE feeInvoice.month END AS lastMonth",
+                "CASE WHEN ledgerItem.id IS NULL THEN 0 ELSE ledgerItem.month END AS lastMonth",
                 "ledger.id AS ledgerId",
                 "ledger.amount AS previousDue",
             ])
             .groupBy('student.id')
             .addGroupBy('classRoom.id')
             .addGroupBy('enrollments.rollNo')
-            .addGroupBy('feeInvoice.id')
+            .addGroupBy('ledgerItem.id')
             .addGroupBy('ledger.id')
             .getRawOne();
 

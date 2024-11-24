@@ -16,12 +16,13 @@ export class FeePaymentsService extends BaseRepository {
     async create(dto: CreateFeePaymentDto) {
         const feeInvoice = await this.getRepository(FeeInvoice).createQueryBuilder('feeInvoice')
             .where('feeInvoice.id = :feeInvoiceId', { feeInvoiceId: dto.feeInvoiceId })
-            .leftJoin('feeInvoice.studentLedger', 'studentLedger')
-            .select(['feeInvoice.id', 'studentLedger.amount'])
+            .leftJoin('feeInvoice.ledgerItem', 'ledgerItem')
+            .leftJoin('ledgerItem.studentLedger', 'studentLedger')
+            .select(['feeInvoice.id', 'ledgerItem.id', 'ledgerItem.ledgerAmount', 'studentLedger.id'])
             .getOne();
         if (!feeInvoice) throw new NotFoundException('Fee invoice not found');
 
-        if (dto.paidAmount > feeInvoice.studentLedger.amount) throw new NotFoundException('Payment amount cannot be greater than the previous due amount');
+        if (dto.paidAmount > feeInvoice.ledgerItem?.ledgerAmount) throw new NotFoundException('Payment amount cannot be greater than the previous due amount');
 
         console.log(feeInvoice)
 
