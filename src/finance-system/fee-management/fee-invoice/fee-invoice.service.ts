@@ -127,7 +127,7 @@ export class FeeInvoiceService extends BaseRepository {
             .where('enrollment.studentId = :studentId', { studentId })
             .andWhere('enrollment.academicYearId = :academicYearId', { academicYearId: latestAcademicYear.id })
             .andWhere('studentLedger.amount > 0') // ensure the student has a previous due amount
-            .orderBy('feeInvoice.dueDate', 'DESC')
+            .orderBy('feeInvoice.createdAt', 'DESC')
             .select([
                 'feeInvoice.id',
                 'feeInvoice.month',
