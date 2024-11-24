@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
-import { IsOptional, IsString, IsUUID } from "class-validator";
+import { IsDateString, IsOptional, IsString, IsUUID } from "class-validator";
 import { QueryDto } from "src/common/dto/query.dto";
 
 export class LedgerQueryDto extends QueryDto {
@@ -9,12 +9,12 @@ export class LedgerQueryDto extends QueryDto {
     studentId?: string;
     
     @ApiPropertyOptional()
-    @IsString()
+    @IsDateString()
     @IsOptional()
     dateFrom?: string;
 
     @ApiPropertyOptional()
-    @IsString()
+    @IsDateString()
     @IsOptional()
     dateTo?: string;
 

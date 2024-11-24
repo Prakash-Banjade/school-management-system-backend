@@ -12,6 +12,7 @@ import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { LedgerQueryDto } from './dto/ledger-query.dto';
 import { LedgerItem } from './entities/ledger-item.entity';
 import { PageMetaDto } from 'src/common/dto/pageMeta.dto';
+import { startOfDay } from 'date-fns';
 
 @Injectable()
 export class StudentLedgersService extends BaseRepository {
@@ -57,8 +58,8 @@ export class StudentLedgersService extends BaseRepository {
 
                 queryDto.particular === 'invoice' && qb.andWhere('feeInvoice.id IS NOT NULL');
 
-                queryDto.dateFrom && qb.andWhere('DATE(ledgerItem.date) >= DATE(:dateFrom)', { dateFrom: queryDto.dateFrom });
-                queryDto.dateTo && qb.andWhere('DATE(ledgerItem.date) <= DATE(:dateTo)', { dateTo: queryDto.dateTo });
+                queryDto.dateFrom && qb.andWhere('DATE(ledgerItem.date) >= DATE(:dateFrom)', { dateFrom: startOfDay(new Date(queryDto.dateFrom)).toISOString() });
+                queryDto.dateTo && qb.andWhere('DATE(ledgerItem.date) <= DATE(:dateTo)', { dateTo: startOfDay(new Date(queryDto.dateTo)).toISOString() });
             }))
             .select([
                 'ledgerItem.id as id',
