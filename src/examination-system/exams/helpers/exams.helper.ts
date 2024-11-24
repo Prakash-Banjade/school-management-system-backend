@@ -3,7 +3,7 @@ import { BadRequestException, Inject, Injectable, NotFoundException } from "@nes
 import { REQUEST } from "@nestjs/core";
 import { Cache } from "cache-manager";
 import { FastifyRequest } from "fastify";
-import { CACHE_KEYS } from "src/common/CONSTANTS";
+import { CACHE_KEYS, WEAK_PERCENTAGE_THRESHOLD } from "src/common/CONSTANTS";
 import { BaseRepository } from "src/common/repository/base-repository";
 import { Student } from "src/students/entities/student.entity";
 import { Brackets, DataSource } from "typeorm";
@@ -147,7 +147,7 @@ export class ExamsHelper extends BaseRepository {
             (examSubject.examReports[0]?.theoryOM < examSubject.theoryPM) || (examSubject.examReports[0]?.practicalOM < examSubject.practicalPM)
         )).length;
 
-        const weakestSubject = exam.examSubjects?.sort((a, b) => a.examReports[0]?.percentage - b.examReports[0]?.percentage)[0]?.subject?.subjectName;
+        const weakSubjects = exam.examSubjects?.filter(es => es.examReports[0]?.percentage < WEAK_PERCENTAGE_THRESHOLD).map(es => es.subject.subjectName);
 
         return {
             student,
@@ -156,7 +156,7 @@ export class ExamsHelper extends BaseRepository {
             gpa,
             grade,
             failedSubjectsCount,
-            weakestSubject
+            weakSubjects
         }
     }
 }

@@ -22,6 +22,8 @@ export const GRADE_REGEX = /^[A-F](\+|-|\*)*$/;
 
 export const MAX_BOOK_ISSUE_LIMIT = 5;
 
+export const WEAK_PERCENTAGE_THRESHOLD = 50;
+
 export const CHARGE_HEADS = {
     admissionFee: "Admission Fee",
     monthlyFee: "Monthly Fee",
