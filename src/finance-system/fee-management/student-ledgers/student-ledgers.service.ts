@@ -45,6 +45,7 @@ export class StudentLedgersService extends BaseRepository {
             .leftJoin('ledgerItem.studentLedger', 'studentLedger')
             .leftJoin('studentLedger.enrollment', 'enrollment')
             .leftJoin('ledgerItem.feeInvoice', 'feeInvoice')
+            .leftJoin('ledgerItem.feePayment', 'feePayment')
             .where('enrollment.academicYearId = :academicYearId', { academicYearId: currentAcademicYearId })
 
         const ledgerItemsQuerybuilder = querybuilder.clone()
@@ -63,10 +64,8 @@ export class StudentLedgersService extends BaseRepository {
                 'ledgerItem.id as id',
                 'ledgerItem.date as date',
                 'ledgerItem.ledgerAmount as ledgerAmount',
-                'feeInvoice.id as feeInvoiceId',
-                'feeInvoice.invoiceNo as invoiceNo',
-                'feeInvoice.totalAmount as totalAmount',
-                'feeInvoice.month as month',
+                `CASE WHEN feeInvoice.id IS NULL THEN NULL ELSE JSON_OBJECT('id', feeInvoice.id, 'rcvNo', feeInvoice.invoiceNo, 'amount', feeInvoice.totalAmount, 'month', feeInvoice.month) END as feeInvoice`,
+                `CASE WHEN feePayment.id IS NULL THEN NULL ELSE JSON_OBJECT('id', feePayment.id, 'rcvNo', feePayment.receiptNo, 'amount', feePayment.amount) END as feePayment`,
             ]);
 
         const ledgerAmount = await querybuilder.clone()

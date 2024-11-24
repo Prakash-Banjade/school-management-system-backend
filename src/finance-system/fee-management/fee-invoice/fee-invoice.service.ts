@@ -118,6 +118,7 @@ export class FeeInvoiceService extends BaseRepository {
         const latestAcademicYear = await this.academicYearsService.latest();
 
         const invoice = await this.getRepository(FeeInvoice).createQueryBuilder('feeInvoice')
+            .leftJoin('feeInvoice.feePayments', 'feePayments')
             .leftJoin('feeInvoice.ledgerItem', 'ledgerItem')
             .leftJoin('ledgerItem.studentLedger', 'studentLedger')
             .leftJoin('studentLedger.enrollment', 'enrollment')
@@ -140,6 +141,7 @@ export class FeeInvoiceService extends BaseRepository {
                 'items.remark',
                 'chargeHead.id',
                 'chargeHead.name',
+                'feePayments.amount'
             ]).getOne();
 
         if (!invoice) throw new NotFoundException('Invoice not found');

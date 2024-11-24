@@ -21,4 +21,8 @@ export class StudentLedger extends BaseEntity {
 
     @OneToMany(() => LedgerItem, ledgerItem => ledgerItem.studentLedger)
     ledgerItems: LedgerItem[];
+
+    updateAmount(updateAmount: number) {
+        this.amount += updateAmount;
+    }
 }
