@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseInterceptors } from '@nestjs/common';
 import { FeeInvoiceService } from './fee-invoice.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CreateFeeInvoiceDto } from './dto/create-fee-invoice.dto';
@@ -17,5 +17,11 @@ export class FeeInvoiceController {
   @UseInterceptors(TransactionInterceptor)
   create(@Body() dto: CreateFeeInvoiceDto) {
     return this.feeInvoiceService.create(dto);
+  }
+
+  @Get('last-invoice/:studentId')
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  getLastInvoice(@Param('studentId') studentId: string) {
+    return this.feeInvoiceService.getLastInvoice(studentId);
   }
 }

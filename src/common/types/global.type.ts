@@ -142,8 +142,7 @@ export enum ELibarryBookStatus {
 
 export enum EPaymentMethod {
     CASH = 'cash',
-    CREDIT = 'credit',
-    DEBIT = 'debit',
+    CHEQUE = 'cheque',
     BANK = 'bank',
 }
 

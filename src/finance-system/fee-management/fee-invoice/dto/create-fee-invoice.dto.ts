@@ -22,8 +22,8 @@ class InvoiceItemsDto {
     @ApiPropertyOptional()
     @IsString()
     @IsOptional()
-    @Length(0, 100, { message: 'Remarks must be less than 100 characters' })
-    remarks?: string;
+    @Length(0, 100, { message: 'Remark must be less than 100 characters' })
+    remark?: string;
 }
 
 export class CreateFeeInvoiceDto {

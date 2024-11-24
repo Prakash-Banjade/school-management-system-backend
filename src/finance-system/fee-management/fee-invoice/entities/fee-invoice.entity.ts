@@ -5,6 +5,7 @@ import { StudentLedger } from "../../student-ledgers/entities/student-ledger.ent
 import { EMonth } from "src/common/types/months";
 import { LedgerItem } from "../../student-ledgers/entities/ledger-item.entity";
 import { MethodNotAllowedException } from "@nestjs/common";
+import { FeePayment } from "../../fee-payments/entities/fee-payment.entity";
 
 @Entity()
 export class FeeInvoice extends BaseEntity {
@@ -35,6 +36,9 @@ export class FeeInvoice extends BaseEntity {
 
     @OneToMany(() => FeeInvoiceItem, feeInvoiceItem => feeInvoiceItem.invoice, { cascade: true })
     items: FeeInvoiceItem[];
+
+    @OneToMany(() => FeePayment, feePayment => feePayment.feeInvoice, { cascade: true })
+    feePayments: FeePayment[];
 
     @OneToOne(() => LedgerItem, ledgerItem => ledgerItem.feeInvoice, { cascade: true })
     ledgerItem: LedgerItem;

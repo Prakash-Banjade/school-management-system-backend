@@ -65,7 +65,7 @@ export class FeeInvoiceService extends BaseRepository {
                 amount: item.amount,
                 discount: item.discount,
                 chargeHead,
-                remark: item.remarks,
+                remark: item.remark,
             });
         }));
 
@@ -112,5 +112,37 @@ export class FeeInvoiceService extends BaseRepository {
             const invDigit = (+lastInvoice.invoiceNo.split('-').at(-1) + 1).toString().padStart(4, '0');
             return `INV-${new Date().getFullYear()}-${invDigit}`;
         }
+    }
+
+    async getLastInvoice(studentId: string) {
+        const latestAcademicYear = await this.academicYearsService.latest();
+
+        const invoice = await this.getRepository(FeeInvoice).createQueryBuilder('feeInvoice')
+            .leftJoin('feeInvoice.studentLedger', 'studentLedger')
+            .leftJoin('studentLedger.enrollment', 'enrollment')
+            .leftJoin('feeInvoice.items', 'items')
+            .leftJoin('feeInvoice.ledgerItem', 'ledgerItem')
+            .leftJoin('items.chargeHead', 'chargeHead')
+            .where('enrollment.studentId = :studentId', { studentId })
+            .andWhere('enrollment.academicYearId = :academicYearId', { academicYearId: latestAcademicYear.id })
+            .andWhere('studentLedger.amount > 0') // ensure the student has a previous due amount
+            .orderBy('feeInvoice.dueDate', 'DESC')
+            .select([
+                'feeInvoice.id',
+                'feeInvoice.month',
+                'feeInvoice.totalAmount',
+                'chargeHead.name',
+                'studentLedger.amount',
+                'items.id',
+                'items.amount',
+                'items.discount',
+                'items.remark',
+                'chargeHead.id',
+                'chargeHead.name',
+            ]).getOne();
+
+        if (!invoice) throw new NotFoundException('Invoice not found');
+
+        return invoice;
     }
 }
