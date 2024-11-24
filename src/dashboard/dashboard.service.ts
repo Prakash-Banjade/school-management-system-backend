@@ -11,7 +11,7 @@ import { Teacher } from 'src/teachers/entities/teacher.entity';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { Staff } from 'src/staffs/entities/staff.entity';
 import { LeaveRequest } from 'src/leave-requests/entities/leave-request.entity';
-import { ELeaveRequestStatus, Role } from 'src/common/types/global.type';
+import { EClassType, ELeaveRequestStatus, Role } from 'src/common/types/global.type';
 
 @Injectable()
 export class DashboardService extends BaseRepository {
@@ -30,14 +30,24 @@ export class DashboardService extends BaseRepository {
 
         const teachersCount = await this.getRepository(Teacher).createQueryBuilder().getCount();
 
-        const classRoomsCount = await this.getRepository(ClassRoom).createQueryBuilder().getCount();
+        const classRoomsCount: {
+            sectionsCount: string,
+            primaryWithNoSectionsCount: string,
+        } = await this.getRepository(ClassRoom).createQueryBuilder('classRoom')
+            .leftJoin('classRoom.children', 'children')
+            .select([
+                'COUNT(DISTINCT CASE WHEN classRoom.classType = :primary THEN children.id END) as sectionsCount',
+                'COUNT(DISTINCT CASE WHEN classRoom.classType = :primary AND children.id IS NULL THEN classRoom.id END) as primaryWithNoSectionsCount',
+            ])
+            .setParameter('primary', EClassType.PRIMARY)
+            .getRawOne();
 
         const staffsCount = await this.getRepository(Staff).createQueryBuilder().getCount();
 
         return {
             studentsCount,
             teachersCount,
-            classRoomsCount,
+            classRoomsCount: +classRoomsCount.sectionsCount + +classRoomsCount.primaryWithNoSectionsCount,
             staffsCount,
         }
     }
