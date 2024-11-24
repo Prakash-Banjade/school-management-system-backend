@@ -6,9 +6,12 @@ import { FastifyRequest } from 'fastify';
 import { CACHE_KEYS } from 'src/common/CONSTANTS';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { Student } from 'src/students/entities/student.entity';
-import { DataSource } from 'typeorm';
+import { Brackets, DataSource } from 'typeorm';
 import { StudentLedger } from './entities/student-ledger.entity';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
+import { LedgerQueryDto } from './dto/ledger-query.dto';
+import { LedgerItem } from './entities/ledger-item.entity';
+import { PageMetaDto } from 'src/common/dto/pageMeta.dto';
 
 @Injectable()
 export class StudentLedgersService extends BaseRepository {
@@ -17,7 +20,7 @@ export class StudentLedgersService extends BaseRepository {
         @Inject(CACHE_MANAGER) private cacheManager: Cache,
     ) { super(dataSource, req); }
 
-    async createStudentsLedger() {
+    async createStudentsLedger() { // TODO: remove in production
         const academicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
         const students = await this.getRepository(Student).createQueryBuilder('student')
@@ -33,6 +36,53 @@ export class StudentLedgersService extends BaseRepository {
         });
 
         await this.getRepository(Enrollment).save(enrollments);
+    }
+
+    async findAll(queryDto: LedgerQueryDto) {
+        const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+
+        const querybuilder = this.getRepository(LedgerItem).createQueryBuilder('ledgerItem')
+            .leftJoin('ledgerItem.studentLedger', 'studentLedger')
+            .leftJoin('studentLedger.enrollment', 'enrollment')
+            .leftJoin('ledgerItem.feeInvoice', 'feeInvoice')
+            .where('enrollment.academicYearId = :academicYearId', { academicYearId: currentAcademicYearId })
+
+        const ledgerItemsQuerybuilder = querybuilder.clone()
+            .limit(queryDto.take)
+            .offset(queryDto.skip)
+            .orderBy('ledgerItem.createdAt', queryDto.order)
+            .andWhere(new Brackets(qb => {
+                queryDto.studentId && qb.andWhere('enrollment.studentId = :studentId', { studentId: queryDto.studentId });
+
+                queryDto.particular === 'invoice' && qb.andWhere('feeInvoice.id IS NOT NULL');
+
+                queryDto.dateFrom && qb.andWhere('DATE(ledgerItem.date) >= DATE(:dateFrom)', { dateFrom: queryDto.dateFrom });
+                queryDto.dateTo && qb.andWhere('DATE(ledgerItem.date) <= DATE(:dateTo)', { dateTo: queryDto.dateTo });
+            }))
+            .select([
+                'ledgerItem.id as id',
+                'ledgerItem.date as date',
+                'ledgerItem.ledgerAmount as ledgerAmount',
+                'feeInvoice.id as feeInvoiceId',
+                'feeInvoice.invoiceNo as invoiceNo',
+                'feeInvoice.totalAmount as totalAmount',
+                'feeInvoice.month as month',
+            ]);
+
+        const ledgerAmount = await querybuilder.clone()
+            .select('studentLedger.amount', 'ledgerAmount')
+            .getRawOne();
+
+        const itemCount = await ledgerItemsQuerybuilder.getCount();
+        const data = await ledgerItemsQuerybuilder.getRawMany();
+
+        const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto: queryDto });
+
+        return {
+            data,
+            ledgerAmount: ledgerAmount?.ledgerAmount,
+            meta: pageMetaDto,
+        };
     }
 
 }

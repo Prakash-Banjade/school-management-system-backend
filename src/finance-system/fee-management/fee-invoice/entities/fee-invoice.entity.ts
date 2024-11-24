@@ -1,14 +1,23 @@
 import { BaseEntity } from "src/common/entities/base.entity";
-import { Column, Entity, ManyToOne, OneToMany } from "typeorm";
+import { BeforeRemove, BeforeSoftRemove, BeforeUpdate, Column, Entity, ManyToOne, OneToMany, OneToOne } from "typeorm";
 import { FeeInvoiceItem } from "./fee-invoice-item.entity";
 import { StudentLedger } from "../../student-ledgers/entities/student-ledger.entity";
 import { EMonth } from "src/common/types/months";
+import { LedgerItem } from "../../student-ledgers/entities/ledger-item.entity";
+import { MethodNotAllowedException } from "@nestjs/common";
 
 @Entity()
 export class FeeInvoice extends BaseEntity {
+    @BeforeUpdate()
+    @BeforeRemove()
+    @BeforeSoftRemove()
+    preventMutation() {
+        throw new MethodNotAllowedException('Mutatinos are not allowed on fee invoice.');
+    }
+
     @Column({ type: 'varchar', unique: true })
     invoiceNo: string;
-    
+
     @ManyToOne(() => StudentLedger, studentLedger => studentLedger.feeInvoices, { onDelete: 'CASCADE' })
     studentLedger: StudentLedger;
 
@@ -26,4 +35,7 @@ export class FeeInvoice extends BaseEntity {
 
     @OneToMany(() => FeeInvoiceItem, feeInvoiceItem => feeInvoiceItem.invoice, { cascade: true })
     items: FeeInvoiceItem[];
+
+    @OneToOne(() => LedgerItem, ledgerItem => ledgerItem.feeInvoice, { cascade: true })
+    ledgerItem: LedgerItem;
 }

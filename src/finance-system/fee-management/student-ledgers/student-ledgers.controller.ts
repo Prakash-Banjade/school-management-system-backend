@@ -1,9 +1,9 @@
-import { Controller, Post, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, Query, UseInterceptors } from '@nestjs/common';
 import { StudentLedgersService } from './student-ledgers.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, Role } from 'src/common/types/global.type';
-import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
+import { LedgerQueryDto } from './dto/ledger-query.dto';
 
 @ApiBearerAuth()
 @ApiTags('Student Ledgers')
@@ -18,4 +18,10 @@ export class StudentLedgersController {
   // createStudentsLedger() {
   //   return this.studentLedgersService.createStudentsLedger();
   // }
+
+  @Get()
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  findAllLedgerItems(@Query() queryDto: LedgerQueryDto) {
+    return this.studentLedgersService.findAll(queryDto);
+  }
 }

@@ -10,6 +10,7 @@ import { AcademicYearsService } from 'src/academic-years/academic-years.service'
 import { FeeInvoiceItem } from './entities/fee-invoice-item.entity';
 import { ChargeHead } from '../charge-heads/entities/charge-head.entity';
 import { StudentLedger } from '../student-ledgers/entities/student-ledger.entity';
+import { LedgerItem } from '../student-ledgers/entities/ledger-item.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class FeeInvoiceService extends BaseRepository {
@@ -76,6 +77,11 @@ export class FeeInvoiceService extends BaseRepository {
             dueDate: dto.dueDate,
             invoiceDate: dto.invoiceDate,
             items: invoiceItems,
+            ledgerItem: this.getRepository(LedgerItem).create({
+                date: dto.invoiceDate,
+                ledgerAmount: ledger.amount + grandTotal, // this is ths snapshot of the ledger at the time of invoice creation
+                studentLedger: ledger,
+            })
         });
 
         await this.getRepository(FeeInvoice).save(feeInvoice);
@@ -103,7 +109,7 @@ export class FeeInvoiceService extends BaseRepository {
         if (!lastInvoice) {
             return `INV-${new Date().getFullYear()}-0001`
         } else {
-            const invDigit = (+lastInvoice.invoiceNo.split('-').at(-1) + 1).toString().padEnd(4, '0');
+            const invDigit = (+lastInvoice.invoiceNo.split('-').at(-1) + 1).toString().padStart(4, '0');
             return `INV-${new Date().getFullYear()}-${invDigit}`;
         }
     }

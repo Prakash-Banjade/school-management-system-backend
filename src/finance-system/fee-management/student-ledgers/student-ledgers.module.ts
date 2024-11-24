@@ -3,11 +3,13 @@ import { StudentLedgersService } from './student-ledgers.service';
 import { StudentLedgersController } from './student-ledgers.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { StudentLedger } from './entities/student-ledger.entity';
+import { LedgerItem } from './entities/ledger-item.entity';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      StudentLedger
+      StudentLedger,
+      LedgerItem
     ])
   ],
   controllers: [StudentLedgersController],
