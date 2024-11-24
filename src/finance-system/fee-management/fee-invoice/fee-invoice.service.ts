@@ -41,7 +41,8 @@ export class FeeInvoiceService extends BaseRepository {
 
         // validate month
         const pastMonthFeeInvoice = await this.getRepository(FeeInvoice).createQueryBuilder('feeInvoice')
-            .leftJoin('feeInvoice.studentLedger', 'studentLedger')
+            .leftJoin('feeInvoice.ledgerItem', 'ledgerItem')
+            .leftJoin('ledgerItem.studentLedger', 'studentLedger')
             .leftJoin('studentLedger.enrollment', 'enrollment')
             .where('enrollment.academicYearId = :academicYearId', { academicYearId: latestAcademicYear.id })
             .andWhere('feeInvoice.month >= :month', { month: dto.month })
@@ -117,7 +118,8 @@ export class FeeInvoiceService extends BaseRepository {
         const latestAcademicYear = await this.academicYearsService.latest();
 
         const invoice = await this.getRepository(FeeInvoice).createQueryBuilder('feeInvoice')
-            .leftJoin('feeInvoice.studentLedger', 'studentLedger')
+            .leftJoin('feeInvoice.ledgerItem', 'ledgerItem')
+            .leftJoin('ledgerItem.studentLedger', 'studentLedger')
             .leftJoin('studentLedger.enrollment', 'enrollment')
             .leftJoin('feeInvoice.items', 'items')
             .leftJoin('items.chargeHead', 'chargeHead')
@@ -130,6 +132,7 @@ export class FeeInvoiceService extends BaseRepository {
                 'feeInvoice.month',
                 'feeInvoice.totalAmount',
                 'chargeHead.name',
+                'ledgerItem.id',
                 'studentLedger.amount',
                 'items.id',
                 'items.amount',
