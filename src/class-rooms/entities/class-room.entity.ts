@@ -27,10 +27,10 @@ export class ClassRoom extends BaseEntity {
     description: string;
 
     @Column({ type: "real", default: 0 })
-    admissionFee: number;
+    admissionFee: number; // TODO: remove this column in production
 
     @Column({ type: "real", default: 0 })
-    monthlyFee: number;
+    monthlyFee: number; // TODO: remove this column in production
 
     @Column({ type: 'varchar', default: '' })
     location: string
