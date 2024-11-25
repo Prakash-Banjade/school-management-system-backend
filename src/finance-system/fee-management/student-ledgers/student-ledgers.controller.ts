@@ -12,7 +12,7 @@ export class StudentLedgersController {
   constructor(private readonly studentLedgersService: StudentLedgersService) { }
 
 
-  // @Post('create-students-ledger')
+  // @Post('create-students-ledger') // TODO: remove in production
   // @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
   // @UseInterceptors(TransactionInterceptor)
   // createStudentsLedger() {
