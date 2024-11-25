@@ -70,6 +70,9 @@ export class StudentLedgersService extends BaseRepository {
             ]);
 
         const ledgerAmount = await querybuilder.clone()
+            .andWhere(new Brackets(qb => {
+                queryDto.studentId && qb.andWhere('enrollment.studentId = :studentId', { studentId: queryDto.studentId });
+            }))
             .select('studentLedger.amount', 'ledgerAmount')
             .getRawOne();
 
