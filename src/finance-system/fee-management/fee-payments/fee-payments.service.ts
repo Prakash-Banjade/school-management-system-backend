@@ -66,4 +66,64 @@ export class FeePaymentsService extends BaseRepository {
             return `FEE-${new Date().getFullYear()}-${invDigit}`;
         }
     }
+
+    async findOne(id: string) {
+        const queryBuilder = this.getRepository(FeePayment).createQueryBuilder('feePayment')
+            .leftJoin('feePayment.feeInvoice', 'feeInvoice')
+            .leftJoin('feeInvoice.ledgerItem', 'ledgerItem')
+            .leftJoin('feeInvoice.feePayments', 'priorFeePayments', 'priorFeePayments.createdAt < feePayment.createdAt') // used to calculate how much amount is paid before for this fee invoice
+            .leftJoin('ledgerItem.studentLedger', 'studentLedger')
+            .leftJoin('studentLedger.enrollment', 'enrollment')
+            .leftJoin('enrollment.classRoom', 'classRoom')
+            .leftJoin('classRoom.parent', 'parent')
+            .leftJoin('enrollment.student', 'student')
+            .leftJoin('feeInvoice.items', 'items')
+            .leftJoin('items.chargeHead', 'chargeHead')
+            .where('feePayment.id = :id', { id })
+            .select([
+                'feePayment.id',
+                'feePayment.receiptNo',
+                'feePayment.amount',
+                'feePayment.paymentMethod',
+                'feePayment.remark',
+                'feePayment.createdAt',
+                'feeInvoice.id',
+                'feeInvoice.month',
+                'feeInvoice.totalAmount',
+                'ledgerItem.id',
+                'ledgerItem.ledgerAmount',
+                'items.id',
+                'items.amount',
+                'items.discount',
+                'items.remark',
+                'chargeHead.id',
+                'chargeHead.name',
+            ])
+            .addSelect('SUM(priorFeePayments.amount)', 'totalFeesPaid')
+            .addSelect(`
+                JSON_OBJECT(
+                    "id", student.id,
+                    "studentId", student.studentId,
+                    "name", CONCAT(student.firstName, " ", student.lastName),
+                    "email", student.email,
+                    "phone", student.phone,
+                    "rollNo", enrollment.rollNo,
+                    "classRoomName", CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, " - ", classRoom.name) END
+                )`, 'student'
+            )
+            .groupBy('feeInvoice.id')
+            .addGroupBy('items.id')
+
+        const payment = await queryBuilder.getOne();
+
+        const rawInvoice = await queryBuilder.getRawOne();
+
+        if (!payment) throw new NotFoundException('Payment not found');
+
+        return {
+            ...payment,
+            student: rawInvoice.student,
+            totalFeesPaid: rawInvoice.totalFeesPaid, // this also contains the amount of current payment
+        };
+    }
 }

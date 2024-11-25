@@ -117,7 +117,7 @@ export class FeeInvoiceService extends BaseRepository {
     async getLastInvoice(studentId: string) {
         const latestAcademicYear = await this.academicYearsService.latest();
 
-        const invoice = await this.getRepository(FeeInvoice).createQueryBuilder('feeInvoice')
+        const queryBuilder = this.getRepository(FeeInvoice).createQueryBuilder('feeInvoice')
             .leftJoin('feeInvoice.feePayments', 'feePayments')
             .leftJoin('feeInvoice.ledgerItem', 'ledgerItem')
             .leftJoin('ledgerItem.studentLedger', 'studentLedger')
@@ -134,18 +134,88 @@ export class FeeInvoiceService extends BaseRepository {
                 'feeInvoice.totalAmount',
                 'chargeHead.name',
                 'ledgerItem.id',
+                'ledgerItem.ledgerAmount',
                 'studentLedger.amount',
+                'items.id',
+                'items.discount',
+                'items.amount',
+                'items.remark',
+                'chargeHead.id',
+                'chargeHead.name',
+            ])
+            .addSelect('SUM(feePayments.amount)', 'totalFeesPaid')
+            .groupBy('feeInvoice.id')
+            .addGroupBy('items.id')
+            .addGroupBy('feePayments.id')
+            .addGroupBy('feePayments.amount')
+
+        const invoice = await queryBuilder.getOne();
+        const rawInvoice = await queryBuilder.getRawOne();
+
+        if (!invoice) throw new NotFoundException('Invoice not found');
+
+        return {
+            ...invoice,
+            totalFeesPaid: rawInvoice.totalFeesPaid
+        };
+    }
+
+    async findOne(id: string) {
+        const queryBuilder = this.getRepository(FeeInvoice).createQueryBuilder('feeInvoice')
+            .leftJoin('feeInvoice.feePayments', 'feePayments')
+            .leftJoin('feeInvoice.ledgerItem', 'ledgerItem')
+            .leftJoin('ledgerItem.studentLedger', 'studentLedger')
+            .leftJoin('studentLedger.enrollment', 'enrollment')
+            .leftJoin('enrollment.classRoom', 'classRoom')
+            .leftJoin('classRoom.parent', 'parent')
+            .leftJoin('enrollment.student', 'student')
+            .leftJoin('feeInvoice.items', 'items')
+            .leftJoin('items.chargeHead', 'chargeHead')
+            .where('feeInvoice.id = :id', { id })
+            .select([
+                'feeInvoice.id',
+                'feeInvoice.month',
+                'feeInvoice.invoiceNo',
+                'feeInvoice.invoiceDate',
+                'feeInvoice.dueDate',
+                'feeInvoice.totalAmount',
+                'ledgerItem.id',
+                'ledgerItem.ledgerAmount',
                 'items.id',
                 'items.amount',
                 'items.discount',
                 'items.remark',
                 'chargeHead.id',
                 'chargeHead.name',
-                'feePayments.amount'
-            ]).getOne();
+                // 'feePayments.amount'
+            ])
+            .addSelect('SUM(feePayments.amount)', 'totalFeesPaid')
+            .addSelect(`
+                JSON_OBJECT(
+                    "id", student.id,
+                    "studentId", student.studentId,
+                    "name", CONCAT(student.firstName, " ", student.lastName),
+                    "email", student.email,
+                    "phone", student.phone,
+                    "rollNo", enrollment.rollNo,
+                    "classRoomName", CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, " - ", classRoom.name) END
+                )`, 'student'
+            )
+            .groupBy('feeInvoice.id')
+            .addGroupBy('items.id')
+            .addGroupBy('feePayments.id')
+            .addGroupBy('feePayments.amount')
+
+        const invoice = await queryBuilder.getOne();
+
+        const rawInvoice = await queryBuilder.getRawOne();
 
         if (!invoice) throw new NotFoundException('Invoice not found');
 
-        return invoice;
+        return {
+            ...invoice,
+            totalFeesPaid: rawInvoice.totalFeesPaid,
+            student: rawInvoice.student,
+        };
     }
 }

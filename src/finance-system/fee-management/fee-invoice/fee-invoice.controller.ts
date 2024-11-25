@@ -24,4 +24,10 @@ export class FeeInvoiceController {
   getLastInvoice(@Param('studentId') studentId: string) {
     return this.feeInvoiceService.getLastInvoice(studentId);
   }
+
+  @Get(':id')
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  findOne(@Param('id') id: string) {
+    return this.feeInvoiceService.findOne(id);
+  }
 }
