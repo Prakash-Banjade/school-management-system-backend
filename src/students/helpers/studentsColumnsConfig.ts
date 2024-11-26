@@ -60,6 +60,7 @@ export const singleStudentColumnsConfig: FindOptionsSelect<Student> = {
             url: true
         },
         relation: true,
+        receiveNotification: true,
     },
     dormitoryRoom: {
         id: true,

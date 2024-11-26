@@ -8,11 +8,13 @@ import * as nodemailer from 'nodemailer';
 import Handlebars from 'handlebars';
 import { join } from 'path';
 import { OnEvent } from '@nestjs/event-emitter';
-import { ConfirmationMailEventDto, ResetPasswordMailEventDto } from './dto/events.dto';
+import { ConfirmationMailEventDto, FeeInvoiceCreatedEventDto, ResetPasswordMailEventDto } from './dto/events.dto';
+import Mail from 'nodemailer/lib/mailer';
 
 export enum MailEvents {
     CONFIRMATION = 'mail.confirmation',
     RESET_PASSWORD = 'mail.reset-password',
+    FEE_INVOICE_CREATED = 'fee-invoice:created'
 }
 
 @Injectable()
@@ -32,6 +34,7 @@ export class MailService {
         this.templates = {
             confirmation: MailService.parseTemplate('email-verification-otp.hbs'),
             resetPassword: MailService.parseTemplate('reset-password.hbs'),
+            invoiceCreated: MailService.parseTemplate('fee-system/fee-invoice-created.hbs'),
         };
     }
 
@@ -49,12 +52,14 @@ export class MailService {
         to: string,
         subject: string,
         html: string,
+        attachments?: Mail.Attachment[]
     ): Promise<void> {
         const result = await this.transport.sendMail({
             from: this.email,
             to,
             subject,
             html,
+            attachments,
         });
 
         const previewUrl = nodemailer.getTestMessageUrl(result);
@@ -85,6 +90,19 @@ export class MailService {
             email,
             subject,
             html,
+        );
+    }
+
+    @OnEvent(MailEvents.FEE_INVOICE_CREATED)
+    public async sendFeeInvoiceCreatedMail(dto: FeeInvoiceCreatedEventDto) {
+        const { parentMail, subject } = dto;
+        const html = this.templates.invoiceCreated(dto);
+
+        this.sendEmail(
+            parentMail,
+            subject,
+            html,
+            dto.attachments,
         );
     }
 }

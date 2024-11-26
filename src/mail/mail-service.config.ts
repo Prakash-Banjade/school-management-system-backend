@@ -26,4 +26,5 @@ export const emailConfig: IEmailConfig = {
 export interface ITemplates<T = any> {
     confirmation: TemplateDelegate<T>;
     resetPassword: TemplateDelegate<T>;
+    invoiceCreated: TemplateDelegate<T>;
 }

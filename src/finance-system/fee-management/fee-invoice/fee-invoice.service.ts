@@ -62,7 +62,7 @@ export class FeeInvoiceService extends BaseRepository {
 
             const chargeHead = await this.getRepository(ChargeHead).findOne({
                 where: { id: item.chargeHeadId },
-                select: { id: true }
+                select: { id: true, name: true } // name is used in mail pdf
             });
             if (!chargeHead) throw new NotFoundException('Charge head not found');
 

@@ -5,9 +5,12 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 
 @Injectable()
-export class PdfService {
-    async renderTemplate(templateName: string, data: Record<string, any>): Promise<string> {
-        const templatePath = path.join(__dirname, '..', 'templates', `${templateName}.hbs`);
+export class PdfAttachmentService {
+    /**
+     * template name should be relative to the templates folder inside dist/mail/templates dir 
+     */
+    async renderTemplate<T>(templateName: string, data: T): Promise<string> {
+        const templatePath = path.join(process.cwd(), 'dist', 'mail', 'templates', `${templateName}.hbs`);
         const templateContent = await fs.readFile(templatePath, 'utf-8');
         const template = Handlebars.compile(templateContent);
         return template(data);

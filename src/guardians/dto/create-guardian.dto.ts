@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID, Matches } from "class-validator";
+import { IsBoolean, IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID, Matches } from "class-validator";
 import { PHONE_NUMBER_REGEX } from "src/common/CONSTANTS";
 import { IsOptionalEmail } from "src/common/decorators/isOptionalEmail.decorator";
 import { IsUuidOrUrl } from "src/common/decorators/isUrlOrUUid.decorator";
@@ -51,4 +51,10 @@ export class CreateGuardianDto {
     @IsUUID()
     @IsNotEmpty()
     studentId: string;
+
+    @ApiPropertyOptional()
+    @IsBoolean()
+    @IsOptional()
+    receiveNotification?: boolean;
 }
+

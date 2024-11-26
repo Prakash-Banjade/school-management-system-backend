@@ -35,3 +35,10 @@ export const CHARGE_HEADS = {
 export const enum CACHE_KEYS {
     CAY_ID = 'currentAcademicYearId'
 }
+
+export const thisSchool = {
+    name: 'Abhyam Academy', 
+    address: 'Comming soon...',
+    phone: '9800525463',
+    logo: 'https://marketplace.canva.com/EAGLphtN1-E/1/0/1600w/canva-blue-modern-school-logo-bVNORNpm-c8.jpg',
+} as const;
