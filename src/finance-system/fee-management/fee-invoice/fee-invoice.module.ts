@@ -4,6 +4,7 @@ import { FeeInvoiceController } from './fee-invoice.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { FeeInvoice } from './entities/fee-invoice.entity';
 import { FeeInvoiceItem } from './entities/fee-invoice-item.entity';
+import { FeeInvoiceMailer } from './fee-invoice.mailer';
 
 @Module({
   imports: [
@@ -13,6 +14,9 @@ import { FeeInvoiceItem } from './entities/fee-invoice-item.entity';
     ])
   ],
   controllers: [FeeInvoiceController],
-  providers: [FeeInvoiceService],
+  providers: [
+    FeeInvoiceService,
+    FeeInvoiceMailer
+  ],
 })
 export class FeeInvoiceModule { }

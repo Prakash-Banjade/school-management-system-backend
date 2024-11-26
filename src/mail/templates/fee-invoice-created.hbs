@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Invoice</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 40px;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo {
+            width: 60px;
+        }
+
+        .school-info h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .school-info p {
+            margin: 5px 0;
+            color: #666;
+        }
+
+        .invoice-number {
+            text-align: right;
+        }
+
+        .student-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .dates {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th {
+            background-color: #f0f0f0;
+            padding: 10px;
+            text-align: left;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .grand-total {
+            text-align: right;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        .amount-words {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .footer {
+            margin-top: 50px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .signature-line {
+            border-top: 1px solid #000;
+            width: 200px;
+            text-align: center;
+            padding-top: 5px;
+        }
+
+        @media print {
+            .print-button {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="logo-section">
+            <img src="{{schoolLogo}}" alt="School Logo" class="logo">
+            <div class="school-info">
+                <h1>Abhyam Academy</h1>
+                <p>{{schoolAddress}}</p>
+                <p>Phone: {{schoolPhone}}</p>
+            </div>
+        </div>
+        <div class="invoice-number">
+            <h2>INVOICE</h2>
+            <p>Invoice #: {{invoiceNumber}}</p>
+        </div>
+    </div>
+
+    <div class="student-info">
+        <div>
+            <p><strong>Student ID:</strong> {{studentId}}</p>
+            <p><strong>Student Name:</strong> {{studentName}}</p>
+        </div>
+        <div>
+            <p><strong>Class:</strong> {{className}}</p>
+        </div>
+    </div>
+
+    <div class="dates">
+        <div>
+            <p><strong>Invoice Date:</strong> {{invoiceDate}}</p>
+            <p><strong>Due Date:</strong> {{dueDate}}</p>
+        </div>
+        <div>
+            <p><strong>Month Upto:</strong> {{monthUpto}}</p>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Charge Head</th>
+                <th>Amount</th>
+                <th>Discount (%)</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#each charges}}
+            <tr>
+                <td>{{name}}</td>
+                <td>{{amount}}</td>
+                <td>{{discount}}</td>
+                <td>{{total}}</td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </table>
+
+    <div class="grand-total">
+        <p>Grand Total: Rs. {{grandTotal}}</p>
+    </div>
+
+    <div class="amount-words">
+        <p>Amount in Words: {{amountInWords}}</p>
+    </div>
+
+    <div class="footer">
+        <div class="payment-terms">
+            <h3>Payment Terms:</h3>
+            <p>Please make payment before the due date</p>
+        </div>
+        <div class="signature">
+            <div class="signature-line">
+                <p>Authorized Signature</p>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

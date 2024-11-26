@@ -103,29 +103,4 @@ export class FilesService {
       res.send(readStream);
     });
   }
-
-  async update(id: string, updateFileDto: UpdateFileDto) {
-    const existing = await this.findOne(id);
-
-    // update file name only
-    existing.name = updateFileDto.name;
-
-    const savedFile = await this.filesRepository.save(existing);
-
-    return {
-      message: 'File updated',
-      file: {
-        url: savedFile.url,
-        id: savedFile.id
-      }
-    }
-  }
-
-  async remove(id: string) {
-    const existing = await this.findOne(id);
-    await this.filesRepository.remove(existing);
-    return {
-      message: 'File deleted successfully'
-    }
-  }
 }

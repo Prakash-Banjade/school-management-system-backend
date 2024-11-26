@@ -33,4 +33,7 @@ export class Guardian extends BaseEntity {
     @ManyToMany(() => Student, (student) => student.guardians, { onDelete: 'CASCADE' })
     @JoinTable({ name: 'student_guardians' })
     students: Student[]
+
+    @Column({ type: 'boolean', default: false })
+    receiveNotification: boolean;
 }
