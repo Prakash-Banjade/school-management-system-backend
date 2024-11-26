@@ -146,13 +146,11 @@ export class FeeInvoiceService extends BaseRepository {
             .addSelect('SUM(feePayments.amount)', 'totalFeesPaid')
             .groupBy('feeInvoice.id')
             .addGroupBy('items.id')
-            .addGroupBy('feePayments.id')
-            .addGroupBy('feePayments.amount')
 
         const invoice = await queryBuilder.getOne();
         const rawInvoice = await queryBuilder.getRawOne();
 
-        if (!invoice) throw new NotFoundException('Invoice not found');
+        if (!invoice) return null;
 
         return {
             ...invoice,
