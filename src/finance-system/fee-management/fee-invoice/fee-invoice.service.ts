@@ -11,11 +11,14 @@ import { FeeInvoiceItem } from './entities/fee-invoice-item.entity';
 import { ChargeHead } from '../charge-heads/entities/charge-head.entity';
 import { StudentLedger } from '../student-ledgers/entities/student-ledger.entity';
 import { LedgerItem } from '../student-ledgers/entities/ledger-item.entity';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { FeeInvoiceCreatedEvent } from './fee-invoice.mailer';
 
 @Injectable({ scope: Scope.REQUEST })
 export class FeeInvoiceService extends BaseRepository {
     constructor(
         dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
+        private readonly eventEmitter: EventEmitter2,
         private readonly academicYearsService: AcademicYearsService
     ) { super(dataSource, req); }
 
@@ -44,7 +47,8 @@ export class FeeInvoiceService extends BaseRepository {
             .leftJoin('feeInvoice.ledgerItem', 'ledgerItem')
             .leftJoin('ledgerItem.studentLedger', 'studentLedger')
             .leftJoin('studentLedger.enrollment', 'enrollment')
-            .where('enrollment.academicYearId = :academicYearId', { academicYearId: latestAcademicYear.id })
+            .where('enrollment.studentId = :studentId', { studentId: student.id })
+            .andWhere('enrollment.academicYearId = :academicYearId', { academicYearId: latestAcademicYear.id })
             .andWhere('feeInvoice.month >= :month', { month: dto.month })
             .getOne();
 
@@ -88,6 +92,9 @@ export class FeeInvoiceService extends BaseRepository {
 
         // update ledger amount
         await this.getRepository(StudentLedger).update({ id: ledger.id }, { amount: ledger.amount + grandTotal });
+
+        // emit event to send mails and sms notifications
+        this.eventEmitter.emit('feeInvoice.created', new FeeInvoiceCreatedEvent({ feeInvoice, studentId: student.id }));
 
         return {
             message: 'Invoice created',
