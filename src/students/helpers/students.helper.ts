@@ -15,7 +15,6 @@ import { REQUEST } from "@nestjs/core";
 import { FastifyRequest } from "fastify";
 import { FeeStructure } from "src/finance-system/fee-management/fee-structures/entities/fee-structure.entity";
 import { ChargeHead } from "src/finance-system/fee-management/charge-heads/entities/charge-head.entity";
-import { FeeInvoice } from "src/finance-system/fee-management/fee-invoice/entities/fee-invoice.entity";
 import { LedgerItem } from "src/finance-system/fee-management/student-ledgers/entities/ledger-item.entity";
 
 @Injectable()
@@ -241,7 +240,7 @@ export class StudentsHelper extends BaseRepository {
                     .addSelect('feeInvoice.month AS month')
                     .from(LedgerItem, 'ledgerItems')
                     .leftJoin('ledgerItems.feeInvoice', 'feeInvoice')
-                    .orderBy('feeInvoice.month', 'DESC')
+                    .orderBy('feeInvoice.createdAt', 'DESC')
                     .limit(1),
                 'ledgerItem',
                 'ledgerItem.studentLedgerId = ledger.id'
