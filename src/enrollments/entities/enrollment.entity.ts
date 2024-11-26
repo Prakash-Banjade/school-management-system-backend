@@ -27,4 +27,10 @@ export class Enrollment extends BaseEntity {
 
     @OneToOne(() => StudentLedger, studentLedger => studentLedger.enrollment, { cascade: true })
     ledger: StudentLedger;
+
+    /**
+     * this column tracks the charge heads that are to be charged only once in an enrollment, so in invoice form, charge heads are filtered accordingly
+     */
+    @Column({ type: 'simple-array', nullable: true })
+    oneTimeChargeIds: string[];
 }

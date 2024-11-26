@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException, Scope } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, InternalServerErrorException, NotFoundException, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
 import { BaseRepository } from 'src/common/repository/base-repository';
@@ -8,11 +8,12 @@ import { Student } from 'src/students/entities/student.entity';
 import { FeeInvoice } from './entities/fee-invoice.entity';
 import { AcademicYearsService } from 'src/academic-years/academic-years.service';
 import { FeeInvoiceItem } from './entities/fee-invoice-item.entity';
-import { ChargeHead } from '../charge-heads/entities/charge-head.entity';
+import { ChargeHead, EChargeHeadPeriod } from '../charge-heads/entities/charge-head.entity';
 import { StudentLedger } from '../student-ledgers/entities/student-ledger.entity';
 import { LedgerItem } from '../student-ledgers/entities/ledger-item.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { FeeInvoiceCreatedEvent } from './fee-invoice.mailer';
+import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class FeeInvoiceService extends BaseRepository {
@@ -33,6 +34,7 @@ export class FeeInvoiceService extends BaseRepository {
             .select([
                 'student.id',
                 'enrollments.id',
+                "enrollments.oneTimeChargeIds",
                 'ledger.id',
                 'ledger.amount',
             ]).getOne();
@@ -41,6 +43,11 @@ export class FeeInvoiceService extends BaseRepository {
         const ledger = student.enrollments[0]?.ledger;
 
         if (!ledger) throw new InternalServerErrorException('Ledger associated with student not found');
+
+        // check if invoice for one tiem charge head already exists
+        const enrollment = student.enrollments[0];
+        enrollment.oneTimeChargeIds = enrollment?.oneTimeChargeIds ?? []; // resetting if default is null;
+        if (enrollment.oneTimeChargeIds?.some(id => dto.invoiceItems?.some(item => item.chargeHeadId === id))) throw new ConflictException('Invoice already exists for one time charge head');
 
         // validate month
         const pastMonthFeeInvoice = await this.getRepository(FeeInvoice).createQueryBuilder('feeInvoice')
@@ -62,9 +69,13 @@ export class FeeInvoiceService extends BaseRepository {
 
             const chargeHead = await this.getRepository(ChargeHead).findOne({
                 where: { id: item.chargeHeadId },
-                select: { id: true, name: true } // name is used in mail pdf
+                select: { id: true, name: true, period: true } // name is used in mail pdf
             });
             if (!chargeHead) throw new NotFoundException('Charge head not found');
+
+            if (chargeHead.period === EChargeHeadPeriod.One_Time) { // storing one time charge head id in enrollment
+                enrollment.oneTimeChargeIds.push(chargeHead.id);
+            }
 
             return this.getRepository(FeeInvoiceItem).create({
                 amount: item.amount,
@@ -92,6 +103,9 @@ export class FeeInvoiceService extends BaseRepository {
 
         // update ledger amount
         await this.getRepository(StudentLedger).update({ id: ledger.id }, { amount: ledger.amount + grandTotal });
+
+        // save enrollment
+        await this.getRepository(Enrollment).update({ id: enrollment.id }, { oneTimeChargeIds: enrollment.oneTimeChargeIds });
 
         // emit event to send mails and sms notifications
         this.eventEmitter.emit('feeInvoice.created', new FeeInvoiceCreatedEvent({ feeInvoice, studentId: student.id }));

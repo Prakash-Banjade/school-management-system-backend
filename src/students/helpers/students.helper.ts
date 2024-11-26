@@ -251,6 +251,7 @@ export class StudentsHelper extends BaseRepository {
                 "student.studentId AS studentId",
                 "CONCAT(student.firstName, ' ', student.lastName) AS name",
                 "enrollments.rollNo AS rollNo",
+                "enrollments.oneTimeChargeIds as oneTimeChargeIds",
                 "student.phone AS phone",
                 "student.email AS email",
                 "profileImage.url AS profileImageUrl",
@@ -267,6 +268,7 @@ export class StudentsHelper extends BaseRepository {
             .addGroupBy('enrollments.rollNo')
             .addGroupBy('ledgerItem.id')
             .addGroupBy('ledger.id')
+            .addGroupBy('enrollments.oneTimeChargeIds')
             .getRawOne();
 
         if (!student || !student.classRoomName) throw new NotFoundException('Student not found');
@@ -284,25 +286,36 @@ export class StudentsHelper extends BaseRepository {
             ])
             .getRawMany();
 
+        const oneTimeChargeIds = student.oneTimeChargeIds ?? '';
+
         const chargeHeads: {
             id: string;
             name: string;
             required: string;
         }[] = await this.getRepository(ChargeHead).createQueryBuilder('chargeHead')
+            .orderBy('chargeHead.createdAt', 'ASC')
+            .where( // filtering out the already charged charge heads that is one time
+                oneTimeChargeIds
+                    ? `NOT FIND_IN_SET(chargeHead.id, :oneTimeChargeIds)`
+                    : '1=1',
+                { oneTimeChargeIds: student.oneTimeChargeIds ?? '' }
+            )
             .select([
                 'chargeHead.id as id',
                 'chargeHead.name as name',
                 `CASE WHEN chargeHead.name = :monthlyFeeName THEN 'true' ELSE 'false' END as required`, // specifying requried field for monthly fee structure
                 'chargeHead.period as period',
-
             ])
             .setParameter('monthlyFeeName', CHARGE_HEADS.monthlyFee)
             .getRawMany();
 
-        // Check if all charge heads are present
-        const missingChargeHeads = Object.values(CHARGE_HEADS).filter(hName => !chargeHeads.some(head => head.name === hName));
+        // // Check if all charge heads are present
+        // const missingChargeHeads = Object.values(CHARGE_HEADS).filter(hName => {
+        //     if (hName === CHARGE_HEADS.admissionFee) return true; // charge head is one time so can be skipped
+        //     return !chargeHeads.some(head => head.name === hName)
+        // });
 
-        if (missingChargeHeads.length > 0) throw new InternalServerErrorException(`One or more charge heads are missing. Please contact customer support. Missing charge heads: ${missingChargeHeads.join(', ')}`);
+        // if (missingChargeHeads.length > 0) throw new InternalServerErrorException(`One or more charge heads are missing. Please contact customer support. Missing charge heads: ${missingChargeHeads.join(', ')}`);
 
         // if student has a route stop, add transportation fee as required and with amount in feeStructures
         return {
