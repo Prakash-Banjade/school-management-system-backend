@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateAcademicYearDto } from './dto/create-academic-year.dto';
 import { UpdateAcademicYearDto } from './dto/update-academic-year.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -20,10 +20,10 @@ export class AcademicYearsService {
   ) { }
 
   async create(createAcademicYearDto: CreateAcademicYearDto) {
-    // TODO: check if the academic year already exists
-    // const existing = await this.academicYearRepo.findOneBy({ year: createAcademicYearDto.year });
+    const { isPast, latestAcademicYear } = await this.isPast();
+    if (isPast) throw new ForbiddenException('Cannot create academic year from past academic year');
 
-    // if (existing) throw new BadRequestException('Academic year already exists');
+    if (new Date(createAcademicYearDto.startDate) <= new Date(latestAcademicYear.endDate)) throw new BadRequestException('Start date must be greater than the end date of this academic year');
 
     // make all the previous years inactive
     await this.academicYearRepo.update({ isActive: true }, { isActive: false });
