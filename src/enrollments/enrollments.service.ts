@@ -14,6 +14,7 @@ import { applySelectColumns } from 'src/utils/apply-select-cols';
 import paginatedData from 'src/utils/paginatedData';
 import { getRegistrationNumber } from 'src/utils/get-registration-number';
 import { AcademicYearsService } from 'src/academic-years/academic-years.service';
+import { StudentLedger } from 'src/finance-system/fee-management/student-ledgers/entities/student-ledger.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class EnrollmentsService extends BaseRepository {
@@ -32,12 +33,39 @@ export class EnrollmentsService extends BaseRepository {
     // check if any of the student is aready enrolled in the academic year or is not begin demoted
     await this.checkIfEnrollmentExists(latestAcademicYear, createEnrollmentDto.studentsWithRollNo.map(student => student.studentId),);
 
+    // fetching students along with their latest enrollment and ledger amount
     const students = await this.getRepository<Student>(Student).createQueryBuilder('student')
-      .whereInIds(createEnrollmentDto.studentsWithRollNo.map(student => student.studentId))
+      .leftJoin(
+        subQuery => {
+          return subQuery
+            .select('enrollment.studentId', 'studentId')
+            .addSelect('enrollment.id', 'enrollmentId')
+            .from(Enrollment, 'enrollment')
+            .where(qb => {
+              const subQueryMaxDate = qb
+                .subQuery()
+                .select('MAX(innerEnrollment.enrollmentDate)')
+                .from(Enrollment, 'innerEnrollment')
+                .where('innerEnrollment.studentId = enrollment.studentId')
+                .getQuery();
+              return `enrollment.enrollmentDate = ${subQueryMaxDate}`;
+            });
+        },
+        'latestEnrollment',
+        'latestEnrollment.studentId = student.id'
+      )
+      .leftJoinAndMapOne(
+        'student.ledger',
+        StudentLedger,
+        'ledger',
+        'ledger.enrollmentId = latestEnrollment.enrollmentId'
+      )
       .select([
-        'student.id',
+        'student.id as id',
+        'ledger.amount as ledgerAmount',
       ])
-      .getMany();
+      .whereInIds(createEnrollmentDto.studentsWithRollNo.map(student => student.studentId))
+      .getRawMany();
 
     if (students.length !== createEnrollmentDto.studentsWithRollNo?.length) throw new NotFoundException('Student not found');
 
@@ -45,18 +73,21 @@ export class EnrollmentsService extends BaseRepository {
 
     // create the enrollment
     const enrollments = this.getRepository<Enrollment>(Enrollment).create(students.map((student, ind) => ({
-      student,
+      student: { id: student.id } as unknown as Student,
       classRoom: newClassRoom,
       academicYear: latestAcademicYear,
       enrollmentDate: createEnrollmentDto.enrollmentDate,
       registrationNumber: getRegistrationNumber(latestAcademicYear),
       rollNo: createEnrollmentDto.studentsWithRollNo[ind].newRollNo,
-    })))
+      ledger: this.getRepository<StudentLedger>(StudentLedger).create({
+        amount: student.ledgerAmount ?? 0,
+      })
+    })));
 
     await this.getRepository<Enrollment>(Enrollment).save(enrollments);
 
     // update student classroom
-    const promotedStudents = students.map((student, ind) => {
+    const promotedStudents: Student[] = students.map((student, ind) => {
       student.classRoom = newClassRoom;
       student.academicYearIds = [...(student.academicYearIds ?? []), latestAcademicYear.id];
       student.rollNo = createEnrollmentDto.studentsWithRollNo[ind].newRollNo;
