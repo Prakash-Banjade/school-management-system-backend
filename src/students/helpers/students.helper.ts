@@ -33,11 +33,12 @@ export class StudentsHelper extends BaseRepository {
             .limit(queryDto.skipPagination ? undefined : queryDto.take)
             .addSelect("CONCAT(student.firstName, ' ', student.lastName) AS fullName")
             .orderBy(this.getOrderByKey(queryDto), queryDto.order)
-            .leftJoin('student.routeStop', 'routeStop')
+            .leftJoin('student.routeStop', 'routeStop', queryDto.onlyBasicInfo ? '1 = 0' : '1 = 1') // only basic info will not have route stop
             .leftJoin('student.enrollments', 'enrollments')
+            .leftJoin('enrollments.ledger', 'ledger', queryDto.includeLedgerAmount ? '1 = 1' : '1 = 0')
             .leftJoin('enrollments.classRoom', 'classRoom')
             .leftJoin('classRoom.parent', 'parent')
-            .leftJoin('student.profileImage', 'profileImage')
+            .leftJoin('student.profileImage', 'profileImage', queryDto.onlyBasicInfo ? '1 = 0' : '1 = 1') // only basic info will not have profile image
             .where("enrollments.academicYearId = :academicYearId", { academicYearId: academicYearId })
             .andWhere(new Brackets(qb => {
                 if (queryDto.search) {
@@ -56,7 +57,12 @@ export class StudentsHelper extends BaseRepository {
 
                 queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId }); // the sectionId send by the frontend is the class room id
             }))
-            .select(this.getStudentsSelectCols(queryDto.onlyBasicInfo));
+            .select(
+                queryDto.includeLedgerAmount ? [
+                    ...this.getStudentsSelectCols(queryDto.onlyBasicInfo),
+                    "ledger.amount as ledgerAmount"
+                ] : this.getStudentsSelectCols(queryDto.onlyBasicInfo)
+            );
 
         return paginatedRawData(queryDto, queryBuilder);
     }
@@ -105,6 +111,9 @@ export class StudentsHelper extends BaseRepository {
             }
             case StudentSortBy.DOB: {
                 return 'student.dob';
+            }
+            case StudentSortBy.LEDGER_AMOUNT: {
+                return 'ledger.amount';
             }
             default: {
                 return 'student.createdAt';
@@ -330,7 +339,7 @@ export class StudentsHelper extends BaseRepository {
                     }
                 ],
             chargeHeads: !student.routeStopId
-                ? chargeHeads
+                ? chargeHeads.filter(h => h.name !== CHARGE_HEADS.transportationFee)
                 : chargeHeads.map(h => h.name === CHARGE_HEADS.transportationFee ? { ...h, required: 'true' } : h),
         };
     }

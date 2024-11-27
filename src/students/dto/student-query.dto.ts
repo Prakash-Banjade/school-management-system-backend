@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsDateString, IsEnum, IsOptional, IsString, IsUUID } from "class-validator";
+import { Transform } from "class-transformer";
+import { IsBoolean, IsDateString, IsEnum, IsOptional, IsString, IsUUID } from "class-validator";
 import { ClassWithSectionQueryDto } from "src/common/dto/classWithSectionQuery.dto";
 import { QueryDto } from "src/common/dto/query.dto";
 
@@ -11,6 +12,7 @@ export enum StudentSortBy {
     GENDER = "gender",
     DOB = "dob",
     STUDENT_ID = "studentId",
+    LEDGER_AMOUNT = "ledgerAmount",
 }
 
 export class StudentQueryDto extends ClassWithSectionQueryDto {
@@ -32,6 +34,12 @@ export class StudentQueryDto extends ClassWithSectionQueryDto {
     @IsUUID()
     @IsOptional()
     academicYearId?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsBoolean()
+    @Transform(({ value }) => value === 'true')
+    includeLedgerAmount?: boolean;
 }
 
 export class StudentAttendanceQueryDto extends QueryDto {
