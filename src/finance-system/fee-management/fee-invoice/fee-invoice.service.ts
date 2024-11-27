@@ -30,6 +30,8 @@ export class FeeInvoiceService extends BaseRepository {
         const student = await this.getRepository(Student).createQueryBuilder('student')  // TODO: assuming student is of current academic year
             .leftJoin('student.enrollments', 'enrollments', 'enrollments.academicYearId = :academicYearId', { academicYearId: latestAcademicYear.id })
             .leftJoin('enrollments.ledger', 'ledger')
+            .leftJoin('enrollments.classRoom', 'classRoom')
+            .leftJoin('classRoom.parent', 'parent')
             .where('student.id = :studentId', { studentId: dto.studentId })
             .select([
                 'student.id',
@@ -37,6 +39,8 @@ export class FeeInvoiceService extends BaseRepository {
                 "enrollments.oneTimeChargeIds",
                 'ledger.id',
                 'ledger.amount',
+                'classRoom.id',
+                'parent.id',
             ]).getOne();
         if (!student) throw new NotFoundException('Student not found');
 
@@ -67,18 +71,28 @@ export class FeeInvoiceService extends BaseRepository {
         const invoiceItems = await Promise.all(dto.invoiceItems.map(async item => {
             grandTotal += this.calculateAmountAfterDiscount(item.amount, item.discount);
 
-            const chargeHead = await this.getRepository(ChargeHead).findOne({
-                where: { id: item.chargeHeadId },
-                select: { id: true, name: true, period: true } // name is used in mail pdf
-            });
+            const chargeHead = await this.getRepository(ChargeHead).createQueryBuilder('chargeHead')
+                .leftJoin('chargeHead.feeStructures', 'feeStructures', 'feeStructures.classRoomId = :classRoomId', {
+                    classRoomId: enrollment.classRoom?.parent?.id ?? enrollment.classRoom?.id
+                })
+                .where('chargeHead.id = :chargeHeadId', { chargeHeadId: item.chargeHeadId })
+                .select([
+                    'chargeHead.id',
+                    'chargeHead.name',
+                    'feeStructures.amount',
+                    'chargeHead.period',
+                ]).getOne();
+
             if (!chargeHead) throw new NotFoundException('Charge head not found');
+
+            const amount = chargeHead.feeStructures[0]?.amount ?? item.amount; // ensuring the amount is as per fee structure
 
             if (chargeHead.period === EChargeHeadPeriod.One_Time) { // storing one time charge head id in enrollment
                 enrollment.oneTimeChargeIds.push(chargeHead.id);
             }
 
             return this.getRepository(FeeInvoiceItem).create({
-                amount: item.amount,
+                amount,
                 discount: item.discount,
                 chargeHead,
                 remark: item.remark,
