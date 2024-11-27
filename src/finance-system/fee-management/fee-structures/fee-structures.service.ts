@@ -71,6 +71,7 @@ export class FeeStructuresService extends BaseRepository {
       .leftJoin('feeStructure.chargeHead', 'chargeHead')
       .where(new Brackets(qb => {
         queryDto.classRoomId && qb.andWhere('feeStructure.classRoomId = :classRoomId', { classRoomId: queryDto.classRoomId })
+        queryDto.chargeHeadType && qb.andWhere('chargeHead.type = :chargeHeadType', { chargeHeadType: queryDto.chargeHeadType })
       }))
       .select([
         'feeStructure.id',
@@ -78,7 +79,9 @@ export class FeeStructuresService extends BaseRepository {
         'feeStructure.amount',
         'chargeHead.name',
         'chargeHead.id',
-        'chargeHead.isMandatory'
+        'chargeHead.isMandatory',
+        'chargeHead.period',
+        'chargeHead.type',
       ])
 
     return paginatedData(queryDto, querybuilder);

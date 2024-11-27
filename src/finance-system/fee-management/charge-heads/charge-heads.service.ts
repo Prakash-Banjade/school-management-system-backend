@@ -48,13 +48,23 @@ export class ChargeHeadsService extends BaseRepository {
 
     querybuilder
       .orderBy('chargeHead.createdAt', queryDto.order)
-      .skip(queryDto.skip)
-      .take(queryDto.take)
+      .skip(queryDto.skipPagination ? undefined : queryDto.skip)
+      .take(queryDto.skipPagination ? undefined : queryDto.take)
+      .leftJoin('chargeHead.feeStructures', 'feeStructures', !!queryDto.classRoomId ? '1 = 1' : '1 = 0')
       .where(new Brackets(qb => {
         queryDto.search && qb.andWhere("LOWER(chargeHead.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
-        queryDto.types?.length && qb.andWhere("chargeHead.type IN (:...types)", { types: queryDto.types })
+        !queryDto.defaults && qb.andWhere("chargeHead.name NOT IN (:...defaultChargeHeads)", { defaultChargeHeads: Object.values(CHARGE_HEADS) })
+        queryDto.classRoomId && qb.andWhere('feeStructures.id IS NULL OR feeStructures.classRoomId = :classRoomId', { classRoomId: queryDto.classRoomId })
+        !!queryDto.types?.length && qb.andWhere("chargeHead.type IN (:...types)", { types: queryDto.types })
       }))
-      .select([
+      .select(queryDto.classRoomId ? [
+        'chargeHead.id',
+        'chargeHead.createdAt',
+        'chargeHead.name',
+        'chargeHead.period',
+        'chargeHead.type',
+        'feeStructures.amount'
+      ] : [
         'chargeHead.id',
         'chargeHead.createdAt',
         'chargeHead.name',
@@ -137,25 +147,28 @@ export class ChargeHeadsService extends BaseRepository {
         description: 'Admission fee for the class room',
         isMandatory: true,
         period: EChargeHeadPeriod.One_Time,
+        order: 1,
       },
       {
         name: CHARGE_HEADS.monthlyFee,
         description: 'Monthly fee for the class room',
         isMandatory: true,
         period: EChargeHeadPeriod.Monthly,
+        order: 2,
       },
       {
         name: CHARGE_HEADS.transportationFee,
         description: 'Transportation fee of the student',
         isMandatory: true,
         period: EChargeHeadPeriod.Monthly,
+        order: 3,
       },
       {
         name: CHARGE_HEADS.libraryFine,
         description: 'Library fine of the student',
         isMandatory: true,
         period: EChargeHeadPeriod.None,
-
+        order: 4,
       }
     ]
 

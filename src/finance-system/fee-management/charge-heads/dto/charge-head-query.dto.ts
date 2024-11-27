@@ -9,6 +9,18 @@ export class ChargeHeadQueryDto extends QueryDto {
     @IsOptional()
     @Transform(({ value }) => value ? value.split(',') : [])
     types?: string[];
+
+    @ApiPropertyOptional()
+    @IsString()
+    @IsOptional()
+    classRoomId?: string;
+
+    @ApiPropertyOptional()
+    @IsBoolean()
+    @Transform(({ value }) => {
+        return value === 'true';
+    })
+    defaults?: boolean = true;
 }
 
 export class ChargeHeadOptionsQueryDto extends QueryDto {

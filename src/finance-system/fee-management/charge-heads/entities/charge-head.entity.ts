@@ -27,6 +27,9 @@ export class ChargeHead extends BaseEntity {
     @Column({ type: 'enum', enum: EChargeHeadPeriod, default: EChargeHeadPeriod.Monthly })
     period: EChargeHeadPeriod;
 
+    @Column({ type: 'integer', default: 10 }) // just random number greater than 4 (length of mandatory charge heads)
+    order: number;
+
     @OneToMany(() => FeeStructure, feeStructure => feeStructure.chargeHead)
     feeStructures: FeeStructure[];
 

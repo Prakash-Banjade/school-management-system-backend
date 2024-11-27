@@ -16,4 +16,9 @@ export class FeeStructureQueryDto extends ClassWithSectionQueryDto {
         return 'feeStructure.createdAt';
     })
     sortBy?: string = 'feeStructure.createdAt';
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    chargeHeadType?: string;
 }
