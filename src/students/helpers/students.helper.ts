@@ -15,7 +15,7 @@ import { REQUEST } from "@nestjs/core";
 import { FastifyRequest } from "fastify";
 import { FeeStructure } from "src/finance-system/fee-management/fee-structures/entities/fee-structure.entity";
 import { ChargeHead } from "src/finance-system/fee-management/charge-heads/entities/charge-head.entity";
-import { LedgerItem } from "src/finance-system/fee-management/student-ledgers/entities/ledger-item.entity";
+import { FeeInvoice } from "src/finance-system/fee-management/fee-invoice/entities/fee-invoice.entity";
 
 @Injectable()
 export class StudentsHelper extends BaseRepository {
@@ -242,18 +242,6 @@ export class StudentsHelper extends BaseRepository {
             .leftJoin("student.profileImage", "profileImage")
             .leftJoin("student.routeStop", "routeStop")
             .leftJoin("enrollments.ledger", "ledger")
-            .leftJoin( // joining only the latest fee invoice
-                subQuery => subQuery
-                    .select('ledgerItems.id AS id')
-                    .addSelect('ledgerItems.studentLedgerId AS studentLedgerId')
-                    .addSelect('feeInvoice.month AS month')
-                    .from(LedgerItem, 'ledgerItems')
-                    .leftJoin('ledgerItems.feeInvoice', 'feeInvoice')
-                    .orderBy('feeInvoice.createdAt', 'DESC')
-                    .limit(1),
-                'ledgerItem',
-                'ledgerItem.studentLedgerId = ledger.id'
-            )
             .where("student.studentId = :studentId", { studentId })
             .select([
                 "student.id AS id",
@@ -268,20 +256,28 @@ export class StudentsHelper extends BaseRepository {
                 "routeStop.id AS routeStopId",
                 "CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, ' - ', classRoom.name) END AS classRoomName",
                 "CASE WHEN parent.id IS NULL THEN classRoom.id ELSE parent.id END AS classRoomId",
-                "CASE WHEN ledgerItem.id IS NULL THEN 0 ELSE ledgerItem.month END AS lastMonth",
                 "ledger.id AS ledgerId",
                 "ledger.amount AS previousDue",
             ])
             .groupBy('student.id')
             .addGroupBy('classRoom.id')
             .addGroupBy('enrollments.rollNo')
-            .addGroupBy('ledgerItem.id')
-            .addGroupBy('ledger.id')
             .addGroupBy('enrollments.oneTimeChargeIds')
+            .addGroupBy('ledger.id')
             .getRawOne();
 
         if (!student || !student.classRoomName) throw new NotFoundException('Student not found');
         if (!student.ledgerId) throw new InternalServerErrorException('Ledger associated with student not found');
+
+        const lastInvoice = await this.getRepository(FeeInvoice).createQueryBuilder('feeInvoice')
+            .leftJoin('feeInvoice.ledgerItem', 'ledgerItem')
+            .leftJoin('ledgerItem.studentLedger', 'studentLedger')
+            .where('studentLedger.id = :studentLedgerId', { studentLedgerId: student.ledgerId })
+            .orderBy('feeInvoice.createdAt', 'DESC')
+            .limit(1)
+            .select([
+                'feeInvoice.month as lastMonth',
+            ]).getRawOne();
 
         const feeStructures: {
             amount: number;
@@ -328,7 +324,10 @@ export class StudentsHelper extends BaseRepository {
 
         // if student has a route stop, add transportation fee as required and with amount in feeStructures
         return {
-            student,
+            student: {
+                ...student,
+                lastMonth: lastInvoice.lastMonth ?? '0',
+            },
             feeStructures: !student.routeStopId
                 ? feeStructures
                 : [
