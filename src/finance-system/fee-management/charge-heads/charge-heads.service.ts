@@ -9,7 +9,7 @@ import { ChargeHead, EChargeHeadPeriod } from './entities/charge-head.entity';
 import { QueryDto } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
 import { isBoolean } from 'class-validator';
-import { ChargeHeadOptionsQueryDto } from './dto/charge-head-query.dto';
+import { ChargeHeadOptionsQueryDto, ChargeHeadQueryDto } from './dto/charge-head-query.dto';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { EClassType } from 'src/common/types/global.type';
 import { FeeStructure } from '../fee-structures/entities/fee-structure.entity';
@@ -43,7 +43,7 @@ export class ChargeHeadsService extends BaseRepository {
     await this.getRepository(FeeStructure).save(feeStructures);
   }
 
-  findAll(queryDto: QueryDto) {
+  findAll(queryDto: ChargeHeadQueryDto) {
     const querybuilder = this.getRepository(ChargeHead).createQueryBuilder('chargeHead');
 
     querybuilder
@@ -52,8 +52,17 @@ export class ChargeHeadsService extends BaseRepository {
       .take(queryDto.take)
       .where(new Brackets(qb => {
         queryDto.search && qb.andWhere("LOWER(chargeHead.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+        queryDto.types?.length && qb.andWhere("chargeHead.type IN (:...types)", { types: queryDto.types })
       }))
-      .select(['chargeHead.id', 'chargeHead.createdAt', 'chargeHead.name', 'chargeHead.description', 'chargeHead.isMandatory', 'chargeHead.period'])
+      .select([
+        'chargeHead.id',
+        'chargeHead.createdAt',
+        'chargeHead.name',
+        'chargeHead.description',
+        'chargeHead.isMandatory',
+        'chargeHead.period',
+        'chargeHead.type'
+      ])
 
     return paginatedData(queryDto, querybuilder);
   }
@@ -68,8 +77,13 @@ export class ChargeHeadsService extends BaseRepository {
       .where(new Brackets(qb => {
         queryDto.search && qb.andWhere("LOWER(chargeHead.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
         !queryDto.defaults && qb.andWhere("chargeHead.name NOT IN (:...defaultChargeHeads)", { defaultChargeHeads: Object.values(CHARGE_HEADS) })
+        queryDto.type && qb.andWhere("chargeHead.type = :type", { type: queryDto.type })
       }))
-      .select([
+      .select(queryDto.includePeriod ? [
+        'chargeHead.id as value',
+        'chargeHead.name as label',
+        'chargeHead.period as period',
+      ] : [
         'chargeHead.id as value',
         'chargeHead.name as label',
       ]);

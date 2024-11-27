@@ -1,21 +1,22 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
-import { IsBoolean, IsOptional, IsUUID } from "class-validator";
+import { IsBoolean, IsOptional, IsString, IsUUID } from "class-validator";
 import { QueryDto } from "src/common/dto/query.dto";
 
-export class ChargeHeadOptionsQueryDto extends QueryDto {
+export class ChargeHeadQueryDto extends QueryDto {
     @ApiPropertyOptional()
-    @IsUUID()
+    @IsString({ each: true })
     @IsOptional()
-    classRoomId?: string;
+    @Transform(({ value }) => value ? value.split(',') : [])
+    types?: string[];
+}
 
-    @ApiPropertyOptional()
+export class ChargeHeadOptionsQueryDto extends QueryDto {
+    @ApiPropertyOptional({ default: true })
     @IsBoolean()
     @IsOptional()
-    @Transform(({ value }) => {
-        return value === 'true';
-    })
-    onlyAvailable?: boolean = false;
+    @Transform(({ value }) => value === 'true')
+    includePeriod: boolean = true;
 
     @ApiPropertyOptional()
     @IsBoolean()
@@ -23,4 +24,9 @@ export class ChargeHeadOptionsQueryDto extends QueryDto {
         return value === 'true';
     })
     defaults?: boolean = true;
+
+    @ApiPropertyOptional()
+    @IsString()
+    @IsOptional()
+    type?: string;
 }

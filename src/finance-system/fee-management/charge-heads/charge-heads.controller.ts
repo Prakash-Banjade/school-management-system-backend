@@ -6,7 +6,7 @@ import { QueryDto } from 'src/common/dto/query.dto';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, Role } from 'src/common/types/global.type';
 import { ApiBearerAuth, ApiExcludeEndpoint, ApiTags } from '@nestjs/swagger';
-import { ChargeHeadOptionsQueryDto } from './dto/charge-head-query.dto';
+import { ChargeHeadOptionsQueryDto, ChargeHeadQueryDto } from './dto/charge-head-query.dto';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 
 @ApiBearerAuth()
@@ -31,7 +31,7 @@ export class ChargeHeadsController {
 
   @Get()
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  findAll(@Query() queryDto: QueryDto) {
+  findAll(@Query() queryDto: ChargeHeadQueryDto) {
     return this.chargeHeadsService.findAll(queryDto);
   }
 

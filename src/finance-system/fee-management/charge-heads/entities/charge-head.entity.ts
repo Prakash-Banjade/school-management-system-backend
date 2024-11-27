@@ -8,6 +8,11 @@ export enum EChargeHeadPeriod {
     None = 'none'
 }
 
+export enum EChargeHeadType {
+    Regular = 'regular',
+    Ad_Hoc = 'ad_hoc',
+}
+
 @Entity()
 export class ChargeHead extends BaseEntity {
     @Column({ type: 'varchar', unique: true })
@@ -27,4 +32,7 @@ export class ChargeHead extends BaseEntity {
 
     @OneToMany(() => FeeStructure, feeStructure => feeStructure.chargeHead)
     feeInvoiceItems: FeeStructure[];
+
+    @Column({ type: 'enum', enum: EChargeHeadType, default: EChargeHeadType.Regular })
+    type: EChargeHeadType;
 }

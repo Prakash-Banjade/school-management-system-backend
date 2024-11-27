@@ -14,7 +14,7 @@ import { BaseRepository } from "src/common/repository/base-repository";
 import { REQUEST } from "@nestjs/core";
 import { FastifyRequest } from "fastify";
 import { FeeStructure } from "src/finance-system/fee-management/fee-structures/entities/fee-structure.entity";
-import { ChargeHead } from "src/finance-system/fee-management/charge-heads/entities/charge-head.entity";
+import { ChargeHead, EChargeHeadPeriod, EChargeHeadType } from "src/finance-system/fee-management/charge-heads/entities/charge-head.entity";
 import { FeeInvoice } from "src/finance-system/fee-management/fee-invoice/entities/fee-invoice.entity";
 
 @Injectable()
@@ -279,34 +279,24 @@ export class StudentsHelper extends BaseRepository {
                 'feeInvoice.month as lastMonth',
             ]).getRawOne();
 
+        const oneTimeChargeIds = student.oneTimeChargeIds ?? '';
+
         const feeStructures: {
             amount: number;
             chargeHeadId: string;
         }[] = await this.getRepository(FeeStructure).createQueryBuilder('feeStructure')
             .leftJoin('feeStructure.chargeHead', 'chargeHead')
             .where('feeStructure.classRoomId = :classRoomId', { classRoomId: student.classRoomId })
-            .select([
-                'feeStructure.amount AS amount',
-                'chargeHead.id AS chargeHeadId',
-            ])
-            .getRawMany();
-
-        const oneTimeChargeIds = student.oneTimeChargeIds ?? '';
-
-        const chargeHeads: {
-            id: string;
-            name: string;
-            required: string;
-        }[] = await this.getRepository(ChargeHead).createQueryBuilder('chargeHead')
-            .orderBy('chargeHead.createdAt', 'ASC')
-            .where( // filtering out the already charged charge heads that is one time
+            .andWhere("chargeHead.type = :type", { type: EChargeHeadType.Regular }) // initially send only the regular charges
+            .andWhere( // filtering out the already charged charge heads that is one time
                 oneTimeChargeIds
                     ? `NOT FIND_IN_SET(chargeHead.id, :oneTimeChargeIds)`
                     : '1=1',
                 { oneTimeChargeIds: student.oneTimeChargeIds ?? '' }
             )
             .select([
-                'chargeHead.id as id',
+                'feeStructure.amount AS amount',
+                'chargeHead.id AS chargeHeadId',
                 'chargeHead.name as name',
                 `CASE WHEN chargeHead.name = :monthlyFeeName THEN 'true' ELSE 'false' END as required`, // specifying requried field for monthly fee structure
                 'chargeHead.period as period',
@@ -314,15 +304,12 @@ export class StudentsHelper extends BaseRepository {
             .setParameter('monthlyFeeName', CHARGE_HEADS.monthlyFee)
             .getRawMany();
 
-        // // Check if all charge heads are present
-        // const missingChargeHeads = Object.values(CHARGE_HEADS).filter(hName => {
-        //     if (hName === CHARGE_HEADS.admissionFee) return true; // charge head is one time so can be skipped
-        //     return !chargeHeads.some(head => head.name === hName)
-        // });
+        const transportationChargeHeadId = await this.getRepository(ChargeHead).createQueryBuilder()
+            .where('name = :name', { name: CHARGE_HEADS.transportationFee })
+            .select('id')
+            .getRawOne();
+        if (!transportationChargeHeadId) throw new InternalServerErrorException('Transportation charge head not found');
 
-        // if (missingChargeHeads.length > 0) throw new InternalServerErrorException(`One or more charge heads are missing. Please contact customer support. Missing charge heads: ${missingChargeHeads.join(', ')}`);
-
-        // if student has a route stop, add transportation fee as required and with amount in feeStructures
         return {
             student: {
                 ...student,
@@ -334,12 +321,12 @@ export class StudentsHelper extends BaseRepository {
                     ...feeStructures,
                     {
                         amount: student.transportationFare,
-                        chargeHeadId: chargeHeads.find(head => head.name === CHARGE_HEADS.transportationFee)?.id,
+                        chargeHeadId: transportationChargeHeadId.id,
+                        name: CHARGE_HEADS.transportationFee,
+                        required: 'true',
+                        period: EChargeHeadPeriod.Monthly,
                     }
                 ],
-            chargeHeads: !student.routeStopId
-                ? chargeHeads.filter(h => h.name !== CHARGE_HEADS.transportationFee)
-                : chargeHeads.map(h => h.name === CHARGE_HEADS.transportationFee ? { ...h, required: 'true' } : h),
         };
     }
 }
