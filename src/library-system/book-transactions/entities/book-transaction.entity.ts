@@ -22,4 +22,7 @@ export class BookTransaction extends BaseEntity {
 
     @Column({ type: 'float', default: 0 })
     fine: number;
+
+    @Column({ type: 'datetime', nullable: true })
+    paidAt: string;
 }
