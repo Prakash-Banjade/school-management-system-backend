@@ -259,7 +259,6 @@ export class StudentsHelper extends BaseRepository {
                 "CASE WHEN parent.id IS NULL THEN classRoom.id ELSE parent.id END AS classRoomId",
                 "ledger.id AS ledgerId",
                 "ledger.amount AS previousDue",
-                "COUNT(DISTINCT transaction.id) AS transactionCount",
             ])
             .groupBy('student.id')
             .addGroupBy('classRoom.id')
@@ -322,8 +321,25 @@ export class StudentsHelper extends BaseRepository {
             .where("transaction.studentId = :studentId", { studentId: student.id })
             .andWhere("DATE(transaction.dueDate) < CURRENT_DATE() AND transaction.returnedAt IS NULL")
             .select([
-                'transaction.dueDate as dueDate',
-            ]);
+                'transaction.id',
+                'transaction.fine',
+            ]).getMany();
+
+        const libraryFine = overDueTransactions.reduce((acc, transaction) => acc + transaction.fine, 0);
+
+        const feeStructuresWithTransportation = !student.routeStopId
+            ? feeStructures
+            : [
+                ...feeStructures,
+                {
+                    amount: student.transportationFare,
+                    chargeHeadId: chargeHeads.find(head => head.name === CHARGE_HEADS.transportationFee)?.id,
+                }
+            ]
+
+        const chargeHeadsWithTransportation = !student.routeStopId
+            ? chargeHeads.filter(h => h.name !== CHARGE_HEADS.transportationFee)
+            : chargeHeads.map(h => h.name === CHARGE_HEADS.transportationFee ? { ...h, required: 'true' } : h)
 
         // if student has a route stop, add transportation fee as required and with amount in feeStructures
         return {
@@ -331,18 +347,16 @@ export class StudentsHelper extends BaseRepository {
                 ...student,
                 lastMonth: lastInvoice?.lastMonth ?? '0',
             },
-            feeStructures: !student.routeStopId
-                ? feeStructures
-                : [
-                    ...feeStructures,
-                    {
-                        amount: student.transportationFare,
-                        chargeHeadId: chargeHeads.find(head => head.name === CHARGE_HEADS.transportationFee)?.id,
-                    }
-                ],
-            chargeHeads: !student.routeStopId
-                ? chargeHeads.filter(h => h.name !== CHARGE_HEADS.transportationFee)
-                : chargeHeads.map(h => h.name === CHARGE_HEADS.transportationFee ? { ...h, required: 'true' } : h),
+            feeStructures: [
+                ...feeStructuresWithTransportation,
+                {
+                    amount: libraryFine,
+                    chargeHeadId: chargeHeads.find(head => head.name === CHARGE_HEADS.libraryFine)?.id,
+                }
+            ],
+            chargeHeads: libraryFine === 0
+                ? chargeHeadsWithTransportation.filter(h => h.name !== CHARGE_HEADS.libraryFine)
+                : chargeHeadsWithTransportation.map(h => h.name === CHARGE_HEADS.libraryFine ? { ...h, required: 'true' } : h),
         };
     }
 }
