@@ -62,6 +62,7 @@ export class EnrollmentsService extends BaseRepository {
       )
       .select([
         'student.id as id',
+        'student.academicYearIds as academicYearIds',
         'ledger.amount as ledgerAmount',
       ])
       .whereInIds(createEnrollmentDto.studentsWithRollNo.map(student => student.studentId))
