@@ -42,9 +42,9 @@ export class LibraryBookService {
       .leftJoin("libraryBook.category", "category")
       .where(new Brackets(qb => {
         if (queryDto.search) {
-          qb.andWhere(new Brackets(qb => {
-            qb.orWhere("libraryBook.bookCode = :search", { search: queryDto.search });
-            qb.orWhere("LOWER(libraryBook.bookName) LIKE LOWER(:search)", { search: `%${queryDto.search}%` });
+          qb.andWhere(new Brackets(subQb => {
+            subQb.orWhere("LOWER(libraryBook.bookName) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+              .orWhere("TRIM(libraryBook.bookCode) = TRIM(:exactSearch)", { exactSearch: queryDto.search });
           }))
         }
 
