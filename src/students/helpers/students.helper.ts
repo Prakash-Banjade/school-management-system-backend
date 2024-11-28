@@ -16,6 +16,7 @@ import { FastifyRequest } from "fastify";
 import { FeeStructure } from "src/finance-system/fee-management/fee-structures/entities/fee-structure.entity";
 import { ChargeHead, EChargeHeadType } from "src/finance-system/fee-management/charge-heads/entities/charge-head.entity";
 import { FeeInvoice } from "src/finance-system/fee-management/fee-invoice/entities/fee-invoice.entity";
+import { BookTransaction } from "src/library-system/book-transactions/entities/book-transaction.entity";
 
 @Injectable()
 export class StudentsHelper extends BaseRepository {
@@ -258,6 +259,7 @@ export class StudentsHelper extends BaseRepository {
                 "CASE WHEN parent.id IS NULL THEN classRoom.id ELSE parent.id END AS classRoomId",
                 "ledger.id AS ledgerId",
                 "ledger.amount AS previousDue",
+                "COUNT(DISTINCT transaction.id) AS transactionCount",
             ])
             .groupBy('student.id')
             .addGroupBy('classRoom.id')
@@ -316,13 +318,12 @@ export class StudentsHelper extends BaseRepository {
             .orderBy('chargeHead.order', 'ASC')
             .getRawMany();
 
-        // // Check if all charge heads are present
-        // const missingChargeHeads = Object.values(CHARGE_HEADS).filter(hName => {
-        //     if (hName === CHARGE_HEADS.admissionFee) return true; // charge head is one time so can be skipped
-        //     return !chargeHeads.some(head => head.name === hName)
-        // });
-
-        // if (missingChargeHeads.length > 0) throw new InternalServerErrorException(`One or more charge heads are missing. Please contact customer support. Missing charge heads: ${missingChargeHeads.join(', ')}`);
+        const overDueTransactions = await this.getRepository(BookTransaction).createQueryBuilder('transaction')
+            .where("transaction.studentId = :studentId", { studentId: student.id })
+            .andWhere("DATE(transaction.dueDate) < CURRENT_DATE() AND transaction.returnedAt IS NULL")
+            .select([
+                'transaction.dueDate as dueDate',
+            ]);
 
         // if student has a route stop, add transportation fee as required and with amount in feeStructures
         return {

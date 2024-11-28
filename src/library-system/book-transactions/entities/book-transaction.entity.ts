@@ -19,4 +19,7 @@ export class BookTransaction extends BaseEntity {
 
     @Column({ type: 'simple-array' })
     renewals: string[];
+
+    @Column({ type: 'float', default: 0 })
+    fine: number;
 }
