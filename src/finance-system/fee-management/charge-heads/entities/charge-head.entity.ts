@@ -1,6 +1,8 @@
 import { BaseEntity } from "src/common/entities/base.entity";
-import { Column, Entity, OneToMany } from "typeorm";
+import { BeforeRemove, BeforeSoftRemove, BeforeUpdate, Column, Entity, OneToMany } from "typeorm";
 import { FeeStructure } from "../../fee-structures/entities/fee-structure.entity";
+import { BadRequestException, InternalServerErrorException } from "@nestjs/common";
+import { CHARGE_HEADS } from "src/common/CONSTANTS";
 
 export enum EChargeHeadPeriod {
     Monthly = 'monthly',
@@ -15,6 +17,14 @@ export enum EChargeHeadType {
 
 @Entity()
 export class ChargeHead extends BaseEntity {
+    @BeforeRemove()
+    @BeforeSoftRemove()
+    @BeforeUpdate()
+    preventMutationForDefaultHeads() {
+        if (!this.name) throw new InternalServerErrorException('Cannot find head name.')
+        if (Object.values(CHARGE_HEADS).includes(this.name)) throw new BadRequestException('Cannot udpate or delete default charge heads.')
+    }
+
     @Column({ type: 'varchar', unique: true })
     name: string;
 

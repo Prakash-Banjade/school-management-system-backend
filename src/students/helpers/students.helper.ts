@@ -16,7 +16,6 @@ import { FastifyRequest } from "fastify";
 import { FeeStructure } from "src/finance-system/fee-management/fee-structures/entities/fee-structure.entity";
 import { ChargeHead, EChargeHeadType } from "src/finance-system/fee-management/charge-heads/entities/charge-head.entity";
 import { FeeInvoice } from "src/finance-system/fee-management/fee-invoice/entities/fee-invoice.entity";
-import { BookTransaction } from "src/library-system/book-transactions/entities/book-transaction.entity";
 
 @Injectable()
 export class StudentsHelper extends BaseRepository {
@@ -307,6 +306,7 @@ export class StudentsHelper extends BaseRepository {
                 { oneTimeChargeIds: student.oneTimeChargeIds ?? '' }
             )
             .andWhere("chargeHead.type = :type", { type: EChargeHeadType.Regular }) // initially send only the regular charges
+            .andWhere("chargeHead.name != :libraryFine", { libraryFine: CHARGE_HEADS.libraryFine })
             .select([
                 'chargeHead.id as id',
                 'chargeHead.name as name',
@@ -317,46 +317,24 @@ export class StudentsHelper extends BaseRepository {
             .orderBy('chargeHead.order', 'ASC')
             .getRawMany();
 
-        const overDueTransactions = await this.getRepository(BookTransaction).createQueryBuilder('transaction')
-            .where("transaction.studentId = :studentId", { studentId: student.id })
-            .andWhere("DATE(transaction.dueDate) < CURRENT_DATE() AND transaction.returnedAt IS NULL")
-            .select([
-                'transaction.id',
-                'transaction.fine',
-            ]).getMany();
-
-        const libraryFine = overDueTransactions.reduce((acc, transaction) => acc + transaction.fine, 0);
-
-        const feeStructuresWithTransportation = !student.routeStopId
-            ? feeStructures
-            : [
-                ...feeStructures,
-                {
-                    amount: student.transportationFare,
-                    chargeHeadId: chargeHeads.find(head => head.name === CHARGE_HEADS.transportationFee)?.id,
-                }
-            ]
-
-        const chargeHeadsWithTransportation = !student.routeStopId
-            ? chargeHeads.filter(h => h.name !== CHARGE_HEADS.transportationFee)
-            : chargeHeads.map(h => h.name === CHARGE_HEADS.transportationFee ? { ...h, required: 'true' } : h)
-
         // if student has a route stop, add transportation fee as required and with amount in feeStructures
         return {
             student: {
                 ...student,
                 lastMonth: lastInvoice?.lastMonth ?? '0',
             },
-            feeStructures: [
-                ...feeStructuresWithTransportation,
-                {
-                    amount: libraryFine,
-                    chargeHeadId: chargeHeads.find(head => head.name === CHARGE_HEADS.libraryFine)?.id,
-                }
-            ],
-            chargeHeads: libraryFine === 0
-                ? chargeHeadsWithTransportation.filter(h => h.name !== CHARGE_HEADS.libraryFine)
-                : chargeHeadsWithTransportation.map(h => h.name === CHARGE_HEADS.libraryFine ? { ...h, required: 'true' } : h),
+            feeStructures: !student.routeStopId
+                ? feeStructures
+                : [
+                    ...feeStructures,
+                    {
+                        amount: student.transportationFare,
+                        chargeHeadId: chargeHeads.find(head => head.name === CHARGE_HEADS.transportationFee)?.id,
+                    }
+                ],
+            chargeHeads: !student.routeStopId
+                ? chargeHeads.filter(h => h.name !== CHARGE_HEADS.transportationFee)
+                : chargeHeads.map(h => h.name === CHARGE_HEADS.transportationFee ? { ...h, required: 'true' } : h),
         };
     }
 }
