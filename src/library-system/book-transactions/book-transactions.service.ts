@@ -143,6 +143,7 @@ export class BookTransactionsService extends BaseRepository {
         "transaction.returnedAt as returnedAt",
         "transaction.createdAt as createdAt",
         "transaction.renewals as renewals",
+        "transaction.fine as fine",
         "book.bookName AS bookName",
         "book.bookCode AS bookCode",
       ])
