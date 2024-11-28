@@ -146,12 +146,7 @@ export class BookTransactionsService extends BaseRepository {
         "book.bookCode AS bookCode",
       ])
 
-    const itemCount = await queryBuilder.getCount();
-    const data = await queryBuilder.getRawMany();
-
-    const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto: queryDto });
-
-    return new PageDto(data, pageMetaDto);
+    return paginatedRawData(queryDto, queryBuilder);
   }
 
   async findOne(id: string) {
