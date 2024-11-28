@@ -4,11 +4,6 @@ import { FeeInvoice } from "../../fee-invoice/entities/fee-invoice.entity";
 import { StudentLedger } from "./student-ledger.entity";
 import { FeePayment } from "../../fee-payments/entities/fee-payment.entity";
 
-export enum ELedgerItemType {
-    Invoice = 'invoice',
-    Payment = 'payment',
-}
-
 @Entity()
 export class LedgerItem extends BaseEntity {
     @Column({ type: 'datetime' })

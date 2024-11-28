@@ -41,10 +41,8 @@ export class BookTransactionsService extends BaseRepository {
         "COUNT(DISTINCT transaction.id) AS totalIssuedCount",
       ]).getRawOne();
 
-      console.log(transactionsCount)
-
     if (+transactionsCount.currentBookTransactionsCount > 0) throw new BadRequestException('Book is already issued. Please renew or return.');
-    if (+transactionsCount.totalIssuedCount >= MAX_BOOK_ISSUE_LIMIT) throw new BadRequestException(`Maximum of ${MAX_BOOK_ISSUE_LIMIT} book issues allowed.`); 
+    if (+transactionsCount.totalIssuedCount >= MAX_BOOK_ISSUE_LIMIT) throw new BadRequestException(`Maximum of ${MAX_BOOK_ISSUE_LIMIT} book issues allowed.`);
 
     // check if book is available
     if (!(book.issuedCount < book.copiesCount)) throw new BadRequestException('Book is not available');
@@ -219,8 +217,8 @@ export class BookTransactionsService extends BaseRepository {
         ////renewals: () => "renewals + 1" // Increment renewals by 1
         renewals: () => `IF(renewals IS NULL OR renewals = '', '${new Date().toISOString().split('T')[0]}', CONCAT(renewals, ',', '${new Date().toISOString().split('T')[0]}'))`
       })
-      .whereInIds(ids)
-      .andWhere("returnedAt IS NULL")
+      .whereInIds(bookTransactions.map(bookTransaction => bookTransaction.id))
+      .andWhere("returnedAt IS NULL AND DATE(dueDate) >= CURRENT_DATE()")
       .execute();
 
     if (updatedTransactions.affected === 0) {

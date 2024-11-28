@@ -1,4 +1,5 @@
 export enum EMonth {
+    None = 0,
     January = 1,
     February = 2,
     March = 3,

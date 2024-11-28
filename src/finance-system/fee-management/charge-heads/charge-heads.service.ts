@@ -6,7 +6,6 @@ import { Brackets, DataSource } from 'typeorm';
 import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
 import { ChargeHead, EChargeHeadPeriod } from './entities/charge-head.entity';
-import { QueryDto } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
 import { isBoolean } from 'class-validator';
 import { ChargeHeadOptionsQueryDto, ChargeHeadQueryDto } from './dto/charge-head-query.dto';

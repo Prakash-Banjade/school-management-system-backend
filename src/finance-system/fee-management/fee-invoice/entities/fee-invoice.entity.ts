@@ -1,7 +1,6 @@
 import { BaseEntity } from "src/common/entities/base.entity";
-import { BeforeRemove, BeforeSoftRemove, BeforeUpdate, Column, Entity, ManyToOne, OneToMany, OneToOne } from "typeorm";
+import { BeforeRemove, BeforeSoftRemove, BeforeUpdate, Column, Entity, OneToMany, OneToOne } from "typeorm";
 import { FeeInvoiceItem } from "./fee-invoice-item.entity";
-import { StudentLedger } from "../../student-ledgers/entities/student-ledger.entity";
 import { EMonth } from "src/common/types/months";
 import { LedgerItem } from "../../student-ledgers/entities/ledger-item.entity";
 import { MethodNotAllowedException } from "@nestjs/common";
