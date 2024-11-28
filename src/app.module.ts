@@ -41,6 +41,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { OptionalSubjectModule } from './optional-subject/optional-subject.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { EventsModule } from './events/events.module';
+import { GeneralSettingsModule } from './general-settings/general-settings.module';
 
 @Module({
   imports: [
@@ -110,6 +111,7 @@ import { EventsModule } from './events/events.module';
     DashboardModule,
     OptionalSubjectModule,
     EventsModule,
+    GeneralSettingsModule,
   ],
   controllers: [AppController],
   providers: [
