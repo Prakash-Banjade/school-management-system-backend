@@ -102,6 +102,9 @@ export class BookTransactionsService extends BaseRepository {
         "transaction.returnedAt as returnedAt",
         "transaction.createdAt as createdAt",
         "student.studentId AS studentId",
+        "transaction.fine as fine",
+        "transaction.paidAt as paidAt",
+        "transaction.renewals as renewals",
         "book.bookName AS bookName",
         "book.bookCode AS bookCode",
         "CONCAT(student.firstName, ' ', student.lastName) AS studentName",
@@ -116,6 +119,8 @@ export class BookTransactionsService extends BaseRepository {
     [EBookTransactionStatus.Issued]: 'transaction.returnedAt IS NULL',
     [EBookTransactionStatus.Returned]: 'transaction.returnedAt IS NOT NULL',
     [EBookTransactionStatus.Overdue]: 'DATE(transaction.dueDate) < CURRENT_DATE() AND transaction.returnedAt IS NULL',
+    'unpaid': 'DATE(transaction.dueDate) < CURRENT_DATE() AND transaction.returnedAt IS NULL AND transaction.paidAt IS NULL',
+    'paid': 'transaction.paidAt IS NOT NULL',
   }
 
   private transactionByPeriodQuery = {

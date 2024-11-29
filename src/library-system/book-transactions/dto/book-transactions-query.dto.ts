@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsDefined, IsEnum, IsOptional, IsString } from "class-validator";
+import { Transform } from "class-transformer";
+import { IsBoolean, IsDefined, IsEnum, IsOptional, IsString } from "class-validator";
 import { QueryDto } from "src/common/dto/query.dto";
 import { EBookTransactionStatus } from "src/common/types/global.type";
 
@@ -11,15 +12,20 @@ export enum EBookTransactionPeriod {
 }
 
 export class BookTransactionsQueryDto extends QueryDto {
-    @ApiPropertyOptional({ type: String, enum: EBookTransactionStatus })
+    @ApiPropertyOptional({ type: String })
     @IsOptional()
     @IsString()
-    status: EBookTransactionStatus;
+    status: EBookTransactionStatus.Issued | EBookTransactionStatus.Returned | EBookTransactionStatus.Overdue | 'paid' | 'unpaid';
 
     @ApiPropertyOptional({ type: String, enum: EBookTransactionPeriod })
     @IsOptional()
     @IsEnum(EBookTransactionPeriod)
     period?: EBookTransactionPeriod;
+
+    @ApiPropertyOptional({ type: String })
+    @IsOptional()
+    @IsString()
+    paid?: string;
 }
 
 export class BookTransactionByStudentQueryDto extends BookTransactionsQueryDto {
