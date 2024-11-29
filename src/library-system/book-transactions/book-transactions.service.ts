@@ -6,12 +6,13 @@ import { CreateBookTransactionDto } from './dto/create-book-transaction.dto';
 import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
 import { BaseRepository } from 'src/common/repository/base-repository';
-import { BookTransactionByStudentQueryDto, BookTransactionsQueryDto, EBookTransactionPeriod } from './dto/book-transactions-query.dto';
+import { BookTransactionByStudentQueryDto, BookTransactionsQueryDto, EBookTransactionPeriod, UnpaidTransactionsQueryDto } from './dto/book-transactions-query.dto';
 import { EBookTransactionStatus } from 'src/common/types/global.type';
 import { LibraryBook } from '../library-book/entities/library-book.entity';
 import { Student } from 'src/students/entities/student.entity';
 import { paginatedRawData } from 'src/utils/paginatedData';
 import { MAX_BOOK_ISSUE_LIMIT } from 'src/common/CONSTANTS';
+import { BookTransactionsHelper } from './helpers/book-transactinos.helper';
 
 @Injectable({ scope: Scope.REQUEST })
 export class BookTransactionsService extends BaseRepository {
@@ -19,6 +20,7 @@ export class BookTransactionsService extends BaseRepository {
     datasource: DataSource,
     @Inject(REQUEST) req: FastifyRequest,
     private readonly libraryBookService: LibraryBookService,
+    private readonly bookTransactionsHelper: BookTransactionsHelper,
   ) {
     super(datasource, req);
   }
@@ -30,6 +32,13 @@ export class BookTransactionsService extends BaseRepository {
       select: { id: true }
     });
     if (!student) throw new NotFoundException('Student not found');
+
+    // check if student has any overdue book transactions
+    const unpaidTransactions = await this.bookTransactionsHelper.getUnPaidTransactions(new UnpaidTransactionsQueryDto({
+      studentId: student.id,
+      take: 1
+    }));
+    if (unpaidTransactions.length > 0) throw new BadRequestException('This student has an overdue transaction. Please return the book first.');
 
     const transactionsCount = await this.getRepository(BookTransaction).createQueryBuilder('transaction')
       .where("transaction.studentId = :studentId", { studentId: student.id })
