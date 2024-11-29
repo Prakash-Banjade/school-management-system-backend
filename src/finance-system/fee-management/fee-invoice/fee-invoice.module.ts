@@ -18,5 +18,6 @@ import { FeeInvoiceMailer } from './fee-invoice.mailer';
     FeeInvoiceService,
     FeeInvoiceMailer
   ],
+  exports: [FeeInvoiceService],
 })
 export class FeeInvoiceModule { }

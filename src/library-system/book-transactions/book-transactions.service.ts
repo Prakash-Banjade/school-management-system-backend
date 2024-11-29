@@ -1,13 +1,11 @@
 import { BadRequestException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { BookTransaction } from './entities/book-transaction.entity';
-import { Brackets, DataSource, In, IsNull } from 'typeorm';
+import { Brackets, DataSource, In } from 'typeorm';
 import { LibraryBookService } from '../library-book/library-book.service';
 import { CreateBookTransactionDto } from './dto/create-book-transaction.dto';
 import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
 import { BaseRepository } from 'src/common/repository/base-repository';
-import { PageMetaDto } from 'src/common/dto/pageMeta.dto';
-import { PageDto } from 'src/common/dto/page.dto.';
 import { BookTransactionByStudentQueryDto, BookTransactionsQueryDto, EBookTransactionPeriod } from './dto/book-transactions-query.dto';
 import { EBookTransactionStatus } from 'src/common/types/global.type';
 import { LibraryBook } from '../library-book/entities/library-book.entity';
@@ -223,9 +221,6 @@ export class BookTransactionsService extends BaseRepository {
     return this.bookTransactionMutationReturn('renewed');
   }
 
-  remove(id: string) {
-    return `This action removes a #${id} bookTransaction`;
-  }
   private bookTransactionMutationReturn(type: 'created' | 'returned' | 'renewed' | 'deleted') {
     return {
       message: type === 'created'

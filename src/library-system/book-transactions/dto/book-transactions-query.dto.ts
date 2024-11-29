@@ -28,3 +28,15 @@ export class BookTransactionByStudentQueryDto extends BookTransactionsQueryDto {
     @IsDefined()
     studentId: string;
 }
+
+export class UnpaidTransactionsQueryDto extends QueryDto {
+    @ApiPropertyOptional({ type: String })
+    @IsString()
+    @IsOptional()
+    studentId?: string;
+
+    constructor(dto: Partial<UnpaidTransactionsQueryDto>) {
+        super();
+        Object.assign(this, dto);
+    }
+}

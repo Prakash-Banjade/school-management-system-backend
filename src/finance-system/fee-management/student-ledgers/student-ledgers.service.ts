@@ -65,6 +65,8 @@ export class StudentLedgersService extends BaseRepository {
                 'ledgerItem.id as id',
                 'ledgerItem.date as date',
                 'ledgerItem.ledgerAmount as ledgerAmount',
+                'ledgerItem.type as type',
+                'ledgerItem.remark as remark',
                 `CASE WHEN feeInvoice.id IS NULL THEN NULL ELSE JSON_OBJECT('id', feeInvoice.id, 'rcvNo', feeInvoice.invoiceNo, 'amount', feeInvoice.totalAmount, 'month', feeInvoice.month) END as feeInvoice`,
                 `CASE WHEN feePayment.id IS NULL THEN NULL ELSE JSON_OBJECT('id', feePayment.id, 'rcvNo', feePayment.receiptNo, 'amount', feePayment.amount) END as feePayment`,
             ]);
@@ -76,8 +78,10 @@ export class StudentLedgersService extends BaseRepository {
             .select('studentLedger.amount', 'ledgerAmount')
             .getRawOne();
 
-        const itemCount = await ledgerItemsQuerybuilder.getCount();
-        const data = await ledgerItemsQuerybuilder.getRawMany();
+        const [data, itemCount] = await Promise.all([
+            ledgerItemsQuerybuilder.getRawMany(),
+            ledgerItemsQuerybuilder.getCount(),
+        ]);
 
         const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto: queryDto });
 

@@ -2,6 +2,7 @@ import { Entity, Column, ManyToOne } from 'typeorm';
 import { BaseEntity } from 'src/common/entities/base.entity';
 import { Student } from 'src/students/entities/student.entity';
 import { LibraryBook } from 'src/library-system/library-book/entities/library-book.entity';
+import { LedgerItem } from 'src/finance-system/fee-management/student-ledgers/entities/ledger-item.entity';
 
 @Entity()
 export class BookTransaction extends BaseEntity {
@@ -25,4 +26,7 @@ export class BookTransaction extends BaseEntity {
 
     @Column({ type: 'datetime', nullable: true })
     paidAt: string;
+
+    @ManyToOne(() => LedgerItem, ledgerItem => ledgerItem.bookTransactions, { onDelete: 'SET NULL', nullable: true })
+    ledgerItem: LedgerItem;
 }

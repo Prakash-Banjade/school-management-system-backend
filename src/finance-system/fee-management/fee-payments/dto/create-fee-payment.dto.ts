@@ -21,3 +21,13 @@ export class CreateFeePaymentDto {
     @IsEnum(EPaymentMethod)
     paymentMethod: EPaymentMethod;
 }
+
+export class LibraryFinePaymentDto {
+    @ApiProperty()
+    @IsUUID()
+    studentId: string;
+
+    @ApiProperty({ enum: EPaymentMethod })
+    @IsEnum(EPaymentMethod)
+    paymentMethod: EPaymentMethod;
+}

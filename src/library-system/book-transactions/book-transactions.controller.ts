@@ -5,11 +5,12 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
-import { BookTransactionByStudentQueryDto, BookTransactionsQueryDto } from './dto/book-transactions-query.dto';
+import { BookTransactionByStudentQueryDto, BookTransactionsQueryDto, UnpaidTransactionsQueryDto } from './dto/book-transactions-query.dto';
 import { RenewBookTransactionDto, ReturnBookTransactionDto } from './dto/update-book-transaction.dto';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
 import { isStudent } from 'src/utils/isStudent';
 import { BookTransactionsStudentViewService } from './book-transactions-student-view.service';
+import { BookTransactionsHelper } from './helpers/book-transactinos.helper';
 
 @ApiBearerAuth()
 @ApiTags('Library Book Transactions')
@@ -17,6 +18,7 @@ import { BookTransactionsStudentViewService } from './book-transactions-student-
 export class BookTransactionsController {
   constructor(
     private readonly bookTransactionsService: BookTransactionsService,
+    private readonly bookTransactionsHelper: BookTransactionsHelper,
     private readonly bookTransactionsStudentViewService: BookTransactionsStudentViewService,
   ) { }
 
@@ -44,6 +46,12 @@ export class BookTransactionsController {
     return this.bookTransactionsService.findAllByStudent(queryDto);
   }
 
+  @Get('unpaid')
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  findUnpaid(@Query() queryDto: UnpaidTransactionsQueryDto) {
+    return this.bookTransactionsHelper.getUnPaidTransactions(queryDto);
+  }
+
   @Get(':id')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findOne(@Param('id') id: string) {
@@ -62,11 +70,5 @@ export class BookTransactionsController {
   @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
   renew(@Body() updateBookTransactionDto: RenewBookTransactionDto) {
     return this.bookTransactionsService.renewBookTransaction(updateBookTransactionDto.transactionIds, updateBookTransactionDto.dueDate);
-  }
-
-  @Delete(':id')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.DELETE })
-  remove(@Param('id') id: string) {
-    return this.bookTransactionsService.remove(id);
   }
 }

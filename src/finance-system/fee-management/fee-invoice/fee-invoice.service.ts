@@ -10,7 +10,7 @@ import { AcademicYearsService } from 'src/academic-years/academic-years.service'
 import { FeeInvoiceItem } from './entities/fee-invoice-item.entity';
 import { ChargeHead, EChargeHeadPeriod } from '../charge-heads/entities/charge-head.entity';
 import { StudentLedger } from '../student-ledgers/entities/student-ledger.entity';
-import { LedgerItem } from '../student-ledgers/entities/ledger-item.entity';
+import { ELedgerItemType, LedgerItem } from '../student-ledgers/entities/ledger-item.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { FeeInvoiceCreatedEvent } from './fee-invoice.mailer';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
@@ -110,6 +110,8 @@ export class FeeInvoiceService extends BaseRepository {
                 date: dto.invoiceDate,
                 ledgerAmount: ledger.amount + grandTotal, // this is ths snapshot of the ledger at the time of invoice creation
                 studentLedger: ledger,
+                type: ELedgerItemType.Invoice,
+                remark: 'Monthly Fee invoice',
             })
         });
 
@@ -134,7 +136,7 @@ export class FeeInvoiceService extends BaseRepository {
         return amount - (amount * discount / 100);
     }
 
-    private async generateInvoiceNo() {
+    async generateInvoiceNo() {
         const lastInvoice = await this.getRepository(FeeInvoice).createQueryBuilder('feeInvoice')
             .orderBy('feeInvoice.createdAt', 'DESC')
             .limit(1)
@@ -142,9 +144,9 @@ export class FeeInvoiceService extends BaseRepository {
             .getOne();
 
         if (!lastInvoice) {
-            return `INV-${new Date().getFullYear()}-0001`
+            return `INV-${new Date().getFullYear()}-00001`
         } else {
-            const invDigit = (+lastInvoice.invoiceNo.split('-').at(-1) + 1).toString().padStart(4, '0');
+            const invDigit = (+lastInvoice.invoiceNo.split('-').at(-1) + 1).toString().padStart(5, '0');
             return `INV-${new Date().getFullYear()}-${invDigit}`;
         }
     }
@@ -160,6 +162,7 @@ export class FeeInvoiceService extends BaseRepository {
             .leftJoin('feeInvoice.items', 'items')
             .leftJoin('items.chargeHead', 'chargeHead')
             .where('enrollment.studentId = :studentId', { studentId })
+            .where('ledgerItem.type = :type', { type: ELedgerItemType.Invoice }) // ensure only fee invoice is returned not fine
             .andWhere('enrollment.academicYearId = :academicYearId', { academicYearId: latestAcademicYear.id })
             .andWhere('studentLedger.amount > 0') // ensure the student has a previous due amount
             .orderBy('feeInvoice.createdAt', 'DESC')
