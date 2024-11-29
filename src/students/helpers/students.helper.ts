@@ -152,6 +152,7 @@ export class StudentsHelper extends BaseRepository {
             .leftJoin("student.enrollments", "enrollments")
             .leftJoin("student.account", "account")
             .leftJoin("enrollments.classRoom", "classRoom")
+            .leftJoin("classRoom.parent", "parent")
             .leftJoinAndMapOne(
                 "student.attendance",
                 Attendance,
@@ -161,11 +162,8 @@ export class StudentsHelper extends BaseRepository {
             )
             .where("enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
             .andWhere(new Brackets((qb) => {
-                if (!queryDto.sectionId) {
-                    qb.where("classRoom.id = :classroomId", { classroomId: queryDto.classRoomId }); // if section id is not present look for class room id
-                } else {
-                    qb.andWhere("classRoom.id = :sectionId", { sectionId: queryDto.sectionId }); // if section id is present look for section id
-                }
+                queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId OR parent.id = :classRoomId', { classRoomId: queryDto.classRoomId });
+                queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId });
             }))
             .select([
                 "student.id",
