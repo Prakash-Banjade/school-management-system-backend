@@ -118,8 +118,8 @@ export class BookTransactionsService extends BaseRepository {
   private transactionByStatusQuery = {
     [EBookTransactionStatus.Issued]: 'transaction.returnedAt IS NULL',
     [EBookTransactionStatus.Returned]: 'transaction.returnedAt IS NOT NULL',
-    [EBookTransactionStatus.Overdue]: 'DATE(transaction.dueDate) < CURRENT_DATE() AND transaction.returnedAt IS NULL',
-    'unpaid': 'DATE(transaction.dueDate) < CURRENT_DATE() AND transaction.returnedAt IS NULL AND transaction.paidAt IS NULL',
+    [EBookTransactionStatus.Overdue]: 'DATE(transaction.dueDate) < DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY) AND transaction.returnedAt IS NULL', // 1 day is subtracted because, dueDate is converted to UTC which is yesterday
+    'unpaid': 'DATE(transaction.dueDate) < DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY) AND transaction.returnedAt IS NULL AND transaction.paidAt IS NULL',
     'paid': 'transaction.paidAt IS NOT NULL',
   }
 

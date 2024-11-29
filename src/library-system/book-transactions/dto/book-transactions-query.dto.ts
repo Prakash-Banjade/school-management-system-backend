@@ -1,6 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { IsBoolean, IsDefined, IsEnum, IsOptional, IsString } from "class-validator";
+import { IsDefined, IsEnum, IsOptional, IsString } from "class-validator";
 import { QueryDto } from "src/common/dto/query.dto";
 import { EBookTransactionStatus } from "src/common/types/global.type";
 
