@@ -94,7 +94,7 @@ export class FeeInvoiceMailer extends BaseRepository {
                 subject: `fee-invoice-${feeMonth.slice(0, 3)?.toLowerCase()}`,
                 attachments: [
                     {
-                        filename: `fee-invoice-${feeMonth.slice(0, 3)?.toLowerCase()}`,
+                        filename: `fee-invoice-${feeMonth.slice(0, 3)?.toLowerCase()}.pdf`,
                         content: buffer,
                     }
                 ]
