@@ -5,4 +5,7 @@ import { Column, Entity } from "typeorm";
 export class GeneralSetting extends BaseEntity {
     @Column({ type: 'float', default: 0 })
     libraryFine: number;
+
+    @Column({ type: 'varchar', default: '' })
+    currency: string;
 }
