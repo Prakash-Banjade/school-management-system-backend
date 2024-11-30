@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { ArrayMinSize, IsArray, IsDateString, IsDefined, IsEnum, IsOptional, IsUUID, ValidateIf, ValidateNested } from "class-validator";
+import { ArrayMinSize, IsArray, IsDateString, IsDefined, IsEnum, IsMilitaryTime, IsOptional, IsUUID, ValidateIf, ValidateNested } from "class-validator";
 import { EAttendanceStatus } from "src/common/types/global.type";
 
 const UpdateStatusEnum = [...Object.values(EAttendanceStatus), null];
@@ -27,13 +27,13 @@ class UpdateAttendanceDto {
 
     @ApiPropertyOptional({ type: String, format: 'date-time' })
     @IsOptional()
-    @IsDateString()
-    inTime?: string;
+    @IsMilitaryTime({ message: 'Invalid in time. Time must be in format HH:MM' })
+    inTime?: string | null;
 
     @ApiPropertyOptional({ type: String, format: 'date-time' })
     @IsOptional()
-    @IsDateString()
-    outTime?: string;
+    @IsMilitaryTime({ message: 'Invalid out time. Time must be in format HH:MM' })
+    outTime?: string | null;
 }
 
 export class UpdateAttendanceBatchDto {

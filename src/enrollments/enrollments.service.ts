@@ -1,7 +1,7 @@
 import { ConflictException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
 import { Enrollment } from './entities/enrollment.entity';
-import { DataSource } from 'typeorm';
+import { Brackets, DataSource } from 'typeorm';
 import { ClassRoomsService } from 'src/class-rooms/class-rooms.service';
 import { AcademicYear } from 'src/academic-years/entities/academic-year.entity';
 import { EnrollmentQueryDto } from './dto/enrollment-query.dto';
@@ -126,6 +126,13 @@ export class EnrollmentsService extends BaseRepository {
       .leftJoin('enrollment.classRoom', 'classRoom')
       .leftJoin('classRoom.parent', 'parent')
       .leftJoin('enrollment.academicYear', 'academicYear')
+      .where(new Brackets(qb => {
+        queryDto.search && qb.orWhere('CONCAT(student.firstName, " ", student.lastName) LIKE :search', { search: `%${queryDto.search}%` })
+          .orWhere('TRIM(enrollment.registrationNumber) = TRIM(:exactSearch)', { exactSearch: queryDto.search });
+
+        queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId OR parent.id = :classRoomId', { classRoomId: queryDto.classRoomId });
+        queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId });
+      }))
 
     applySelectColumns(queryBuilder, enrollmentSelectColumns, 'enrollment');
 

@@ -14,9 +14,9 @@ export class Attendance extends BaseEntity {
     @Column({ type: 'datetime' })
     date: string;
 
-    @Column({ type: 'datetime', nullable: true })
+    @Column({ type: 'varchar', nullable: true })
     inTime: string;
 
-    @Column({ type: 'datetime', nullable: true })
+    @Column({ type: 'varchar', nullable: true })
     outTime: string;
 }

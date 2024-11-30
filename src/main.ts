@@ -32,10 +32,18 @@ async function bootstrap() {
 
   app.register(fastifyCors, {
     credentials: true,
-    origin: configService.get<string>('CLIENT_URL'),
+    origin: (origin, callback) => {
+      if (!origin && configService.get<string>('NODE_ENV') === 'development') {
+        return callback(null, true);
+      }
+      if (origin === configService.get<string>('CLIENT_URL')) {
+        return callback(null, true);
+      }
+      return callback(new Error('Not allowed by CORS'), false);
+    },
     allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
     optionsSuccessStatus: 200,
-    preflightContinue: false, // enforce CORS policy consistently across the application's endpoints.
+    preflightContinue: false, // Do not pass OPTIONS request to other handlers
     methods: ['GET', 'POST', 'DELETE', 'PATCH'],
   });
 

@@ -162,8 +162,8 @@ export class LessonPlansService extends BaseRepository {
   async updateStatus(id: string, dto: UpdateLessonPlanStatusDto) {
     const existing = await this.findOne(id);
 
-    if (existing.status === ELessonPlanStatus.Completed) throw new BadRequestException('Lesson plan already completed');
-    if (existing.status === ELessonPlanStatus.Not_Started && dto.status === ELessonPlanStatus.Completed) throw new BadRequestException('Lesson plan not started yet');
+    // if (existing.status === ELessonPlanStatus.Completed) throw new BadRequestException('Lesson plan already completed');
+    // if (existing.status === ELessonPlanStatus.Not_Started && dto.status === ELessonPlanStatus.Completed) throw new BadRequestException('Lesson plan not started yet');
 
     existing.status = dto.status;
 
