@@ -19,7 +19,7 @@ export class GeneralSettingsService extends BaseRepository {
 
   async set(dto: GeneralSettingDto) {
     await this.removeCache(); // remove all cache
-    
+
     const existing = await this.getRepository(GeneralSetting).findOne({ where: { id: Not(IsNull()) } });
 
     if (existing) {
@@ -38,12 +38,12 @@ export class GeneralSettingsService extends BaseRepository {
     }
   }
 
-  async get(queryDto: GeneralSettingQueryDto) {
+  async get(queryDto: GeneralSettingQueryDto): Promise<GeneralSetting> {
     const cacheKey = `${CACHE_KEYS.GEN_SET}:${queryDto.settings?.join('_') ?? ''}`;
 
     // if data is cached, return it
     const cachedData = await this.cacheManager.get(cacheKey);
-    if (cachedData) return cachedData;
+    if (cachedData) return cachedData as GeneralSetting;
 
     // query db for the data
     let setting = await this.getRepository(GeneralSetting).findOne({

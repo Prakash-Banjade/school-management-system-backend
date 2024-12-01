@@ -1,15 +1,25 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <meta charset="utf-8">
-    <title>Invoice</title>
+    <meta charset="UTF-8">
+    <title>Invoice - {{monthUpto}}</title>
     <style>
         body {
+            margin: 0;
+            padding: 0;
             font-family: Arial, sans-serif;
-            max-width: 800px;
+        }
+
+        .page {
+            width: 210mm;
+            /* A4 width */
+            height: 297mm;
+            /* A4 height */
+            padding: 10mm;
             margin: 0 auto;
-            padding: 20px;
+            background: white;
+            box-sizing: border-box;
         }
 
         .header {
@@ -27,20 +37,29 @@
 
         .logo {
             width: 60px;
+            height: 60px;
         }
 
-        .school-info h1 {
+        .company-info h1 {
             margin: 0;
             font-size: 24px;
+            color: #000;
         }
 
-        .school-info p {
+        .company-info p {
             margin: 5px 0;
             color: #666;
         }
 
+        .invoice-title {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: right;
+        }
+
         .invoice-number {
             text-align: right;
+            color: #666;
         }
 
         .student-info {
@@ -62,39 +81,58 @@
         }
 
         th {
-            background-color: #e5e7eb;
+            background-color: #f0f0f0;
             padding: 10px;
             text-align: left;
         }
 
         td {
             padding: 10px;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid #eee;
+        }
+
+        .amount-column {
+            text-align: right;
         }
 
         .grand-total {
-            text-align: right;
-            font-size: 18px;
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border: 1px solid #eee;
+            margin-bottom: 20px;
+            border-radius: 4px;
             font-weight: bold;
-            margin: 20px 0;
         }
 
         .amount-words {
-            text-align: center;
-            margin: 30px 0;
+            margin-bottom: 40px;
+            text-align: right;
         }
 
-        .footer {
-            margin-top: 50px;
-            display: flex;
-            justify-content: space-between;
+        .payment-terms {
+            margin-bottom: 60px;
         }
 
-        .signature-line {
+        .signature {
+            text-align: right;
             border-top: 1px solid #000;
+            padding-top: 10px;
             width: 200px;
-            text-align: center;
-            padding-top: 5px;
+            float: right;
+        }
+
+        .print-button {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #000;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            border: none;
         }
 
         @media print {
@@ -106,79 +144,83 @@
 </head>
 
 <body>
-    <div class="header">
-        <div class="logo-section">
-            <img src="{{schoolLogo}}" alt="School Logo" class="logo">
-            <div class="school-info">
-                <h1>Abhyam Academy</h1>
-                <p>{{schoolAddress}}</p>
-                <p>Phone: {{schoolPhone}}</p>
+    <div class="page">
+        <div class="header">
+            <div class="logo-section">
+                <svg class="logo" viewBox="0 0 100 100">
+                    <rect x="20" y="20" width="60" height="60" fill="black" />
+                    <circle cx="50" cy="40" r="10" fill="white" />
+                    <rect x="40" y="45" width="20" height="25" fill="white" />
+                </svg>
+                <div class="company-info">
+                    <h1>{{schoolName}}</h1>
+                    <p>{{schoolAddress}}</p>
+                    <p>Phone: {{schoolPhone}}</p>
+                </div>
+            </div>
+            <div>
+                <div class="invoice-title">INVOICE</div>
+                <div class="invoice-number">Invoice #: {{invoiceNumber}}</div>
             </div>
         </div>
-        <div class="invoice-number">
-            <h2>INVOICE</h2>
-            <p>Invoice #: {{invoiceNumber}}</p>
+
+        <div class="student-info">
+            <div>
+                <strong>Student ID:</strong> {{studentId}}<br>
+                <strong>Student Name:</strong> {{studentName}}
+            </div>
+            <div>
+                <strong>Class:</strong> {{className}}
+            </div>
         </div>
-    </div>
 
-    <div class="student-info">
-        <div>
-            <p><strong>Student ID:</strong> {{studentId}}</p>
-            <p><strong>Student Name:</strong> {{studentName}}</p>
+        <div class="dates">
+            <div>
+                <strong>Invoice Date:</strong> {{invoiceDate}}<br>
+                <strong>Due Date:</strong> {{dueDate}}
+            </div>
+            <div>
+                <strong>Month Upto:</strong> {{monthUpto}}
+            </div>
         </div>
-        <div>
-            <p><strong>Class:</strong> {{className}}</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Charge Head</th>
+                    <th class="amount-column">Amount</th>
+                    <th class="amount-column">Discount (%)</th>
+                    <th class="amount-column">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each charges}}
+                <tr>
+                    <td>{{name}}</td>
+                    <td class="amount-column">{{amount}}</td>
+                    <td class="amount-column">{{discount}}</td>
+                    <td class="amount-column">{{total}}</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+
+        <div class="grand-total">
+            <span>Grand Total:</span>
+            <span>{{currency}} {{grandTotal}}</span>
         </div>
-    </div>
 
-    <div class="dates">
-        <div>
-            <p><strong>Invoice Date:</strong> {{invoiceDate}}</p>
-            <p><strong>Due Date:</strong> {{dueDate}}</p>
+        <div class="amount-words">
+            <strong>Amount in Words:</strong> {{amountInWords}}
         </div>
-        <div>
-            <p><strong>Month Upto:</strong> {{monthUpto}}</p>
-        </div>
-    </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Charge Head</th>
-                <th>Amount</th>
-                <th>Discount (%)</th>
-                <th>Total</th>
-            </tr>
-        </thead>
-        <tbody>
-            {{#each charges}}
-            <tr>
-                <td>{{name}}</td>
-                <td>{{amount}}</td>
-                <td>{{discount}}</td>
-                <td>{{total}}</td>
-            </tr>
-            {{/each}}
-        </tbody>
-    </table>
-
-    <div class="grand-total">
-        <p>Grand Total: Rs. <span style="font-size: 1.5rem;">{{grandTotal}}</span></p>
-    </div>
-
-    <div class="amount-words">
-        <p>Amount in Words: {{amountInWords}}</p>
-    </div>
-
-    <div class="footer">
         <div class="payment-terms">
-            <h3>Payment Terms:</h3>
-            <p>Please make payment before the due date</p>
+            <strong>Payment Terms:</strong><br>
+            Please make payment before the due date
         </div>
+
         <div class="signature">
-            <div class="signature-line">
-                <p>Authorized Signature</p>
-            </div>
+            Authorized Signature
         </div>
     </div>
 </body>

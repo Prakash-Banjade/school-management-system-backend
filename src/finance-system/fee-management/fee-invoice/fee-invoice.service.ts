@@ -60,10 +60,10 @@ export class FeeInvoiceService extends BaseRepository {
             .leftJoin('studentLedger.enrollment', 'enrollment')
             .where('enrollment.studentId = :studentId', { studentId: student.id })
             .andWhere('enrollment.academicYearId = :academicYearId', { academicYearId: latestAcademicYear.id })
-            .andWhere('feeInvoice.month >= :month', { month: dto.month })
+            .orderBy('feeInvoice.createdAt', 'DESC')
             .getOne();
 
-        if (pastMonthFeeInvoice) throw new BadRequestException('Fee invoice for this month already exists');
+        if (pastMonthFeeInvoice && pastMonthFeeInvoice.month >= dto.month) throw new BadRequestException('Fee invoice for this month already exists');
 
         // TODO: assuming all the amounts are valid and correctly calculated
 

@@ -1,4 +1,5 @@
 export interface FeeInvoicePdf {
+    schoolName: string,
     schoolLogo: string,
     schoolAddress: string,
     schoolPhone: string,
@@ -16,5 +17,6 @@ export interface FeeInvoicePdf {
         total: string,
     }[],
     grandTotal: string,
-    amountInWords: string
+    amountInWords: string,
+    currency: string
 }

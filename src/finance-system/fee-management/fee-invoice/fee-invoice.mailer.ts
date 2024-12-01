@@ -13,6 +13,7 @@ import { EMonth } from "src/common/types/months";
 import { thisSchool } from "src/common/CONSTANTS";
 import { FeeInvoicePdf } from "./interfaces/fee-invoice-pdf.interface";
 import { ToWords } from "to-words";
+import { GeneralSettingsService } from "src/general-settings/general-settings.service";
 export const toWords = new ToWords();
 
 export class FeeInvoiceCreatedEvent {
@@ -31,10 +32,13 @@ export class FeeInvoiceMailer extends BaseRepository {
         dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
         private readonly eventEmitter: EventEmitter2,
         private readonly pdfAttachmentService: PdfAttachmentService,
+        private readonly generalSettingsService: GeneralSettingsService
     ) { super(dataSource, req); }
 
     @OnEvent('feeInvoice.created')
     async onFeeInvoiceCreated({ feeInvoice, studentId }: FeeInvoiceCreatedEvent) {
+        const generalSettings = await this.generalSettingsService.get({ settings: ['currency'] })
+
         const student = await this.getRepository(Student).createQueryBuilder('student')
             .where('student.id = :studentId', { studentId })
             .leftJoin('student.guardians', 'guardians', 'guardians.receiveNotification = 1')
@@ -44,6 +48,7 @@ export class FeeInvoiceMailer extends BaseRepository {
                 'student.id',
                 'student.firstName',
                 'student.lastName',
+                'student.studentId',
                 'guardians.phone',
                 'guardians.email',
                 'guardians.firstName',
@@ -79,6 +84,8 @@ export class FeeInvoiceMailer extends BaseRepository {
                 studentName: student.firstName + ' ' + student.lastName,
                 grandTotal: feeInvoice.totalAmount?.toLocaleString(),
                 amountInWords: toWords.convert(feeInvoice.totalAmount, { currency: true, ignoreZeroCurrency: true }),
+                schoolName: thisSchool.name,
+                currency: generalSettings.currency,
             })
             const buffer = await this.pdfAttachmentService.generatePdf(pdfHtml);
 
