@@ -49,11 +49,8 @@ export class StudentsHelper extends BaseRepository {
                     }))
                 }
                 queryDto.studentId && qb.andWhere('student.studentId = :studentId', { studentId: queryDto.studentId });
-
-                queryDto.classRoomId && qb.andWhere(new Brackets(qb => { // if class room id, check in both section and class
-                    qb.orWhere('parent.id = :classRoomId', { classRoomId: queryDto.classRoomId });
-                    qb.orWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
-                }))
+                // if class room id, check in both section and class room
+                queryDto.classRoomId && qb.andWhere('parent.id = :classRoomId OR classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
 
                 queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId }); // the sectionId send by the frontend is the class room id
             }))

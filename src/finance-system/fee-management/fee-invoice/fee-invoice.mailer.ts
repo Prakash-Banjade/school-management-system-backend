@@ -89,7 +89,7 @@ export class FeeInvoiceMailer extends BaseRepository {
             })
             const buffer = await this.pdfAttachmentService.generatePdf(pdfHtml);
 
-            await this.eventEmitter.emitAsync(MailEvents.FEE_INVOICE_CREATED, new FeeInvoiceCreatedEventDto({
+            this.eventEmitter.emit(MailEvents.FEE_INVOICE_CREATED, new FeeInvoiceCreatedEventDto({
                 currency: 'Rs.',
                 invoiceMonth: feeMonth,
                 invoiceYear: new Date().getFullYear()?.toString(),
