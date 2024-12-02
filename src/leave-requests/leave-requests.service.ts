@@ -99,7 +99,15 @@ export class LeaveRequestsService {
 
   async findOne(id: string) {
     const existing = await this.leaveRequestRepo.findOne({
-      where: { id }
+      where: { id },
+      relations: {
+        account: true,
+      },
+      select: {
+        account: {
+          id: true,
+        }
+      }
     });
     if (!existing) throw new NotFoundException('Leave request not found');
 
@@ -109,6 +117,10 @@ export class LeaveRequestsService {
   async updateStatus(id: string, updateLeaveRequestStatusDto: UpdateLeaveRequestStatusDto) {
     const existing = await this.findOne(id);
 
+    const leaveFrom = existing.leaveFrom;
+    console.log(leaveFrom)
+
+    return;
     existing.status = updateLeaveRequestStatusDto.status;
     await this.leaveRequestRepo.save(existing);
 
