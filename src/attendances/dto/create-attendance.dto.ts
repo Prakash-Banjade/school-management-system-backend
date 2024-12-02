@@ -30,3 +30,24 @@ export class CreateAttendanceDto {
     @IsDateString()
     outTime?: string;
 }
+
+export class CreateLeaveAttendanceEvent {
+    @ApiProperty({ type: String, format: 'uuid' })
+    @IsUUID()
+    @IsNotEmpty()
+    accountId: string;
+
+    @ApiPropertyOptional({ type: String, format: 'date-time' })
+    @IsNotEmpty()
+    @IsDateString()
+    dateFrom: string;
+
+    @ApiPropertyOptional({ type: String, format: 'date-time' })
+    @IsNotEmpty()
+    @IsDateString()
+    dateTo: string;
+
+    constructor(dto: CreateLeaveAttendanceEvent) {
+        Object.assign(this, dto);
+    }
+}

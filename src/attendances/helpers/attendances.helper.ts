@@ -1,19 +1,29 @@
-import { InjectRepository } from "@nestjs/typeorm";
-import { Brackets, Repository } from "typeorm";
+import { Brackets, DataSource } from "typeorm";
 import { Attendance } from "../entities/attendance.entity";
 import { AttendanceCountQueryDto } from "../dto/attendance-count-query.dto";
 import { AuthUser, EAttendanceStatus, Role } from "src/common/types/global.type";
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { countDaysInMonth, countDaysInYear } from "src/utils/countDaysInMonth";
+import { BaseRepository } from "src/common/repository/base-repository";
+import { FastifyRequest } from "fastify";
+import { REQUEST } from "@nestjs/core";
+import { CreateLeaveAttendanceEvent } from "../dto/create-attendance.dto";
+import { format } from "date-fns";
+import { Account } from "src/auth-system/accounts/entities/account.entity";
+import { OnEvent } from "@nestjs/event-emitter";
+
+export const enum AttendanceEvent {
+    CREATE_LEAVE = "attendance:create_leave"
+}
 
 @Injectable()
-export class AttendancesHelper {
+export class AttendancesHelper extends BaseRepository {
     constructor(
-        @InjectRepository(Attendance) private attendanceRepo: Repository<Attendance>,
-    ) { }
+        dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
+    ) { super(dataSource, req) }
 
     async getCount(queryDto: AttendanceCountQueryDto, currentUser: AuthUser) {
-        const monthlyQuery = this.attendanceRepo.createQueryBuilder('attendance')
+        const monthlyQuery = this.getRepository(Attendance).createQueryBuilder('attendance')
             .leftJoin('attendance.account', 'account')
             .select('attendance.status', 'status')
             .addSelect('COUNT(attendance.id)', 'attendanceCount')
@@ -29,7 +39,7 @@ export class AttendancesHelper {
             }))
             .groupBy('attendance.status');
 
-        const yearlyQuery = this.attendanceRepo.createQueryBuilder('attendance')
+        const yearlyQuery = this.getRepository(Attendance).createQueryBuilder('attendance')
             .leftJoin('attendance.account', 'account')
             .select('attendance.status', 'status')
             .addSelect('COUNT(attendance.id)', 'attendanceCount')
@@ -73,5 +83,38 @@ export class AttendancesHelper {
         };
 
         return finalResult;
+    }
+
+    private async getAccount(accountId: string) {
+        const account = await this.getRepository(Account).findOne({
+            where: { id: accountId },
+            select: { id: true }
+        });
+        if (!account) throw new NotFoundException('Account not found');
+        return account;
+    }
+
+    @OnEvent(AttendanceEvent.CREATE_LEAVE)
+    async createLeaveAttendance(dto: CreateLeaveAttendanceEvent) {
+        const account = await this.getAccount(dto.accountId);
+
+        const dateFrom = new Date(dto.dateFrom);
+        const dateTo = new Date(dto.dateTo);
+
+        let attendances: Attendance[] = [];
+
+        while (dateFrom <= dateTo) {
+            const attendance = this.getRepository(Attendance).create({
+                account,
+                date: format(dateFrom, 'yyyy-MM-dd'),
+                status: EAttendanceStatus.LEAVE,
+            });
+
+            attendances.push(attendance);
+
+            dateFrom.setDate(dateFrom.getDate() + 1);
+        }
+
+        this.getRepository(Attendance).save(attendances);
     }
 }

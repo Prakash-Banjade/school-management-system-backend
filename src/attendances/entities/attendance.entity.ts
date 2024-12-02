@@ -5,8 +5,8 @@ import { Column, Entity, ManyToOne, } from "typeorm";
 
 @Entity()
 export class Attendance extends BaseEntity {
-    @Column({ type: 'enum', enum: EAttendanceStatus })
-    status: EAttendanceStatus
+    @Column({ type: 'enum', enum: EAttendanceStatus, nullable: true })
+    status: EAttendanceStatus | null;
 
     @ManyToOne(() => Account, (account) => account.attendances, { onDelete: 'CASCADE' })
     account: Account
@@ -15,8 +15,8 @@ export class Attendance extends BaseEntity {
     date: string;
 
     @Column({ type: 'varchar', nullable: true })
-    inTime: string;
+    inTime: string | null;
 
     @Column({ type: 'varchar', nullable: true })
-    outTime: string;
+    outTime: string | null;
 }

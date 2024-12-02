@@ -5,7 +5,6 @@ import { Attendance } from './entities/attendance.entity';
 import { Brackets, DataSource } from 'typeorm';
 import { AttendanceQueryDto } from './dto/attendance-query.dto';
 import paginatedData from 'src/utils/paginatedData';
-import { AccountsService } from 'src/auth-system/accounts/accounts.service';
 import { AuthUser, Role } from 'src/common/types/global.type';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { attendanceSelectCols } from './helpers/attendance-select-cols.config';
@@ -13,31 +12,36 @@ import { UpdateAttendanceBatchDto } from './dto/update-attendance-batch.dto';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { FastifyRequest } from 'fastify';
 import { REQUEST } from '@nestjs/core';
+import { Account } from 'src/auth-system/accounts/entities/account.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AttendancesService extends BaseRepository {
   constructor(
     datasource: DataSource, @Inject(REQUEST) req: FastifyRequest,
-    private readonly accountsService: AccountsService,
   ) { super(datasource, req) }
 
   async create(createAttendanceDto: CreateAttendanceDto) {
-    const account = await this.accountsService.findOne(createAttendanceDto.accountId);
+    const account = await this.getAccount(createAttendanceDto.accountId);
 
     const attendance = this.getRepository(Attendance).create({
       ...createAttendanceDto,
       account
     });
 
-    const savedAttendance = await this.getRepository(Attendance).save(attendance);
+    await this.getRepository(Attendance).save(attendance);
 
     return {
       message: 'Attendance created successfully',
-      attendance: {
-        id: savedAttendance.id,
-        account: savedAttendance.account.firstName + ' ' + savedAttendance.account.lastName
-      }
     }
+  }
+
+  private async getAccount(accountId: string) {
+    const account = await this.getRepository(Account).findOne({
+      where: { id: accountId },
+      select: { id: true }
+    });
+    if (!account) throw new NotFoundException('Account not found');
+    return account;
   }
 
   async findAll(queryDto: AttendanceQueryDto, currentUser: AuthUser) {
@@ -100,7 +104,7 @@ export class AttendancesService extends BaseRepository {
         Object.assign(existing, attendance);
         return existing;
       } else {
-        const account = await this.accountsService.findOne(attendance.accountId);
+        const account = await this.getAccount(attendance.accountId);
         return this.getRepository(Attendance).create({
           ...attendance,
           account

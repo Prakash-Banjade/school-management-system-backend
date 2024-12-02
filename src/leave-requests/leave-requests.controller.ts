@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors } from '@nestjs/common';
 import { LeaveRequestsService } from './leave-requests.service';
 import { CreateLeaveRequestDto } from './dto/create-leave-request.dto';
 import { UpdateLeaveRequestDto, UpdateLeaveRequestStatusDto } from './dto/update-leave-request.dto';
@@ -7,6 +7,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
 import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
+import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 
 @ApiBearerAuth()
 @ApiTags('Leave Requests')
@@ -43,6 +44,7 @@ export class LeaveRequestsController {
 
   @Patch(':id/updateStatus')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
+  @UseInterceptors(TransactionInterceptor)
   updateStatus(@Param('id') id: string, @Body() udpateLeaveRequestStatusDto: UpdateLeaveRequestStatusDto) {
     return this.leaveRequestsService.updateStatus(id, udpateLeaveRequestStatusDto);
   }
