@@ -16,7 +16,7 @@ import { Global, Module } from '@nestjs/common';
                         url: process.env.DATABASE_URL,
                         entities: [`${__dirname}/../**/**.entity{.ts,.js}`], // this will automatically load all entity file in the src folder
                         synchronize: process.env.DB_SYNCHRONIZE === 'true',
-                        timezone: 'Z', // Use UTC
+                        timezone: '+00:00', // Use UTC
                     });
                     await dataSource.initialize(); // initialize the data source
                     console.log('Database connected successfully');
