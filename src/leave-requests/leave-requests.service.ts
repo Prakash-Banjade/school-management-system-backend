@@ -135,9 +135,6 @@ export class LeaveRequestsService extends BaseRepository {
   async updateStatus(id: string, updateLeaveRequestStatusDto: UpdateLeaveRequestStatusDto) {
     const existing = await this.findOne(id);
 
-    console.log(existing.leaveFrom)
-    
-    return;
     existing.status = updateLeaveRequestStatusDto.status;
     await this.getRepository(LeaveRequest).save(existing);
 

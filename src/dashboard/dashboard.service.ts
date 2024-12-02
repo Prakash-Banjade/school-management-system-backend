@@ -68,7 +68,7 @@ export class DashboardService extends BaseRepository {
             .andWhere('enrollments.academicYearId = :academicYearId', { academicYearId: currentAcademicYearId })
 
         const studentsLeaveRequests = await studentsLeaveRequestsQueryBuilder.clone()
-            .take(3)
+            .limit(3)
             .select([
                 'leaveRequest.id as id',
                 'leaveRequest.leaveFrom as leaveFrom',
@@ -85,7 +85,7 @@ export class DashboardService extends BaseRepository {
 
         const teachersLeaveRequestsQueryBuilder = this.getRepository(LeaveRequest).createQueryBuilder('leaveRequest')
             .orderBy('leaveRequest.createdAt', 'DESC')
-            .take(3)
+            .limit(3)
             .leftJoin('leaveRequest.account', 'account')
             .leftJoin('account.teacher', 'teacher')
             .leftJoin('teacher.profileImage', 'profileImage')
@@ -93,7 +93,7 @@ export class DashboardService extends BaseRepository {
             .andWhere('leaveRequest.status = :status', { status: ELeaveRequestStatus.PENDING })
 
         const teachersLeaveRequests = await teachersLeaveRequestsQueryBuilder.clone()
-            .take(3)
+            .limit(3)
             .select([
                 'leaveRequest.id as id',
                 'leaveRequest.leaveFrom as leaveFrom',
