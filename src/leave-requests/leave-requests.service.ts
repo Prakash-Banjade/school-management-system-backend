@@ -135,9 +135,6 @@ export class LeaveRequestsService extends BaseRepository {
   async updateStatus(id: string, updateLeaveRequestStatusDto: UpdateLeaveRequestStatusDto) {
     const existing = await this.findOne(id);
 
-    console.log(existing.leaveFrom)
-    
-    return;
     existing.status = updateLeaveRequestStatusDto.status;
     await this.getRepository(LeaveRequest).save(existing);
 
@@ -145,8 +142,8 @@ export class LeaveRequestsService extends BaseRepository {
     if (updateLeaveRequestStatusDto.status === ELeaveRequestStatus.APPROVED) {
       this.eventEmitter.emit(AttendanceEvent.CREATE_LEAVE, new CreateLeaveAttendanceEvent({
         accountId: existing.account?.id,
-        dateFrom: existing.leaveFrom,
-        dateTo: existing.leaveTo,
+        dateFrom: existing.leaveFrom?.toISOString(),
+        dateTo: existing.leaveTo?.toISOString(),
       }));
     }
 

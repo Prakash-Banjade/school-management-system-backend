@@ -9,10 +9,10 @@ export class LeaveRequest extends BaseEntity {
     account: Account
 
     @Column({ type: "datetime" })
-    leaveFrom: string;
+    leaveFrom: Date;
 
     @Column({ type: "datetime" })
-    leaveTo: string;
+    leaveTo: Date;
 
     @Column({ type: "text" })
     title: string;
