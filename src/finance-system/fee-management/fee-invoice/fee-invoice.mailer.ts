@@ -14,6 +14,7 @@ import { thisSchool } from "src/common/CONSTANTS";
 import { FeeInvoicePdf } from "./interfaces/fee-invoice-pdf.interface";
 import { ToWords } from "to-words";
 import { GeneralSettingsService } from "src/general-settings/general-settings.service";
+import { format } from "date-fns";
 export const toWords = new ToWords();
 
 export class FeeInvoiceCreatedEvent {
@@ -73,8 +74,8 @@ export class FeeInvoiceMailer extends BaseRepository {
                     total: (item.amount - (item.amount * item.discount / 100)).toLocaleString(),
                 })),
                 className: student.classRoom?.parent?.name ?? student.classRoom?.name,
-                dueDate: feeInvoice.dueDate,
-                invoiceDate: feeInvoice.invoiceDate,
+                dueDate: format(feeInvoice.dueDate, 'yyyy-MM-dd'),
+                invoiceDate: format(feeInvoice.invoiceDate, 'yyyy-MM-dd'),
                 invoiceNumber: feeInvoice.invoiceNo,
                 monthUpto: feeMonth,
                 schoolAddress: thisSchool.address,
