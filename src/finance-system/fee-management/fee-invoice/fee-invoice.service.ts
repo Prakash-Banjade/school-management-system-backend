@@ -162,7 +162,7 @@ export class FeeInvoiceService extends BaseRepository {
             .leftJoin('feeInvoice.items', 'items')
             .leftJoin('items.chargeHead', 'chargeHead')
             .where('enrollment.studentId = :studentId', { studentId })
-            .where('ledgerItem.type = :type', { type: ELedgerItemType.Invoice }) // ensure only fee invoice is returned not fine
+            .andWhere('ledgerItem.type = :type', { type: ELedgerItemType.Invoice }) // ensure only fee invoice is returned not fine
             .andWhere('enrollment.academicYearId = :academicYearId', { academicYearId: latestAcademicYear.id })
             .andWhere('studentLedger.amount > 0') // ensure the student has a previous due amount
             .orderBy('feeInvoice.createdAt', 'DESC')
