@@ -99,6 +99,8 @@ export class AttendancesService extends BaseRepository {
     const attendancesToRemove = updateAttendanceBatchDto.updatedAttendances?.map(attendance => attendance.status === null ? attendance.id : null).filter(Boolean);
 
     const attendances = await Promise.all(updateAttendanceBatchDto.updatedAttendances.filter(a => a.status !== null)?.map(async attendance => {
+      if (!!attendance?.outTime && !attendance?.inTime) throw new BadRequestException('There must be in time to have out time.')
+      
       if (attendance.id) {
         const existing = await this.findOne(attendance.id);
         Object.assign(existing, attendance);

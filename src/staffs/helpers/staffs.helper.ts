@@ -28,7 +28,9 @@ export class StaffsHelper {
                 "account.id",
                 "attendance.id",
                 "attendance.status",
-                "attendance.date"
+                "attendance.date",
+                "attendance.inTime",
+                "attendance.outTime",
             ])
             .getMany();
 

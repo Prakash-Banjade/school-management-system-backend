@@ -23,7 +23,8 @@ class UpdateAttendanceDto {
 
     @ApiPropertyOptional({ enum: UpdateStatusEnum })
     @IsEnum(UpdateStatusEnum)
-    status: EAttendanceStatus | null;
+    @IsOptional()
+    status?: EAttendanceStatus | null;
 
     @ApiPropertyOptional({ type: String, format: 'date-time' })
     @IsOptional()
