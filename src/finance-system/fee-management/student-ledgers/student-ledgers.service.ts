@@ -58,8 +58,8 @@ export class StudentLedgersService extends BaseRepository {
 
                 queryDto.particular === 'invoice' && qb.andWhere('feeInvoice.id IS NOT NULL');
 
-                queryDto.dateFrom && qb.andWhere('DATE(ledgerItem.date) >= DATE(:dateFrom)', { dateFrom: startOfDay(new Date(queryDto.dateFrom)).toISOString() });
-                queryDto.dateTo && qb.andWhere('DATE(ledgerItem.date) <= DATE(:dateTo)', { dateTo: startOfDay(new Date(queryDto.dateTo)).toISOString() });
+                queryDto.dateFrom && qb.andWhere('DATE(ledgerItem.date) >= DATE(:dateFrom)', { dateFrom: queryDto.dateFrom });
+                queryDto.dateTo && qb.andWhere('DATE(ledgerItem.date) <= DATE(:dateTo)', { dateTo: queryDto.dateTo });
             }))
             .select([
                 'ledgerItem.id as id',
