@@ -155,7 +155,7 @@ export class StudentsHelper extends BaseRepository {
                 Attendance,
                 "attendance",
                 "attendance.accountId = account.id AND DATE(attendance.date) = DATE(:attendanceDate)",
-                { attendanceDate: new Date(queryDto.date).toISOString().split('T')[0] }
+                { attendanceDate: queryDto.date }
             )
             .where("enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
             .andWhere(new Brackets((qb) => {
@@ -172,6 +172,7 @@ export class StudentsHelper extends BaseRepository {
                 "attendance.status",
                 "attendance.date"
             ])
+            .orderBy("student.rollNo", "ASC")
             .getMany();
 
         return studentsWithAttendance;

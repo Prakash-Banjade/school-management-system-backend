@@ -8,7 +8,6 @@ import { BaseRepository } from "src/common/repository/base-repository";
 import { FastifyRequest } from "fastify";
 import { REQUEST } from "@nestjs/core";
 import { CreateLeaveAttendanceEvent } from "../dto/create-attendance.dto";
-import { format } from "date-fns";
 import { Account } from "src/auth-system/accounts/entities/account.entity";
 import { OnEvent } from "@nestjs/event-emitter";
 
@@ -20,6 +19,7 @@ export const enum AttendanceEvent {
 export class AttendancesHelper extends BaseRepository {
     constructor(
         dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
+        private readonly appDataSource: DataSource,
     ) { super(dataSource, req) }
 
     async getCount(queryDto: AttendanceCountQueryDto, currentUser: AuthUser) {
@@ -96,25 +96,48 @@ export class AttendancesHelper extends BaseRepository {
 
     @OnEvent(AttendanceEvent.CREATE_LEAVE)
     async createLeaveAttendance(dto: CreateLeaveAttendanceEvent) {
-        const account = await this.getAccount(dto.accountId);
+        const queryRunner = this.appDataSource.createQueryRunner();
 
-        const dateFrom = new Date(dto.dateFrom);
-        const dateTo = new Date(dto.dateTo);
+        await queryRunner.connect();
 
-        let attendances: Attendance[] = [];
+        await queryRunner.startTransaction();
 
-        while (dateFrom <= dateTo) {
-            const attendance = this.getRepository(Attendance).create({
-                account,
-                date: format(dateFrom, 'yyyy-MM-dd'),
-                status: EAttendanceStatus.LEAVE,
-            });
+        try {
+            const account = await this.getAccount(dto.accountId);
 
-            attendances.push(attendance);
+            // removing old attendances if happened between these dates
+            await this.getRepository(Attendance).createQueryBuilder()
+                .delete()
+                .from(Attendance)
+                .where('accountId = :accountId', { accountId: dto.accountId })
+                .andWhere('DATE(date) BETWEEN DATE(:dateFrom) AND DATE(:dateTo)', { dateFrom: dto.dateFrom, dateTo: dto.dateTo })
+                .execute();
 
-            dateFrom.setDate(dateFrom.getDate() + 1);
+            const dateFrom = new Date(dto.dateFrom);
+            const dateTo = new Date(dto.dateTo);
+
+            let attendances: Attendance[] = [];
+
+            while (dateFrom <= dateTo) {
+                const attendance = this.getRepository(Attendance).create({
+                    account,
+                    date: dateFrom.toISOString(),
+                    status: EAttendanceStatus.LEAVE,
+                });
+
+                attendances.push(attendance);
+
+                dateFrom.setDate(dateFrom.getDate() + 1);
+            }
+
+            this.getRepository(Attendance).save(attendances);
+
+            await queryRunner.commitTransaction();
+        } catch (e) {
+            await queryRunner.rollbackTransaction();
+            throw e;
+        } finally {
+            await queryRunner.release();
         }
-
-        this.getRepository(Attendance).save(attendances);
     }
 }
