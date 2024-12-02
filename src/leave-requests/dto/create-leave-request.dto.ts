@@ -1,7 +1,7 @@
 import { BadRequestException } from "@nestjs/common";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsDateString, IsNotEmpty, IsOptional, IsString, IsUUID, Length, ValidateIf } from "class-validator";
-import { differenceInDays } from "date-fns";
+import { IsDateString, IsNotEmpty, IsOptional, IsString, Length, ValidateIf } from "class-validator";
+import { isBefore } from "date-fns";
 import { IsFutureDate } from "src/common/decorators/isFutureDate.decorator";
 
 export class CreateLeaveRequestDto {
@@ -15,7 +15,7 @@ export class CreateLeaveRequestDto {
     @IsDateString()
     @IsNotEmpty()
     @ValidateIf(o => {
-        if (differenceInDays(new Date(o.leaveFrom), new Date(o.leaveTo)) > 0) throw new BadRequestException('Leave to date cannot be before leave from date');
+        if (isBefore(o.leaveTo, o.leaveFrom)) throw new BadRequestException('Leave to date cannot be before leave from date');
         return true;
     })
     leaveTo: string;

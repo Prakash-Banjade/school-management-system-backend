@@ -136,7 +136,7 @@ export class LeaveRequestsService extends BaseRepository {
     const existing = await this.findOne(id);
 
     existing.status = updateLeaveRequestStatusDto.status;
-    // await this.getRepository(LeaveRequest).save(existing);
+    await this.getRepository(LeaveRequest).save(existing);
 
     // update the attendance for leave
     if (updateLeaveRequestStatusDto.status === ELeaveRequestStatus.APPROVED) {

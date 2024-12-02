@@ -15,7 +15,7 @@ class IsFutureDateConstraint implements ValidatorConstraintInterface {
 
         const today = new Date();
         today.setHours(0, 0, 0, 0); // Set time to the start of the day
-        return dateObj > today;
+        return dateObj >= today;
     }
 
     defaultMessage(args: ValidationArguments) {
