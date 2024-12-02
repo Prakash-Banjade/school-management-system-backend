@@ -16,7 +16,7 @@ export class StaffsHelper {
                 "staff.attendance",
                 Attendance,
                 "attendance",
-                "attendance.accountId = account.id AND DATE(attendance.date) = DATE_SUB(:attendanceDate, INTERVAL 1 DAY)", // subtracting 1 day because, attendance.date is in UTC i.e 05:45 less from 00:00
+                "attendance.accountId = account.id AND DATE(attendance.date) = DATE(:attendanceDate)", 
                 { attendanceDate: new Date(queryDto.date).toISOString().split('T')[0] }
             )
             .select([
