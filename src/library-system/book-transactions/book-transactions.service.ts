@@ -13,6 +13,7 @@ import { Student } from 'src/students/entities/student.entity';
 import { paginatedRawData } from 'src/utils/paginatedData';
 import { MAX_BOOK_ISSUE_LIMIT } from 'src/common/CONSTANTS';
 import { BookTransactionsHelper } from './helpers/book-transactinos.helper';
+import { startOfDayString } from 'src/utils/utils';
 
 @Injectable({ scope: Scope.REQUEST })
 export class BookTransactionsService extends BaseRepository {
@@ -222,9 +223,9 @@ export class BookTransactionsService extends BaseRepository {
       .set({
         dueDate,
         ////renewals: () => "renewals + 1" // Increment renewals by 1
-        renewals: () => `IF(renewals IS NULL OR renewals = '', '${new Date().toISOString().split('T')[0]}', CONCAT(renewals, ',', '${new Date().toISOString().split('T')[0]}'))`
+        renewals: () => `IF(renewals IS NULL OR renewals = '', '${startOfDayString(new Date())}', CONCAT(renewals, ',', '${startOfDayString(new Date())}'))`
       })
-      .whereInIds(bookTransactions.map(bookTransaction => bookTransaction.id))
+      .whereInIds(ids)
       .andWhere("returnedAt IS NULL AND DATE(dueDate) >= CURRENT_DATE()")
       .execute();
 
