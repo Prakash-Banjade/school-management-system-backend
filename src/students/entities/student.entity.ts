@@ -7,7 +7,6 @@ import { Enrollment } from "src/enrollments/entities/enrollment.entity";
 import { ExamReport } from "src/examination-system/exam-reports/entities/exam-report.entity";
 import { File } from "src/file-management/files/entities/file.entity";
 import { Image } from "src/file-management/images/entities/image.entity";
-import { StudentLedger } from "src/finance-system/fee-management/student-ledgers/entities/student-ledger.entity";
 import { Guardian } from "src/guardians/entities/guardian.entity";
 import { BookTransaction } from "src/library-system/book-transactions/entities/book-transaction.entity";
 import { OptionalSubject } from "src/optional-subject/entities/optional-subject.entity";
@@ -33,7 +32,7 @@ export class Student extends BaseEntity {
     @ManyToOne(() => ClassRoom, (classRoom) => classRoom.students, { onDelete: 'RESTRICT' })
     classRoom: ClassRoom;
 
-    @ManyToMany(() => OptionalSubject, (optionalSubject) => optionalSubject.students)
+    @ManyToMany(() => OptionalSubject, (optionalSubject) => optionalSubject.students, { cascade: true })
     optionalSubjects: OptionalSubject[];
 
     @Column({ type: 'int' })
