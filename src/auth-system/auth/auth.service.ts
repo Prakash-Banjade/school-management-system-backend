@@ -155,7 +155,10 @@ export class AuthService extends BaseRepository {
     reply.clearCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME, this.getRefreshCookieOptions()); // a new refresh token is to be generated
     const oldRefreshToken = req.unsignCookie(req.cookies[Tokens.REFRESH_TOKEN_COOKIE_NAME])?.value;
 
-    const account = await this.accountsRepo.findOneBy({ id: req.accountId, refreshTokens: Like(`%${oldRefreshToken}%`) }); // accountId is validated in the refresh token guard
+    const account = await this.accountsRepo.findOne({
+      where: { id: req.accountId, refreshTokens: Like(`%${oldRefreshToken}%`) },
+      select: { id: true, email: true, role: true, refreshTokens: true, password: true }, // TODO: password is selected for entity listener
+    }); // accountId is validated in the refresh token guard
     if (!account) throw new UnauthorizedException('Invalid refresh token');
 
     const { access_token, refresh_token } = await this.jwtService.getAuthTokens(account);
