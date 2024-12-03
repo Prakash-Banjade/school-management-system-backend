@@ -16,6 +16,7 @@ import { FastifyRequest } from "fastify";
 import { FeeStructure } from "src/finance-system/fee-management/fee-structures/entities/fee-structure.entity";
 import { ChargeHead, EChargeHeadType } from "src/finance-system/fee-management/charge-heads/entities/charge-head.entity";
 import { FeeInvoice } from "src/finance-system/fee-management/fee-invoice/entities/fee-invoice.entity";
+import { ELedgerItemType } from "src/finance-system/fee-management/student-ledgers/entities/ledger-item.entity";
 
 @Injectable()
 export class StudentsHelper extends BaseRepository {
@@ -269,6 +270,7 @@ export class StudentsHelper extends BaseRepository {
             .leftJoin('feeInvoice.ledgerItem', 'ledgerItem')
             .leftJoin('ledgerItem.studentLedger', 'studentLedger')
             .where('studentLedger.id = :studentLedgerId', { studentLedgerId: student.ledgerId })
+            .andWhere('ledgerItem.type = :type', { type: ELedgerItemType.Invoice }) // ensure only fee invoice is returned not fine
             .orderBy('feeInvoice.createdAt', 'DESC')
             .limit(1)
             .select([
