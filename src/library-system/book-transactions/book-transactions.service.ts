@@ -6,13 +6,12 @@ import { CreateBookTransactionDto } from './dto/create-book-transaction.dto';
 import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
 import { BaseRepository } from 'src/common/repository/base-repository';
-import { BookTransactionByStudentQueryDto, BookTransactionsQueryDto, EBookTransactionPeriod, UnpaidTransactionsQueryDto } from './dto/book-transactions-query.dto';
+import { BookTransactionByStudentQueryDto, BookTransactionsQueryDto, EBookTransactionPeriod } from './dto/book-transactions-query.dto';
 import { EBookTransactionStatus } from 'src/common/types/global.type';
 import { LibraryBook } from '../library-book/entities/library-book.entity';
 import { Student } from 'src/students/entities/student.entity';
 import { paginatedRawData } from 'src/utils/paginatedData';
 import { MAX_BOOK_ISSUE_LIMIT } from 'src/common/CONSTANTS';
-import { BookTransactionsHelper } from './helpers/book-transactinos.helper';
 import { startOfDayString } from 'src/utils/utils';
 
 @Injectable({ scope: Scope.REQUEST })
@@ -21,7 +20,6 @@ export class BookTransactionsService extends BaseRepository {
     datasource: DataSource,
     @Inject(REQUEST) req: FastifyRequest,
     private readonly libraryBookService: LibraryBookService,
-    private readonly bookTransactionsHelper: BookTransactionsHelper,
   ) {
     super(datasource, req);
   }
@@ -35,11 +33,15 @@ export class BookTransactionsService extends BaseRepository {
     if (!student) throw new NotFoundException('Student not found');
 
     // check if student has any overdue book transactions
-    const unpaidTransactions = await this.bookTransactionsHelper.getUnPaidTransactions(new UnpaidTransactionsQueryDto({
-      studentId: student.id,
-      take: 1
-    }));
-    if (unpaidTransactions.length > 0) throw new BadRequestException('This student has an overdue transaction. Please return the book first.');
+    const unpaidTransactions = await this.getRepository(BookTransaction).createQueryBuilder('transaction')
+      .where('transaction.studentId = :studentId', { studentId: student.id })
+      .andWhere(new Brackets(qb => {
+        qb.orWhere('DATE(transaction.dueDate) < CURRENT_DATE() AND transaction.returnedAt IS NULL') // currently overdue and not returned yet
+          .orWhere('transaction.returnedAt IS NOT NULL AND transaction.paidAt IS NULL AND DATE(transaction.dueDate) < DATE(transaction.returnedAt)') // overdue + returned but not paid
+      }))
+      .select(['transaction.id']).getMany();
+
+    if (unpaidTransactions.length > 0) throw new BadRequestException('This student has an overdue transaction. Please make the payment first.');
 
     const transactionsCount = await this.getRepository(BookTransaction).createQueryBuilder('transaction')
       .where("transaction.studentId = :studentId", { studentId: student.id })

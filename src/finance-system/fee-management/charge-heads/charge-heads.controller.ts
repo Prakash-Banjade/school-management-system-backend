@@ -2,10 +2,9 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseIntercepto
 import { ChargeHeadsService } from './charge-heads.service';
 import { CreateChargeHeadDto } from './dto/create-charge-head.dto';
 import { UpdateChargeHeadDto } from './dto/update-charge-head.dto';
-import { QueryDto } from 'src/common/dto/query.dto';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, Role } from 'src/common/types/global.type';
-import { ApiBearerAuth, ApiExcludeEndpoint, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ChargeHeadOptionsQueryDto, ChargeHeadQueryDto } from './dto/charge-head-query.dto';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 
@@ -17,6 +16,7 @@ export class ChargeHeadsController {
 
   @Post()
   @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
+  @UseInterceptors(TransactionInterceptor)
   create(@Body() createChargeHeadDto: CreateChargeHeadDto) {
     return this.chargeHeadsService.create(createChargeHeadDto);
   }
@@ -49,6 +49,7 @@ export class ChargeHeadsController {
 
   @Patch(':id')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
+  @UseInterceptors(TransactionInterceptor)
   update(@Param('id') id: string, @Body() updateChargeHeadDto: UpdateChargeHeadDto) {
     return this.chargeHeadsService.update(id, updateChargeHeadDto);
   }
