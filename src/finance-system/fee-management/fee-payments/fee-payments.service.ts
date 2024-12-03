@@ -7,7 +7,6 @@ import { CreateFeePaymentDto, LibraryFinePaymentDto } from './dto/create-fee-pay
 import { FeeInvoice } from '../fee-invoice/entities/fee-invoice.entity';
 import { FeePayment } from './entities/fee-payment.entity';
 import { ELedgerItemType, LedgerItem } from '../student-ledgers/entities/ledger-item.entity';
-import { format } from 'date-fns';
 import { StudentLedger } from '../student-ledgers/entities/student-ledger.entity';
 import { BookTransactionsHelper } from 'src/library-system/book-transactions/helpers/book-transactinos.helper';
 import { ChargeHead } from '../charge-heads/entities/charge-head.entity';
@@ -19,6 +18,7 @@ import { EMonth } from 'src/common/types/months';
 import { UnpaidTransactionsQueryDto } from 'src/library-system/book-transactions/dto/book-transactions-query.dto';
 import { AcademicYearsService } from 'src/academic-years/academic-years.service';
 import { BookTransaction } from 'src/library-system/book-transactions/entities/book-transaction.entity';
+import { startOfDayString } from 'src/utils/utils';
 
 @Injectable({ scope: Scope.REQUEST })
 export class FeePaymentsService extends BaseRepository {
@@ -54,7 +54,7 @@ export class FeePaymentsService extends BaseRepository {
             remark: dto.remark,
             receiptNo: await this.generateReceiptNo(),
             ledgerItem: this.getRepository(LedgerItem).create({
-                date: format(new Date(), 'yyyy-MM-dd'),
+                date: startOfDayString(new Date()),
                 ledgerAmount: updatedLedger.amount,
                 studentLedger: feeInvoice.ledgerItem?.studentLedger,
                 type: ELedgerItemType.Payment,
@@ -193,14 +193,14 @@ export class FeePaymentsService extends BaseRepository {
         })) as FeeInvoiceItem[];
 
         const feeInvoice = this.getRepository(FeeInvoice).create({
-            invoiceDate: format(new Date(), 'yyyy-MM-dd'),
-            dueDate: format(new Date(), 'yyyy-MM-dd'),
+            invoiceDate: startOfDayString(new Date()),
+            dueDate: startOfDayString(new Date()),
             month: EMonth.None,
             totalAmount: totalAmount,
             invoiceNo: await this.feeInvoiceService.generateInvoiceNo(),
             items: feeInvoiceItems,
             ledgerItem: this.getRepository(LedgerItem).create({
-                date: format(new Date(), 'yyyy-MM-dd'),
+                date: startOfDayString(new Date()),
                 ledgerAmount: totalAmount,
                 studentLedger: student.enrollments[0].ledger,
                 type: ELedgerItemType.LibraryFine,
@@ -211,7 +211,7 @@ export class FeePaymentsService extends BaseRepository {
                 this.getRepository(FeePayment).create({
                     amount: totalAmount,
                     ledgerItem: this.getRepository(LedgerItem).create({
-                        date: format(new Date(), 'yyyy-MM-dd'),
+                        date: startOfDayString(new Date()),
                         ledgerAmount: totalAmount,
                         studentLedger: student.enrollments[0].ledger,
                         type: ELedgerItemType.LibraryFine,
