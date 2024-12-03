@@ -1,5 +1,5 @@
 import { BaseEntity } from "src/common/entities/base.entity";
-import { BeforeRemove, BeforeSoftRemove, BeforeUpdate, Column, Entity, OneToMany } from "typeorm";
+import { BeforeInsert, BeforeRemove, BeforeSoftRemove, BeforeUpdate, Column, Entity, OneToMany } from "typeorm";
 import { FeeStructure } from "../../fee-structures/entities/fee-structure.entity";
 import { BadRequestException, InternalServerErrorException } from "@nestjs/common";
 import { CHARGE_HEADS } from "src/common/CONSTANTS";
@@ -23,6 +23,25 @@ export class ChargeHead extends BaseEntity {
     preventMutationForDefaultHeads() {
         if (!this.name) throw new InternalServerErrorException('Cannot find head name.')
         if (Object.values(CHARGE_HEADS).includes(this.name)) throw new BadRequestException('Cannot udpate or delete default charge heads.')
+    }
+
+    /**
+     * Charge head with type "ad_hoc" can only have "none" period
+     * Charge head with type "regular" cannot have "none" period
+     */
+    @BeforeInsert()
+    @BeforeUpdate()
+    validateTypeAndPeriod() {
+        const providedType = this.type ?? EChargeHeadType.Regular;
+        const providedPeriod = this.period ?? EChargeHeadPeriod.Monthly;
+
+        if (providedType === EChargeHeadType.Ad_Hoc) {
+            this.period = EChargeHeadPeriod.None;
+            this.isMandatory = false;
+        }
+        if (providedType === EChargeHeadType.Regular && providedPeriod === EChargeHeadPeriod.None) {
+            this.period = EChargeHeadPeriod.Monthly;
+        }
     }
 
     @Column({ type: 'varchar', unique: true })
