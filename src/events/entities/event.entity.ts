@@ -1,6 +1,5 @@
 import { BaseEntity } from 'src/common/entities/base.entity';
-import { Role } from 'src/common/types/global.type';
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, Column } from 'typeorm';
 
 @Entity()
 export class Event extends BaseEntity {
