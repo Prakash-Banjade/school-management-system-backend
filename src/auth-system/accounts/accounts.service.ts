@@ -1,5 +1,4 @@
-import { Inject, Injectable, Scope } from '@nestjs/common';
-import { UpdateAccountDto } from './dto/update-account.dto';
+import { BadRequestException, Inject, Injectable, Scope } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Account } from './entities/account.entity';
@@ -13,19 +12,33 @@ import { FastifyRequest } from 'fastify';
 import { AuthUser, Role } from 'src/common/types/global.type';
 import { generateRandomPassword } from 'src/utils/generatePassword';
 import * as bcrypt from 'bcrypt';
-import { PASSWORD_SALT_COUNT } from 'src/common/CONSTANTS';
+import { PASSWORD_SALT_COUNT, thisSchool } from 'src/common/CONSTANTS';
 import { accountSelectCols } from './helpers/account-select-cols.config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { MailEvents } from 'src/mail/mail.service';
+import { UserCredentialsEventDto } from 'src/mail/dto/events.dto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AccountsService extends BaseRepository {
   constructor(
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
     @InjectRepository(Account) private accountsRepo: Repository<Account>,
+    private readonly configService: ConfigService,
+    private readonly eventEmitter: EventEmitter2
   ) {
     super(dataSource, req);
   }
 
   async createAccount(entity: Teacher | Student | Guardian | Staff) {
+    // check for existing
+    const existingAccount = await this.accountsRepo.findOne({ where: { email: entity.email }, select: { id: true } });
+    if (existingAccount) throw new BadRequestException({
+      message: 'Duplicate email. Please use different email.',
+      field: 'email',
+    });
+
+    // create account by generating random password
     const password = generateRandomPassword();
     const key = entity instanceof Teacher
       ? Role.TEACHER
@@ -44,21 +57,26 @@ export class AccountsService extends BaseRepository {
       isVerified: true,
       password,
       prevPasswords: [bcrypt.hashSync(password, PASSWORD_SALT_COUNT)],
-    })
+    });
 
     console.log({
       entityType: entity.constructor.name,
       password,
       email: entity.email
-    })
-
-    // TODO: send email to user
+    });
 
     await this.getRepository(Account).save(account);
 
-    return {
-      message: 'Account created successfully',
-    }
+    // send mail
+    this.eventEmitter.emit(MailEvents.USER_CREDENTIALS, new UserCredentialsEventDto({
+      email: entity.email,
+      password,
+      schoolName: thisSchool.name,
+      schoolAddress: thisSchool.address,
+      username: entity.firstName + ' ' + entity.lastName,
+      schoolLogo: thisSchool.logo,
+      clientUrl: this.configService.get<string>('CLIENT_URL'),
+    }));
   }
 
   async me(currentUser: AuthUser) {
@@ -71,22 +89,10 @@ export class AccountsService extends BaseRepository {
     return account;
   }
 
-  findAll() {
-    return `This action returns all accounts`;
-  }
-
   async findOne(id: string) {
     const existingAccount = await this.accountsRepo.findOneBy({ id });
     if (!existingAccount) throw new Error('Account not found');
 
     return existingAccount;
-  }
-
-  update(id: string, updateAccountDto: UpdateAccountDto) {
-    return `This action updates a #${id} account`;
-  }
-
-  remove(id: string) {
-    return `This action removes a #${id} account`;
   }
 }

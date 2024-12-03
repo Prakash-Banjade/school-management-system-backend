@@ -6,11 +6,6 @@ import { IsUuidOrUrl } from "src/common/decorators/isUrlOrUUid.decorator";
 import { EBloodGroup, EMaritalStatus, EStaff, Gender } from "src/common/types/global.type";
 
 export class CreateStaffDto {
-    @ApiProperty({ type: Number, example: '5545', description: 'StaffId of the staff' })
-    @IsNumber()
-    @IsOptional()
-    staffId?: number;
-
     @ApiProperty({ type: 'enum', enum: EStaff, example: EStaff.DRIVER, description: 'Type of the staff' })
     @IsEnum(EStaff)
     @IsNotEmpty()

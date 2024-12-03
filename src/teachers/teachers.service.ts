@@ -41,7 +41,7 @@ export class TeachersService extends BaseRepository {
     // create account
     await this.accountsService.createAccount(savedTeacher);
 
-    return this.teacherMutationReturn(savedTeacher, 'created');
+    return { message: 'Teacher created' }
   }
 
   async findAll(queryDto: TeacherQueryDto) {
@@ -106,24 +106,25 @@ export class TeachersService extends BaseRepository {
     Object.assign(existingTeacher, {
       ...updateTeacherDto,
     });
-    const savedTeacher = await this.getRepository(Teacher).save(existingTeacher);
+    await this.getRepository(Teacher).save(existingTeacher);
 
-    return this.teacherMutationReturn(savedTeacher, 'updated');
+    return { message: 'Teacher updated' };
   }
 
   async remove(id: string) {
     const existingTeacher = await this.findOne(id);
 
-    return this.getRepository(Teacher).remove(existingTeacher);
+    await this.getRepository(Teacher).remove(existingTeacher);
+
+    return { message: 'Teacher deleted' };
   }
 
   async checkIfTeacherExists(teacherDto: CreateTeacherDto | UpdateTeacherDto, teacher?: Teacher) {
-    const { teacherId, email, phone, accountNumber } = teacherDto;
+    const { email, phone, accountNumber } = teacherDto;
 
     const existingTeacher = await this.getRepository(Teacher).createQueryBuilder('teacher')
       .where(new Brackets(qb => {
         qb.where([
-          { teacherId },
           { email },
           { phone },
           { accountNumber }
@@ -132,25 +133,13 @@ export class TeachersService extends BaseRepository {
       })).getOne();
 
     if (existingTeacher && !teacher) {
-      if (existingTeacher.teacherId === teacherId) throw new BadRequestException('Teacher with this teacherId already exists');
       if (existingTeacher.email === email) throw new BadRequestException('Teacher with this email already exists');
       if (existingTeacher.phone === phone) throw new BadRequestException('Teacher with this phone already exists');
       if (existingTeacher.accountNumber === accountNumber) throw new BadRequestException('Teacher with this accountNumber already exists');
     } else if (existingTeacher && teacher) {
-      if (existingTeacher.teacherId === teacherId && existingTeacher.id !== teacher.id) throw new BadRequestException('Teacher with this teacherId already exists');
       if (existingTeacher.email === email && existingTeacher.id !== teacher.id) throw new BadRequestException('Teacher with this email already exists');
       if (existingTeacher.phone === phone && existingTeacher.id !== teacher.id) throw new BadRequestException('Teacher with this phone already exists');
       if (existingTeacher.accountNumber === accountNumber && existingTeacher.id !== teacher.id) throw new BadRequestException('Teacher with this accountNumber already exists');
-    }
-  }
-
-  private teacherMutationReturn = (teacher: Teacher, type: 'created' | 'updated') => {
-    return {
-      message: type === 'created' ? 'Teacher created successfully' : 'Teacher updated successfully',
-      teacher: {
-        id: teacher.id,
-        name: `${teacher.firstName} ${teacher.lastName}`,
-      }
     }
   }
 }

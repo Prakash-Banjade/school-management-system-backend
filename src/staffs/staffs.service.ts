@@ -42,7 +42,7 @@ export class StaffsService extends BaseRepository {
     // create account
     await this.accountsService.createAccount(savedStaff);
 
-    return this.staffMutationReturn(savedStaff, 'created');
+    return { message: 'Staff created' }
   }
 
   async findAll(queryDto: StaffQueryDto) {
@@ -121,23 +121,26 @@ export class StaffsService extends BaseRepository {
 
     Object.assign(existingStaff, { ...updateStaffDto });
 
-    return this.staffMutationReturn(await this.getRepository(Staff).save(existingStaff), 'updated');
+    await this.getRepository(Staff).save(existingStaff);
+
+    return { message: 'Staff updated' }
   }
 
   async remove(id: string) {
     const existingStaff = await this.findOne(id);
 
-    return this.staffMutationReturn(await this.getRepository(Staff).remove(existingStaff), 'deleted');
+    await this.getRepository(Staff).remove(existingStaff);
+
+    return { message: 'Staff deleted' }
   }
 
   async checkIfStaffExists(staffDto: CreateStaffDto | UpdateStaffDto, staff?: Staff) {
-    const { staffId, email, phone, accountNumber } = staffDto;
+    const { email, phone, accountNumber } = staffDto;
 
     const existingStaff = await this.getRepository(Staff).createQueryBuilder('staff')
       .where({ id: staff?.id ? Not(staff.id) : undefined })
       .where(new Brackets(qb => {
         qb.where([
-          { staffId },
           { email },
           { phone },
           { accountNumber }
@@ -145,25 +148,13 @@ export class StaffsService extends BaseRepository {
       })).getOne();
 
     if (existingStaff && !staff) {
-      if (existingStaff.staffId === staffId) throw new BadRequestException('Staff with this staffId already exists');
       if (existingStaff.email === email) throw new BadRequestException('Staff with this email already exists');
       if (existingStaff.phone === phone) throw new BadRequestException('Staff with this phone already exists');
       if (existingStaff.accountNumber === accountNumber) throw new BadRequestException('Staff with this accountNumber already exists');
     } else if (existingStaff && staff) {
-      if (existingStaff.staffId === staffId && existingStaff.id !== staff.id) throw new BadRequestException('Staff with this staffId already exists');
       if (existingStaff.email === email && existingStaff.id !== staff.id) throw new BadRequestException('Staff with this email already exists');
       if (existingStaff.phone === phone && existingStaff.id !== staff.id) throw new BadRequestException('Staff with this phone already exists');
       if (existingStaff.accountNumber === accountNumber && existingStaff.id !== staff.id) throw new BadRequestException('Staff with this accountNumber already exists');
-    }
-  }
-
-  private staffMutationReturn = (staff: Staff, type: 'created' | 'updated' | 'deleted') => {
-    return {
-      message: type === 'created' ? 'Staff created successfully' : type === 'deleted' ? 'Staff deleted successfully' : 'Staff updated successfully',
-      staff: {
-        id: staff.id,
-        name: `${staff.firstName} ${staff.lastName}`,
-      }
     }
   }
 }

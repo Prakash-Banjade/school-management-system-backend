@@ -6,11 +6,6 @@ import { IsUuidOrUrl } from "src/common/decorators/isUrlOrUUid.decorator";
 import { EBloodGroup, EMaritalStatus, Gender } from "src/common/types/global.type";
 
 export class CreateTeacherDto {
-    @ApiProperty({ type: Number, example: '5545', description: 'TeacherId of the teacher' })
-    @IsNumber()
-    @IsOptional()
-    teacherId?: number;
-
     @ApiProperty({ type: String, example: 'John', description: 'First name of the teacher' })
     @IsString()
     @IsNotEmpty()

@@ -8,11 +8,12 @@ import * as nodemailer from 'nodemailer';
 import Handlebars from 'handlebars';
 import { join } from 'path';
 import { OnEvent } from '@nestjs/event-emitter';
-import { ConfirmationMailEventDto, FeeInvoiceCreatedEventDto, ResetPasswordMailEventDto } from './dto/events.dto';
+import { ConfirmationMailEventDto, FeeInvoiceCreatedEventDto, ResetPasswordMailEventDto, UserCredentialsEventDto } from './dto/events.dto';
 import Mail from 'nodemailer/lib/mailer';
 
 export enum MailEvents {
     CONFIRMATION = 'mail.confirmation',
+    USER_CREDENTIALS = 'mail.user-credentials',
     RESET_PASSWORD = 'mail.reset-password',
     FEE_INVOICE_CREATED = 'fee-invoice:created'
 }
@@ -35,6 +36,7 @@ export class MailService {
             confirmation: MailService.parseTemplate('email-verification-otp.hbs'),
             resetPassword: MailService.parseTemplate('reset-password.hbs'),
             invoiceCreated: MailService.parseTemplate('fee-system/fee-invoice-created.hbs'),
+            userCredentials: MailService.parseTemplate('sendUserCredentials.hbs'),
         };
     }
 
@@ -76,6 +78,13 @@ export class MailService {
             otp: String(dto.otp),
         });
         this.sendEmail(email, subject, html);
+    }
+
+    @OnEvent(MailEvents.USER_CREDENTIALS)
+    public async sendUserCredentials(dto: UserCredentialsEventDto) {
+        const subject = 'SMS Credentials';
+        const html = this.templates.userCredentials(dto);
+        this.sendEmail(dto.email, subject, html);
     }
 
     @OnEvent(MailEvents.RESET_PASSWORD)

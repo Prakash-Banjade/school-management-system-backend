@@ -1,10 +1,11 @@
 import { Controller, Get } from "@nestjs/common";
-import { ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { AccountsService } from "./accounts.service";
 import { CurrentUser } from "src/common/decorators/user.decorator";
 import { Action, AuthUser, Role } from "src/common/types/global.type";
 import { CheckAbilities } from "src/common/decorators/abilities.decorator";
 
+@ApiBearerAuth()
 @ApiTags('Accounts')
 @Controller('accounts')
 export class AccountsController {
