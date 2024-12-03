@@ -50,10 +50,10 @@ export class StudentsHelper extends BaseRepository {
                     }))
                 }
                 queryDto.studentId && qb.andWhere('student.studentId = :studentId', { studentId: queryDto.studentId });
-                // if class room id, check in both section and class room
-                queryDto.classRoomId && qb.andWhere('parent.id = :classRoomId OR classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
 
                 queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId }); // the sectionId send by the frontend is the class room id
+                // if class room id, check in both section and class room
+                queryDto.classRoomId && qb.andWhere('parent.id = :classRoomId OR classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
             }))
             .select(
                 queryDto.includeLedgerAmount ? [
@@ -71,6 +71,7 @@ export class StudentsHelper extends BaseRepository {
             "CONCAT(student.firstName, ' ', student.lastName) AS fullName",
             "enrollments.rollNo as rollNo",
             "student.studentId as studentId",
+            "classRoom.id as classRoomId",
             "CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, ' - ', classRoom.name) END AS classRoomName",
         ];
 
