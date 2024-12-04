@@ -54,7 +54,7 @@ export class AccountsService extends BaseRepository {
       lastName: entity.lastName,
       role: key,
       [key]: entity,
-      isVerified: true,
+      verifiedAt: new Date(),
       password,
       prevPasswords: [bcrypt.hashSync(password, PASSWORD_SALT_COUNT)],
     });

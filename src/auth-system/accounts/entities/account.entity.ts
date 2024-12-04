@@ -32,8 +32,8 @@ export class Account extends BaseEntity {
     @Column({ type: 'enum', enum: Role, default: Role.USER })
     role: Role;
 
-    @Column({ type: 'boolean', default: false })
-    isVerified: boolean = false;
+    @Column({ type: 'timestamp', nullable: true })
+    verifiedAt: Date | null = null;
 
     @Column({ type: 'enum', enum: AuthProvider, default: AuthProvider.CREDENTIALS })
     provider: AuthProvider;

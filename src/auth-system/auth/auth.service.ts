@@ -57,7 +57,7 @@ export class AuthService extends BaseRepository {
     const existingRefreshCookie = req.cookies?.[Tokens.REFRESH_TOKEN_COOKIE_NAME];
 
     const foundAccount = await this.authHelper.validateAccount(signInDto.email, signInDto.password);
-    if (!foundAccount.isVerified) return await this.authHelper.sendConfirmationEmail(foundAccount);
+    if (!foundAccount.verifiedAt) return await this.authHelper.sendConfirmationEmail(foundAccount);
 
     const { access_token, refresh_token } = await this.jwtService.getAuthTokens(foundAccount);
 
@@ -103,7 +103,7 @@ export class AuthService extends BaseRepository {
     const foundAccount = await this.accountsRepo.findOneBy({ email: foundRequest.email });
     if (!foundAccount) throw new NotFoundException('Account not found');
 
-    foundAccount.isVerified = true;
+    foundAccount.verifiedAt = new Date();
     const savedAccount = await this.accountsRepo.save(foundAccount);
 
     const newUser = this.usersRepo.create({
@@ -128,10 +128,10 @@ export class AuthService extends BaseRepository {
       email: registerDto.email,
     });
 
-    if (foundAccount && foundAccount.isVerified) throw new ConflictException('User with this email already exists');
+    if (foundAccount && foundAccount.verifiedAt) throw new ConflictException('User with this email already exists');
 
     // handle if the account is not verified
-    if (foundAccount && !foundAccount.isVerified) {
+    if (foundAccount && !foundAccount.verifiedAt) {
       Object.assign(foundAccount, {
         ...registerDto,
       })
@@ -157,7 +157,7 @@ export class AuthService extends BaseRepository {
 
     const account = await this.accountsRepo.findOne({
       where: { id: req.accountId, refreshTokens: Like(`%${oldRefreshToken}%`) },
-      select: { id: true, email: true, role: true, refreshTokens: true, password: true }, // TODO: password is selected for entity listener
+      select: { id: true, email: true, role: true, refreshTokens: true, password: true, verifiedAt: true }, // TODO: password and verifiedAt is selected for entity listener
     }); // accountId is validated in the refresh token guard
     if (!account) throw new UnauthorizedException('Invalid refresh token');
 
@@ -192,7 +192,7 @@ export class AuthService extends BaseRepository {
 
   async changePassword(changePasswordDto: ChangePasswordDto, currentUser: AuthUser) {
     const account = await this.authHelper.validateAccount(currentUser.email, changePasswordDto.oldPassword);
-    if (!account.isVerified) throw new ForbiddenException();
+    if (!account.verifiedAt) throw new ForbiddenException();
 
     // check if the new password is
     for (const prevPassword of account.prevPasswords) {
