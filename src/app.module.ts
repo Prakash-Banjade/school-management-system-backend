@@ -17,7 +17,6 @@ import { AcademicYearsModule } from './academic-years/academic-years.module';
 import { AddressesModule } from './addresses/addresses.module';
 import { AttendancesModule } from './attendances/attendances.module';
 import { ClassRoomsModule } from './class-rooms/class-rooms.module';
-import { DealersModule } from './dealers/dealers.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
 import { ExaminationSystemModule } from './examination-system/examination-system.module';
 import { GuardiansModule } from './guardians/guardians.module';
@@ -94,7 +93,6 @@ import { GeneralSettingsModule } from './general-settings/general-settings.modul
     AttendancesModule,
     ClassRoomsModule,
     ClassRoutinesModule,
-    DealersModule,
     EnrollmentsModule,
     ExaminationSystemModule,
     GuardiansModule,
