@@ -1,11 +1,25 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsDateString, IsEmail, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, Matches, Min } from "class-validator";
+import { Type } from "class-transformer";
+import { IsArray, IsDateString, IsEmail, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, Matches, Min, ValidateNested } from "class-validator";
 import { NAME_REGEX, NAME_WITH_SPACE_REGEX, PHONE_NUMBER_REGEX } from "src/common/CONSTANTS";
 import { IsNotFutureDate } from "src/common/decorators/isNotFutureDate.decorator";
 import { IsUuidOrUrl } from "src/common/decorators/isUrlOrUUid.decorator";
 import { EBloodGroup, EMaritalStatus, Gender } from "src/common/types/global.type";
+import { IAllowance } from "src/finance-system/salary-management/salary-structures/entities/salary-structure.entity";
 
-export class CreateTeacherDto {
+export class AllowanceDto implements IAllowance {
+    @ApiProperty({ type: Number, example: 1000, description: 'Amount of the allowance' })
+    @IsNumber()
+    @Min(0)
+    amount!: number;
+
+    @ApiProperty({ type: String, example: 'Allowance title', description: 'Title of the allowance' })
+    @IsString()
+    @IsNotEmpty()
+    title!: string;
+}
+
+export class CreateEmployeeDto {
     @ApiProperty({ type: String, example: 'John', description: 'First name of the teacher' })
     @IsString()
     @IsNotEmpty()
@@ -44,11 +58,18 @@ export class CreateTeacherDto {
     @IsNotFutureDate({ message: 'Date of birth cannot be in the future' })
     dob!: string;
 
-    @ApiProperty({ type: Number, example: 10000, description: 'Wage of the teacher' })
+    @ApiProperty({ type: Number, example: 10000, description: 'Baisc salary of the teacher' })
     @IsNotEmpty()
     @Min(0)
     @IsNumber()
-    wage!: number;
+    basicSalary!: number;
+
+    @ApiPropertyOptional({ type: [AllowanceDto], description: 'Allowances of the teacher' })
+    @IsArray()
+    @IsOptional()
+    @ValidateNested({ each: true })
+    @Type(() => AllowanceDto)
+    allowances?: AllowanceDto[];
 
     @ApiPropertyOptional({ type: String, description: 'Profile image id/url of the teacher' })
     @IsUuidOrUrl()
@@ -96,3 +117,5 @@ export class CreateTeacherDto {
     @IsNotEmpty()
     accountNumber!: string;
 }
+
+export class CreateTeacherDto extends CreateEmployeeDto { }

@@ -3,6 +3,7 @@ import { ClassRoom } from "src/class-rooms/entities/class-room.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { EBloodGroup, EMaritalStatus, Gender } from "src/common/types/global.type";
 import { Image } from "src/file-management/images/entities/image.entity";
+import { SalaryStructure } from "src/finance-system/salary-management/salary-structures/entities/salary-structure.entity";
 import { Subject } from "src/subjects/entities/subject.entity";
 import { TaskEvaluation } from "src/task-system/task-evaluations/entities/task-evaluation.entity";
 import { generateTeacherId } from "src/utils/generate-teacher-id";
@@ -41,9 +42,6 @@ export class Teacher extends BaseEntity {
     @Column({ type: 'datetime' })
     dob: string;
 
-    @Column({ type: 'real' })
-    wage: number
-
     @OneToOne(() => Image, image => image.teacher_profileImage, { nullable: true })
     profileImage: Image;
 
@@ -78,5 +76,8 @@ export class Teacher extends BaseEntity {
     assignedSubjects: Subject[]
 
     @OneToMany(() => TaskEvaluation, (taskEvaluation) => taskEvaluation.evaluator)
-    taskEvaluations: TaskEvaluation[]
+    taskEvaluations: TaskEvaluation[];
+
+    @OneToOne(() => SalaryStructure, (salaryStructure) => salaryStructure.teacher, { cascade: true })
+    salaryStructure: SalaryStructure;
 }

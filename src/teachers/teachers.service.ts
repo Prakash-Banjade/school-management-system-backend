@@ -12,6 +12,7 @@ import { AccountsService } from 'src/auth-system/accounts/accounts.service';
 import { FastifyRequest } from 'fastify';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import paginatedData from 'src/utils/paginatedData';
+import { SalaryStructure } from 'src/finance-system/salary-management/salary-structures/entities/salary-structure.entity';
 
 
 @Injectable({ scope: Scope.REQUEST })
@@ -34,8 +35,13 @@ export class TeachersService extends BaseRepository {
 
     const teacher = this.getRepository(Teacher).create({
       ...createTeacherDto,
-      profileImage
+      profileImage,
+      salaryStructure: this.getRepository(SalaryStructure).create({
+        basicSalary: createTeacherDto.basicSalary,
+        allowances: createTeacherDto.allowances ?? [],
+      })
     });
+
     const savedTeacher = await this.getRepository(Teacher).save(teacher);
 
     // create account
