@@ -10,6 +10,7 @@ import { join } from 'path';
 import { OnEvent } from '@nestjs/event-emitter';
 import { ConfirmationMailEventDto, FeeInvoiceCreatedEventDto, ResetPasswordMailEventDto, UserCredentialsEventDto } from './dto/events.dto';
 import Mail from 'nodemailer/lib/mailer';
+import { thisSchool } from 'src/common/CONSTANTS';
 
 export enum MailEvents {
     CONFIRMATION = 'mail.confirmation',
@@ -94,6 +95,10 @@ export class MailService {
         const html = this.templates.resetPassword({
             name: firstName + ' ' + lastName,
             resetLink: `${this.domain}/auth/reset-password/${dto.token}`,
+            clientUrl: this.domain,
+            schoolName: thisSchool.name,
+            schoolAddress: thisSchool.address,
+            schoolLogo: thisSchool.logo,
         });
         this.sendEmail(
             email,
