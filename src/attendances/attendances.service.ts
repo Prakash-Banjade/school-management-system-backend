@@ -5,7 +5,7 @@ import { Attendance } from './entities/attendance.entity';
 import { Brackets, DataSource } from 'typeorm';
 import { AttendanceQueryDto } from './dto/attendance-query.dto';
 import paginatedData from 'src/utils/paginatedData';
-import { AuthUser, Role } from 'src/common/types/global.type';
+import { AuthUser, EAttendanceStatus, Role } from 'src/common/types/global.type';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { attendanceSelectCols } from './helpers/attendance-select-cols.config';
 import { UpdateAttendanceBatchDto } from './dto/update-attendance-batch.dto';
@@ -100,15 +100,19 @@ export class AttendancesService extends BaseRepository {
 
     const attendances = await Promise.all(updateAttendanceBatchDto.updatedAttendances.filter(a => a.status !== null)?.map(async attendance => {
       if (!!attendance?.outTime && !attendance?.inTime) throw new BadRequestException('There must be in time to have out time.')
-      
-      if (attendance.id) {
+
+      if (attendance.id) { // update existing
         const existing = await this.findOne(attendance.id);
-        Object.assign(existing, attendance);
+        Object.assign(existing, {
+          ...attendance,
+          status: !!attendance?.inTime ? EAttendanceStatus.PRESENT : attendance.status
+        });
         return existing;
-      } else {
+      } else { // create new
         const account = await this.getAccount(attendance.accountId);
         return this.getRepository(Attendance).create({
           ...attendance,
+          status: !!attendance?.inTime ? EAttendanceStatus.PRESENT : attendance.status,
           account
         });
       }
