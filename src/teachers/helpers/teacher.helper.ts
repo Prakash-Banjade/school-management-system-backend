@@ -80,7 +80,6 @@ export class TeachersHelper extends BaseRepository {
                 'teacher.email as email',
                 'teacher.phone as phone',
                 'teacher.dob as dob',
-                'teacher.wage as wage',
                 'teacher.gender as gender',
                 'teacher.qualification as qualification',
                 'teacher.maritalStatus as maritalStatus',

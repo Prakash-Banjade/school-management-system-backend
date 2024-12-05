@@ -25,6 +25,9 @@ export class CaslAbilityFactory {
         } else if (user.role === Role.STUDENT) {
             can(Action.MANAGE, Role.USER)
             can(Action.MANAGE, Role.STUDENT)
+        } else if (user.role === Role.TEACHER) {
+            can(Action.MANAGE, Role.USER)
+            can(Action.MANAGE, Role.TEACHER)
         }
 
         return build({

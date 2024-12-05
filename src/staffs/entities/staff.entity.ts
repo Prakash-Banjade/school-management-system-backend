@@ -2,6 +2,7 @@ import { Account } from "src/auth-system/accounts/entities/account.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { EBloodGroup, EMaritalStatus, EStaff, Gender } from "src/common/types/global.type";
 import { Image } from "src/file-management/images/entities/image.entity";
+import { SalaryStructure } from "src/finance-system/salary-management/salary-structures/entities/salary-structure.entity";
 import { Vehicle } from "src/transportation-system/vehicles/entities/vehicle.entity";
 import { generateTeacherId } from "src/utils/generate-teacher-id";
 import { BeforeInsert, BeforeUpdate, Column, Entity, JoinColumn, OneToMany, OneToOne } from "typeorm";
@@ -39,9 +40,6 @@ export class Staff extends BaseEntity {
     @JoinColumn()
     account: Account;
 
-    @Column({ type: 'real' })
-    wage: number
-
     @OneToOne(() => Image, image => image.staff_profileImage, { nullable: true })
     profileImage?: Image
 
@@ -70,7 +68,10 @@ export class Staff extends BaseEntity {
     accountName: string
 
     @Column({ type: 'varchar', nullable: true })
-    accountNumber: string
+    accountNumber: string;
+
+    @OneToOne(() => SalaryStructure, (salaryStructure) => salaryStructure.staff, { cascade: true })
+    salaryStructure: SalaryStructure;
 
     /**
     |--------------------------------------------------

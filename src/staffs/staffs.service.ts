@@ -14,6 +14,7 @@ import paginatedData from 'src/utils/paginatedData';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { staffsColumnsConfig } from './helpers/staff-select-cols.config';
 import { EStaff } from 'src/common/types/global.type';
+import { SalaryStructure } from 'src/finance-system/salary-management/salary-structures/entities/salary-structure.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class StaffsService extends BaseRepository {
@@ -35,7 +36,11 @@ export class StaffsService extends BaseRepository {
 
     const staff = this.getRepository(Staff).create({
       ...createStaffDto,
-      profileImage
+      profileImage,
+      salaryStructure: this.getRepository(SalaryStructure).create({
+        basicSalary: createStaffDto.basicSalary,
+        allowances: createStaffDto.allowances ?? [],
+      })
     });
     const savedStaff = await this.getRepository(Staff).save(staff);
 
