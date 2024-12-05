@@ -26,10 +26,14 @@ export class SalaryStructuresService extends BaseRepository {
             .leftJoin('salaryStructure.staff', 'staff')
             .leftJoin('staff.account', 'staffAccount', 'staff.id IS NOT NULL')
             .where(new Brackets(qb => {
-                queryDto.search && qb.orWhere('LOWER(CONCAT(teacher.firstName, " ", teacher.lastName)) LIKE LOWER(:search)', { search: `%${queryDto.search}%` })
-                    .orWhere('LOWER(CONCAT(staff.firstName, " ", staff.lastName)) LIKE LOWER(:search)', { search: `%${queryDto.search}%` })
-                    .orWhere('teacher.teacherId = :exactSearch', { exactSearch: queryDto.search })
-                    .orWhere('staff.staffId = :exactSearch', { exactSearch: queryDto.search });
+                queryDto.search && qb.andWhere(new Brackets(subQb => {
+                    subQb.orWhere('LOWER(CONCAT(teacher.firstName, " ", teacher.lastName)) LIKE LOWER(:search)', { search: `%${queryDto.search}%` })
+                        .orWhere('LOWER(CONCAT(staff.firstName, " ", staff.lastName)) LIKE LOWER(:search)', { search: `%${queryDto.search}%` })
+                        .orWhere('teacher.teacherId = :exactSearch', { exactSearch: queryDto.search })
+                        .orWhere('staff.staffId = :exactSearch', { exactSearch: queryDto.search });
+                }));
+
+                queryDto.designations?.length && qb.andWhere('teacherAccount.role IN (:...roles) OR staffAccount.role IN (:...roles)', { roles: queryDto.designations });
             }))
             .select([
                 'salaryStructure.id as id',
@@ -52,6 +56,13 @@ export class SalaryStructuresService extends BaseRepository {
                     END
                     as employeeId
                 `,
+                `
+                    CASE WHEN teacherAccount.id IS NOT NULL THEN
+                        teacherAccount.role
+                    ELSE
+                        staffAccount.role
+                    END
+                    as designation`,
                 'teacher.id as teacherId',
                 'staff.id as staffId',
             ])
