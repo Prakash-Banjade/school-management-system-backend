@@ -5,19 +5,7 @@ import { NAME_REGEX, NAME_WITH_SPACE_REGEX, PHONE_NUMBER_REGEX } from "src/commo
 import { IsNotFutureDate } from "src/common/decorators/isNotFutureDate.decorator";
 import { IsUuidOrUrl } from "src/common/decorators/isUrlOrUUid.decorator";
 import { EBloodGroup, EMaritalStatus, Gender } from "src/common/types/global.type";
-import { IAllowance } from "src/finance-system/salary-management/salary-structures/entities/salary-structure.entity";
-
-export class AllowanceDto implements IAllowance {
-    @ApiProperty({ type: Number, example: 1000, description: 'Amount of the allowance' })
-    @IsNumber()
-    @Min(0)
-    amount!: number;
-
-    @ApiProperty({ type: String, example: 'Allowance title', description: 'Title of the allowance' })
-    @IsString()
-    @IsNotEmpty()
-    title!: string;
-}
+import { AllowanceDto } from "src/finance-system/salary-management/salary-structures/dto/create-salary-structure.dto";
 
 export class CreateEmployeeDto {
     @ApiProperty({ type: String, example: 'John', description: 'First name of the teacher' })
