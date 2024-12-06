@@ -4,8 +4,9 @@ import { Payroll } from "../../payrolls/entities/payroll.entity";
 
 export enum ESalaryAdjustmentType {
     Bonus = 'bonus',
-    deduction = 'deduction',
-    advance = 'advance',
+    Deduction = 'deduction',
+    Advance = 'advance',
+    Allowance = 'allowance',
 }
 
 @Entity()

@@ -1,15 +1,20 @@
 import { BaseEntity } from "src/common/entities/base.entity";
-import { EMonth } from "src/common/types/months";
-import { BeforeInsert, Column, Entity, OneToMany, OneToOne } from "typeorm";
-import { SalaryAdjustment } from "../../salary-adjustments/entities/salary-adjustment.entity";
+import { BeforeInsert, Column, Entity, ManyToOne, OneToMany } from "typeorm";
+import { ESalaryAdjustmentType, SalaryAdjustment } from "../../salary-adjustments/entities/salary-adjustment.entity";
 import { SalaryPayment } from "../../salary-payemnts/entities/salary-payment.entity";
-import { EmployeeLedger } from "../../employee-ledgers/entities/employee-ledger.entity";
+import { Teacher } from "src/teachers/entities/teacher.entity";
+import { Staff } from "src/staffs/entities/staff.entity";
 
 @Entity()
 export class Payroll extends BaseEntity {
+    @ManyToOne(() => Staff, staff => staff.payrolls, { onDelete: 'CASCADE' })
+    staff: Staff;
 
-    @Column({ type: 'enum', enum: EMonth })
-    month: EMonth;
+    @ManyToOne(() => Teacher, teacher => teacher.payrolls, { onDelete: 'CASCADE' })
+    teacher: Teacher;
+
+    @Column({ type: 'datetime' })
+    date: string;
 
     @Column({ type: 'float' })
     grossSalary: number;
@@ -22,13 +27,16 @@ export class Payroll extends BaseEntity {
 
     @BeforeInsert()
     calculateNetSalary() {
-        const adjustmentAmount = this.salaryAdjustments?.reduce((acc, curr) => acc + curr.amount, 0); // for deductions, amount is negative
+        const adjustmentAmount = this.salaryAdjustments?.reduce((acc, curr) => {
+            curr.type === ESalaryAdjustmentType.Deduction ? acc -= curr.amount : acc += curr.amount;
+            return acc;
+        }, 0);
         this.netSalary = this.grossSalary + adjustmentAmount;
     }
 
     @OneToMany(() => SalaryPayment, payment => payment.payroll, { cascade: true })
     salaryPayments: SalaryPayment[];
 
-    @OneToOne(() => EmployeeLedger, ledger => ledger.payroll, { onDelete: 'CASCADE' })
-    ledger: EmployeeLedger;
+    // @OneToOne(() => EmployeeLedger, ledger => ledger.payroll, { onDelete: 'CASCADE' })
+    // ledger: EmployeeLedger;
 }

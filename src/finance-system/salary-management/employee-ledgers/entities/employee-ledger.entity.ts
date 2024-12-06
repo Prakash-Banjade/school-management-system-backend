@@ -34,7 +34,7 @@ export class EmployeeLedger extends BaseEntity {
     @JoinColumn()
     payment: SalaryPayment;
 
-    @OneToOne(() => Payroll, payroll => payroll.ledger, { onDelete: 'CASCADE' })
-    @JoinColumn()
-    payroll: Payroll;
+    // @OneToOne(() => Payroll, payroll => payroll.ledger, { onDelete: 'CASCADE' })
+    // @JoinColumn()
+    // payroll: Payroll;
 }

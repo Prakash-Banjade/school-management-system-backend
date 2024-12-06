@@ -33,7 +33,7 @@ export class SalaryStructuresService extends BaseRepository {
                         .orWhere('staff.staffId = :exactSearch', { exactSearch: queryDto.search });
                 }));
 
-                queryDto.designations?.length && qb.andWhere('teacherAccount.role IN (:...roles) OR staffAccount.role IN (:...roles)', { roles: queryDto.designations });
+                queryDto.designations?.length && qb.andWhere('teacherAccount.role IN (:...roles) OR staff.type IN (:...roles)', { roles: queryDto.designations });
             }))
             .select([
                 'salaryStructure.id as id',
@@ -60,7 +60,7 @@ export class SalaryStructuresService extends BaseRepository {
                     CASE WHEN teacherAccount.id IS NOT NULL THEN
                         teacherAccount.role
                     ELSE
-                        staffAccount.role
+                        staff.type
                     END
                     as designation`,
                 'teacher.id as teacherId',

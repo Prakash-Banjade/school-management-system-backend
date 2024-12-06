@@ -4,6 +4,7 @@ import { BaseEntity } from "src/common/entities/base.entity";
 import { EBloodGroup, EMaritalStatus, Gender } from "src/common/types/global.type";
 import { Image } from "src/file-management/images/entities/image.entity";
 import { EmployeeLedger } from "src/finance-system/salary-management/employee-ledgers/entities/employee-ledger.entity";
+import { Payroll } from "src/finance-system/salary-management/payrolls/entities/payroll.entity";
 import { SalaryStructure } from "src/finance-system/salary-management/salary-structures/entities/salary-structure.entity";
 import { Subject } from "src/subjects/entities/subject.entity";
 import { TaskEvaluation } from "src/task-system/task-evaluations/entities/task-evaluation.entity";
@@ -81,6 +82,9 @@ export class Teacher extends BaseEntity {
 
     @OneToOne(() => SalaryStructure, (salaryStructure) => salaryStructure.teacher, { cascade: true })
     salaryStructure: SalaryStructure;
+
+    @OneToMany(() => Payroll, (payroll) => payroll.teacher)
+    payrolls: Payroll[];
 
     @OneToMany(() => EmployeeLedger, (employeeLedger) => employeeLedger.teacher)
     ledgers: EmployeeLedger[];
