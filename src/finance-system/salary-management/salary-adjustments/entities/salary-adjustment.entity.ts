@@ -7,6 +7,7 @@ export enum ESalaryAdjustmentType {
     Deduction = 'deduction',
     Advance = 'advance',
     Allowance = 'allowance',
+    Unpaid = 'unpaid',
 }
 
 @Entity()

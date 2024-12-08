@@ -4,7 +4,7 @@ import { FastifyRequest } from 'fastify';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { DataSource } from 'typeorm';
 import { CreatePayrollDto } from './dto/create-payroll.dto';
-import { SalaryStructure } from '../salary-structures/entities/salary-structure.entity';
+import { IAllowance, SalaryStructure } from '../salary-structures/entities/salary-structure.entity';
 import { Payroll } from './entities/payroll.entity';
 import { Teacher } from 'src/teachers/entities/teacher.entity';
 import { Staff } from 'src/staffs/entities/staff.entity';
@@ -20,12 +20,13 @@ export class PayrollsService extends BaseRepository {
     async create(dto: CreatePayrollDto) {
         const salaryStructure: {
             id: string;
-            grossSalary: number;
+            basicSalary: number;
             teacherId: string | null;
             staffId: string | null;
             payAmount: number;
             date: string | null;
             advanceAmount: number | null;
+            allowances: string | IAllowance[] | null;
         } | null = await this.getRepository(SalaryStructure).createQueryBuilder('salaryStructure')
             .leftJoin('salaryStructure.teacher', 'teacher')
             .leftJoin('salaryStructure.staff', 'staff')
@@ -49,7 +50,8 @@ export class PayrollsService extends BaseRepository {
             .where('teacher.id = :employeeId OR staff.id = :employeeId', { employeeId: dto.employeeId })
             .select([
                 'salaryStructure.id as id',
-                'salaryStructure.grossSalary as grossSalary',
+                'salaryStructure.basicSalary as basicSalary',
+                'salaryStructure.allowances as allowances',
                 'teacher.id as teacherId',
                 'staff.id as staffId',
                 'CASE WHEN teacher.id IS NOT NULL THEN teacher.payAmount ELSE staff.payAmount END as payAmount',
@@ -72,19 +74,32 @@ export class PayrollsService extends BaseRepository {
             payAmount: salaryStructure.payAmount,
         } as Staff : null;
 
+        const allowanceAmount: number | null = typeof salaryStructure.allowances === 'string'
+            ? (JSON.parse(salaryStructure.allowances) as IAllowance[])?.reduce((acc, curr) => acc + curr.amount, 0)
+            : salaryStructure.allowances?.reduce((acc, curr) => acc + curr.amount, 0);
+
         const payroll = this.getRepository(Payroll).create({
             date: dto.date,
-            grossSalary: salaryStructure.grossSalary,
-            salaryAdjustments: salaryStructure.advanceAmount !== null
-                ? [
-                    ...dto.salaryAdjustments,
-                    {
+            grossSalary: salaryStructure.basicSalary, // allowances are included in adjustments to separately show entries in template
+            salaryAdjustments: [
+                ...dto.salaryAdjustments,
+                salaryStructure.advanceAmount !== null
+                    ? {
                         amount: salaryStructure.advanceAmount,
                         type: ESalaryAdjustmentType.Deduction,
                         description: 'Past Advance'
-                    }
-                ]
-                : dto.salaryAdjustments,
+                    } : null,
+                {
+                    amount: allowanceAmount ?? 0,
+                    type: ESalaryAdjustmentType.Allowance,
+                    description: 'Allowance',
+                },
+                {
+                    amount: teacher?.id ? teacher.payAmount : staff.payAmount,
+                    type: ESalaryAdjustmentType.Unpaid,
+                    description: 'Unpaid Salary',
+                }
+            ].filter(Boolean),
             // either one of the teacher or staff will be null
             teacher,
             staff,
@@ -92,7 +107,16 @@ export class PayrollsService extends BaseRepository {
 
         payroll.calculateNetSalary(); // calculate net salary
 
+        // console.log(payroll);
+
+        // return;
+
         await this.getRepository(Payroll).save(payroll);
+
+        // update pay amount in employee
+        teacher?.id
+            ? await this.getRepository(Teacher).update(teacher.id, { payAmount: payroll.netSalary })
+            : await this.getRepository(Staff).update(staff.id, { payAmount: payroll.netSalary });
 
         return {
             message: 'Payroll created',
@@ -101,5 +125,63 @@ export class PayrollsService extends BaseRepository {
 
     private readonly sameSalaryMonthOrBefore = (lastSalaryDate: string, newSalaryDate: string) => {
         return isBefore(newSalaryDate, lastSalaryDate) || (isSameMonth(newSalaryDate, lastSalaryDate) && isSameYear(newSalaryDate, lastSalaryDate));
+    }
+
+    async getLastPayroll(employeeId: string) {
+        const payroll = await this.getRepository(Payroll).createQueryBuilder('payroll')
+            .leftJoin('payroll.salaryAdjustments', 'salaryAdjustments')
+            .leftJoin('payroll.teacher', 'teacher')
+            .leftJoin('payroll.staff', 'staff')
+            .where('teacher.id = :employeeId OR staff.id = :employeeId', { employeeId })
+            .select([
+                'payroll.id as id',
+                'payroll.date as date',
+                'payroll.netSalary as netSalary',
+                'payroll.grossSalary as grossSalary',
+                `
+                    CASE WHEN teacher.id IS NOT NULL THEN JSON_OBJECT(
+                        'id', teacher.id,
+                        'fullName', CONCAT(teacher.firstName, " ", teacher.lastName),
+                        'employeeId', teacher.teacherId,
+                        'designation', 'teacher', 
+                        'phone', teacher.phone,
+                        'email', teacher.email
+                    ) ELSE JSON_OBJECT(
+                        'id', staff.id,
+                        'fullName', CONCAT(staff.firstName, " ", staff.lastName),
+                        'employeeId', staff.staffId,
+                        'designation', staff.type,
+                        'phone', staff.phone,
+                        'email', staff.email
+                    ) END
+                    as employee
+                `,
+                `
+                    JSON_ARRAYAGG(
+                        JSON_OBJECT(
+                            'id', salaryAdjustments.id,
+                            'type', salaryAdjustments.type,
+                            'amount', salaryAdjustments.amount,
+                            'description', salaryAdjustments.description
+                        )
+                    ) as salaryAdjustments
+                `
+            ])
+            .groupBy('payroll.id')
+            .orderBy('payroll.date', 'DESC')
+            .limit(1)
+            .getRawOne();
+
+        if (payroll && !payroll.employee) throw new NotFoundException('Payroll not found');
+
+        return payroll ? {
+            ...payroll,
+            employee: typeof payroll.employee === 'string'
+                ? JSON.parse(payroll.employee)
+                : payroll.employee,
+            salaryAdjustments: typeof payroll.salaryAdjustments === 'string'
+                ? JSON.parse(payroll.salaryAdjustments) ?? []
+                : payroll.salaryAdjustments,
+        } : null;
     }
 }

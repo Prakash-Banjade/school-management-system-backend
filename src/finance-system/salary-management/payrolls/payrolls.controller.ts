@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, UseInterceptors } from '@nestjs/common';
 import { PayrollsService } from './payrolls.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { GetEmployeesQueryDto } from './dto/payroll-query.dto';
@@ -6,6 +6,7 @@ import { PayrollsHelper } from './helpers/payrolls.helper';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, Role } from 'src/common/types/global.type';
 import { CreatePayrollDto } from './dto/create-payroll.dto';
+import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 
 @ApiBearerAuth()
 @ApiTags('Payrolls')
@@ -18,6 +19,7 @@ export class PayrollsController {
 
   @Post()
   @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
+  @UseInterceptors(TransactionInterceptor)
   create(@Body() createPayrollDto: CreatePayrollDto) {
     return this.payrollsService.create(createPayrollDto);
   }
@@ -32,5 +34,11 @@ export class PayrollsController {
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   getEmployee(@Param('employeeId') employeeId: string) {
     return this.payrollsHelper.getEmployee(employeeId);
+  }
+
+  @Get('employees/:employeeId/last-payroll')
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  getLastPayroll(@Param('employeeId') employeeId: string) {
+    return this.payrollsService.getLastPayroll(employeeId);
   }
 }

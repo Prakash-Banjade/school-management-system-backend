@@ -1,15 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsArray, IsDateString, IsEnum, IsOptional, IsUUID, ValidateIf, ValidateNested } from "class-validator";
-import { EMonth } from "src/common/types/months";
+import { IsArray, IsDateString, IsNumber, IsOptional, IsUUID, Min, ValidateNested } from "class-validator";
 import { CreateSalaryAdjustmentDto } from "../../salary-adjustments/dto/create-salary-adjustment.dto";
 import { Type } from "class-transformer";
-import { BadRequestException } from "@nestjs/common";
 
 export class CreatePayrollDto {
     @ApiProperty()
     @IsDateString()
     date: string;
-    
+
     @ApiPropertyOptional({ type: CreateSalaryAdjustmentDto, isArray: true })
     @IsArray()
     @ValidateNested({ each: true })
@@ -20,4 +18,10 @@ export class CreatePayrollDto {
     @ApiProperty({ format: 'uuid' })
     @IsUUID()
     employeeId: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsNumber()
+    @Min(0, { message: 'Advance amount must be greater than or equal to 0' })
+    advance?: number;
 }
