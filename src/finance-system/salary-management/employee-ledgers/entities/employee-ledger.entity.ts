@@ -3,7 +3,6 @@ import { Staff } from "src/staffs/entities/staff.entity";
 import { Teacher } from "src/teachers/entities/teacher.entity";
 import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from "typeorm";
 import { SalaryPayment } from "../../salary-payemnts/entities/salary-payment.entity";
-import { Payroll } from "../../payrolls/entities/payroll.entity";
 
 export enum EmployeeLedgerType {
     Salary_Payment = 'Salary_Payment',

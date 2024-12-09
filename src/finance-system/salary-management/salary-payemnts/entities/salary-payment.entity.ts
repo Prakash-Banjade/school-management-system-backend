@@ -9,6 +9,9 @@ export class SalaryPayment extends BaseEntity {
     @Column({ type: 'float' })
     amount: number;
 
+    @Column({ type: 'text', nullable: true })
+    remark: string;
+
     @Column({ type: 'datetime' })
     paymentDate: string;
 
@@ -18,6 +21,6 @@ export class SalaryPayment extends BaseEntity {
     @ManyToOne(() => Payroll, payroll => payroll.salaryPayments, { onDelete: 'CASCADE' })
     payroll: Payroll;
 
-    @OneToOne(() => EmployeeLedger, ledger => ledger.payment, { onDelete: 'CASCADE' })
+    @OneToOne(() => EmployeeLedger, ledger => ledger.payment, { cascade: true })
     ledger: EmployeeLedger;
 }

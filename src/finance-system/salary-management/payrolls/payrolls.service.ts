@@ -10,6 +10,7 @@ import { Teacher } from 'src/teachers/entities/teacher.entity';
 import { Staff } from 'src/staffs/entities/staff.entity';
 import { ESalaryAdjustmentType } from '../salary-adjustments/entities/salary-adjustment.entity';
 import { isBefore, isSameMonth, isSameYear } from 'date-fns';
+import { SalaryPayment } from '../salary-payemnts/entities/salary-payment.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class PayrollsService extends BaseRepository {
@@ -86,7 +87,7 @@ export class PayrollsService extends BaseRepository {
                 salaryStructure.advanceAmount !== null
                     ? {
                         amount: salaryStructure.advanceAmount,
-                        type: ESalaryAdjustmentType.Deduction,
+                        type: ESalaryAdjustmentType.Past_Advance,
                         description: 'Past Advance'
                     } : null,
                 {
@@ -130,6 +131,7 @@ export class PayrollsService extends BaseRepository {
     async getLastPayroll(employeeId: string) {
         const payroll = await this.getRepository(Payroll).createQueryBuilder('payroll')
             .leftJoin('payroll.salaryAdjustments', 'salaryAdjustments')
+            .leftJoin('payroll.salaryPayments', 'salaryPayments')
             .leftJoin('payroll.teacher', 'teacher')
             .leftJoin('payroll.staff', 'staff')
             .where('teacher.id = :employeeId OR staff.id = :employeeId', { employeeId })
@@ -165,7 +167,7 @@ export class PayrollsService extends BaseRepository {
                             'description', salaryAdjustments.description
                         )
                     ) as salaryAdjustments
-                `
+                `,
             ])
             .groupBy('payroll.id')
             .orderBy('payroll.date', 'DESC')
@@ -173,6 +175,12 @@ export class PayrollsService extends BaseRepository {
             .getRawOne();
 
         if (payroll && !payroll.employee) throw new NotFoundException('Payroll not found');
+
+        // TODO: this can be achieved from above query also, but something doesn't work
+        const salaryPayments = await this.getRepository(SalaryPayment).createQueryBuilder('salaryPayment')
+            .where('salaryPayment.payrollId = :payrollId', { payrollId: payroll.id })
+            .select('SUM(salaryPayment.amount) as amount')
+            .getRawOne();
 
         return payroll ? {
             ...payroll,
@@ -182,6 +190,7 @@ export class PayrollsService extends BaseRepository {
             salaryAdjustments: typeof payroll.salaryAdjustments === 'string'
                 ? JSON.parse(payroll.salaryAdjustments) ?? []
                 : payroll.salaryAdjustments,
+            paidSalary: salaryPayments?.amount ?? 0,
         } : null;
     }
 }
