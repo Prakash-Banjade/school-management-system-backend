@@ -59,6 +59,15 @@ export class LibraryBookService {
   async findOne(id: string) {
     const existing = await this.libraryBookRepo.findOne({
       where: { id },
+      relations: {
+        category: true,
+      },
+      select: {
+        category: {
+          id: true,
+          name: true,
+        }
+      }
     })
     if (!existing) throw new NotFoundException('Library book not found')
 
@@ -67,6 +76,11 @@ export class LibraryBookService {
 
   async update(id: string, updateLibraryBookDto: UpdateLibraryBookDto) {
     const existing = await this.findOne(id);
+
+    if (updateLibraryBookDto.categoryId && (existing.category?.id !== updateLibraryBookDto.categoryId || !existing.category)) {
+      existing.category = await this.bookCategoriesService.findOne(updateLibraryBookDto.categoryId);
+    }
+
     Object.assign(existing, updateLibraryBookDto);
     await this.libraryBookRepo.save(existing);
 
