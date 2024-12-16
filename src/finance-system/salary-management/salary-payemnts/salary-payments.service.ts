@@ -41,6 +41,7 @@ export class SalaryPaymentsService extends BaseRepository {
         const totalSalaryPaid = payroll.salaryPayments?.reduce((acc, curr) => acc + curr.amount, 0) || 0;
         const remainingSalary = payroll.netSalary - totalSalaryPaid;
 
+        if (remainingSalary === 0) throw new NotFoundException('No remaining salary to pay');
         if (remainingSalary < dto.amount) throw new NotFoundException('You are trying to pay more than remaining salary');
 
         const salaryPayment = this.getRepository(SalaryPayment).create({
@@ -68,10 +69,10 @@ export class SalaryPaymentsService extends BaseRepository {
 
     async findAll(queryDto: SalaryPaymentQueryDto) {
         const querybuilder = this.getRepository(SalaryPayment).createQueryBuilder('salaryPayment')
-            .leftJoin('salaryPayment.payroll', 'payroll')
             .limit(queryDto.take)
             .offset(queryDto.skip)
             .orderBy('salaryPayment.paymentDate', 'DESC')
+            .leftJoin('salaryPayment.payroll', 'payroll')
             .where(new Brackets(qb => {
                 queryDto.employeeId && qb.andWhere('payroll.teacherId = :employeeId OR payroll.staffId = :employeeId', { employeeId: queryDto.employeeId });
 
