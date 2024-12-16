@@ -174,7 +174,7 @@ export class PayrollsService extends BaseRepository {
             .limit(1)
             .getRawOne();
 
-        if (payroll && !payroll.employee) throw new NotFoundException('Payroll not found');
+        if (!payroll?.employee) return null;
 
         // TODO: this can be achieved from above query also, but something doesn't work
         const salaryPayments = await this.getRepository(SalaryPayment).createQueryBuilder('salaryPayment')
@@ -182,7 +182,7 @@ export class PayrollsService extends BaseRepository {
             .select('SUM(salaryPayment.amount) as amount')
             .getRawOne();
 
-        return payroll ? {
+        return {
             ...payroll,
             employee: typeof payroll.employee === 'string'
                 ? JSON.parse(payroll.employee)
@@ -191,6 +191,6 @@ export class PayrollsService extends BaseRepository {
                 ? JSON.parse(payroll.salaryAdjustments) ?? []
                 : payroll.salaryAdjustments,
             paidSalary: salaryPayments?.amount ?? 0,
-        } : null;
+        };
     }
 }
