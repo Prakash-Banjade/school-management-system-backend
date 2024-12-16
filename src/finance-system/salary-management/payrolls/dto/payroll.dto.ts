@@ -25,3 +25,18 @@ export class CreatePayrollDto {
     @Min(0, { message: 'Advance amount must be greater than or equal to 0' })
     advance?: number;
 }
+
+export class UpdatePayrollDto {
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsNumber()
+    @Min(0, { message: 'Advance amount must be greater than or equal to 0' })
+    advance?: number;
+
+    @ApiPropertyOptional({ type: CreateSalaryAdjustmentDto, isArray: true })
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => CreateSalaryAdjustmentDto)
+    @IsOptional()
+    salaryAdjustments: CreateSalaryAdjustmentDto[] = [];
+}

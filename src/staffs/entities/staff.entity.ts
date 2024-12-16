@@ -7,7 +7,7 @@ import { Payroll } from "src/finance-system/salary-management/payrolls/entities/
 import { SalaryStructure } from "src/finance-system/salary-management/salary-structures/entities/salary-structure.entity";
 import { Vehicle } from "src/transportation-system/vehicles/entities/vehicle.entity";
 import { generateTeacherId } from "src/utils/generate-teacher-id";
-import { BeforeInsert, BeforeUpdate, Column, Entity, JoinColumn, OneToMany, OneToOne } from "typeorm";
+import { BeforeInsert, Column, Entity, JoinColumn, OneToMany, OneToOne } from "typeorm";
 
 @Entity()
 export class Staff extends BaseEntity {
@@ -15,7 +15,6 @@ export class Staff extends BaseEntity {
     staffId: number;
 
     @BeforeInsert()
-    @BeforeUpdate()
     generateTeacherId() {
         if (!this.staffId) this.staffId = generateTeacherId();
     }

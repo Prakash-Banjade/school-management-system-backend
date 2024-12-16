@@ -1,11 +1,11 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, UseInterceptors } from '@nestjs/common';
 import { PayrollsService } from './payrolls.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { GetEmployeesQueryDto } from './dto/payroll-query.dto';
 import { PayrollsHelper } from './helpers/payrolls.helper';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, Role } from 'src/common/types/global.type';
-import { CreatePayrollDto } from './dto/create-payroll.dto';
+import { CreatePayrollDto, UpdatePayrollDto } from './dto/payroll.dto';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 
 @ApiBearerAuth()
@@ -40,5 +40,12 @@ export class PayrollsController {
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   getLastPayroll(@Param('employeeId') employeeId: string) {
     return this.payrollsService.getLastPayroll(employeeId);
+  }
+
+  @Patch(':id')
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
+  @UseInterceptors(TransactionInterceptor)
+  update(@Param('id') id: string, @Body() updatePayrollDto: UpdatePayrollDto) {
+    return this.payrollsService.update(id, updatePayrollDto);
   }
 }

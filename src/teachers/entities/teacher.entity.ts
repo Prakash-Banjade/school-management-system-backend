@@ -9,7 +9,7 @@ import { SalaryStructure } from "src/finance-system/salary-management/salary-str
 import { Subject } from "src/subjects/entities/subject.entity";
 import { TaskEvaluation } from "src/task-system/task-evaluations/entities/task-evaluation.entity";
 import { generateTeacherId } from "src/utils/generate-teacher-id";
-import { BeforeInsert, BeforeUpdate, Column, Entity, JoinColumn, OneToMany, OneToOne } from "typeorm";
+import { BeforeInsert, Column, Entity, JoinColumn, OneToMany, OneToOne } from "typeorm";
 
 @Entity()
 export class Teacher extends BaseEntity {
@@ -17,7 +17,6 @@ export class Teacher extends BaseEntity {
     teacherId: number;
 
     @BeforeInsert()
-    @BeforeUpdate()
     generateTeacherId() {
         if (!this.teacherId) this.teacherId = generateTeacherId();
     }

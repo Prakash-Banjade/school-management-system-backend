@@ -1,9 +1,9 @@
-import { BadRequestException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { DataSource } from 'typeorm';
-import { CreatePayrollDto } from './dto/create-payroll.dto';
+import { CreatePayrollDto, UpdatePayrollDto } from './dto/payroll.dto';
 import { IAllowance, SalaryStructure } from '../salary-structures/entities/salary-structure.entity';
 import { Payroll } from './entities/payroll.entity';
 import { Teacher } from 'src/teachers/entities/teacher.entity';
@@ -108,10 +108,6 @@ export class PayrollsService extends BaseRepository {
 
         payroll.calculateNetSalary(); // calculate net salary
 
-        // console.log(payroll);
-
-        // return;
-
         await this.getRepository(Payroll).save(payroll);
 
         // update pay amount in employee
@@ -192,5 +188,48 @@ export class PayrollsService extends BaseRepository {
                 : payroll.salaryAdjustments,
             paidSalary: salaryPayments?.amount ?? 0,
         };
+    }
+
+    async update(id: string, dto: UpdatePayrollDto) {
+        const existing = await this.getRepository(Payroll).findOne({
+            where: { id },
+            relations: {
+                salaryPayments: true,
+                salaryAdjustments: true,
+                staff: true,
+                teacher: true,
+            },
+            select: {
+                salaryPayments: { id: true },
+                salaryAdjustments: { id: true, type: true, amount: true, description: true },
+                staff: { id: true },
+                teacher: { id: true },
+            }
+        });
+
+        if (!existing) throw new NotFoundException('Payroll not found');
+
+        if (existing.salaryPayments?.length > 0) throw new ForbiddenException('This payroll cannot be updated now');
+
+        Object.assign(existing, {
+            ...existing,
+            salaryAdjustments: [
+                // adjustments with these three types are not updated
+                ...existing.salaryAdjustments?.filter(a => [ESalaryAdjustmentType.Allowance, ESalaryAdjustmentType.Past_Advance, ESalaryAdjustmentType.Unpaid].includes(a.type)),
+                ...dto.salaryAdjustments,
+            ]
+        });
+
+        existing.calculateNetSalary();
+
+        await this.getRepository(Payroll).save(existing);
+
+        existing.teacher?.id
+            ? await this.getRepository(Teacher).update(existing.teacher.id, { payAmount: existing.netSalary })
+            : await this.getRepository(Staff).update(existing.staff?.id, { payAmount: existing.netSalary });
+
+        return {
+            message: 'Payroll updated'
+        }
     }
 }
