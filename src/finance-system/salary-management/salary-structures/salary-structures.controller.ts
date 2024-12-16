@@ -18,11 +18,11 @@ export class SalaryStructuresController {
     return this.salaryStructuresService.findAll(query);
   }
 
-  @Post() // TODO: remove in production
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
-  createSalaryStructureForAllEmployees() {
-    return this.salaryStructuresService.createSalaryStructureForAllEmployees();
-  }
+  // @Post() // TODO: remove in production
+  // @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
+  // createSalaryStructureForAllEmployees() {
+  //   return this.salaryStructuresService.createSalaryStructureForAllEmployees();
+  // }
 
   @Patch(':id')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })

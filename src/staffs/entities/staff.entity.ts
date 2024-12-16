@@ -2,6 +2,8 @@ import { Account } from "src/auth-system/accounts/entities/account.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { EBloodGroup, EMaritalStatus, EStaff, Gender } from "src/common/types/global.type";
 import { Image } from "src/file-management/images/entities/image.entity";
+import { EmployeeLedger } from "src/finance-system/salary-management/employee-ledgers/entities/employee-ledger.entity";
+import { Payroll } from "src/finance-system/salary-management/payrolls/entities/payroll.entity";
 import { SalaryStructure } from "src/finance-system/salary-management/salary-structures/entities/salary-structure.entity";
 import { Vehicle } from "src/transportation-system/vehicles/entities/vehicle.entity";
 import { generateTeacherId } from "src/utils/generate-teacher-id";
@@ -72,6 +74,19 @@ export class Staff extends BaseEntity {
 
     @OneToOne(() => SalaryStructure, (salaryStructure) => salaryStructure.staff, { cascade: true })
     salaryStructure: SalaryStructure;
+
+    @OneToMany(() => Payroll, (payroll) => payroll.staff)
+    payrolls: Payroll[];
+
+    @OneToMany(() => EmployeeLedger, (employeeLedger) => employeeLedger.staff)
+    ledgers: EmployeeLedger[];
+
+    @Column({ type: 'float', default: 0 })
+    payAmount: number; // used to keep track of ledger amount
+
+    setPayAmount(amount: number) {
+        this.payAmount += amount;
+    }
 
     /**
     |--------------------------------------------------
