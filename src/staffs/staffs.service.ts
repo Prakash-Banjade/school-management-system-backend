@@ -15,6 +15,7 @@ import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { staffsColumnsConfig } from './helpers/staff-select-cols.config';
 import { EStaff } from 'src/common/types/global.type';
 import { SalaryStructure } from 'src/finance-system/salary-management/salary-structures/entities/salary-structure.entity';
+import { Account } from 'src/auth-system/accounts/entities/account.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class StaffsService extends BaseRepository {
@@ -98,13 +99,17 @@ export class StaffsService extends BaseRepository {
         type,
       },
       relations: {
-        profileImage: true
+        profileImage: true,
+        account: true,
       },
       select: {
         profileImage: {
           id: true,
           url: true,
           originalName: true,
+        },
+        account: {
+          id: true,
         }
       }
     });
@@ -127,6 +132,11 @@ export class StaffsService extends BaseRepository {
     Object.assign(existingStaff, { ...updateStaffDto });
 
     await this.getRepository(Staff).save(existingStaff);
+
+    // update email if provided
+    if (updateStaffDto.email && existingStaff.email !== updateStaffDto.email) {
+      await this.getRepository(Account).update({ id: existingStaff.account?.id }, { email: updateStaffDto.email });
+    }
 
     return { message: 'Staff updated' }
   }

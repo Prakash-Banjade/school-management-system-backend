@@ -24,6 +24,7 @@ import { CACHE_KEYS } from 'src/common/CONSTANTS';
 import { RouteStopsService } from 'src/transportation-system/route-stops/route-stops.service';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { StudentLedger } from 'src/finance-system/fee-management/student-ledgers/entities/student-ledger.entity';
+import { Account } from 'src/auth-system/accounts/entities/account.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class StudentsService extends BaseRepository {
@@ -98,7 +99,7 @@ export class StudentsService extends BaseRepository {
     // CREATE ACCOUNT
     await this.accountsService.createAccount(savedStudent);
 
-    return this.studentMutationReturn(savedStudent, 'created');
+    return { message: 'Student created' }
   }
 
   async findOne(id: string) {
@@ -198,12 +199,6 @@ export class StudentsService extends BaseRepository {
       existing.profileImage = updateStudentDto.profileImageId ? await this.imageService.findOne(updateStudentDto.profileImageId) : null;
     }
 
-    /**
-    |--------------------------------------------------
-    | don't allow to udpate class room
-    |--------------------------------------------------
-    */
-
     // evaluate document attachments
     const documentAttachments = updateStudentDto.documentAttachmentIds
       ? await this.filesService.findAllByIds(updateStudentDto.documentAttachmentIds)
@@ -232,19 +227,26 @@ export class StudentsService extends BaseRepository {
       documentAttachments,
     });
 
-    const savedStudent = await this.getRepository<Student>(Student).save(existing);
+    await this.getRepository<Student>(Student).save(existing);
 
     // update roll no in enrollment
-    const updatedEnrollment = await this.getRepository<Enrollment>(Enrollment).createQueryBuilder()
-      .update(Enrollment)
-      .set({ rollNo: updateStudentDto.rollNo })
-      .where("studentId = :studentId", { studentId: existing.id })
-      .andWhere("academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
-      .execute();
+    if (updateStudentDto.rollNo && existing.rollNo !== updateStudentDto.rollNo) {
+      const updatedEnrollment = await this.getRepository<Enrollment>(Enrollment).createQueryBuilder()
+        .update(Enrollment)
+        .set({ rollNo: updateStudentDto.rollNo })
+        .where("studentId = :studentId", { studentId: existing.id })
+        .andWhere("academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
+        .execute();
 
-    if (updatedEnrollment.affected === 0) throw new NotFoundException('Student not found');
+      if (updatedEnrollment.affected === 0) throw new NotFoundException('Student not found');
+    }
 
-    return this.studentMutationReturn(savedStudent, 'updated');
+    // update email if provided
+    if (updateStudentDto.email && existing.email !== updateStudentDto.email) {
+      await this.getRepository(Account).update({ id: existing.account?.id }, { email: updateStudentDto.email });
+    }
+
+    return { message: 'Student updated' }
   }
 
   async updateClassRoom(updateStudentClassDto: UpdateStudentClassDto) {
@@ -283,16 +285,8 @@ export class StudentsService extends BaseRepository {
   async remove(id: string) {
     const existing = await this.findOne(id)
 
-    return this.getRepository<Student>(Student).remove(existing)
-  }
+    await this.getRepository<Student>(Student).remove(existing)
 
-  private studentMutationReturn = (student: Student, type: 'created' | 'updated') => {
-    return {
-      message: type === 'created' ? 'Student created successfully' : 'Student updated successfully',
-      student: {
-        id: student.id,
-        name: `${student.firstName} ${student.lastName}`,
-      }
-    }
+    return { message: 'Student deleted' }
   }
 }

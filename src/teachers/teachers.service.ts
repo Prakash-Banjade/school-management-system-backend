@@ -13,6 +13,7 @@ import { FastifyRequest } from 'fastify';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import paginatedData from 'src/utils/paginatedData';
 import { SalaryStructure } from 'src/finance-system/salary-management/salary-structures/entities/salary-structure.entity';
+import { Account } from 'src/auth-system/accounts/entities/account.entity';
 
 
 @Injectable({ scope: Scope.REQUEST })
@@ -113,6 +114,11 @@ export class TeachersService extends BaseRepository {
       ...updateTeacherDto,
     });
     await this.getRepository(Teacher).save(existingTeacher);
+
+    // update email if provided
+    if (updateTeacherDto.email && existingTeacher.email !== updateTeacherDto.email) {
+      await this.getRepository(Account).update({ id: existingTeacher.account?.id }, { email: updateTeacherDto.email });
+    }
 
     return { message: 'Teacher updated' };
   }
