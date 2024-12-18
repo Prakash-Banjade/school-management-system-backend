@@ -79,14 +79,21 @@ export class ClassRoomsHelper extends BaseRepository {
             .orderBy("classRoom.createdAt", queryDto.order)
             .skip(queryDto.skipPagination ? undefined : queryDto.skip)
             .take(queryDto.skipPagination ? undefined : queryDto.take)
-            .leftJoin("classRoom.children", "children")
+            .leftJoin("classRoom.children", "children", queryDto.onlyPrimaryClass ? '1 = 0' : '1 = 1')
             .where('classRoom.classType = :classType', { classType: EClassType.PRIMARY })
             .andWhere(new Brackets(qb => {
-                queryDto.classRoomId && qb.andWhere("classRoom.id = :search", { search: queryDto.search })
                 queryDto.search && qb.andWhere("LOWER(classRoom.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
             }))
 
-        applySelectColumns(queryBuilder, classRoomOptionsSelectCols, 'classRoom');
+        applySelectColumns(
+            queryBuilder,
+            queryDto.onlyPrimaryClass ? {
+                id: true,
+                name: true,
+                createdAt: true,
+            } : classRoomOptionsSelectCols,
+            'classRoom'
+        );
 
         return queryBuilder.getMany();
     }
@@ -95,7 +102,7 @@ export class ClassRoomsHelper extends BaseRepository {
     async getClassRoomDetails(id: string) {
         const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
-        const classRoomQueryBuilder = this.classRoomRepo.createQueryBuilder('classRoom')
+        return this.classRoomRepo.createQueryBuilder('classRoom')
             .where('classRoom.id = :classroomId', { classroomId: id }) // Filter by specific classroom ID
             .leftJoin('classRoom.classTeacher', 'classTeacher')
             .leftJoin('classRoom.students', 'student', 'FIND_IN_SET(:currentAcademicYearId, student.academicYearIds) > 0', { currentAcademicYearId })
@@ -116,8 +123,6 @@ export class ClassRoomsHelper extends BaseRepository {
                 'COUNT(DISTINCT student.id) + COUNT(DISTINCT childClassStudent.id) AS totalStudentsCount',
                 `COUNT(DISTINCT CASE WHEN student.gender = '${Gender.MALE}' THEN student.id END) + COUNT(DISTINCT CASE WHEN childClassStudent.gender = '${Gender.MALE}' THEN childClassStudent.id END) AS totalMaleStudentsCount`,
                 `COUNT(DISTINCT CASE WHEN student.gender = '${Gender.FEMALE}' THEN student.id END) + COUNT(DISTINCT CASE WHEN childClassStudent.gender = '${Gender.FEMALE}' THEN childClassStudent.id END) AS totalFemaleStudentsCount`
-            ])
-
-        return classRoomQueryBuilder.getRawOne();
+            ]).getRawOne();
     }
 }

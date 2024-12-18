@@ -1,9 +1,10 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { IsOptional, IsString } from "class-validator";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { Transform } from "class-transformer";
+import { IsBoolean, IsOptional, IsString } from "class-validator";
 import { QueryDto } from "src/common/dto/query.dto";
 import { EClassType } from "src/common/types/global.type";
 
-export class ClassRoomQueryDto extends QueryDto { 
+export class ClassRoomQueryDto extends QueryDto {
     @ApiProperty()
     @IsString()
     @IsOptional()
@@ -16,8 +17,9 @@ export class ClassRoomQueryDto extends QueryDto {
 }
 
 export class ClassRoomOptionsQueryDto extends QueryDto {
-    @ApiProperty()
-    @IsString()
+    @ApiPropertyOptional()
     @IsOptional()
-    classRoomId?: string;
+    @IsBoolean()
+    @Transform(({ value }) => value === 'true')
+    onlyPrimaryClass?: boolean = false;
 }
