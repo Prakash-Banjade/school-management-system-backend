@@ -105,6 +105,7 @@ export class AttendancesService extends BaseRepository {
         const existing = await this.findOne(attendance.id);
         Object.assign(existing, {
           ...attendance,
+          inTime: existing.inTime || !!attendance?.inTime, // if there is inTime already, it can't be updated
           status: !!attendance?.inTime ? EAttendanceStatus.PRESENT : attendance.status
         });
         return existing;
