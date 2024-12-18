@@ -1,38 +1,38 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateRouteStopDto } from './dto/create-route-stop.dto';
 import { UpdateRouteStopDto } from './dto/update-route-stop.dto';
-import { InjectRepository } from '@nestjs/typeorm';
 import { RouteStop } from './entities/route-stop.entity';
-import { Brackets, Repository } from 'typeorm';
-import { VehiclesService } from '../vehicles/vehicles.service';
+import { Brackets, DataSource } from 'typeorm';
 import paginatedData from 'src/utils/paginatedData';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { routeStopSelectCols } from './helpers/route-stop-select-cols';
 import { RouteStopQueryDto, ERouteStopSortBy } from './dto/route-stop-query.dto';
+import { BaseRepository } from 'src/common/repository/base-repository';
+import { REQUEST } from '@nestjs/core';
+import { FastifyRequest } from 'fastify';
+import { Vehicle } from '../vehicles/entities/vehicle.entity';
 
 @Injectable()
-export class RouteStopsService {
+export class RouteStopsService extends BaseRepository {
   constructor(
-    @InjectRepository(RouteStop) private readonly routeStopRepo: Repository<RouteStop>,
-    private readonly vehiclesService: VehiclesService,
-  ) { }
+    dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
+  ) { super(dataSource, req); }
 
   async create(createRouteStopDto: CreateRouteStopDto) {
-    const vehicle = await this.vehiclesService.findOne(createRouteStopDto.vehicleId);
+    const vehicle = await this.getRepository(Vehicle).findOne({ where: { id: createRouteStopDto.vehicleId }, select: { id: true } });
+    if (!vehicle) throw new NotFoundException('Vehicle not found');
 
-    const newRouteStop = this.routeStopRepo.create({
+    const newRouteStop = this.getRepository(RouteStop).create({
       ...createRouteStopDto,
       vehicle,
     });
-    await this.routeStopRepo.save(newRouteStop);
+    await this.getRepository(RouteStop).save(newRouteStop);
 
-    return {
-      message: 'Route stop created successfully',
-    }
+    return { message: 'Route stop created successfully' }
   }
 
   findAll(queryDto: RouteStopQueryDto) {
-    const queryBuilder = this.routeStopRepo.createQueryBuilder('routeStop');
+    const queryBuilder = this.getRepository(RouteStop).createQueryBuilder('routeStop');
 
     queryBuilder
       .orderBy(this.getOrderByKey(queryDto), queryDto.order)
@@ -61,7 +61,7 @@ export class RouteStopsService {
   }
 
   getOptions(queryDto: RouteStopQueryDto) {
-    return this.routeStopRepo.createQueryBuilder('routeStop')
+    return this.getRepository(RouteStop).createQueryBuilder('routeStop')
       .limit(queryDto.take)
       .offset(queryDto.skip)
       .leftJoin('routeStop.vehicle', 'vehicle')
@@ -81,7 +81,7 @@ export class RouteStopsService {
   }
 
   async findOne(id: string) {
-    const existing = await this.routeStopRepo.findOne({
+    const existing = await this.getRepository(RouteStop).findOne({
       where: { id },
       relations: ['vehicle'],
       select: routeStopSelectCols,
@@ -93,7 +93,7 @@ export class RouteStopsService {
   };
 
   async findOneWithAvailableSeats(id: string) {
-    const existing = await this.routeStopRepo.createQueryBuilder('routeStop')
+    const existing = await this.getRepository(RouteStop).createQueryBuilder('routeStop')
       .leftJoin('routeStop.vehicle', 'vehicle')
       .leftJoin('routeStop.students', 'students')
       .where('routeStop.id = :id', { id })
@@ -120,7 +120,9 @@ export class RouteStopsService {
 
     // evaluate vehicle
     if (updateRouteStopDto.vehicleId && (updateRouteStopDto.vehicleId !== existing.vehicle?.id || !existing.vehicle)) {
-      const vehicle = await this.vehiclesService.findOne(updateRouteStopDto.vehicleId);
+      const vehicle = await this.getRepository(Vehicle).findOne({ where: { id: updateRouteStopDto.vehicleId }, select: { id: true } });
+      if (!vehicle) throw new NotFoundException('Vehicle not found');
+
       existing.vehicle = vehicle;
     }
 
@@ -128,20 +130,17 @@ export class RouteStopsService {
       ...updateRouteStopDto,
     });
 
-    await this.routeStopRepo.save(existing);
+    await this.getRepository(RouteStop).save(existing);
 
-    return {
-      message: 'Route stop updated',
-    }
+    return { message: 'Route stop updated' }
   }
 
   async remove(id: string) {
-    const existing = await this.findOne(id);
+    const existing = await this.getRepository(RouteStop).findOne({ where: { id }, select: { id: true } });
+    if (!existing) throw new NotFoundException('Route stop not found');
 
-    await this.routeStopRepo.remove(existing);
+    await this.getRepository(RouteStop).remove(existing);
 
-    return {
-      message: 'Route stop removed',
-    }
+    return { message: 'Route stop removed' }
   }
 }

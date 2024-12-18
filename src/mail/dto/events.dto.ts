@@ -42,13 +42,9 @@ export class FeeInvoiceCreatedEventDto {
 }
 
 export class UserCredentialsEventDto {
-    schoolName: string;
-    schoolAddress: string;
-    schoolLogo: string;
     email: string;
     password: string;
     username: string;
-    clientUrl: string;
 
     constructor(dto: UserCredentialsEventDto) {
         Object.assign(this, dto);

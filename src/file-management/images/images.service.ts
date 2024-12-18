@@ -78,6 +78,11 @@ export class ImagesService {
         { id },
         { url: id }
       ],
+      select: {
+        id: true,
+        mimeType: true,
+        originalName: true,
+      }
     });
     if (!existingImage) throw new NotFoundException('Image not found');
 

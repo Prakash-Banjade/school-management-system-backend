@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { Brackets, DataSource, In } from 'typeorm';
@@ -12,11 +12,10 @@ import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { TaskQueryDto } from './dto/task-query.dto';
-import { PageMetaDto } from 'src/common/dto/pageMeta.dto';
-import { PageDto } from 'src/common/dto/page.dto.';
 import { FilesService } from 'src/file-management/files/files.service';
+import { paginatedRawData } from 'src/utils/paginatedData';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class TasksService extends BaseRepository {
   constructor(
     dataSource: DataSource,
@@ -61,8 +60,8 @@ export class TasksService extends BaseRepository {
       classRooms: classRoomsTheTaskFor,
     })
 
-    const savedTask = await this.getRepository(Task).save(newTask);
-    return this.taskMutationReturn(savedTask, 'created');
+    await this.getRepository(Task).save(newTask);
+    return { message: 'Task created successfully' };
   }
 
   async findAll(queryDto: TaskQueryDto) {
@@ -98,17 +97,7 @@ export class TasksService extends BaseRepository {
       ])
       .groupBy("task.id");
 
-    const itemCount = await queryBuilder.getCount();
-    const data = (await queryBuilder.getRawMany()).map(task => {
-      return {
-        ...task,
-        classRooms: typeof task.classRooms === 'string' ? JSON.parse(task.classRooms) : task.classRooms, // convert stringified JSON to array of objects
-      }
-    })
-
-    const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto: queryDto });
-
-    return new PageDto(data, pageMetaDto);
+    return paginatedRawData(queryDto, queryBuilder);
   }
 
   async getStatistics(taskId: string) {
@@ -178,23 +167,17 @@ export class TasksService extends BaseRepository {
     existingTask.classRooms = classRooms;
 
     const updatedTask = this.getRepository(Task).merge(existingTask, updateTaskDto);
-    return this.taskMutationReturn(await this.getRepository(Task).save(updatedTask), 'updated');
+
+    await this.getRepository(Task).save(updatedTask)
+
+    return { message: 'Task updated' }
   }
 
   async remove(id: string) {
-    const existing = await this.findOne(id);
-    const removedTask = await this.getRepository(Task).remove(existing);
+    const existing = await this.getRepository(Task).findOne({ where: { id }, select: { id: true } });
+    await this.getRepository(Task).remove(existing);
 
-    return this.taskMutationReturn(removedTask, 'deleted');
-  }
-
-  private taskMutationReturn = (task: Task, type: 'created' | 'updated' | 'deleted') => {
-    return {
-      message: type === 'created' ? 'Task created successfully' : 'Task updated successfully',
-      task: {
-        id: task.id,
-      }
-    }
+    return { message: 'Task removed' }
   }
 
 }

@@ -1,39 +1,42 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Vehicle } from './entities/vehicle.entity';
-import { Brackets, ILike, Repository } from 'typeorm';
-import { StaffsService } from 'src/staffs/staffs.service';
+import { Brackets, DataSource, ILike } from 'typeorm';
 import { EStaff } from 'src/common/types/global.type';
 import paginatedData from 'src/utils/paginatedData';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { singleVehicleSelectCols, vehicleSelectCols } from './helpers/vehicle-select-cols';
 import { VehiclesQueryDto } from './dto/vehicles-query.dto';
+import { BaseRepository } from 'src/common/repository/base-repository';
+import { REQUEST } from '@nestjs/core';
+import { FastifyRequest } from 'fastify';
+import { Staff } from 'src/staffs/entities/staff.entity';
+import { Vehicle } from './entities/vehicle.entity';
 
 @Injectable()
-export class VehiclesService {
+export class VehiclesService extends BaseRepository {
   constructor(
-    @InjectRepository(Vehicle) private readonly vehicleRepo: Repository<Vehicle>,
-    private readonly staffsService: StaffsService,
-  ) { }
+    dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
+  ) { super(dataSource, req); }
 
   async create(createVehicleDto: CreateVehicleDto) {
-    const driver = createVehicleDto.driverId ? await this.staffsService.findOne(createVehicleDto.driverId, EStaff.DRIVER) : null;
+    const driver = createVehicleDto.driverId ? await this.getRepository(Staff).findOne({
+      where: { id: createVehicleDto.driverId, type: EStaff.DRIVER },
+      select: { id: true }
+    }) : null;
 
-    const vehicle = this.vehicleRepo.create({
+    const vehicle = this.getRepository(Vehicle).create({
       ...createVehicleDto,
       driver,
     });
-    await this.vehicleRepo.save(vehicle);
 
-    return {
-      message: 'Vehicle added',
-    }
+    await this.getRepository(Vehicle).save(vehicle);
+
+    return { message: 'Vehicle added' }
   }
 
   async findAll(queryDto: VehiclesQueryDto) {
-    const querybuilder = this.vehicleRepo.createQueryBuilder('vehicle');
+    const querybuilder = this.getRepository(Vehicle).createQueryBuilder('vehicle');
 
     querybuilder
       .orderBy('vehicle.createdAt', queryDto.order)
@@ -51,7 +54,7 @@ export class VehiclesService {
   }
 
   async getOptions(queryDto: VehiclesQueryDto) {
-    return this.vehicleRepo.createQueryBuilder('vehicle')
+    return this.getRepository(Vehicle).createQueryBuilder('vehicle')
       .orderBy("vehicle.createdAt", queryDto.order)
       .limit(queryDto.take)
       .offset(queryDto.skip)
@@ -64,8 +67,9 @@ export class VehiclesService {
       ])
       .getRawMany();
   }
+
   async findOne(id: string) {
-    const existing = await this.vehicleRepo.findOne({
+    const existing = await this.getRepository(Vehicle).findOne({
       where: { id },
       relations: {
         driver: true,
@@ -82,30 +86,28 @@ export class VehiclesService {
     const existing = await this.findOne(id);
 
     const driver = updateVehicleDto.driverId
-      ? await this.staffsService.findOne(updateVehicleDto.driverId)
+      ? await this.getRepository(Staff).findOne({
+        where: { id: updateVehicleDto.driverId, type: EStaff.DRIVER },
+        select: { id: true }
+      })
       : updateVehicleDto.driverId === null ? null : existing.driver;
-
-    if (driver && driver.type !== EStaff.DRIVER) throw new BadRequestException('Staff is not a driver');
 
     Object.assign(existing, {
       ...updateVehicleDto,
       driver,
     });
 
-    await this.vehicleRepo.save(existing);
+    await this.getRepository(Vehicle).save(existing);
 
-    return {
-      message: 'Vehicle updated'
-    }
+    return { message: 'Vehicle updated' }
   }
 
   async remove(id: string) {
-    const existing = await this.findOne(id);
+    const existing = await this.getRepository(Vehicle).findOne({ where: { id }, select: { id: true } });
+    if (!existing) throw new NotFoundException('Vehicle not found');
 
-    await this.vehicleRepo.remove(existing)
+    await this.getRepository(Vehicle).remove(existing)
 
-    return {
-      message: 'Vehicle removed'
-    }
+    return { message: 'Vehicle removed' }
   }
 }

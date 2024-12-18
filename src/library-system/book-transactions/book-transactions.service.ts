@@ -68,7 +68,7 @@ export class BookTransactionsService extends BaseRepository {
 
     await this.getRepository(BookTransaction).save(transaction);
 
-    return this.bookTransactionMutationReturn('created');
+    return { message: 'Issued successfully' };
   }
 
   async findAll(queryDto: BookTransactionsQueryDto) {
@@ -198,7 +198,8 @@ export class BookTransactionsService extends BaseRepository {
     // decrement issued count in books
     const bookTransactions = await this.getRepository(BookTransaction).find({
       where: { id: In(ids) },
-      relations: { book: true }
+      relations: { book: true },
+      select: { id: true, book: { id: true, issuedCount: true } }
     });
 
     const updatedBooks = bookTransactions.map(bookTransaction => {
@@ -207,7 +208,7 @@ export class BookTransactionsService extends BaseRepository {
     })
     await this.getRepository(LibraryBook).save(updatedBooks);
 
-    return this.bookTransactionMutationReturn('returned');
+    return { message: 'Returned successfully' }
   }
 
   async renewBookTransaction(ids: string[], dueDate: string) {
@@ -235,20 +236,6 @@ export class BookTransactionsService extends BaseRepository {
       throw new NotFoundException('Book transaction not found');
     }
 
-    return this.bookTransactionMutationReturn('renewed');
-  }
-
-  private bookTransactionMutationReturn(type: 'created' | 'returned' | 'renewed' | 'deleted') {
-    return {
-      message: type === 'created'
-        ? 'Issued successfully'
-        : type === 'deleted'
-          ? 'Transaction deleted'
-          : type === 'renewed'
-            ? 'Renewed successfully'
-            : type === 'returned'
-              ? 'Returned successfully'
-              : 'Book transaction updated successfully',
-    }
+    return { message: 'Renewed successfully' }
   }
 }

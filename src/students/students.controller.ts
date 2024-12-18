@@ -45,7 +45,7 @@ export class StudentsController {
   @Get('attendances')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findAllAttendance(@Query() queryDto: StudentAttendanceQueryDto) {
-    return this.studentsService.getStudentsAttendance(queryDto);
+    return this.studentsHelper.getStudentsWithAttendance(queryDto);
   }
 
   @Get('library/:studentId')

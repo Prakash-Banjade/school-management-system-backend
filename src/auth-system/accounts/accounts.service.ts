@@ -17,14 +17,12 @@ import { accountSelectCols } from './helpers/account-select-cols.config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { MailEvents } from 'src/mail/mail.service';
 import { UserCredentialsEventDto } from 'src/mail/dto/events.dto';
-import { ConfigService } from '@nestjs/config';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AccountsService extends BaseRepository {
   constructor(
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
     @InjectRepository(Account) private accountsRepo: Repository<Account>,
-    private readonly configService: ConfigService,
     private readonly eventEmitter: EventEmitter2
   ) {
     super(dataSource, req);
@@ -71,11 +69,7 @@ export class AccountsService extends BaseRepository {
     this.eventEmitter.emit(MailEvents.USER_CREDENTIALS, new UserCredentialsEventDto({
       email: entity.email,
       password,
-      schoolName: thisSchool.name,
-      schoolAddress: thisSchool.address,
       username: entity.firstName + ' ' + entity.lastName,
-      schoolLogo: thisSchool.logo,
-      clientUrl: this.configService.get<string>('CLIENT_URL'),
     }));
   }
 

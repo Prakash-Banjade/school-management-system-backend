@@ -1,10 +1,8 @@
-import { BadRequestException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentClassDto, UpdateStudentDto } from './dto/update-student.dto';
 import { Student } from './entities/student.entity';
 import { DataSource } from 'typeorm';
-import { StudentAttendanceQueryDto } from './dto/student-query.dto';
-import { ClassRoomsService } from 'src/class-rooms/class-rooms.service';
 import { REQUEST } from '@nestjs/core';
 import { singleStudentColumnsConfig } from './helpers/studentsColumnsConfig';
 import { DormitoryRoomsService } from 'src/dormitory-system/dormitory-rooms/dormitory-rooms.service';
@@ -25,6 +23,8 @@ import { RouteStopsService } from 'src/transportation-system/route-stops/route-s
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { StudentLedger } from 'src/finance-system/fee-management/student-ledgers/entities/student-ledger.entity';
 import { Account } from 'src/auth-system/accounts/entities/account.entity';
+import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
+import { AcademicYearsService } from 'src/academic-years/academic-years.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class StudentsService extends BaseRepository {
@@ -32,11 +32,11 @@ export class StudentsService extends BaseRepository {
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
     private readonly imageService: ImagesService,
     private readonly filesService: FilesService,
-    private readonly classRoomsService: ClassRoomsService,
     private readonly accountsService: AccountsService,
     private dormitoryRoomsService: DormitoryRoomsService,
     private readonly studentsHelper: StudentsHelper,
     private readonly routeStopsService: RouteStopsService,
+    private readonly academicYearService: AcademicYearsService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {
     super(dataSource, req);
@@ -46,7 +46,12 @@ export class StudentsService extends BaseRepository {
     await this.studentsHelper.checkIfStudentExists(createStudentDto);
 
     // evaluate class room
-    const classRoom = await this.classRoomsService.findOne(createStudentDto.classRoomId);
+    const classRoom = await this.getRepository(ClassRoom).findOne({
+      where: { id: createStudentDto.classRoomId },
+      relations: { children: true },
+      select: { id: true, classType: true, children: { id: true } }
+    });
+    if (!classRoom) throw new NotFoundException('Class room not found');
     if (classRoom.classType === EClassType.PRIMARY && classRoom.children?.length > 0) { // if there are class sections, then section is needed
       throw new BadRequestException('Please select section');
     }
@@ -55,7 +60,6 @@ export class StudentsService extends BaseRepository {
     const profileImage = createStudentDto.profileImageId
       ? await this.imageService.findOne(createStudentDto.profileImageId)
       : null;
-
 
     // evaluate document attachments
     const documentAttachments = createStudentDto.documentAttachmentIds
@@ -72,7 +76,11 @@ export class StudentsService extends BaseRepository {
       ? await this.routeStopsService.findOneWithAvailableSeats(createStudentDto.routeStopId)
       : null;
 
-    const academicYear = await this.getRepository<AcademicYear>(AcademicYear).findOneBy({ isActive: true }); // enroll in current academic year
+    const academicYear = await this.getRepository<AcademicYear>(AcademicYear).findOne({ // enroll in current academic year
+      where: { isActive: true },
+      select: { id: true }
+    });
+    if (!academicYear) throw new ForbiddenException('No active academic year');
 
     const enrollment = this.getRepository<Enrollment>(Enrollment).create({
       classRoom,
@@ -133,25 +141,6 @@ export class StudentsService extends BaseRepository {
     return existing;
   }
 
-  async findOneByAccountId(accountId: string) {
-    const existing = await this.getRepository<Student>(Student).findOne({
-      where: { account: { id: accountId } },
-      relations: {
-        classRoom: {
-          parent: true,
-        },
-        profileImage: true,
-        guardians: true,
-        dormitoryRoom: true,
-        documentAttachments: true,
-      },
-      select: singleStudentColumnsConfig,
-    })
-    if (!existing) throw new NotFoundException('Student not found')
-
-    return existing;
-  }
-
   async findLibraryStudent(studentId: string) {
     const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
@@ -179,10 +168,6 @@ export class StudentsService extends BaseRepository {
     if (!student || !student.classRoomName) throw new NotFoundException('Student not found');
 
     return student;
-  }
-
-  async getStudentsAttendance(queryDto: StudentAttendanceQueryDto) {
-    return this.studentsHelper.getStudentsWithAttendance(queryDto);
   }
 
   async update(id: string, updateStudentDto: UpdateStudentDto) {
@@ -250,7 +235,16 @@ export class StudentsService extends BaseRepository {
   }
 
   async updateClassRoom(updateStudentClassDto: UpdateStudentClassDto) {
-    const classRoom = await this.classRoomsService.findOne(updateStudentClassDto.classRoomId);
+    // check if performing this action from past academic year
+    const { isPast } = await this.academicYearService.isPast();
+    if (isPast) throw new ForbiddenException('Cannot perform this action from past academic year');
+
+    const classRoom = await this.getRepository(ClassRoom).findOne({
+      where: { id: updateStudentClassDto.classRoomId },
+      relations: { children: true },
+      select: { id: true, classType: true, children: { id: true } }
+    });
+    if (!classRoom) throw new NotFoundException('Class room not found');
 
     if (classRoom.classType === EClassType.PRIMARY && classRoom.children?.length > 0) { // if there are class sections, then section is needed
       throw new BadRequestException('Please select section');

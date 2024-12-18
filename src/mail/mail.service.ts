@@ -84,7 +84,13 @@ export class MailService {
     @OnEvent(MailEvents.USER_CREDENTIALS)
     public async sendUserCredentials(dto: UserCredentialsEventDto) {
         const subject = 'SMS Credentials';
-        const html = this.templates.userCredentials(dto);
+        const html = this.templates.userCredentials({
+            ...dto,
+            schoolName: thisSchool.name,
+            schoolAddress: thisSchool.address,
+            schoolLogo: thisSchool.logo,
+            clientUrl: this.configService.get<string>('CLIENT_URL'),
+        });
         this.sendEmail(dto.email, subject, html);
     }
 

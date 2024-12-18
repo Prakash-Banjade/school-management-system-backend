@@ -11,24 +11,27 @@ import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { taskSubmissionSelectCols } from './helpers/task-submission-select-cols.config';
 import paginatedData from 'src/utils/paginatedData';
 import { AuthUser, EFileMimeType, ETask, ETaskSubmissionStatus } from 'src/common/types/global.type';
-import { StudentsService } from 'src/students/students.service';
 import { FilesService } from 'src/file-management/files/files.service';
 import { Task } from '../tasks/entities/task.entity';
 import { isStudent } from 'src/utils/isStudent';
+import { Student } from 'src/students/entities/student.entity';
 
 @Injectable()
 export class TaskSubmissionsService extends BaseRepository {
   constructor(
     dataSource: DataSource,
     @Inject(REQUEST) private req: FastifyRequest,
-    private readonly studentsService: StudentsService,
     private readonly filesService: FilesService
   ) { super(dataSource, req) }
 
   async create(createTaskSubmissionDto: CreateTaskSubmissionDto, currentUser: AuthUser) {
     if (!isStudent(currentUser)) throw new NotFoundException('Access Denied');
 
-    const student = await this.studentsService.findOneByAccountId(currentUser.accountId); // getting the student
+    const student = await this.getRepository(Student).findOne({
+      where: { id: currentUser.studentId },
+      select: { id: true }
+    });
+    if (!student) throw new NotFoundException('Student not found');
 
     const task = await this.getRepository(Task).createQueryBuilder('task')
       .leftJoin('task.classRooms', 'classRoom')
