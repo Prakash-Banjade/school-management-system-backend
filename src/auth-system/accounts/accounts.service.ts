@@ -1,6 +1,5 @@
-import { BadRequestException, Inject, Injectable, Scope } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
+import { DataSource, Not } from 'typeorm';
 import { Account } from './entities/account.entity';
 import { Teacher } from 'src/teachers/entities/teacher.entity';
 import { REQUEST } from '@nestjs/core';
@@ -12,7 +11,7 @@ import { FastifyRequest } from 'fastify';
 import { AuthUser, Role } from 'src/common/types/global.type';
 import { generateRandomPassword } from 'src/utils/generatePassword';
 import * as bcrypt from 'bcrypt';
-import { PASSWORD_SALT_COUNT, thisSchool } from 'src/common/CONSTANTS';
+import { PASSWORD_SALT_COUNT } from 'src/common/CONSTANTS';
 import { accountSelectCols } from './helpers/account-select-cols.config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { MailEvents } from 'src/mail/mail.service';
@@ -22,7 +21,6 @@ import { UserCredentialsEventDto } from 'src/mail/dto/events.dto';
 export class AccountsService extends BaseRepository {
   constructor(
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
-    @InjectRepository(Account) private accountsRepo: Repository<Account>,
     private readonly eventEmitter: EventEmitter2
   ) {
     super(dataSource, req);
@@ -30,7 +28,7 @@ export class AccountsService extends BaseRepository {
 
   async createAccount(entity: Teacher | Student | Guardian | Staff) {
     // check for existing
-    const existingAccount = await this.accountsRepo.findOne({ where: { email: entity.email }, select: { id: true } });
+    const existingAccount = await this.getRepository(Account).findOne({ where: { email: entity.email }, select: { id: true } });
     if (existingAccount) throw new BadRequestException({
       message: 'Duplicate email. Please use different email.',
       field: 'email',
@@ -84,9 +82,46 @@ export class AccountsService extends BaseRepository {
   }
 
   async findOne(id: string) {
-    const existingAccount = await this.accountsRepo.findOneBy({ id });
+    const existingAccount = await this.getRepository(Account).findOneBy({ id });
     if (!existingAccount) throw new Error('Account not found');
 
     return existingAccount;
+  }
+
+  async updateEmail(accountId: string, newEmail: string) {
+    // check if email is taken
+    const accountWithEmail = await this.getRepository(Account).findOne({
+      where: {
+        email: newEmail,
+        id: Not(accountId)
+      },
+    });
+    if (accountWithEmail) throw new ConflictException('This email is already taken');
+
+    await this.getRepository(Account).update({ id: accountId }, { email: newEmail });
+  }
+
+  async sendNewCredentials(id: string) {
+    const account = await this.getRepository(Account).findOne({
+      where: { id },
+      select: { id: true, email: true, firstName: true, lastName: true }
+    });
+    if (!account) throw new NotFoundException('Account not found');
+
+    const password = generateRandomPassword();
+
+    account.password = password;
+
+    await this.getRepository(Account).save(account);
+
+    this.eventEmitter.emit(MailEvents.USER_CREDENTIALS, new UserCredentialsEventDto({
+      email: account.email,
+      password,
+      username: account.firstName + ' ' + account.lastName
+    }));
+
+    return {
+      message: 'Credentials sent'
+    }
   }
 }

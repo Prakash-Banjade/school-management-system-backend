@@ -40,6 +40,7 @@ export class StudentsHelper extends BaseRepository {
             .leftJoin('enrollments.classRoom', 'classRoom')
             .leftJoin('classRoom.parent', 'parent')
             .leftJoin('student.profileImage', 'profileImage', queryDto.onlyBasicInfo ? '1 = 0' : '1 = 1') // only basic info will not have profile image
+            .leftJoin('student.account', 'account', queryDto.onlyBasicInfo ? '1 = 0' : '1 = 1')
             .where("enrollments.academicYearId = :academicYearId", { academicYearId: academicYearId })
             .andWhere(new Brackets(qb => {
                 if (queryDto.search) {
@@ -91,6 +92,7 @@ export class StudentsHelper extends BaseRepository {
                 "parent.name as parentClass",
                 "routeStop.id as routeStopId",
                 "routeStop.name as routeStop",
+                "account.id as accountId",
             ]
     }
 

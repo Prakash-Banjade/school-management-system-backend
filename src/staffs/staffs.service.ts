@@ -129,14 +129,14 @@ export class StaffsService extends BaseRepository {
       existingStaff.profileImage = updateStaffDto.profileImageId ? await this.imageService.findOne(updateStaffDto.profileImageId) : null; // setting new profile image
     }
 
+    // update email if provided
+    if (updateStaffDto.email && existingStaff.email !== updateStaffDto.email) {
+      await this.accountsService.updateEmail(existingStaff.account?.id, updateStaffDto.email);
+    }
+
     Object.assign(existingStaff, { ...updateStaffDto });
 
     await this.getRepository(Staff).save(existingStaff);
-
-    // update email if provided
-    if (updateStaffDto.email && existingStaff.email !== updateStaffDto.email) {
-      await this.getRepository(Account).update({ id: existingStaff.account?.id }, { email: updateStaffDto.email });
-    }
 
     return { message: 'Staff updated' }
   }
