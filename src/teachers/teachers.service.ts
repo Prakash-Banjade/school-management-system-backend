@@ -110,15 +110,15 @@ export class TeachersService extends BaseRepository {
       existingTeacher.profileImage = updateTeacherDto.profileImageId ? await this.imageService.findOne(updateTeacherDto.profileImageId) : null; // setting new profile image
     }
 
+    // update email if provided
+    if (updateTeacherDto.email && existingTeacher.email !== updateTeacherDto.email) {
+      await this.accountsService.updateEmail(existingTeacher.account?.id, updateTeacherDto.email);
+    }
+
     Object.assign(existingTeacher, {
       ...updateTeacherDto,
     });
     await this.getRepository(Teacher).save(existingTeacher);
-
-    // update email if provided
-    if (updateTeacherDto.email && existingTeacher.email !== updateTeacherDto.email) {
-      await this.getRepository(Account).update({ id: existingTeacher.account?.id }, { email: updateTeacherDto.email });
-    }
 
     return { message: 'Teacher updated' };
   }

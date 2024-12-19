@@ -207,6 +207,11 @@ export class StudentsService extends BaseRepository {
       existing.routeStop = null;
     }
 
+    // update email if provided
+    if (updateStudentDto.email && existing.email !== updateStudentDto.email) {
+      await this.accountsService.updateEmail(existing.account?.id, updateStudentDto.email);
+    }
+
     Object.assign(existing, {
       ...updateStudentDto,
       documentAttachments,
@@ -224,11 +229,6 @@ export class StudentsService extends BaseRepository {
         .execute();
 
       if (updatedEnrollment.affected === 0) throw new NotFoundException('Student not found');
-    }
-
-    // update email if provided
-    if (updateStudentDto.email && existing.email !== updateStudentDto.email) {
-      await this.getRepository(Account).update({ id: existing.account?.id }, { email: updateStudentDto.email });
     }
 
     return { message: 'Student updated' }
