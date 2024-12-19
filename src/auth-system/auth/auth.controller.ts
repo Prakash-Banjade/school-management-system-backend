@@ -81,6 +81,7 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     @ApiConsumes('multipart/form-data')
     @FormDataRequest()
+    @UseInterceptors(TransactionInterceptor)
     changePassword(@Body() changePasswordDto: ChangePasswordDto, @CurrentUser() currentUser: AuthUser) {
         return this.authService.changePassword(changePasswordDto, currentUser);
     }
@@ -91,6 +92,7 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     @ApiConsumes('multipart/form-data')
     @FormDataRequest()
+    @UseInterceptors(TransactionInterceptor)
     forgotPassword(@Body() { email }: PasswordChangeRequestDto) {
         return this.authService.forgotPassword(email)
     }
@@ -107,6 +109,7 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     @ApiConsumes('multipart/form-data')
     @FormDataRequest()
+    @UseInterceptors(TransactionInterceptor)
     resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
         return this.authService.resetPassword(resetPasswordDto);
     }
