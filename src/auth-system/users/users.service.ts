@@ -35,13 +35,12 @@ export class UsersService extends BaseRepository {
     const profileImage = createUserDto.profileImageId ? await this.imagesService.findOne(createUserDto.profileImageId) : null;
 
     const user = this.getRepository(User).create({
-      branch,
       profileImage,
     });
 
     await this.getRepository(User).save(user);
 
-    await this.accountsService.createAdminAccount(user, {
+    await this.accountsService.createAdminAccount(user, branch, {
       email: createUserDto.email,
       firstName: createUserDto.firstName,
       lastName: createUserDto.lastName

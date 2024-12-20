@@ -1,8 +1,6 @@
-import { CookieSerializeOptions } from '@fastify/csrf-protection';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService as JwtSer } from '@nestjs/jwt';
-import { Tokens } from 'src/common/CONSTANTS';
 import { AuthUser, Role } from 'src/common/types/global.type';
 import { Account } from '../accounts/entities/account.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -54,10 +52,12 @@ export class JwtService {
                 },
                 relations: {
                     classRoom: true,
+                    account: { branch: true },
                 },
                 select: {
                     id: true,
-                    classRoom: { id: true }
+                    classRoom: { id: true },
+                    account: { id: true, branch: { id: true } }
                 }
             });
 
@@ -67,12 +67,14 @@ export class JwtService {
                 role: Role.STUDENT,
                 classRoomId: student.classRoom.id,
                 studentId: student.id,
+                branchId: student.account?.branch?.id ?? undefined
             };
         } else {
             payload = {
                 accountId: account.id,
                 email: account.email,
                 role: account.role,
+                branchId: account.branch?.id ?? undefined
             };
         }
 

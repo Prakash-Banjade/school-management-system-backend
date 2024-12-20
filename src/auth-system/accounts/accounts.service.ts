@@ -14,6 +14,7 @@ import { PASSWORD_SALT_COUNT } from 'src/common/CONSTANTS';
 import { accountSelectCols } from './helpers/account-select-cols.config';
 import { AuthHelper } from '../auth/helpers/auth.helper';
 import { User } from '../users/entities/user.entity';
+import { Branch } from 'src/branches/entities/branch.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AccountsService extends BaseRepository {
@@ -65,7 +66,7 @@ export class AccountsService extends BaseRepository {
     } as Account);
   }
 
-  async createAdminAccount(user: User, dto: { firstName: string, lastName: string, email: string }) {
+  async createAdminAccount(user: User, branch: Branch, dto: { firstName: string, lastName: string, email: string }) {
     const existingAccount = await this.getRepository(Account).findOne({ where: { email: dto.email }, select: { id: true } });
     if (existingAccount) throw new BadRequestException({
       message: 'Duplicate email. Please use different email.',
@@ -82,6 +83,7 @@ export class AccountsService extends BaseRepository {
       user,
       password,
       prevPasswords: [bcrypt.hashSync(password, PASSWORD_SALT_COUNT)],
+      branch,
     });
     await this.getRepository(Account).save(account);
 

@@ -22,7 +22,4 @@ export class User extends BaseEntity {
     @OneToOne(() => Account, account => account.user, { nullable: true, onDelete: 'CASCADE' })
     @JoinColumn()
     account: Account | null;
-
-    @ManyToOne(() => Branch, branch => branch.users, { onDelete: 'RESTRICT', nullable: true })
-    branch: Branch | null;
 }

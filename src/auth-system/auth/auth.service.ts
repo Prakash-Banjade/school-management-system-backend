@@ -159,7 +159,16 @@ export class AuthService extends BaseRepository {
 
     const account = await this.accountsRepo.findOne({
       where: { id: req.accountId, refreshTokens: Like(`%${oldRefreshToken}%`) },
-      select: { id: true, email: true, role: true, refreshTokens: true, password: true, verifiedAt: true }, // TODO: password and verifiedAt is selected for entity listener
+      relations: { branch: true },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        refreshTokens: true,
+        password: true,
+        verifiedAt: true,
+        branch: { id: true } // necessary for jwt access token
+      }, // TODO: password and verifiedAt is selected for entity listener
     }); // accountId is validated in the refresh token guard
     if (!account) throw new UnauthorizedException('Invalid refresh token');
 

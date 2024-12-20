@@ -1,4 +1,4 @@
-import { BeforeInsert, BeforeUpdate, Column, Entity, OneToMany, OneToOne } from "typeorm";
+import { BeforeInsert, BeforeUpdate, Column, Entity, ManyToOne, OneToMany, OneToOne } from "typeorm";
 import * as bcrypt from 'bcrypt';
 import { BadRequestException } from "@nestjs/common";
 import { BaseEntity } from "src/common/entities/base.entity";
@@ -13,6 +13,7 @@ import { Attendance } from "src/attendances/entities/attendance.entity";
 import { LeaveRequest } from "src/leave-requests/entities/leave-request.entity";
 import { Task } from "src/task-system/tasks/entities/task.entity";
 import { LessonPlan } from "src/subjects/lesson-plans/entities/lesson-plan.entity";
+import { Branch } from "src/branches/entities/branch.entity";
 
 @Entity()
 export class Account extends BaseEntity {
@@ -45,6 +46,9 @@ export class Account extends BaseEntity {
 
     @Column({ type: 'simple-array', nullable: true })
     refreshTokens: string[];
+
+    @ManyToOne(() => Branch, branch => branch.accounts, { onDelete: 'RESTRICT', nullable: true })
+    branch: Branch | null;
 
     @OneToOne(() => User, user => user.account, { nullable: true })
     user: User;

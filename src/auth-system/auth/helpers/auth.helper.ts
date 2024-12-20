@@ -133,7 +133,11 @@ export class AuthHelper extends BaseRepository {
      * If account is not verified, send confirmation email
      */
     async validateAccount(email: string, password: string): Promise<Account | { message: string }> {
-        const foundAccount = await this.accountsRepo.findOneBy({ email });
+        const foundAccount = await this.accountsRepo.findOne({
+            where: { email },
+            relations: { branch: true },
+            select: { branch: { id: true } },
+        });
 
         if (!foundAccount) throw new UnauthorizedException(INVALID_AUTH_CREDENTIALS_MSG);
 
