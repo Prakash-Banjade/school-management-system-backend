@@ -21,7 +21,6 @@ import { EnrollmentsModule } from './enrollments/enrollments.module';
 import { ExaminationSystemModule } from './examination-system/examination-system.module';
 import { GuardiansModule } from './guardians/guardians.module';
 import { NoticesModule } from './notices/notices.module';
-import { RecommendationsModule } from './recommendations/recommendations.module';
 import { StaffsModule } from './staffs/staffs.module';
 import { StudentsModule } from './students/students.module';
 import { SubjectsModule } from './subjects/subjects.module';
@@ -103,7 +102,6 @@ import { BranchesModule } from './branches/branches.module';
     ExaminationSystemModule,
     GuardiansModule,
     NoticesModule,
-    RecommendationsModule,
     StaffsModule,
     LeaveRequestsModule,
     StudentsModule,

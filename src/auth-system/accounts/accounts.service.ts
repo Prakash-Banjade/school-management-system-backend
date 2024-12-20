@@ -4,7 +4,6 @@ import { Account } from './entities/account.entity';
 import { Teacher } from 'src/teachers/entities/teacher.entity';
 import { REQUEST } from '@nestjs/core';
 import { Student } from 'src/students/entities/student.entity';
-import { Guardian } from 'src/guardians/entities/guardian.entity';
 import { Staff } from 'src/staffs/entities/staff.entity';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { FastifyRequest } from 'fastify';
@@ -14,6 +13,7 @@ import * as bcrypt from 'bcrypt';
 import { PASSWORD_SALT_COUNT } from 'src/common/CONSTANTS';
 import { accountSelectCols } from './helpers/account-select-cols.config';
 import { AuthHelper } from '../auth/helpers/auth.helper';
+import { User } from '../users/entities/user.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AccountsService extends BaseRepository {
@@ -26,7 +26,7 @@ export class AccountsService extends BaseRepository {
 
   // TODO: Actually the best approach would be to not create account directly, instead create EmailVerificationPending record, once verified then create account
   // But in this app, if account is not created at first, then we student, teacher can't be created
-  async createAccount(entity: Teacher | Student | Guardian | Staff) {
+  async createAccount(entity: Teacher | Student | Staff) {
     // check for existing
     const existingAccount = await this.getRepository(Account).findOne({ where: { email: entity.email }, select: { id: true } });
     if (existingAccount) throw new BadRequestException({
@@ -57,6 +57,34 @@ export class AccountsService extends BaseRepository {
     await this.getRepository(Account).save(account);
 
     // send account confirmation mail to the user
+    return this.authHelper.sendConfirmationEmail({
+      id: account.id,
+      email: account.email,
+      firstName: account.firstName,
+      lastName: account.lastName,
+    } as Account);
+  }
+
+  async createAdminAccount(user: User, dto: { firstName: string, lastName: string, email: string }) {
+    const existingAccount = await this.getRepository(Account).findOne({ where: { email: dto.email }, select: { id: true } });
+    if (existingAccount) throw new BadRequestException({
+      message: 'Duplicate email. Please use different email.',
+      field: 'email',
+    });
+
+    const password = generateRandomPassword();
+
+    const account = this.getRepository<Account>(Account).create({
+      email: dto.email,
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      role: Role.ADMIN,
+      user,
+      password,
+      prevPasswords: [bcrypt.hashSync(password, PASSWORD_SALT_COUNT)],
+    });
+    await this.getRepository(Account).save(account);
+
     return this.authHelper.sendConfirmationEmail({
       id: account.id,
       email: account.email,

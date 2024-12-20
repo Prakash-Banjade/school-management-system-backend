@@ -1,10 +1,10 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { FastifyRequest } from 'fastify';
 import { REQUEST } from '@nestjs/core';
-import { Brackets, DataSource } from 'typeorm';
+import { Brackets, DataSource, ILike } from 'typeorm';
 import { Branch } from './entities/branch.entity';
 import { QueryDto } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
@@ -16,7 +16,21 @@ export class BranchesService extends BaseRepository {
   ) { super(dataSource, req) }
 
   async create(createBranchDto: CreateBranchDto) {
+    const existingWithSameName = await this.getRepository(Branch).findOne({
+      where: { name: ILike(createBranchDto.name) },
+      select: { id: true }
+    });
+    if (existingWithSameName) throw new ConflictException('Branch name already exists');
 
+    const newBranch = this.getRepository(Branch).create({
+      ...createBranchDto
+    });
+
+    await this.getRepository(Branch).save(newBranch);
+
+    return {
+      message: 'Branch created successfully',
+    }
   }
 
   findAll(queryDto: QueryDto) {
