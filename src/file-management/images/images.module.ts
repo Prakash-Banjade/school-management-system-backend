@@ -3,15 +3,15 @@ import { ImagesService } from './images.service';
 import { ImagesController } from './images.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Image } from './entities/image.entity';
-import { AccountsModule } from 'src/auth-system/accounts/accounts.module';
+import { Account } from 'src/auth-system/accounts/entities/account.entity';
 
 Global()
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       Image,
+      Account,
     ]),
-    AccountsModule,
   ],
   controllers: [ImagesController],
   providers: [ImagesService],

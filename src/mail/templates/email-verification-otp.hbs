@@ -1,82 +1,88 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <title>Email Verification</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-        }
-
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            background-color: #f9f9f9;
-        }
-
-        .header {
-            text-align: center;
-            padding-bottom: 20px;
-        }
-
-        .otp {
-            font-size: 24px;
-            font-weight: bold;
-            margin: 20px 0;
-            color: #333;
-        }
-
-        .button-container {
-            text-align: center;
-            margin: 20px 0;
-        }
-
-        .button {
-            background-color: #f97316;
-            color: white;
-            padding: 10px 20px;
-            text-decoration: none;
-            font-size: 16px;
-            border-radius: 5px;
-            display: inline-block;
-        }
-
-        .button:hover {
-            background-color: #fb9349;
-        }
-
-        .footer {
-            margin-top: 30px;
-            font-size: 12px;
-            color: #666;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Verification - {{schoolName}}</title>
 </head>
 
-<body>
-    <div class="container">
-        <div class="header">
-            <h2>Email Verification</h2>
-        </div>
-        <p>Dear {{name}},</p>
-        <p>Thank you for registering. To complete your registration, please use the following OTP (One-Time Password) to
-            verify your email address:</p>
-        <div class="otp">{{otp}}</div>
-        <p>This OTP is valid for 30 minutes.</p>
-        <p>If you did not request this email, please ignore it.</p>
-        <div class="button-container">
-            <a href={{link}} class="button">Go to Site</a>
-        </div>
-        <div class="footer">
-            <p>Best regards,</p>
-            <p>Nest-Fastify App</p>
-        </div>
-    </div>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+            <td align="center" style="padding: 20px 0;">
+                <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0"
+                    style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td align="center"
+                            style="padding: 30px 0 30px; background-color: #003366; border-top-left-radius: 8px; border-top-right-radius: 8px;">
+                            <img src="{{schoolLogo}}" alt="{{schoolName}} Logo" style="max-width: 80px; height: auto;">
+                        </td>
+                    </tr>
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 30px;">
+                            <h1 style="color: #003366; font-size: 24px; margin-bottom: 20px;">Hello {{receiverName}},
+                            </h1>
+                            <h2 style="color: #003366; font-size: 20px; margin-bottom: 20px;">Verify Your {{schoolName}}
+                                Account</h2>
+                            <p style="color: #333333; font-size: 16px; line-height: 1.5; margin-bottom: 20px;">An
+                                account has been created for you at {{schoolName}}. To access your account, please
+                                verify your email address using the following One-Time Password (OTP):</p>
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
+                                style="margin-bottom: 20px;">
+                                <tr>
+                                    <td align="center"
+                                        style="padding: 20px; background-color: #e6f2ff; font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #003366;">
+                                        {{otp}}
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style="color: #333333; font-size: 16px; line-height: 1.5; margin-bottom: 20px;">To
+                                complete the verification process and access your account, please click the button below
+                                and enter the OTP:</p>
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{link}}"
+                                            style="display: inline-block; padding: 12px 24px; background-color: #009933; color: #ffffff; text-decoration: none; border-radius: 4px; font-weight: bold;">Verify
+                                            Your Account</a>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p
+                                style="color: #ff0000; font-size: 14px; line-height: 1.5; margin-top: 20px; font-style: italic;">
+                                Important: This OTP and verification link will expire in {{expirationMin}} minutes. If
+                                you don't verify
+                                your account within this time, please contact the academy administration for assistance.
+                            </p>
+                            <p style="color: #333333; font-size: 16px; line-height: 1.5; margin-top: 30px;">If you
+                                believe this account was created in error or have any questions, please contact our IT
+                                support team immediately.</p>
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="padding: 30px 30px; background-color: #e6f2ff; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;">
+                            <p style="color: #666666; font-size: 14px; line-height: 1.5; margin: 0;">{{schoolName}}
+                            </p>
+                            <p style="color: #666666; font-size: 14px; line-height: 1.5; margin: 5px 0 0;">
+                                {{schoolAddress}}</p>
+                            <p style="color: #666666; font-size: 14px; line-height: 1.5; margin: 10px 0 0;">
+                                <a href="{{clientUrl}}" style="color: #009933; text-decoration: none;">IT Support</a> |
+                                <a href="{{clientUrl}}" style="color: #009933; text-decoration: none;">Privacy
+                                    Policy</a> |
+                                <a href="{{clientUrl}}" style="color: #009933; text-decoration: none;">Terms of
+                                    Service</a>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 
 </html>

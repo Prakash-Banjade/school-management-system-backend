@@ -41,6 +41,8 @@ import { OptionalSubjectModule } from './optional-subject/optional-subject.modul
 import { ScheduleModule } from '@nestjs/schedule';
 import { EventsModule } from './events/events.module';
 import { GeneralSettingsModule } from './general-settings/general-settings.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -81,6 +83,9 @@ import { GeneralSettingsModule } from './general-settings/general-settings.modul
     }),
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'wwwroot'),
+    }),
     TypeOrmModule,
     AuthSystemModule,
     FileManagementModule,

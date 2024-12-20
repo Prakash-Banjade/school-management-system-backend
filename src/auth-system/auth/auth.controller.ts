@@ -57,15 +57,23 @@ export class AuthController {
         return this.authService.register(registerDto);
     }
 
-    // @Public()
-    // @Post('verify-email')
-    @ApiExcludeEndpoint()
+    @Public()
+    @Post('verify-email')
     @UseInterceptors(TransactionInterceptor)
     @HttpCode(HttpStatus.OK)
     @ApiConsumes('multipart/form-data')
     @FormDataRequest()
     verifyEmail(@Body() emailVerificationDto: EmailVerificationDto) {
         return this.authService.verifyEmail(emailVerificationDto);
+    }
+
+    @Public()
+    @Post('verify-email-confirm-token')
+    @HttpCode(HttpStatus.OK)
+    @ApiConsumes('multipart/form-data')
+    @FormDataRequest()
+    verifyEmailResetToken(@Body() { token }: VerifyTokenDto) {
+        return this.authService.verifyEmailResetToken(token);
     }
 
     @Post('logout')
@@ -98,7 +106,7 @@ export class AuthController {
     }
 
     @Public()
-    @Post('verify-token')
+    @Post('verify-pwd-reset-token')
     @HttpCode(HttpStatus.OK)
     verifyResetToken(@Body() verifyTokenDto: VerifyTokenDto) {
         return this.authService.verifyResetToken(verifyTokenDto.token)

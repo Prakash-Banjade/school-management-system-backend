@@ -18,10 +18,4 @@ export class AccountsController {
     me(@CurrentUser() currentUser: AuthUser) {
         return this.accountsService.me(currentUser);
     }
-
-    @Post(':id/send-new-credentials')
-    @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
-    sendNewCredentials(@Param('id') id: string) {
-        return this.accountsService.sendNewCredentials(id);
-    }
 }

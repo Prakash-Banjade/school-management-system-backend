@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, Scope } from '@nestjs/common';
 import { DataSource, Not } from 'typeorm';
 import { Account } from './entities/account.entity';
 import { Teacher } from 'src/teachers/entities/teacher.entity';
@@ -13,19 +13,19 @@ import { generateRandomPassword } from 'src/utils/generatePassword';
 import * as bcrypt from 'bcrypt';
 import { PASSWORD_SALT_COUNT } from 'src/common/CONSTANTS';
 import { accountSelectCols } from './helpers/account-select-cols.config';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { MailEvents } from 'src/mail/mail.service';
-import { UserCredentialsEventDto } from 'src/mail/dto/events.dto';
+import { AuthHelper } from '../auth/helpers/auth.helper';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AccountsService extends BaseRepository {
   constructor(
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
-    private readonly eventEmitter: EventEmitter2
+    private readonly authHelper: AuthHelper,
   ) {
     super(dataSource, req);
   }
 
+  // TODO: Actually the best approach would be to not create account directly, instead create EmailVerificationPending record, once verified then create account
+  // But in this app, if account is not created at first, then we student, teacher can't be created
   async createAccount(entity: Teacher | Student | Guardian | Staff) {
     // check for existing
     const existingAccount = await this.getRepository(Account).findOne({ where: { email: entity.email }, select: { id: true } });
@@ -50,25 +50,19 @@ export class AccountsService extends BaseRepository {
       lastName: entity.lastName,
       role: key,
       [key]: entity,
-      verifiedAt: new Date(),
       password,
       prevPasswords: [bcrypt.hashSync(password, PASSWORD_SALT_COUNT)],
     });
 
-    console.log({
-      entityType: entity.constructor.name,
-      password,
-      email: entity.email
-    });
-
     await this.getRepository(Account).save(account);
 
-    // send mail
-    this.eventEmitter.emit(MailEvents.USER_CREDENTIALS, new UserCredentialsEventDto({
-      email: entity.email,
-      password,
-      username: entity.firstName + ' ' + entity.lastName,
-    }));
+    // send account confirmation mail to the user
+    return this.authHelper.sendConfirmationEmail({
+      id: account.id,
+      email: account.email,
+      firstName: account.firstName,
+      lastName: account.lastName,
+    } as Account);
   }
 
   async me(currentUser: AuthUser) {
@@ -99,29 +93,5 @@ export class AccountsService extends BaseRepository {
     if (accountWithEmail) throw new ConflictException('This email is already taken');
 
     await this.getRepository(Account).update({ id: accountId }, { email: newEmail });
-  }
-
-  async sendNewCredentials(id: string) {
-    const account = await this.getRepository(Account).findOne({
-      where: { id },
-      select: { id: true, email: true, firstName: true, lastName: true }
-    });
-    if (!account) throw new NotFoundException('Account not found');
-
-    const password = generateRandomPassword();
-
-    account.password = password;
-
-    await this.getRepository(Account).save(account);
-
-    this.eventEmitter.emit(MailEvents.USER_CREDENTIALS, new UserCredentialsEventDto({
-      email: account.email,
-      password,
-      username: account.firstName + ' ' + account.lastName
-    }));
-
-    return {
-      message: 'Credentials sent'
-    }
   }
 }
