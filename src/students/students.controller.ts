@@ -31,35 +31,35 @@ export class StudentsController {
   @Get()
   @ApiPaginatedResponse(CreateStudentDto)
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  findAll(@Query() queryDto: StudentQueryDto) {
-    return this.studentsHelper.findAll(queryDto);
+  findAll(@Query() queryDto: StudentQueryDto, @CurrentUser() currentUser: AuthUser) {
+    return this.studentsHelper.findAll(queryDto, currentUser);
   }
 
   @Get('past')
   @ApiPaginatedResponse(CreateStudentDto)
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  findAllFromPast(@Query() queryDto: PastStudentsQueryDto) {
-    return this.studentsHelper.getPastStudents(queryDto);
+  findAllFromPast(@Query() queryDto: PastStudentsQueryDto, @CurrentUser() currentUser: AuthUser) {
+    return this.studentsHelper.getPastStudents(queryDto, currentUser);
   }
 
   @Get('attendances')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  findAllAttendance(@Query() queryDto: StudentAttendanceQueryDto) {
-    return this.studentsHelper.getStudentsWithAttendance(queryDto);
+  findAllAttendance(@Query() queryDto: StudentAttendanceQueryDto, @CurrentUser() currentUser: AuthUser) {
+    return this.studentsHelper.getStudentsWithAttendance(queryDto, currentUser);
   }
 
   @Get('library/:studentId')
   @ApiOperation({ summary: 'Find library student' })
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  findLibraryStudent(@Param('studentId') studentId: string) {
-    return this.studentsService.findLibraryStudent(studentId);
+  findLibraryStudent(@Param('studentId') studentId: string, @CurrentUser() currentUser: AuthUser) {
+    return this.studentsService.findLibraryStudent(studentId, currentUser);
   }
 
   @Get('fee/:studentId')
   @ApiOperation({ summary: 'Find fee student' })
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  findFeeStudent(@Param('studentId') studentId: string) {
-    return this.studentsHelper.getFeeStudent(studentId);
+  findFeeStudent(@Param('studentId') studentId: string, @CurrentUser() currentUser: AuthUser) {
+    return this.studentsHelper.getFeeStudent(studentId, currentUser);
   }
 
   @Get('me')

@@ -140,7 +140,7 @@ export class StudentsService extends BaseRepository {
     return existing;
   }
 
-  async findLibraryStudent(studentId: string) {
+  async findLibraryStudent(studentId: string, currentUser: AuthUser) {
     const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
     const student = await this.getRepository<Student>(Student).createQueryBuilder('student')
@@ -149,7 +149,9 @@ export class StudentsService extends BaseRepository {
       .leftJoin("classRoom.parent", "parent")
       .leftJoin("student.profileImage", "profileImage")
       .leftJoin("student.bookTransactions", "bookTransactions")
+      .leftJoin("student.account", "account")
       .where("student.studentId = :studentId", { studentId })
+      .andWhere('account.branchId = :branchId', { branchId: currentUser.branchId })
       .select([
         "student.id AS id",
         "CONCAT(student.firstName, ' ', student.lastName) AS name",

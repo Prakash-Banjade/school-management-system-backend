@@ -31,21 +31,21 @@ export class StaffsController {
   @Get()
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   @ApiPaginatedResponse(CreateStaffDto)
-  findAll(@Query() queryDto: StaffQueryDto) {
-    return this.staffsService.findAll(queryDto);
+  findAll(@Query() queryDto: StaffQueryDto, @CurrentUser() currentUser: AuthUser) {
+    return this.staffsService.findAll(queryDto, currentUser);
   }
 
   @Get('options')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   @ApiPaginatedResponse(CreateStaffDto)
-  getOptions(@Query() queryDto: StaffQueryDto) {
-    return this.staffsService.getOptions(queryDto);
+  getOptions(@Query() queryDto: StaffQueryDto, @CurrentUser() currentUser: AuthUser) {
+    return this.staffsService.getOptions(queryDto, currentUser);
   }
 
   @Get('attendances')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  getAttendance(@Query() queryDto: EmployeeAttendanceQueryDto) {
-    return this.staffsHelper.getStaffsWithAttendance(queryDto);
+  getAttendance(@Query() queryDto: EmployeeAttendanceQueryDto, @CurrentUser() currentUser: AuthUser) {
+    return this.staffsHelper.getStaffsWithAttendance(queryDto, currentUser);
   }
 
   @Get(':id')
@@ -59,11 +59,5 @@ export class StaffsController {
   @UseInterceptors(TransactionInterceptor)
   update(@Param('id') id: string, @Body() updateStaffDto: UpdateStaffDto) {
     return this.staffsService.update(id, updateStaffDto);
-  }
-
-  @Delete(':id')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.DELETE })
-  remove(@Param('id') id: string) {
-    return this.staffsService.remove(id);
   }
 }

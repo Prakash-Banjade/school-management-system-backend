@@ -2,20 +2,18 @@ import { BadRequestException, Inject, Injectable, NotFoundException, Scope } fro
 import { CreateStaffDto } from './dto/create-staff.dto';
 import { UpdateStaffDto } from './dto/update-staff.dto';
 import { Staff } from './entities/staff.entity';
-import { Brackets, DataSource, IsNull, Not, Or } from 'typeorm';
+import { Brackets, DataSource, Not } from 'typeorm';
 import { REQUEST } from '@nestjs/core';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { ImagesService } from 'src/file-management/images/images.service';
 import { AccountsService } from 'src/auth-system/accounts/accounts.service';
 import { FastifyRequest } from 'fastify';
 import { StaffQueryDto } from './dto/staff-query.dto';
-import { Deleted } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { staffsColumnsConfig } from './helpers/staff-select-cols.config';
 import { AuthUser, EStaff } from 'src/common/types/global.type';
 import { SalaryStructure } from 'src/finance-system/salary-management/salary-structures/entities/salary-structure.entity';
-import { Account } from 'src/auth-system/accounts/entities/account.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class StaffsService extends BaseRepository {
@@ -51,19 +49,16 @@ export class StaffsService extends BaseRepository {
     return { message: 'Staff created' }
   }
 
-  async findAll(queryDto: StaffQueryDto) {
+  async findAll(queryDto: StaffQueryDto, currentUser: AuthUser) {
     const queryBuilder = this.getRepository(Staff).createQueryBuilder('staff');
-
-    const deletedAt = queryDto.deleted === Deleted.ONLY ? Not(IsNull()) : queryDto.deleted === Deleted.NONE ? IsNull() : Or(IsNull(), Not(IsNull()));
 
     queryBuilder
       .orderBy("staff.createdAt", queryDto.order)
       .skip(queryDto.skip)
       .take(queryDto.take)
-      .withDeleted()
-      .where({ deletedAt })
       .leftJoin("staff.profileImage", "profileImage")
       .leftJoin('staff.account', 'account')
+      .where("account.branchId = :branchId", { branchId: currentUser.branchId ?? queryDto.branchId })
       .andWhere(new Brackets(qb => {
         queryDto.search && qb.andWhere(new Brackets(qb => {
           qb.orWhere("LOWER(CONCAT(staff.firstName, ' ', staff.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
@@ -79,10 +74,12 @@ export class StaffsService extends BaseRepository {
     return paginatedData(queryDto, queryBuilder);
   }
 
-  async getOptions(queryDto: StaffQueryDto) {
+  async getOptions(queryDto: StaffQueryDto, currentUser: AuthUser) {
     return this.getRepository(Staff).createQueryBuilder('staff')
       .orderBy("staff.createdAt", queryDto.order)
-      .where(new Brackets(qb => {
+      .leftJoin("staff.account", "account")
+      .where("account.branchId = :branchId", { branchId: currentUser.branchId ?? queryDto.branchId })
+      .andWhere(new Brackets(qb => {
         queryDto.type?.length && qb.andWhere('staff.type IN (:...type)', { type: queryDto.type });
       }))
       .select([
@@ -139,14 +136,6 @@ export class StaffsService extends BaseRepository {
     await this.getRepository(Staff).save(existingStaff);
 
     return { message: 'Staff updated' }
-  }
-
-  async remove(id: string) {
-    const existingStaff = await this.findOne(id);
-
-    await this.getRepository(Staff).remove(existingStaff);
-
-    return { message: 'Staff deleted' }
   }
 
   async checkIfStaffExists(staffDto: CreateStaffDto | UpdateStaffDto, staff?: Staff) {

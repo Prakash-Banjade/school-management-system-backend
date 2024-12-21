@@ -30,11 +30,6 @@ export class StudentQueryDto extends ClassWithSectionQueryDto {
     @IsEnum(StudentSortBy)
     sortBy: string;
 
-    @ApiPropertyOptional({ type: String, format: 'uuid', description: 'Academic year id' })
-    @IsUUID()
-    @IsOptional()
-    academicYearId?: string;
-
     @ApiPropertyOptional()
     @IsOptional()
     @IsBoolean()

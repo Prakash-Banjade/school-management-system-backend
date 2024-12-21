@@ -13,8 +13,6 @@ import { FastifyRequest } from 'fastify';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import paginatedData from 'src/utils/paginatedData';
 import { SalaryStructure } from 'src/finance-system/salary-management/salary-structures/entities/salary-structure.entity';
-import { Account } from 'src/auth-system/accounts/entities/account.entity';
-import { BranchesService } from 'src/branches/branches.service';
 import { AuthUser } from 'src/common/types/global.type';
 
 
@@ -24,7 +22,6 @@ export class TeachersService extends BaseRepository {
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
     private readonly imageService: ImagesService,
     private readonly accountsService: AccountsService,
-    private readonly branchesService: BranchesService,
   ) {
     super(dataSource, req);
   }
@@ -54,7 +51,7 @@ export class TeachersService extends BaseRepository {
     return { message: 'Teacher created' }
   }
 
-  async findAll(queryDto: TeacherQueryDto) {
+  async findAll(queryDto: TeacherQueryDto, currentUser: AuthUser) {
     const queryBuilder = this.getRepository(Teacher).createQueryBuilder('teacher');
 
     queryBuilder
@@ -63,6 +60,7 @@ export class TeachersService extends BaseRepository {
       .take(queryDto.take)
       .leftJoin("teacher.profileImage", "profileImage")
       .leftJoin('teacher.account', 'account')
+      .where('account.branchId = :branchId', { branchId: currentUser.branchId ?? queryDto.branchId })
       .andWhere(new Brackets(qb => {
         queryDto.search && qb.andWhere(new Brackets(qb => {
           qb.orWhere("LOWER(CONCAT(teacher.firstName, ' ', teacher.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
