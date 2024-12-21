@@ -24,8 +24,8 @@ export class StudentsController {
   @Post()
   @UseInterceptors(TransactionInterceptor)
   @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
-  create(@Body() createStudentDto: CreateStudentDto) {
-    return this.studentsService.create(createStudentDto);
+  create(@Body() createStudentDto: CreateStudentDto, @CurrentUser() currentUser: AuthUser) {
+    return this.studentsService.create(createStudentDto, currentUser);
   }
 
   @Get()

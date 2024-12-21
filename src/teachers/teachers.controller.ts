@@ -28,8 +28,8 @@ export class TeachersController {
   @Post()
   @UseInterceptors(TransactionInterceptor)
   @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
-  create(@Body() createTeacherDto: CreateTeacherDto) {
-    return this.teachersService.create(createTeacherDto);
+  create(@Body() createTeacherDto: CreateTeacherDto, @CurrentUser() currentUser: AuthUser) {
+    return this.teachersService.create(createTeacherDto, currentUser);
   }
 
   @Get()

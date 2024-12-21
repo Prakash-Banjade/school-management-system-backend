@@ -15,19 +15,21 @@ import { accountSelectCols } from './helpers/account-select-cols.config';
 import { AuthHelper } from '../auth/helpers/auth.helper';
 import { User } from '../users/entities/user.entity';
 import { Branch } from 'src/branches/entities/branch.entity';
+import { BranchesService } from 'src/branches/branches.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AccountsService extends BaseRepository {
   constructor(
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
     private readonly authHelper: AuthHelper,
+    private readonly branchesService: BranchesService,
   ) {
     super(dataSource, req);
   }
 
   // TODO: Actually the best approach would be to not create account directly, instead create EmailVerificationPending record, once verified then create account
   // But in this app, if account is not created at first, then we student, teacher can't be created
-  async createAccount(entity: Teacher | Student | Staff) {
+  async createAccount(entity: Teacher | Student | Staff, currentUser: AuthUser) {
     // check for existing
     const existingAccount = await this.getRepository(Account).findOne({ where: { email: entity.email }, select: { id: true } });
     if (existingAccount) throw new BadRequestException({
@@ -53,6 +55,7 @@ export class AccountsService extends BaseRepository {
       [key]: entity,
       password,
       prevPasswords: [bcrypt.hashSync(password, PASSWORD_SALT_COUNT)],
+      branch: await this.branchesService.getBranch(currentUser.branchId),
     });
 
     await this.getRepository(Account).save(account);

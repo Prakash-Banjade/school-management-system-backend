@@ -13,8 +13,8 @@ import { AuthUser } from 'src/common/types/global.type';
 import { Account } from '../accounts/entities/account.entity';
 import { ImagesService } from 'src/file-management/images/images.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { Branch } from 'src/branches/entities/branch.entity';
 import { AccountsService } from '../accounts/accounts.service';
+import { BranchesService } from 'src/branches/branches.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class UsersService extends BaseRepository {
@@ -23,14 +23,11 @@ export class UsersService extends BaseRepository {
     @Inject(REQUEST) req: FastifyRequest,
     private readonly imagesService: ImagesService,
     private readonly accountsService: AccountsService,
+    private readonly branchesService: BranchesService,
   ) { super(datasource, req) }
 
   async create(createUserDto: CreateUserDto) {
-    const branch = await this.getRepository(Branch).findOne({
-      where: { id: createUserDto.branchId },
-      select: { id: true }
-    });
-    if (!branch) throw new NotFoundException('Branch not found');
+    const branch = await this.branchesService.getBranch(createUserDto.branchId);
 
     const profileImage = createUserDto.profileImageId ? await this.imagesService.findOne(createUserDto.profileImageId) : null;
 

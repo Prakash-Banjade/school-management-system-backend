@@ -23,9 +23,6 @@ export class Enrollment extends BaseEntity {
     @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
     enrollmentDate: string;
 
-    @ManyToOne(() => Branch, (branch) => branch.enrollments, { onDelete: 'RESTRICT' })
-    branch: Branch;
-
     @Column({ type: 'int', default: 1 })
     rollNo: number;
 

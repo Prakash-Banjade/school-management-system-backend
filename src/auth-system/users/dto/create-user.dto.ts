@@ -25,9 +25,10 @@ export class CreateUserDto {
     })
     lastName: string;
 
-    @ApiProperty({ format: 'uuid' })
+    @ApiPropertyOptional({ format: 'uuid' })
     @IsUUID()
-    branchId: string;
+    @IsOptional()
+    branchId?: string; // there may not be any branch
 
     @ApiPropertyOptional({ type: String, description: 'Image ID/URL' })
     @IsUuidOrUrl()

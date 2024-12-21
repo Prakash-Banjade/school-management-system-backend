@@ -16,7 +16,4 @@ export class Branch extends BaseEntity {
 
     @OneToMany(() => Account, account => account.branch)
     accounts: Account[]
-
-    @OneToMany(() => Enrollment, enrollment => enrollment.branch)
-    enrollments: Enrollment[]
 }

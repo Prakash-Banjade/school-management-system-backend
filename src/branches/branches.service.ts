@@ -1,10 +1,10 @@
-import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { FastifyRequest } from 'fastify';
 import { REQUEST } from '@nestjs/core';
-import { Brackets, DataSource, ILike } from 'typeorm';
+import { Brackets, DataSource, FindOptionsSelect, ILike } from 'typeorm';
 import { Branch } from './entities/branch.entity';
 import { QueryDto } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
@@ -67,5 +67,23 @@ export class BranchesService extends BaseRepository {
     return {
       message: 'Branch updated successfully',
     }
+  }
+
+  async getBranch(branchId: string | undefined, select?: FindOptionsSelect<Branch>) {
+    // check if the school has any branch
+    const branchesCount = await this.getRepository(Branch).createQueryBuilder().getCount();
+
+    if (branchesCount > 0 && !branchId) throw new InternalServerErrorException('Branch id not provided');
+
+    if (!branchId) return null; // there might not be any branch
+
+    const existing = await this.getRepository(Branch).findOne({
+      where: { id: branchId },
+      select: select ?? { id: true }
+    });
+
+    if (!existing) throw new NotFoundException('Branch not found');
+
+    return existing;
   }
 }

@@ -14,6 +14,8 @@ import { applySelectColumns } from 'src/utils/apply-select-cols';
 import paginatedData from 'src/utils/paginatedData';
 import { SalaryStructure } from 'src/finance-system/salary-management/salary-structures/entities/salary-structure.entity';
 import { Account } from 'src/auth-system/accounts/entities/account.entity';
+import { BranchesService } from 'src/branches/branches.service';
+import { AuthUser } from 'src/common/types/global.type';
 
 
 @Injectable({ scope: Scope.REQUEST })
@@ -22,11 +24,12 @@ export class TeachersService extends BaseRepository {
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
     private readonly imageService: ImagesService,
     private readonly accountsService: AccountsService,
+    private readonly branchesService: BranchesService,
   ) {
     super(dataSource, req);
   }
 
-  async create(createTeacherDto: CreateTeacherDto) {
+  async create(createTeacherDto: CreateTeacherDto, currentUser: AuthUser) {
     // check if teacher already exists
     await this.checkIfTeacherExists(createTeacherDto);
 
@@ -46,7 +49,7 @@ export class TeachersService extends BaseRepository {
     const savedTeacher = await this.getRepository(Teacher).save(teacher);
 
     // create account
-    await this.accountsService.createAccount(savedTeacher);
+    await this.accountsService.createAccount(savedTeacher, currentUser);
 
     return { message: 'Teacher created' }
   }

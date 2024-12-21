@@ -6,10 +6,11 @@ import { StaffQueryDto } from './dto/staff-query.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ApiPaginatedResponse } from 'src/common/decorators/apiPaginatedResponse.decorator';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action, Role } from 'src/common/types/global.type';
+import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { StaffsHelper } from './helpers/staffs.helper';
 import { EmployeeAttendanceQueryDto } from 'src/teachers/dto/employee-attendance-query.dto';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
+import { CurrentUser } from 'src/common/decorators/user.decorator';
 
 @ApiBearerAuth()
 @ApiTags("Staffs")
@@ -23,8 +24,8 @@ export class StaffsController {
   @Post()
   @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
   @UseInterceptors(TransactionInterceptor)
-  create(@Body() createStaffDto: CreateStaffDto) {
-    return this.staffsService.create(createStaffDto);
+  create(@Body() createStaffDto: CreateStaffDto, @CurrentUser() currentUser: AuthUser) {
+    return this.staffsService.create(createStaffDto, currentUser);
   }
 
   @Get()

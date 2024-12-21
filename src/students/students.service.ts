@@ -11,7 +11,7 @@ import { ImagesService } from 'src/file-management/images/images.service';
 import { AccountsService } from 'src/auth-system/accounts/accounts.service';
 import { FastifyRequest } from 'fastify';
 import { StudentsHelper } from './helpers/students.helper';
-import { EClassType } from 'src/common/types/global.type';
+import { AuthUser, EClassType } from 'src/common/types/global.type';
 import { FilesService } from 'src/file-management/files/files.service';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { AcademicYear } from 'src/academic-years/entities/academic-year.entity';
@@ -22,7 +22,6 @@ import { CACHE_KEYS } from 'src/common/CONSTANTS';
 import { RouteStopsService } from 'src/transportation-system/route-stops/route-stops.service';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { StudentLedger } from 'src/finance-system/fee-management/student-ledgers/entities/student-ledger.entity';
-import { Account } from 'src/auth-system/accounts/entities/account.entity';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { AcademicYearsService } from 'src/academic-years/academic-years.service';
 
@@ -42,7 +41,7 @@ export class StudentsService extends BaseRepository {
     super(dataSource, req);
   }
 
-  async create(createStudentDto: CreateStudentDto) {
+  async create(createStudentDto: CreateStudentDto, currentUser: AuthUser) {
     await this.studentsHelper.checkIfStudentExists(createStudentDto);
 
     // evaluate class room
@@ -88,7 +87,7 @@ export class StudentsService extends BaseRepository {
       enrollmentDate: createStudentDto.admissionDate,
       rollNo: createStudentDto.rollNo,
       registrationNumber: getRegistrationNumber(academicYear),
-      ledger: this.getRepository<StudentLedger>(StudentLedger).create()
+      ledger: this.getRepository<StudentLedger>(StudentLedger).create(),
     });
 
     const newStudent = this.getRepository<Student>(Student).create({
@@ -105,7 +104,7 @@ export class StudentsService extends BaseRepository {
     const savedStudent = await this.getRepository<Student>(Student).save(newStudent);
 
     // CREATE ACCOUNT
-    await this.accountsService.createAccount(savedStudent);
+    await this.accountsService.createAccount(savedStudent, currentUser);
 
     return { message: 'Student created' }
   }

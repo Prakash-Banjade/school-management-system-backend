@@ -13,7 +13,7 @@ import { Deleted } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { staffsColumnsConfig } from './helpers/staff-select-cols.config';
-import { EStaff } from 'src/common/types/global.type';
+import { AuthUser, EStaff } from 'src/common/types/global.type';
 import { SalaryStructure } from 'src/finance-system/salary-management/salary-structures/entities/salary-structure.entity';
 import { Account } from 'src/auth-system/accounts/entities/account.entity';
 
@@ -27,7 +27,7 @@ export class StaffsService extends BaseRepository {
     super(dataSource, req);
   }
 
-  async create(createStaffDto: CreateStaffDto) {
+  async create(createStaffDto: CreateStaffDto, currentUser: AuthUser) {
     // check if staff already exists
     await this.checkIfStaffExists(createStaffDto);
 
@@ -46,7 +46,7 @@ export class StaffsService extends BaseRepository {
     const savedStaff = await this.getRepository(Staff).save(staff);
 
     // create account
-    await this.accountsService.createAccount(savedStaff);
+    await this.accountsService.createAccount(savedStaff, currentUser);
 
     return { message: 'Staff created' }
   }
