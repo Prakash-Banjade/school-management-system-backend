@@ -60,7 +60,7 @@ export class AuthHelper extends BaseRepository {
             .update(encryptedVerificationToken)
             .digest('hex');
 
-        // check for existing verification pending, if yes, remove
+        // check for existing verification pending
         const existingVerificationRequest = await this.emailVerificationPendingRepo.findOneBy({ email: account.email });
 
         if (existingVerificationRequest) { // update the existing one
@@ -79,14 +79,21 @@ export class AuthHelper extends BaseRepository {
             await this.emailVerificationPendingRepo.save(emailVerificationPending);
         }
 
-        this.eventEmitter.emit(MailEvents.CONFIRMATION, new ConfirmationMailEventDto(account, encryptedVerificationToken, otp));
+        // send mail
+        this.eventEmitter.emit(MailEvents.CONFIRMATION, new ConfirmationMailEventDto({
+            otp,
+            expirationMin: this.configService.getOrThrow('EMAIL_VERIFICATION_EXPIRATION_SEC') / 60,
+            receiverEmail: account.email,
+            receiverName: account.firstName + ' ' + account.lastName,
+            token: encryptedVerificationToken
+        }));
 
         return {
             message: "An OTP has been sent to your email. Please use the OTP to verify your account."
         }
     }
 
-    async verifyEmail(emailVerificationDto: EmailVerificationDto): Promise<EmailVerificationPending> {
+    async verifyPendingEmail(emailVerificationDto: EmailVerificationDto): Promise<EmailVerificationPending> {
         const { otp, verificationToken } = emailVerificationDto;
 
         let payload: { email: string };
@@ -96,8 +103,12 @@ export class AuthHelper extends BaseRepository {
             payload = await this.jwtService.verifyAsync(decryptedToken, {
                 secret: this.configService.get('EMAIL_VERIFICATION_SECRET'),
             });
-        } catch {
-            throw new BadRequestException('Invalid token received')
+        } catch (e) {
+            if (e instanceof TokenExpiredError) throw new BadRequestException({
+                error: 'TokenExpiredError',
+                message: 'OTP has been expired'
+            });
+            throw new BadRequestException('Invalid token')
         }
 
         const foundRequest = await this.emailVerificationPendingRepo.findOneBy({ email: payload.email })
@@ -114,27 +125,24 @@ export class AuthHelper extends BaseRepository {
         const isOtpValid = bcrypt.compareSync(String(otp), foundRequest.otp);
         if (!isOtpValid) throw new BadRequestException('Invalid OTP');
 
-        // check if otp has expired
-        const now = new Date();
-        const otpExpiration = new Date(foundRequest.createdAt);
-        otpExpiration.setSeconds(otpExpiration.getSeconds() + this.configService.getOrThrow('EMAIL_VERIFICATION_EXPIRATION_SEC'));
-        if (now > otpExpiration) {
-            await this.emailVerificationPendingRepo.remove(foundRequest); // remove from database
-            throw new BadRequestException('OTP has expired');
-        }
-
         return foundRequest;
     }
 
     /**
-     * Returns Account object if credentials are valid
-     * 
-     * Note: Doesn't check if the account is verified
+     * Returns Account object if credentials are valid. 
+     * If account is not verified, send confirmation email
      */
-    async validateAccount(email: string, password: string): Promise<Account> {
-        const foundAccount = await this.accountsRepo.findOneBy({ email });
+    async validateAccount(email: string, password: string): Promise<Account | { message: string }> {
+        const foundAccount = await this.accountsRepo.findOne({
+            where: { email },
+            relations: { branch: true },
+            select: { branch: { id: true } },
+        });
 
         if (!foundAccount) throw new UnauthorizedException(INVALID_AUTH_CREDENTIALS_MSG);
+
+        // if account is not verified, send confirmation email
+        if (!foundAccount.verifiedAt) return await this.sendConfirmationEmail(foundAccount);
 
         const isPasswordValid = await bcrypt.compare(
             password,

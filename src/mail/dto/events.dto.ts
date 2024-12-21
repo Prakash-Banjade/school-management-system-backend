@@ -1,25 +1,24 @@
 import Mail from "nodemailer/lib/mailer";
-import { Account } from "src/auth-system/accounts/entities/account.entity"
 
 export class ConfirmationMailEventDto {
-    account: Account;
+    receiverEmail: string;
+    receiverName: string;
     token: string;
     otp: number;
+    expirationMin: number;
 
-    constructor(account: Account, token: string, otp: number) {
-        this.account = account;
-        this.token = token;
-        this.otp = otp;
+    constructor(dto: ConfirmationMailEventDto) {
+        Object.assign(this, dto);
     }
 }
 
 export class ResetPasswordMailEventDto {
-    account: Account;
+    receiverEmail: string;
+    receiverName: string;
     token: string;
 
-    constructor(account: Account, token: string) {
-        this.account = account;
-        this.token = token;
+    constructor(dto: ResetPasswordMailEventDto) {
+        Object.assign(this, dto);
     }
 }
 

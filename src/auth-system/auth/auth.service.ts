@@ -1,23 +1,11 @@
-import {
-  BadRequestException,
-  ConflictException,
-  ForbiddenException,
-  HttpStatus,
-  Inject,
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException,
-  Scope,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { DataSource, Like } from 'typeorm';
+import { BadRequestException, ConflictException, ForbiddenException, HttpStatus, Inject, Injectable, InternalServerErrorException, NotFoundException, Scope, UnauthorizedException } from '@nestjs/common';
+import { DataSource, IsNull, Like, Not } from 'typeorm';
 import { PasswordChangeRequest } from './entities/password-change-request.entity';
 import { EmailVerificationPending } from './entities/email-verification-pending.entity';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { REQUEST } from '@nestjs/core';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { Account } from '../accounts/entities/account.entity';
-import { User } from '../users/entities/user.entity';
 import { ConfigService } from '@nestjs/config';
 import { AuthUser } from 'src/common/types/global.type';
 import { MAX_PREV_PASSWORDS, PASSWORD_SALT_COUNT, Tokens } from 'src/common/CONSTANTS';
@@ -33,9 +21,10 @@ import { ResetPasswordDto } from './dto/resetPassword.dto';
 import { UpdateEmailDto } from './dto/update-email.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { MailEvents } from 'src/mail/mail.service';
-import { ResetPasswordMailEventDto } from 'src/mail/dto/events.dto';
+import { ResetPasswordMailEventDto, UserCredentialsEventDto } from 'src/mail/dto/events.dto';
 import { TokenExpiredError } from '@nestjs/jwt';
 import { IVerifyEncryptedHashTokenPairReturn } from './helpers/interface';
+import { generateRandomPassword } from 'src/utils/generatePassword';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AuthService extends BaseRepository {
@@ -49,15 +38,17 @@ export class AuthService extends BaseRepository {
   ) { super(datasource, req) }
 
   private readonly accountsRepo = this.datasource.getRepository<Account>(Account)
-  private readonly usersRepo = this.datasource.getRepository<User>(User)
   private readonly emailVerificationPendingRepo = this.datasource.getRepository<EmailVerificationPending>(EmailVerificationPending)
   private readonly passwordChangeRequestRepo = this.datasource.getRepository<PasswordChangeRequest>(PasswordChangeRequest);
 
   async login(signInDto: SignInDto, req: FastifyRequest, reply: FastifyReply) {
     const existingRefreshCookie = req.cookies?.[Tokens.REFRESH_TOKEN_COOKIE_NAME];
 
-    const foundAccount = await this.authHelper.validateAccount(signInDto.email, signInDto.password);
-    if (!foundAccount.verifiedAt) return await this.authHelper.sendConfirmationEmail(foundAccount);
+    const data = await this.authHelper.validateAccount(signInDto.email, signInDto.password);
+
+    if (!(data instanceof Account)) return data; // this can be a message after sending mail to unverified user
+
+    const foundAccount = data;
 
     const { access_token, refresh_token } = await this.jwtService.getAuthTokens(foundAccount);
 
@@ -75,7 +66,7 @@ export class AuthService extends BaseRepository {
 
     foundAccount.refreshTokens = [...(foundAccount.refreshTokens ?? []), refresh_token];
 
-    await this.accountsRepo.save(foundAccount);
+    await this.getRepository(Account).save(foundAccount);
 
     return reply
       .setCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME, refresh_token, this.getRefreshCookieOptions())
@@ -90,37 +81,48 @@ export class AuthService extends BaseRepository {
       secure: this.configService.get('NODE_ENV') === 'production',
       httpOnly: true,
       signed: true,
-      // sameSite: this.configService.get('NODE_ENV') === 'production' ? 'none' : 'lax',
+      sameSite: this.configService.get('NODE_ENV') === 'production' ? 'none' : 'lax',
       expires: new Date(Date.now() + (parseInt(this.configService.getOrThrow('REFRESH_TOKEN_EXPIRATION_SEC')) * 1000)),
       path: '/', // necessary to be able to access cookie from out of this route path context, like auth.guard.ts
     }
   }
 
   async verifyEmail(emailVerificationDto: EmailVerificationDto) {
-    const foundRequest = await this.authHelper.verifyEmail(emailVerificationDto);
+    const foundRequest = await this.authHelper.verifyPendingEmail(emailVerificationDto);
 
     // GET ACCOUNT FROM DATABASE
     const foundAccount = await this.accountsRepo.findOneBy({ email: foundRequest.email });
     if (!foundAccount) throw new NotFoundException('Account not found');
 
+    const newPassword = generateRandomPassword();
+
     foundAccount.verifiedAt = new Date();
-    const savedAccount = await this.accountsRepo.save(foundAccount);
-
-    const newUser = this.usersRepo.create({
-      account: savedAccount,
-    });
-
-    await this.usersRepo.save(newUser);
+    foundAccount.password = newPassword;
+    foundAccount.prevPasswords = [bcrypt.hashSync(newPassword, PASSWORD_SALT_COUNT)];
+    await this.getRepository(Account).save(foundAccount);
 
     await this.emailVerificationPendingRepo.remove(foundRequest); // remove from db
 
+    // send user credentials mail
+    this.eventEmitter.emit(MailEvents.USER_CREDENTIALS, new UserCredentialsEventDto({
+      email: foundAccount.email,
+      password: newPassword,
+      username: foundAccount.firstName + ' ' + foundAccount.lastName,
+    }));
+
     return {
       message: 'Account verified successfully',
-      account: {
-        email: savedAccount.email,
-        name: savedAccount.firstName + ' ' + savedAccount.lastName,
-      },
     };
+  }
+
+  async verifyEmailResetToken(verificationToken: string) {
+    const result = await this.authHelper.verifyEncryptedHashTokenPair<{ email: string }>(verificationToken, this.configService.getOrThrow('EMAIL_VERIFICATION_SECRET'));
+    if (result?.error || !result?.payload?.email) {
+      if (result.error instanceof TokenExpiredError) throw new BadRequestException('OTP has been expired');
+      throw new BadRequestException(result.error?.message || 'Invalid token');
+    };
+
+    return { message: "VALID TOKEN" };
   }
 
   async register(registerDto: RegisterDto) {
@@ -136,7 +138,7 @@ export class AuthService extends BaseRepository {
         ...registerDto,
       })
 
-      await this.accountsRepo.save(foundAccount);
+      await this.getRepository(Account).save(foundAccount);
 
       return await this.authHelper.sendConfirmationEmail(foundAccount);
     }
@@ -146,7 +148,7 @@ export class AuthService extends BaseRepository {
       ...registerDto,
       prevPasswords: [bcrypt.hashSync(registerDto.password, PASSWORD_SALT_COUNT)],
     });
-    await this.accountsRepo.save(newAccount);
+    await this.getRepository(Account).save(newAccount);
 
     return await this.authHelper.sendConfirmationEmail(newAccount);
   }
@@ -157,7 +159,16 @@ export class AuthService extends BaseRepository {
 
     const account = await this.accountsRepo.findOne({
       where: { id: req.accountId, refreshTokens: Like(`%${oldRefreshToken}%`) },
-      select: { id: true, email: true, role: true, refreshTokens: true, password: true, verifiedAt: true }, // TODO: password and verifiedAt is selected for entity listener
+      relations: { branch: true },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        refreshTokens: true,
+        password: true,
+        verifiedAt: true,
+        branch: { id: true } // necessary for jwt access token
+      }, // TODO: password and verifiedAt is selected for entity listener
     }); // accountId is validated in the refresh token guard
     if (!account) throw new UnauthorizedException('Invalid refresh token');
 
@@ -166,7 +177,7 @@ export class AuthService extends BaseRepository {
     const newRefreshTokenArray = account.refreshTokens?.filter((rt) => rt !== oldRefreshToken);
     account.refreshTokens = [...newRefreshTokenArray, refresh_token];
 
-    await this.accountsRepo.save(account);
+    await this.getRepository(Account).save(account);
 
     return reply
       .setCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME, refresh_token, this.getRefreshCookieOptions())
@@ -185,14 +196,14 @@ export class AuthService extends BaseRepository {
     const newRefreshTokenArray = account.refreshTokens?.filter((rt) => rt !== refreshToken);
     account.refreshTokens = newRefreshTokenArray;
 
-    await this.accountsRepo.save(account);
+    await this.getRepository(Account).save(account);
 
     return reply.clearCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME, this.getRefreshCookieOptions()).status(HttpStatus.NO_CONTENT).send();
   }
 
   async changePassword(changePasswordDto: ChangePasswordDto, currentUser: AuthUser) {
     const account = await this.authHelper.validateAccount(currentUser.email, changePasswordDto.oldPassword);
-    if (!account.verifiedAt) throw new ForbiddenException();
+    if (!(account instanceof Account)) return account; // this can be a message after sending mail to unverified user
 
     // check if the new password is
     for (const prevPassword of account.prevPasswords) {
@@ -211,7 +222,7 @@ export class AuthService extends BaseRepository {
       account.prevPasswords.shift(); // remove the oldest one, index [0]
     }
 
-    await this.accountsRepo.save(account);
+    await this.getRepository(Account).save(account);
 
     return {
       message: "Password changed"
@@ -219,7 +230,10 @@ export class AuthService extends BaseRepository {
   }
 
   async forgotPassword(email: string) {
-    const foundAccount = await this.accountsRepo.findOneBy({ email });
+    const foundAccount = await this.accountsRepo.findOne({
+      where: { email, verifiedAt: Not(IsNull()) },
+      select: { id: true, email: true, firstName: true, lastName: true },
+    });
     if (!foundAccount) throw new NotFoundException('Account not found');
 
     const [resetToken, hashedResetToken] = await this.authHelper.getEncryptedHashTokenPair(
@@ -244,8 +258,12 @@ export class AuthService extends BaseRepository {
 
     await this.passwordChangeRequestRepo.save(changeRequest);
 
-    // send reset password link
-    this.eventEmitter.emit(MailEvents.RESET_PASSWORD, new ResetPasswordMailEventDto(foundAccount, resetToken));
+    // send reset password link mail
+    this.eventEmitter.emit(MailEvents.RESET_PASSWORD, new ResetPasswordMailEventDto({
+      receiverEmail: foundAccount.email,
+      receiverName: `${foundAccount.firstName} ${foundAccount.lastName}`,
+      token: resetToken
+    }));
 
     return {
       message: `Link is valid for ${Number(this.configService.getOrThrow('FORGOT_PASSWORD_EXPIRATION_SEC')) / 60} minutes`,
@@ -308,7 +326,7 @@ export class AuthService extends BaseRepository {
       account.prevPasswords.shift(); // remove the oldest one, index [0]
     }
 
-    await this.accountsRepo.save(account);
+    await this.getRepository(Account).save(account);
 
     // clear the reset token from the database
     await this.passwordChangeRequestRepo.remove(passwordChangeRequest);
@@ -326,7 +344,7 @@ export class AuthService extends BaseRepository {
 
     account.email = updateEmailDto.newEmail;
 
-    await this.accountsRepo.save(account);
+    await this.getRepository(Account).save(account);
 
     return {
       message: 'Email updated'

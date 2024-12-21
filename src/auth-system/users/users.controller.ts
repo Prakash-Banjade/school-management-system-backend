@@ -1,4 +1,4 @@
-import { Controller, Get, Body, Patch, Param, Delete, Query, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Body, Patch, Param, Delete, Query, UseInterceptors, Post } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersQueryDto } from './dto/user-query.dto';
@@ -7,6 +7,7 @@ import { CurrentUser } from 'src/common/decorators/user.decorator';
 import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
+import { CreateUserDto } from './dto/create-user.dto';
 
 @ApiExcludeController()
 @ApiTags("Users")
@@ -14,10 +15,12 @@ import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 export class UsersController {
   constructor(private readonly usersService: UsersService) { }
 
-  // @Post()
-  // create(@Body() createUserDto: CreateUserDto) {
-  //   return this.usersService.create(createUserDto);
-  // }
+  @Post()
+  @CheckAbilities({ subject: Role.SUPER_ADMIN, action: Action.CREATE })
+  @UseInterceptors(TransactionInterceptor)
+  create(@Body() createUserDto: CreateUserDto) {
+    return this.usersService.create(createUserDto);
+  }
 
   @Get()
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
@@ -39,10 +42,5 @@ export class UsersController {
   @UseInterceptors(TransactionInterceptor)
   update(@Body() updateUserDto: UpdateUserDto, @CurrentUser() currentUser: AuthUser) {
     return this.usersService.update(updateUserDto, currentUser);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(id);
   }
 }

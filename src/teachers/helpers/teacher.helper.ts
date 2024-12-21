@@ -9,6 +9,7 @@ import { BaseRepository } from "src/common/repository/base-repository";
 import { FastifyRequest } from "fastify";
 import { REQUEST } from "@nestjs/core";
 import { ClassRoutine } from "src/class-routines/entities/class-routine.entity";
+import { AuthUser } from "src/common/types/global.type";
 
 @Injectable()
 export class TeachersHelper extends BaseRepository {
@@ -17,9 +18,10 @@ export class TeachersHelper extends BaseRepository {
         @InjectRepository(Teacher) private readonly teacherRepo: Repository<Teacher>,
     ) { super(dataSource, req); }
 
-    async getTeachersWithAttendance(queryDto: EmployeeAttendanceQueryDto) {
+    async getTeachersWithAttendance(queryDto: EmployeeAttendanceQueryDto, currentUser: AuthUser) {
         const teachersWithAttendance = await this.teacherRepo.createQueryBuilder('teacher')
             .leftJoin("teacher.account", "account")
+            .where('account.branchId = :branchId', { branchId: currentUser.branchId ?? queryDto.branchId })
             .leftJoinAndMapOne(
                 "teacher.attendance",
                 Attendance,
@@ -45,12 +47,14 @@ export class TeachersHelper extends BaseRepository {
 
     }
 
-    async getTeacherOptions(queryDto: QueryDto) {
+    async getTeacherOptions(queryDto: QueryDto, currentUser: AuthUser) {
         const teacherOptions = await this.teacherRepo.createQueryBuilder('teacher')
             .orderBy("teacher.createdAt", queryDto.order)
             .limit(queryDto.take)
             .offset(queryDto.skip)
-            .where(new Brackets(qb => {
+            .leftJoin("teacher.account", "account")
+            .where("account.branchId = :branchId", { branchId: currentUser.branchId ?? queryDto.branchId })
+            .andWhere(new Brackets(qb => {
                 if (!!queryDto.search) {
                     qb.where("LOWER(CONCAT(teacher.firstName, ' ', teacher.lastName)) LIKE LOWER(:search)", {
                         search: `%${queryDto.search}%`

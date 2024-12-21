@@ -3,12 +3,14 @@ export type AuthUser = {
     accountId: string;
     email: string;
     role: Omit<Role, Role.STUDENT>;
+    branchId: string | undefined;
 } | {
     accountId: string;
     email: string;
     role: Role.STUDENT;
     classRoomId: string;
     studentId: string;
+    branchId: string;
 }
 
 export enum Action {

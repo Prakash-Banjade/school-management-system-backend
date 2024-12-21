@@ -17,6 +17,7 @@ import { FeeStructure } from "src/finance-system/fee-management/fee-structures/e
 import { ChargeHead, EChargeHeadType } from "src/finance-system/fee-management/charge-heads/entities/charge-head.entity";
 import { FeeInvoice } from "src/finance-system/fee-management/fee-invoice/entities/fee-invoice.entity";
 import { ELedgerItemType } from "src/finance-system/fee-management/student-ledgers/entities/ledger-item.entity";
+import { AuthUser } from "src/common/types/global.type";
 
 @Injectable()
 export class StudentsHelper extends BaseRepository {
@@ -26,7 +27,7 @@ export class StudentsHelper extends BaseRepository {
         @Inject(CACHE_MANAGER) private cacheManager: Cache,
     ) { super(dataSource, req); }
 
-    async findAll(queryDto: StudentQueryDto) {
+    async findAll(queryDto: StudentQueryDto, currentUser: AuthUser) {
         const academicYearId = queryDto.academicYearId || await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
         const queryBuilder = this.studentRepo.createQueryBuilder('student')
@@ -40,8 +41,9 @@ export class StudentsHelper extends BaseRepository {
             .leftJoin('enrollments.classRoom', 'classRoom')
             .leftJoin('classRoom.parent', 'parent')
             .leftJoin('student.profileImage', 'profileImage', queryDto.onlyBasicInfo ? '1 = 0' : '1 = 1') // only basic info will not have profile image
-            .leftJoin('student.account', 'account', queryDto.onlyBasicInfo ? '1 = 0' : '1 = 1')
+            .leftJoin('student.account', 'account')
             .where("enrollments.academicYearId = :academicYearId", { academicYearId: academicYearId })
+            .andWhere("account.branchId = :branchId", { branchId: currentUser.branchId ?? queryDto.branchId })
             .andWhere(new Brackets(qb => {
                 if (queryDto.search) {
                     qb.andWhere(new Brackets(subQb => {
@@ -146,7 +148,7 @@ export class StudentsHelper extends BaseRepository {
         }
     }
 
-    async getStudentsWithAttendance(queryDto: StudentAttendanceQueryDto) {
+    async getStudentsWithAttendance(queryDto: StudentAttendanceQueryDto, currentUser: AuthUser) {
         const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
         const studentsWithAttendance = await this.studentRepo.createQueryBuilder('student')
@@ -162,6 +164,7 @@ export class StudentsHelper extends BaseRepository {
                 { attendanceDate: queryDto.date }
             )
             .where("enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
+            .andWhere('account.branchId = :branchId', { branchId: currentUser.branchId ?? queryDto.branchId })
             .andWhere(new Brackets((qb) => {
                 queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId OR parent.id = :classRoomId', { classRoomId: queryDto.classRoomId });
                 queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId });
@@ -183,13 +186,14 @@ export class StudentsHelper extends BaseRepository {
 
     }
 
-    async getPastStudents(queryDto: PastStudentsQueryDto) {
+    async getPastStudents(queryDto: PastStudentsQueryDto, currentUser: AuthUser) {
         const queryBuilder = this.studentRepo.createQueryBuilder('student')
             .offset(queryDto.skipPagination ? undefined : queryDto.skip)
             .limit(queryDto.skipPagination ? undefined : queryDto.take)
             .orderBy('student.rollNo', 'ASC')
             .leftJoin('student.classRoom', 'classRoom')
             .leftJoin('classRoom.parent', 'parent')
+            .leftJoin('student.account', 'account')
             .leftJoin(
                 // Subquery to get the latest enrollment using ROW_NUMBER
                 qb => qb
@@ -201,6 +205,7 @@ export class StudentsHelper extends BaseRepository {
                 'latestEnrollment',
                 'latestEnrollment.studentId = student.id AND latestEnrollment.rowNumber = 1' // Filter to only include the latest enrollment
             )
+            .where('account.branchId = :branchId', { branchId: currentUser.branchId ?? queryDto.branchId })
             .andWhere(new Brackets(qb => {
                 if (queryDto.search) {
                     qb.andWhere(new Brackets(subQb => {
@@ -232,7 +237,7 @@ export class StudentsHelper extends BaseRepository {
         return paginatedRawData(queryDto, queryBuilder);
     }
 
-    async getFeeStudent(studentId: string) {
+    async getFeeStudent(studentId: string, currentUser: AuthUser) {
         const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
         const student = await this.studentRepo.createQueryBuilder('student')
@@ -242,7 +247,9 @@ export class StudentsHelper extends BaseRepository {
             .leftJoin("student.profileImage", "profileImage")
             .leftJoin("student.routeStop", "routeStop")
             .leftJoin("enrollments.ledger", "ledger")
+            .leftJoin("student.account", "account")
             .where("student.studentId = :studentId", { studentId })
+            .andWhere('account.branchId = :branchId', { branchId: currentUser.branchId })
             .select([
                 "student.id AS id",
                 "student.studentId AS studentId",

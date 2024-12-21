@@ -1,4 +1,4 @@
-import { Injectable, Logger, LoggerService } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createTransport, Transporter } from 'nodemailer';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
@@ -21,17 +21,17 @@ export enum MailEvents {
 
 @Injectable()
 export class MailService {
-    private readonly loggerService: LoggerService;
     private readonly transport: Transporter<SMTPTransport.SentMessageInfo>;
     private readonly email: string;
     private readonly domain: string;
     private readonly templates: ITemplates;
+    private readonly backendDomain: string;
 
     constructor(private readonly configService: ConfigService) {
         this.transport = createTransport(emailConfig);
         this.email = `"SMS Backend" <${emailConfig.auth.user}>`;
-        this.domain = this.configService.get<string>('CLIENT_URL');
-        this.loggerService = new Logger(MailService.name);
+        this.domain = this.configService.getOrThrow<string>('CLIENT_URL');
+        this.backendDomain = this.configService.getOrThrow<string>('BACKEND_URL');
 
         this.templates = {
             confirmation: MailService.parseTemplate('email-verification-otp.hbs'),
@@ -71,43 +71,45 @@ export class MailService {
 
     @OnEvent(MailEvents.CONFIRMATION)
     public async sendConfirmationEmail(dto: ConfirmationMailEventDto) {
-        const { email, firstName, lastName } = dto.account;
         const subject = 'Confirm your email';
         const html = this.templates.confirmation({
-            name: firstName + ' ' + lastName,
-            link: `${this.domain}/auth/confirm/${dto.token}`,
-            otp: String(dto.otp),
+            ...dto,
+            link: `${this.domain}/auth/confirm-email/${dto.token}`,
+            clientUrl: this.domain,
+            schoolName: thisSchool.name,
+            schoolAddress: thisSchool.address,
+            schoolLogo: `${this.backendDomain}/logo.webp`,
         });
-        this.sendEmail(email, subject, html);
+        this.sendEmail(dto.receiverEmail, subject, html);
     }
 
     @OnEvent(MailEvents.USER_CREDENTIALS)
     public async sendUserCredentials(dto: UserCredentialsEventDto) {
-        const subject = 'SMS Credentials';
+        const subject = 'Login Credentials';
         const html = this.templates.userCredentials({
             ...dto,
+            clientUrl: this.domain,
             schoolName: thisSchool.name,
             schoolAddress: thisSchool.address,
-            schoolLogo: thisSchool.logo,
-            clientUrl: this.configService.get<string>('CLIENT_URL'),
+            schoolLogo: `${this.backendDomain}/logo.webp`,
         });
         this.sendEmail(dto.email, subject, html);
     }
 
     @OnEvent(MailEvents.RESET_PASSWORD)
     public async sendResetPasswordLink(dto: ResetPasswordMailEventDto) {
-        const { email, firstName, lastName } = dto.account;
+        const { receiverEmail, receiverName } = dto;
         const subject = 'Reset your password';
         const html = this.templates.resetPassword({
-            name: firstName + ' ' + lastName,
+            name: receiverName,
             resetLink: `${this.domain}/auth/reset-password/${dto.token}`,
             clientUrl: this.domain,
             schoolName: thisSchool.name,
             schoolAddress: thisSchool.address,
-            schoolLogo: thisSchool.logo,
+            schoolLogo: `${this.backendDomain}/logo.webp`,
         });
         this.sendEmail(
-            email,
+            receiverEmail,
             subject,
             html,
         );

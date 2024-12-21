@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import { PageOptionsDto } from "./pageOptions.dto";
-import { IsBoolean, IsEnum, IsOptional, IsString } from "class-validator";
+import { IsBoolean, IsEnum, IsOptional, IsString, IsUUID } from "class-validator";
 import { Transform } from "class-transformer";
 
 export enum Deleted {
@@ -30,4 +30,14 @@ export class QueryDto extends PageOptionsDto {
     @IsBoolean()
     @Transform(({ value }) => value === 'true')
     onlyBasicInfo?: boolean = false;
+
+    @ApiPropertyOptional({ type: String, format: 'uuid', description: 'Academic year id' })
+    @IsUUID()
+    @IsOptional()
+    academicYearId?: string;
+
+    @ApiPropertyOptional({ type: String, format: 'uuid', description: 'Branch id' })
+    @IsUUID()
+    @IsOptional()
+    branchId?: string;
 }

@@ -21,7 +21,6 @@ import { EnrollmentsModule } from './enrollments/enrollments.module';
 import { ExaminationSystemModule } from './examination-system/examination-system.module';
 import { GuardiansModule } from './guardians/guardians.module';
 import { NoticesModule } from './notices/notices.module';
-import { RecommendationsModule } from './recommendations/recommendations.module';
 import { StaffsModule } from './staffs/staffs.module';
 import { StudentsModule } from './students/students.module';
 import { SubjectsModule } from './subjects/subjects.module';
@@ -41,6 +40,9 @@ import { OptionalSubjectModule } from './optional-subject/optional-subject.modul
 import { ScheduleModule } from '@nestjs/schedule';
 import { EventsModule } from './events/events.module';
 import { GeneralSettingsModule } from './general-settings/general-settings.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
+import { BranchesModule } from './branches/branches.module';
 
 @Module({
   imports: [
@@ -81,6 +83,9 @@ import { GeneralSettingsModule } from './general-settings/general-settings.modul
     }),
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'wwwroot'),
+    }),
     TypeOrmModule,
     AuthSystemModule,
     FileManagementModule,
@@ -97,7 +102,6 @@ import { GeneralSettingsModule } from './general-settings/general-settings.modul
     ExaminationSystemModule,
     GuardiansModule,
     NoticesModule,
-    RecommendationsModule,
     StaffsModule,
     LeaveRequestsModule,
     StudentsModule,
@@ -110,6 +114,7 @@ import { GeneralSettingsModule } from './general-settings/general-settings.modul
     OptionalSubjectModule,
     EventsModule,
     GeneralSettingsModule,
+    BranchesModule,
   ],
   controllers: [AppController],
   providers: [

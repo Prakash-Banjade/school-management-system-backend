@@ -7,7 +7,6 @@ import path from 'path';
 import fs from 'fs';
 import sharp from 'sharp';
 import { ImageQueryDto } from './dto/image-query.dto';
-import { AccountsService } from 'src/auth-system/accounts/accounts.service';
 import { AuthUser, Role } from 'src/common/types/global.type';
 import { getImageMetadata } from 'src/utils/getImageMetadata';
 import { QueryDto } from 'src/common/dto/query.dto';
@@ -16,16 +15,20 @@ import { imageSelectColumns } from './helpers/image-select-cols';
 import paginatedData from 'src/utils/paginatedData';
 import { FastifyReply } from 'fastify';
 import { isBackendUrl } from 'src/common/decorators/isUrlOrUUid.decorator';
+import { Account } from 'src/auth-system/accounts/entities/account.entity';
 
 @Injectable()
 export class ImagesService {
   constructor(
     @InjectRepository(Image) private imagesRepository: Repository<Image>,
-    private readonly accountService: AccountsService
+    @InjectRepository(Account) private accountRepository: Repository<Account>,
   ) { }
 
   async upload(createImageDto: CreateImageDto, currentUser: AuthUser) {
-    const account = await this.accountService.findOne(currentUser.accountId);
+    const account = await this.accountRepository.findOne({
+      where: { id: currentUser.accountId },
+      select: { id: true }
+    })
 
     const images: Image[] = await Promise.all(createImageDto?.images.map(async (uploadImage) => {
       const metaData = await getImageMetadata(uploadImage);

@@ -28,8 +28,8 @@ export class TeachersController {
   @Post()
   @UseInterceptors(TransactionInterceptor)
   @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
-  create(@Body() createTeacherDto: CreateTeacherDto) {
-    return this.teachersService.create(createTeacherDto);
+  create(@Body() createTeacherDto: CreateTeacherDto, @CurrentUser() currentUser: AuthUser) {
+    return this.teachersService.create(createTeacherDto, currentUser);
   }
 
   @Get()
@@ -41,19 +41,19 @@ export class TeachersController {
   findAll(@Query() queryDto: TeacherQueryDto, @CurrentUser() currentUser: AuthUser) {
     return isStudent(currentUser)
       ? this.teachersStudentViewService.findAll(queryDto, currentUser)
-      : this.teachersService.findAll(queryDto);
+      : this.teachersService.findAll(queryDto, currentUser);
   }
 
   @Get('attendances')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  getAttendance(@Query() queryDto: EmployeeAttendanceQueryDto) {
-    return this.teachersHelper.getTeachersWithAttendance(queryDto);
+  getAttendance(@Query() queryDto: EmployeeAttendanceQueryDto, @CurrentUser() currentUser: AuthUser) {
+    return this.teachersHelper.getTeachersWithAttendance(queryDto, currentUser);
   }
 
   @Get('options')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  getTeacherOptions(@Query() queryDto: QueryDto) {
-    return this.teachersHelper.getTeacherOptions(queryDto);
+  getTeacherOptions(@Query() queryDto: QueryDto, @CurrentUser() currentUser: AuthUser) {
+    return this.teachersHelper.getTeacherOptions(queryDto, currentUser);
   }
 
   @Get(':id/details') // used in single teacher page in frontend
