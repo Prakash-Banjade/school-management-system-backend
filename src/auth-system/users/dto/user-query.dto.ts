@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
-import { IsOptional } from "class-validator";
+import { IsOptional, IsString } from "class-validator";
 import { QueryDto } from "src/common/dto/query.dto";
 import { Gender, Role } from "src/common/types/global.type";
 
@@ -18,5 +18,10 @@ export class UsersQueryDto extends QueryDto {
 
     @ApiPropertyOptional({ type: 'enum', enum: Role })
     @IsOptional()
-    role: Role
+    role: Role;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    branchId?: string;
 }

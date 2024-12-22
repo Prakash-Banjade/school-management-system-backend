@@ -1,9 +1,8 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from "typeorm";
+import { Column, Entity, JoinColumn, OneToOne } from "typeorm";
 import { Gender } from "src/common/types/global.type";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { Account } from "src/auth-system/accounts/entities/account.entity";
 import { Image } from "src/file-management/images/entities/image.entity";
-import { Branch } from "src/branches/entities/branch.entity";
 
 @Entity()
 export class User extends BaseEntity {
@@ -21,5 +20,5 @@ export class User extends BaseEntity {
 
     @OneToOne(() => Account, account => account.user, { nullable: true, onDelete: 'CASCADE' })
     @JoinColumn()
-    account: Account | null;
+    account: Account;
 }

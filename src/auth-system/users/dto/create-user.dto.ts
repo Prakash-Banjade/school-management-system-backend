@@ -1,7 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsEmail, IsNotEmpty, IsOptional, IsString, IsUUID, Matches } from "class-validator";
 import { NAME_REGEX, NAME_WITH_SPACE_REGEX } from "src/common/CONSTANTS";
-import { IsUuidOrUrl } from "src/common/decorators/isUrlOrUUid.decorator";
 
 export class CreateUserDto {
     @ApiProperty()
@@ -29,9 +28,4 @@ export class CreateUserDto {
     @IsUUID()
     @IsOptional()
     branchId?: string; // there may not be any branch
-
-    @ApiPropertyOptional({ type: String, description: 'Image ID/URL' })
-    @IsUuidOrUrl()
-    @IsOptional()
-    profileImageId?: string;
 }

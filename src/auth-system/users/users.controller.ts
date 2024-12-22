@@ -23,7 +23,7 @@ export class UsersController {
   }
 
   @Get()
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @CheckAbilities({ subject: Role.SUPER_ADMIN, action: Action.READ })
   findAll(@Query() queryDto: UsersQueryDto) {
     return this.usersService.findAll(queryDto);
   }

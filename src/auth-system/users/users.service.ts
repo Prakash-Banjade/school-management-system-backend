@@ -5,9 +5,8 @@ import { REQUEST } from '@nestjs/core';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { FastifyRequest } from 'fastify';
 import { UsersQueryDto } from './dto/user-query.dto';
-import paginatedData from 'src/utils/paginatedData';
+import { paginatedRawData } from 'src/utils/paginatedData';
 import { User } from './entities/user.entity';
-import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { userSelectCols } from './helpers/user-select-cols';
 import { AuthUser } from 'src/common/types/global.type';
 import { Account } from '../accounts/entities/account.entity';
@@ -19,8 +18,7 @@ import { BranchesService } from 'src/branches/branches.service';
 @Injectable({ scope: Scope.REQUEST })
 export class UsersService extends BaseRepository {
   constructor(
-    private readonly datasource: DataSource,
-    @Inject(REQUEST) req: FastifyRequest,
+    datasource: DataSource, @Inject(REQUEST) req: FastifyRequest,
     private readonly imagesService: ImagesService,
     private readonly accountsService: AccountsService,
     private readonly branchesService: BranchesService,
@@ -29,11 +27,7 @@ export class UsersService extends BaseRepository {
   async create(createUserDto: CreateUserDto) {
     const branch = await this.branchesService.getBranch(createUserDto.branchId);
 
-    const profileImage = createUserDto.profileImageId ? await this.imagesService.findOne(createUserDto.profileImageId) : null;
-
-    const user = this.getRepository(User).create({
-      profileImage,
-    });
+    const user = this.getRepository(User).create({});
 
     await this.getRepository(User).save(user);
 
@@ -43,7 +37,7 @@ export class UsersService extends BaseRepository {
       lastName: createUserDto.lastName
     })
 
-    return { message: 'User created' }
+    return { message: 'Admin created' }
   }
 
   async findAll(queryDto: UsersQueryDto) {
@@ -51,18 +45,26 @@ export class UsersService extends BaseRepository {
 
     queryBuilder
       .orderBy("user.createdAt", queryDto.order)
-      .skip(queryDto.skip)
-      .take(queryDto.take)
-      .withDeleted()
+      .offset(queryDto.skip)
+      .limit(queryDto.take)
       .leftJoin("user.account", "account")
+      .leftJoin("account.branch", "branch")
       .leftJoin("user.profileImage", "profileImage")
-      .andWhere(new Brackets(qb => {
+      .where(new Brackets(qb => {
+        queryDto.search && qb.andWhere("LOWER(CONCAT(account.firstName, ' ', account.lastName)) LIKE :search", { search: `%${queryDto.search?.toLowerCase()?.replaceAll(' ', '%')}%` });
         queryDto.role && qb.andWhere('account.role = :role', { role: queryDto.role });
+        queryDto.branchId && qb.andWhere('branch.id = :branchId', { branchId: queryDto.branchId });
       }))
+      .select([
+        "user.id as id",
+        "profileImage.url as profileImageUrl",
+        "CONCAT(account.firstName, ' ', account.lastName) as fullName",
+        "account.email as email",
+        "account.role as role",
+        "branch.name as branchName",
+      ])
 
-    applySelectColumns(queryBuilder, userSelectCols, 'user');
-
-    return paginatedData(queryDto, queryBuilder);
+    return paginatedRawData(queryDto, queryBuilder);
   }
 
   async findOne(id: string): Promise<User> {
