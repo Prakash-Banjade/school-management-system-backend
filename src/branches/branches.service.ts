@@ -46,6 +46,16 @@ export class BranchesService extends BaseRepository {
     return paginatedData(queryDto, querybuilder);
   }
 
+  getOptions(queryDto: QueryDto) {
+    return this.getRepository(Branch).createQueryBuilder('branch')
+      .orderBy("branch.createdAt", queryDto.order)
+      .select([
+        "branch.id as value",
+        "branch.name as label"
+      ])
+      .getRawMany();
+  }
+
   async findOne(id: string) {
     const existing = await this.getRepository(Branch).findOne({
       where: { id },

@@ -3,7 +3,7 @@ import { Injectable } from "@nestjs/common";
 import { User } from "src/auth-system/users/entities/user.entity";
 import { Action, AuthUser, Role } from "src/common/types/global.type";
 
-export type Subjects = InferSubjects<typeof User | Role> | 'all'
+export type Subjects = InferSubjects<typeof User | Role>
 
 export type AppAbility = MongoAbility<[Action, Subjects]>
 
@@ -14,6 +14,7 @@ export class CaslAbilityFactory {
 
         if (user.role === Role.SUPER_ADMIN) {
             can(Action.MANAGE, Role.SUPER_ADMIN)
+            can(Action.MANAGE, Role.ADMIN)
             can(Action.MANAGE, Role.USER)
         }
         if (user.role === Role.ADMIN) {

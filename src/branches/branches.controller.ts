@@ -25,6 +25,12 @@ export class BranchesController {
     return this.branchesService.findAll(queryDto);
   }
 
+  @Get('options')
+  @CheckAbilities({ subject: Role.SUPER_ADMIN, action: Action.READ })
+  getOptions(@Query() queryDto: QueryDto) {
+    return this.branchesService.getOptions(queryDto);
+  }
+
   @Get(':id')
   @CheckAbilities({ subject: Role.SUPER_ADMIN, action: Action.READ })
   findOne(@Param('id') id: string) {

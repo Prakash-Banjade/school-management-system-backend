@@ -13,31 +13,31 @@ export class MarksGradesController {
   constructor(private readonly marksGradesService: MarksGradesService) { }
 
   @Post()
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
+  @CheckAbilities({ subject: Role.SUPER_ADMIN, action: Action.CREATE })
   create(@Body() createMarksGradeDto: CreateMarksGradeDto) {
     return this.marksGradesService.create(createMarksGradeDto);
   }
 
   @Get()
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @CheckAbilities({ subject: Role.SUPER_ADMIN, action: Action.READ })
   findAll(@Query() queryDto: QueryDto) {
     return this.marksGradesService.findAll(queryDto);
   }
 
   @Get(':id')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @CheckAbilities({ subject: Role.SUPER_ADMIN, action: Action.READ })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.marksGradesService.findOne(id);
   }
 
   // @Patch(':id')
-  // @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
+  // @CheckAbilities({ subject: Role.SUPER_ADMIN, action: Action.UPDATE })
   // update(@Param('id', ParseUUIDPipe) id: string, @Body() updateMarksGradeDto: UpdateMarksGradeDto) {
   //   return this.marksGradesService.update(id, updateMarksGradeDto);
   // }
 
   @Delete(':id')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.DELETE })
+  @CheckAbilities({ subject: Role.SUPER_ADMIN, action: Action.DELETE })
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.marksGradesService.remove(id);
   }

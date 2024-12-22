@@ -15,13 +15,13 @@ export class AcademicYearsController {
   constructor(private readonly academicYearsService: AcademicYearsService) { }
 
   @Post()
-  @CheckAbilities({ action: Action.CREATE, subject: Role.ADMIN })
+  @CheckAbilities({ action: Action.CREATE, subject: Role.SUPER_ADMIN })
   create(@Body() createAcademicYearDto: CreateAcademicYearDto) {
     return this.academicYearsService.create(createAcademicYearDto);
   }
 
   @Get()
-  @CheckAbilities({ action: Action.READ, subject: Role.ADMIN })
+  @CheckAbilities({ action: Action.READ, subject: Role.SUPER_ADMIN })
   findAll(@Query() queryDto: QueryDto) {
     return this.academicYearsService.findAll(queryDto);
   }
@@ -39,25 +39,25 @@ export class AcademicYearsController {
   }
 
   @Get(':id')
-  @CheckAbilities({ action: Action.READ, subject: Role.ADMIN })
+  @CheckAbilities({ action: Action.READ, subject: Role.SUPER_ADMIN })
   findOne(@Param('id') id: string) {
     return this.academicYearsService.findOne(id);
   }
 
   @Patch(':id/change-active')
-  @CheckAbilities({ action: Action.UPDATE, subject: Role.ADMIN })
+  @CheckAbilities({ action: Action.UPDATE, subject: Role.SUPER_ADMIN })
   udpateActive(@Param('id') id: string) {
     return this.academicYearsService.udpateActive(id);
   }
 
   @Patch(':id')
-  @CheckAbilities({ action: Action.UPDATE, subject: Role.ADMIN })
+  @CheckAbilities({ action: Action.UPDATE, subject: Role.SUPER_ADMIN })
   update(@Param('id') id: string, @Body() updateAcademicYearDto: UpdateAcademicYearDto) {
     return this.academicYearsService.update(id, updateAcademicYearDto);
   }
 
   @Delete(':id')
-  @CheckAbilities({ action: Action.DELETE, subject: Role.ADMIN })
+  @CheckAbilities({ action: Action.DELETE, subject: Role.SUPER_ADMIN })
   remove(@Param('id') id: string) {
     return this.academicYearsService.remove(id);
   }

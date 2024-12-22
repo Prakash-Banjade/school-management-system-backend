@@ -14,7 +14,7 @@ export class ExamTypesController {
   constructor(private readonly examTypesService: ExamTypesService) { }
 
   @Post()
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
+  @CheckAbilities({ subject: Role.SUPER_ADMIN, action: Action.CREATE })
   create(@Body() createExamTypeDto: CreateExamTypeDto) {
     return this.examTypesService.create(createExamTypeDto);
   }
@@ -26,25 +26,25 @@ export class ExamTypesController {
   }
 
   @Get('options')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @CheckAbilities({ subject: Role.SUPER_ADMIN, action: Action.READ })
   getOptions(@Query() queryDto: QueryDto) {
     return this.examTypesService.getOptions(queryDto);
   }
 
   @Get(':id')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @CheckAbilities({ subject: Role.SUPER_ADMIN, action: Action.READ })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.examTypesService.findOne(id);
   }
 
   @Patch(':id')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
+  @CheckAbilities({ subject: Role.SUPER_ADMIN, action: Action.UPDATE })
   update(@Param('id', ParseUUIDPipe) id: string, @Body() updateExamTypeDto: UpdateExamTypeDto) {
     return this.examTypesService.update(id, updateExamTypeDto);
   }
 
   @Delete(':id')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.DELETE })
+  @CheckAbilities({ subject: Role.SUPER_ADMIN, action: Action.DELETE })
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.examTypesService.remove(id);
   }
