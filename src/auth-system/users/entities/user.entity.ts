@@ -15,9 +15,6 @@ export class User extends BaseEntity {
     @Column({ type: 'timestamp', nullable: true })
     dob: string | null;
 
-    @OneToOne(() => Image, image => image.user_profileImage, { nullable: true })
-    profileImage: Image | null;
-
     @OneToOne(() => Account, account => account.user, { nullable: true, onDelete: 'CASCADE' })
     @JoinColumn()
     account: Account;

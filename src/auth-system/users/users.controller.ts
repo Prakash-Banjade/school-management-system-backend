@@ -29,6 +29,7 @@ export class UsersController {
   }
 
   @Get('me')
+  @CheckAbilities({ subject: Role.USER, action: Action.READ })
   getMyInfo(@CurrentUser() currentUser: AuthUser) {
     return this.usersService.myDetails(currentUser);
   }

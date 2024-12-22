@@ -95,4 +95,6 @@ export class Account extends BaseEntity {
     @OneToMany(() => LessonPlan, lessonPlan => lessonPlan.createdBy)
     createdLessonPlans: LessonPlan[];
 
+    @OneToOne(() => Image, image => image.account_profileImage, { nullable: true })
+    profileImage: Image | null;
 }

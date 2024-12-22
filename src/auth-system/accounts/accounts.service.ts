@@ -98,16 +98,6 @@ export class AccountsService extends BaseRepository {
     } as Account);
   }
 
-  async me(currentUser: AuthUser) {
-    const account = await this.getRepository(Account).findOne({
-      where: { id: currentUser.accountId },
-      select: accountSelectCols,
-    });
-    if (!account) throw new Error('Account not found');
-
-    return account;
-  }
-
   async findOne(id: string) {
     const existingAccount = await this.getRepository(Account).findOneBy({ id });
     if (!existingAccount) throw new Error('Account not found');

@@ -40,9 +40,9 @@ export class Image extends BaseEntity {
     uploadedBy!: Account
 
     // relations
-    @OneToOne(() => User, user => user.profileImage, { onDelete: 'CASCADE', nullable: true })
+    @OneToOne(() => Account, account => account.profileImage, { onDelete: 'CASCADE', nullable: true })
     @JoinColumn()
-    user_profileImage: User;
+    account_profileImage: Account;
 
     // student
     @OneToOne(() => Student, student => student.profileImage, { onDelete: 'CASCADE', nullable: true })

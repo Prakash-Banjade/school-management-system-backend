@@ -49,7 +49,7 @@ export class UsersService extends BaseRepository {
       .limit(queryDto.take)
       .leftJoin("user.account", "account")
       .leftJoin("account.branch", "branch")
-      .leftJoin("user.profileImage", "profileImage")
+      .leftJoin("account.profileImage", "profileImage")
       .where(new Brackets(qb => {
         queryDto.search && qb.andWhere("LOWER(CONCAT(account.firstName, ' ', account.lastName)) LIKE :search", { search: `%${queryDto.search?.toLowerCase()?.replaceAll(' ', '%')}%` });
         queryDto.role && qb.andWhere('account.role = :role', { role: queryDto.role });
@@ -71,7 +71,7 @@ export class UsersService extends BaseRepository {
     const existing = await this.getRepository(User).findOne({
       where: { id },
       relations: {
-        profileImage: true, account: true,
+        account: true,
       },
       select: userSelectCols,
     })
@@ -96,17 +96,36 @@ export class UsersService extends BaseRepository {
   }
 
   async myDetails(currentUser: AuthUser) {
-    return await this.getUserByAccountId(currentUser.accountId);
+    return this.getRepository(Account).createQueryBuilder('account')
+      .leftJoin('account.profileImage', 'profileImage')
+      .leftJoin('account.branch', 'branch')
+      .where('account.id = :id', { id: currentUser.accountId })
+      .select([
+        'account.id as id',
+        'account.email as email',
+        'account.firstName as firstName',
+        'account.lastName as lastName',
+        'account.role as role',
+        'profileImage.url as profileImageUrl',
+        'branch.name as branchName',
+      ])
+      .getRawOne();
   }
 
   async update(updateUserDto: UpdateUserDto, currentUser: AuthUser) {
     const existingUser = await this.getUserByAccountId(currentUser.accountId);
-    const existingAccount = await this.getRepository(Account).findOneBy({ id: currentUser.accountId });
+    const existingAccount = await this.getRepository(Account).findOne({
+      where: { id: currentUser.accountId },
+      relations: { profileImage: true },
+      select: {
+        profileImage: { id: true }
+      }
+    });
     if (!existingAccount) throw new InternalServerErrorException('Unable to update the associated profile. Please contact support.');
 
-    const profileImage = (updateUserDto.profileImageId && (existingUser.profileImage?.id !== updateUserDto.profileImageId || !existingUser.profileImage))
+    const profileImage = (updateUserDto.profileImageId && (existingAccount.profileImage?.id !== updateUserDto.profileImageId || !existingAccount.profileImage))
       ? await this.imagesService.findOne(updateUserDto.profileImageId)
-      : existingUser.profileImage;
+      : existingAccount.profileImage;
 
     // update user
     Object.assign(existingUser, {
@@ -114,13 +133,13 @@ export class UsersService extends BaseRepository {
     });
 
     // assign profile image
-    existingUser.profileImage = profileImage;
 
     await this.getRepository(User).save(existingUser);
 
     Object.assign(existingAccount, {
       firstName: updateUserDto.firstName || existingAccount.firstName,
       lastName: updateUserDto.lastName,
+      profileImage
     })
 
     await this.getRepository(Account).save(existingAccount);
