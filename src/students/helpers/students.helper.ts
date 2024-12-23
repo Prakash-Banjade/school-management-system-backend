@@ -1,14 +1,11 @@
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
-import { Brackets, DataSource, Not, Repository } from "typeorm";
+import { Brackets, DataSource, Not } from "typeorm";
 import { Student } from "../entities/student.entity";
 import { PastStudentsQueryDto, StudentAttendanceQueryDto, StudentQueryDto } from "../dto/student-query.dto";
 import { CreateStudentDto } from "../dto/create-student.dto";
 import { UpdateStudentDto } from "../dto/update-student.dto";
-import { InjectRepository } from "@nestjs/typeorm";
 import { Attendance } from "src/attendances/entities/attendance.entity";
-import { Cache } from "cache-manager";
-import { CACHE_MANAGER } from "@nestjs/cache-manager";
-import { CACHE_KEYS, CHARGE_HEADS } from "src/common/CONSTANTS";
+import { CHARGE_HEADS } from "src/common/CONSTANTS";
 import { paginatedRawData } from "src/utils/paginatedData";
 import { BaseRepository } from "src/common/repository/base-repository";
 import { REQUEST } from "@nestjs/core";
@@ -17,22 +14,20 @@ import { FeeStructure } from "src/finance-system/fee-management/fee-structures/e
 import { ChargeHead, EChargeHeadType } from "src/finance-system/fee-management/charge-heads/entities/charge-head.entity";
 import { FeeInvoice } from "src/finance-system/fee-management/fee-invoice/entities/fee-invoice.entity";
 import { ELedgerItemType } from "src/finance-system/fee-management/student-ledgers/entities/ledger-item.entity";
-import { AuthUser } from "src/common/types/global.type";
 import { isUUID } from "class-validator";
-import applyBranchFilter from "src/utils/apply-branch-filter";
+import { UtilitiesService } from "src/utilities/utilities.service";
 
 @Injectable()
 export class StudentsHelper extends BaseRepository {
     constructor(
-        dataSource: DataSource, @Inject(REQUEST) private req: FastifyRequest,
-        @InjectRepository(Student) private readonly studentRepo: Repository<Student>,
-        @Inject(CACHE_MANAGER) private cacheManager: Cache,
+        dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
+        private readonly utilitiesService: UtilitiesService,
     ) { super(dataSource, req); }
 
-    async findAll(queryDto: StudentQueryDto, currentUser: AuthUser) {
-        const academicYearId = queryDto.academicYearId || await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+    async findAll(queryDto: StudentQueryDto) {
+        const academicYearId = queryDto.academicYearId || await this.utilitiesService.getAcademicYearId();
 
-        const queryBuilder = this.studentRepo.createQueryBuilder('student')
+        const queryBuilder = this.getRepository(Student).createQueryBuilder('student')
             .offset(queryDto.skipPagination ? undefined : queryDto.skip)
             .limit(queryDto.skipPagination ? undefined : queryDto.take)
             .addSelect("CONCAT(student.firstName, ' ', student.lastName) AS fullName")
@@ -66,7 +61,7 @@ export class StudentsHelper extends BaseRepository {
                 ] : this.getStudentsSelectCols(queryDto.onlyBasicInfo)
             );
 
-        applyBranchFilter(queryBuilder, currentUser.branchId ?? queryDto.branchId);
+        this.utilitiesService.applyBranchFilter(queryBuilder);
 
         return paginatedRawData(queryDto, queryBuilder);
     }
@@ -104,7 +99,7 @@ export class StudentsHelper extends BaseRepository {
     async checkIfStudentExists(studentDto: CreateStudentDto | UpdateStudentDto, student?: Student) {
         const { rollNo, email, bankAccountNumber, nationalIdCardNo } = studentDto;
 
-        const existingStudent = await this.studentRepo.createQueryBuilder('student')
+        const existingStudent = await this.getRepository(Student).createQueryBuilder('student')
             .where(new Brackets(qb => {
                 qb.where([
                     { email },
@@ -125,10 +120,10 @@ export class StudentsHelper extends BaseRepository {
         }
     }
 
-    async getStudentsWithAttendance(queryDto: StudentAttendanceQueryDto, currentUser: AuthUser) {
-        const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+    async getStudentsWithAttendance(queryDto: StudentAttendanceQueryDto) {
+        const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
 
-        const queryBuilder = this.studentRepo.createQueryBuilder('student')
+        const queryBuilder = this.getRepository(Student).createQueryBuilder('student')
             .leftJoin("student.enrollments", "enrollments")
             .leftJoin("student.account", "account")
             .leftJoin("enrollments.classRoom", "classRoom")
@@ -157,13 +152,13 @@ export class StudentsHelper extends BaseRepository {
             ])
             .orderBy("student.rollNo", "ASC")
 
-        const studentsWithAttendance = await applyBranchFilter(queryBuilder, currentUser.branchId ?? queryDto.branchId).getMany();
+        const studentsWithAttendance = await this.utilitiesService.applyBranchFilter(queryBuilder).getMany();
 
         return studentsWithAttendance;
     }
 
-    async getPastStudents(queryDto: PastStudentsQueryDto, currentUser: AuthUser) {
-        const queryBuilder = this.studentRepo.createQueryBuilder('student')
+    async getPastStudents(queryDto: PastStudentsQueryDto) {
+        const queryBuilder = this.getRepository(Student).createQueryBuilder('student')
             .offset(queryDto.skipPagination ? undefined : queryDto.skip)
             .limit(queryDto.skipPagination ? undefined : queryDto.take)
             .orderBy('student.rollNo', 'ASC')
@@ -207,16 +202,16 @@ export class StudentsHelper extends BaseRepository {
                 "latestEnrollment.id AS enrollmentId",
             ]);
 
-        applyBranchFilter(queryBuilder, currentUser.branchId ?? queryDto.branchId);
+        this.utilitiesService.applyBranchFilter(queryBuilder);
 
         return paginatedRawData(queryDto, queryBuilder);
     }
 
-    async getFeeStudent(studentId: string, currentUser: AuthUser) {
-        const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+    async getFeeStudent(studentId: string) {
+        const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
         const isPk = isUUID(studentId); // this is done to check if the studentId is a uuid, pk has indexing
 
-        const studentQueryBuilder = this.studentRepo.createQueryBuilder('student')
+        const studentQueryBuilder = this.getRepository(Student).createQueryBuilder('student')
             .leftJoin("student.enrollments", "enrollments", "enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
             .leftJoin('enrollments.classRoom', 'classRoom')
             .leftJoin("classRoom.parent", "parent")
@@ -247,7 +242,7 @@ export class StudentsHelper extends BaseRepository {
             .addGroupBy('enrollments.oneTimeChargeIds')
             .addGroupBy('ledger.id')
 
-        const student = await applyBranchFilter(studentQueryBuilder, currentUser.branchId).getRawOne();
+        const student = await this.utilitiesService.applyBranchFilter(studentQueryBuilder).getRawOne();
 
         if (!student || !student.classRoomName) throw new NotFoundException('Student not found');
         if (!student.ledgerId) throw new InternalServerErrorException('Ledger associated with student not found');

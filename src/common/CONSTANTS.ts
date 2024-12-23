@@ -45,5 +45,5 @@ export const thisSchool = {
 
 export const enum CookieKey {
     BRANCH_ID = 'branchId',
-    ACADEMICYEAR_ID = 'academicYearId',
+    ACADEMIC_YEAR_ID = 'academicYearId',
 }

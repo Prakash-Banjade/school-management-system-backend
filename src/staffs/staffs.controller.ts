@@ -6,11 +6,10 @@ import { StaffQueryDto } from './dto/staff-query.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ApiPaginatedResponse } from 'src/common/decorators/apiPaginatedResponse.decorator';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action, AuthUser, Role } from 'src/common/types/global.type';
+import { Action, Role } from 'src/common/types/global.type';
 import { StaffsHelper } from './helpers/staffs.helper';
 import { EmployeeAttendanceQueryDto } from 'src/teachers/dto/employee-attendance-query.dto';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
-import { CurrentUser } from 'src/common/decorators/user.decorator';
 
 @ApiBearerAuth()
 @ApiTags("Staffs")
@@ -24,40 +23,40 @@ export class StaffsController {
   @Post()
   @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
   @UseInterceptors(TransactionInterceptor)
-  create(@Body() createStaffDto: CreateStaffDto, @CurrentUser() currentUser: AuthUser) {
-    return this.staffsService.create(createStaffDto, currentUser);
+  create(@Body() createStaffDto: CreateStaffDto) {
+    return this.staffsService.create(createStaffDto);
   }
 
   @Get()
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   @ApiPaginatedResponse(CreateStaffDto)
-  findAll(@Query() queryDto: StaffQueryDto, @CurrentUser() currentUser: AuthUser) {
-    return this.staffsService.findAll(queryDto, currentUser);
+  findAll(@Query() queryDto: StaffQueryDto) {
+    return this.staffsService.findAll(queryDto);
   }
 
   @Get('options')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   @ApiPaginatedResponse(CreateStaffDto)
-  getOptions(@Query() queryDto: StaffQueryDto, @CurrentUser() currentUser: AuthUser) {
-    return this.staffsService.getOptions(queryDto, currentUser);
+  getOptions(@Query() queryDto: StaffQueryDto) {
+    return this.staffsService.getOptions(queryDto);
   }
 
   @Get('attendances')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  getAttendance(@Query() queryDto: EmployeeAttendanceQueryDto, @CurrentUser() currentUser: AuthUser) {
-    return this.staffsHelper.getStaffsWithAttendance(queryDto, currentUser);
+  getAttendance(@Query() queryDto: EmployeeAttendanceQueryDto) {
+    return this.staffsHelper.getStaffsWithAttendance(queryDto);
   }
 
   @Get(':id')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  findOne(@Param('id') id: string, @CurrentUser() currentUser: AuthUser) {
-    return this.staffsService.findOne(id, currentUser);
+  findOne(@Param('id') id: string) {
+    return this.staffsService.findOne(id);
   }
 
   @Patch(':id')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
   @UseInterceptors(TransactionInterceptor)
-  update(@Param('id') id: string, @Body() updateStaffDto: UpdateStaffDto, @CurrentUser() currentUser: AuthUser) {
-    return this.staffsService.update(id, updateStaffDto, currentUser);
+  update(@Param('id') id: string, @Body() updateStaffDto: UpdateStaffDto) {
+    return this.staffsService.update(id, updateStaffDto);
   }
 }

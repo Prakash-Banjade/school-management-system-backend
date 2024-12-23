@@ -12,9 +12,8 @@ import { StaffQueryDto } from './dto/staff-query.dto';
 import paginatedData from 'src/utils/paginatedData';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { staffsColumnsConfig } from './helpers/staff-select-cols.config';
-import { AuthUser } from 'src/common/types/global.type';
 import { SalaryStructure } from 'src/finance-system/salary-management/salary-structures/entities/salary-structure.entity';
-import applyBranchFilter from 'src/utils/apply-branch-filter';
+import { UtilitiesService } from 'src/utilities/utilities.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class StaffsService extends BaseRepository {
@@ -22,11 +21,12 @@ export class StaffsService extends BaseRepository {
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
     private readonly imageService: ImagesService,
     private readonly accountsService: AccountsService,
+    private readonly utilitiesService: UtilitiesService,
   ) {
     super(dataSource, req);
   }
 
-  async create(createStaffDto: CreateStaffDto, currentUser: AuthUser) {
+  async create(createStaffDto: CreateStaffDto) {
     // check if staff already exists
     await this.checkIfStaffExists(createStaffDto);
 
@@ -45,12 +45,12 @@ export class StaffsService extends BaseRepository {
     const savedStaff = await this.getRepository(Staff).save(staff);
 
     // create account
-    await this.accountsService.createAccount(savedStaff, currentUser);
+    await this.accountsService.createAccount(savedStaff);
 
     return { message: 'Staff created' }
   }
 
-  async findAll(queryDto: StaffQueryDto, currentUser: AuthUser) {
+  async findAll(queryDto: StaffQueryDto) {
     const queryBuilder = this.getRepository(Staff).createQueryBuilder('staff');
 
     queryBuilder
@@ -70,12 +70,12 @@ export class StaffsService extends BaseRepository {
       }))
 
     applySelectColumns(queryBuilder, staffsColumnsConfig, 'staff');
-    applyBranchFilter(queryBuilder, currentUser.branchId ?? queryDto.branchId);
+    this.utilitiesService.applyBranchFilter(queryBuilder);
 
     return paginatedData(queryDto, queryBuilder);
   }
 
-  async getOptions(queryDto: StaffQueryDto, currentUser: AuthUser) {
+  async getOptions(queryDto: StaffQueryDto) {
     const queryBuilder = this.getRepository(Staff).createQueryBuilder('staff')
       .orderBy("staff.createdAt", queryDto.order)
       .leftJoin("staff.account", "account")
@@ -87,16 +87,16 @@ export class StaffsService extends BaseRepository {
         "CONCAT(staff.firstName, ' ', staff.lastName) as label",
       ]);
 
-    applyBranchFilter(queryBuilder, currentUser.branchId ?? queryDto.branchId);
+    this.utilitiesService.applyBranchFilter(queryBuilder);
 
     return queryBuilder.getRawMany();
   }
 
-  async findOne(id: string, currentUser: AuthUser) {
+  async findOne(id: string) {
     const existingStaff = await this.getRepository(Staff).findOne({
       where: {
         id,
-        account: { branch: { id: currentUser.branchId } }
+        account: { branch: { id: this.utilitiesService.getBranchId() } }
       },
       relations: {
         profileImage: true,
@@ -116,8 +116,8 @@ export class StaffsService extends BaseRepository {
     return existingStaff;
   }
 
-  async update(id: string, updateStaffDto: UpdateStaffDto, currentUser: AuthUser) {
-    const existingStaff = await this.findOne(id, currentUser);
+  async update(id: string, updateStaffDto: UpdateStaffDto) {
+    const existingStaff = await this.findOne(id);
     await this.checkIfStaffExists(updateStaffDto, existingStaff);
 
     // evaluate profile image

@@ -13,9 +13,7 @@ import { FastifyRequest } from 'fastify';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import paginatedData from 'src/utils/paginatedData';
 import { SalaryStructure } from 'src/finance-system/salary-management/salary-structures/entities/salary-structure.entity';
-import { AuthUser } from 'src/common/types/global.type';
-import applyBranchFilter from 'src/utils/apply-branch-filter';
-
+import { UtilitiesService } from 'src/utilities/utilities.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class TeachersService extends BaseRepository {
@@ -23,11 +21,12 @@ export class TeachersService extends BaseRepository {
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
     private readonly imageService: ImagesService,
     private readonly accountsService: AccountsService,
+    private readonly utilitiesService: UtilitiesService,
   ) {
     super(dataSource, req);
   }
 
-  async create(createTeacherDto: CreateTeacherDto, currentUser: AuthUser) {
+  async create(createTeacherDto: CreateTeacherDto) {
     // check if teacher already exists
     await this.checkIfTeacherExists(createTeacherDto);
 
@@ -47,12 +46,12 @@ export class TeachersService extends BaseRepository {
     const savedTeacher = await this.getRepository(Teacher).save(teacher);
 
     // create account
-    await this.accountsService.createAccount(savedTeacher, currentUser);
+    await this.accountsService.createAccount(savedTeacher);
 
     return { message: 'Teacher created' }
   }
 
-  async findAll(queryDto: TeacherQueryDto, currentUser: AuthUser) {
+  async findAll(queryDto: TeacherQueryDto) {
     const queryBuilder = this.getRepository(Teacher).createQueryBuilder('teacher');
 
     queryBuilder
@@ -71,16 +70,16 @@ export class TeachersService extends BaseRepository {
       }));
 
     applySelectColumns(queryBuilder, teachersColumnsConfig, 'teacher');
-    applyBranchFilter(queryBuilder, currentUser.branchId ?? queryDto.branchId);
+    this.utilitiesService.applyBranchFilter(queryBuilder);
 
     return paginatedData(queryDto, queryBuilder);
   }
 
-  async findOne(id: string, currentUser: AuthUser) {
+  async findOne(id: string) {
     const existingTeacher = await this.getRepository(Teacher).findOne({
       where: {
         id,
-        account: { branch: { id: currentUser.branchId } }
+        account: { branch: { id: this.utilitiesService.getBranchId() } }
       },
       relations: {
         profileImage: true,
@@ -102,8 +101,8 @@ export class TeachersService extends BaseRepository {
     return existingTeacher;
   }
 
-  async update(id: string, updateTeacherDto: UpdateTeacherDto, currentUser: AuthUser) {
-    const existingTeacher = await this.findOne(id, currentUser);
+  async update(id: string, updateTeacherDto: UpdateTeacherDto) {
+    const existingTeacher = await this.findOne(id);
 
     // check if teacher already exists
     await this.checkIfTeacherExists(updateTeacherDto, existingTeacher);

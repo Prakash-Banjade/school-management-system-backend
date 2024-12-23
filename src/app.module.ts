@@ -43,6 +43,7 @@ import { GeneralSettingsModule } from './general-settings/general-settings.modul
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { BranchesModule } from './branches/branches.module';
+import { UtilitiesModule } from './utilities/utilities.module';
 
 @Module({
   imports: [
@@ -115,6 +116,7 @@ import { BranchesModule } from './branches/branches.module';
     EventsModule,
     GeneralSettingsModule,
     BranchesModule,
+    UtilitiesModule,
   ],
   controllers: [AppController],
   providers: [

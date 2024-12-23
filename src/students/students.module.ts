@@ -1,8 +1,6 @@
 import { Module } from '@nestjs/common';
 import { StudentsService } from './students.service';
 import { StudentsController } from './students.controller';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { Student } from './entities/student.entity';
 import { DormitoryRoomsModule } from 'src/dormitory-system/dormitory-rooms/dormitory-rooms.module';
 import { ImagesModule } from 'src/file-management/images/images.module';
 import { AccountsModule } from 'src/auth-system/accounts/accounts.module';
@@ -12,9 +10,6 @@ import { RouteStopsModule } from 'src/transportation-system/route-stops/route-st
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      Student,
-    ]),
     ImagesModule,
     AccountsModule,
     DormitoryRoomsModule,
