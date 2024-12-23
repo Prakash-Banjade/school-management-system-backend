@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, ForbiddenException, HttpStatus, Inject, Injectable, InternalServerErrorException, NotFoundException, Scope, UnauthorizedException } from '@nestjs/common';
-import { DataSource, IsNull, Like, Not } from 'typeorm';
+import { DataSource, IsNull, Not } from 'typeorm';
 import { PasswordChangeRequest } from './entities/password-change-request.entity';
 import { EmailVerificationPending } from './entities/email-verification-pending.entity';
 import { BaseRepository } from 'src/common/repository/base-repository';
@@ -25,6 +25,7 @@ import { ResetPasswordMailEventDto, UserCredentialsEventDto } from 'src/mail/dto
 import { TokenExpiredError } from '@nestjs/jwt';
 import { IVerifyEncryptedHashTokenPairReturn } from './helpers/interface';
 import { generateRandomPassword } from 'src/utils/generatePassword';
+import { RefreshTokenService } from './helpers/refresh-tokens.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AuthService extends BaseRepository {
@@ -34,7 +35,8 @@ export class AuthService extends BaseRepository {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly authHelper: AuthHelper,
-    private readonly eventEmitter: EventEmitter2
+    private readonly eventEmitter: EventEmitter2,
+    private readonly refreshTokenService: RefreshTokenService,
   ) { super(datasource, req) }
 
   private readonly accountsRepo = this.datasource.getRepository<Account>(Account)
@@ -49,6 +51,9 @@ export class AuthService extends BaseRepository {
     if (!(data instanceof Account)) return data; // this can be a message after sending mail to unverified user
 
     const foundAccount = data;
+    this.refreshTokenService.setEmail(signInDto.email);
+
+    let refreshTokens = await this.refreshTokenService.getRefreshTokens();
 
     const { access_token, refresh_token } = await this.jwtService.getAuthTokens(foundAccount);
 
@@ -56,17 +61,17 @@ export class AuthService extends BaseRepository {
       const { value: existingRefreshToken, valid } = req.unsignCookie(existingRefreshCookie);
 
       const newRefreshTokenArray = valid
-        ? (foundAccount?.refreshTokens?.filter((rt) => rt !== existingRefreshToken) ?? [])
-        : (foundAccount.refreshTokens ?? [])
+        ? (refreshTokens?.filter((rt) => rt !== existingRefreshToken) ?? [])
+        : (refreshTokens ?? [])
 
       if (existingRefreshToken) reply.clearCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME, this.getRefreshCookieOptions()); // CLEAR COOKIE, BCZ A NEW ONE IS TO BE GENERATED
 
-      foundAccount.refreshTokens = [...newRefreshTokenArray];
+      refreshTokens = [...newRefreshTokenArray];
     }
 
-    foundAccount.refreshTokens = [...(foundAccount.refreshTokens ?? []), refresh_token];
+    refreshTokens = [...(refreshTokens ?? []), refresh_token];
 
-    await this.getRepository(Account).save(foundAccount);
+    await this.refreshTokenService.setRefreshTokens(refreshTokens);
 
     return reply
       .setCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME, refresh_token, this.getRefreshCookieOptions())
@@ -156,28 +161,25 @@ export class AuthService extends BaseRepository {
   async refresh(req: FastifyRequest, reply: FastifyReply): Promise<{ access_token: string }> {
     reply.clearCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME, this.getRefreshCookieOptions()); // a new refresh token is to be generated
     const oldRefreshToken = req.unsignCookie(req.cookies[Tokens.REFRESH_TOKEN_COOKIE_NAME])?.value;
+    this.refreshTokenService.setEmail(req.user?.email);
 
     const account = await this.accountsRepo.findOne({
-      where: { id: req.accountId, refreshTokens: Like(`%${oldRefreshToken}%`) },
+      where: { id: req.accountId },
       relations: { branch: true },
       select: {
         id: true,
         email: true,
         role: true,
-        refreshTokens: true,
-        password: true,
-        verifiedAt: true,
         branch: { id: true } // necessary for jwt access token
-      }, // TODO: password and verifiedAt is selected for entity listener
+      },
     }); // accountId is validated in the refresh token guard
     if (!account) throw new UnauthorizedException('Invalid refresh token');
 
     const { access_token, refresh_token } = await this.jwtService.getAuthTokens(account);
 
-    const newRefreshTokenArray = account.refreshTokens?.filter((rt) => rt !== oldRefreshToken);
-    account.refreshTokens = [...newRefreshTokenArray, refresh_token];
+    const refreshTokens = await this.refreshTokenService.getRefreshTokens();
 
-    await this.getRepository(Account).save(account);
+    await this.refreshTokenService.setRefreshTokens(refreshTokens?.filter((rt) => rt !== oldRefreshToken));
 
     return reply
       .setCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME, refresh_token, this.getRefreshCookieOptions())
@@ -190,13 +192,11 @@ export class AuthService extends BaseRepository {
   async logout(req: FastifyRequest, reply: FastifyReply) {
     const refreshToken = req.unsignCookie(req.cookies[Tokens.REFRESH_TOKEN_COOKIE_NAME])?.value; // validated from refreshtoken guard
 
-    const account = await this.accountsRepo.findOneBy({ id: req.accountId, refreshTokens: Like(`%${refreshToken}%`) });
-    if (!account) throw new UnauthorizedException('Invalid refresh token');
+    this.refreshTokenService.setEmail(req.user?.email);
+    const refreshTokens = await this.refreshTokenService.getRefreshTokens();
 
-    const newRefreshTokenArray = account.refreshTokens?.filter((rt) => rt !== refreshToken);
-    account.refreshTokens = newRefreshTokenArray;
-
-    await this.getRepository(Account).save(account);
+    const newRefreshTokenArray: string[] | undefined = refreshTokens?.filter((rt) => rt !== refreshToken);
+    await this.refreshTokenService.setRefreshTokens(newRefreshTokenArray);
 
     return reply.clearCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME, this.getRefreshCookieOptions()).status(HttpStatus.NO_CONTENT).send();
   }
