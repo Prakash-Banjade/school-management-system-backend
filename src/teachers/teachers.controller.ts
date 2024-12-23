@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Query, UseInterceptors, ParseUUIDPipe } from '@nestjs/common';
 import { TeachersService } from './teachers.service';
 import { CreateTeacherDto } from './dto/create-teacher.dto';
 import { UpdateTeacherDto } from './dto/update-teacher.dto';
@@ -11,9 +11,9 @@ import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { EmployeeAttendanceQueryDto } from './dto/employee-attendance-query.dto';
 import { TeachersHelper } from './helpers/teacher.helper';
 import { QueryDto } from 'src/common/dto/query.dto';
+import { TeachersStudentViewService } from './teachers.student-view.service';
 import { isStudent } from 'src/utils/isStudent';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
-import { TeachersStudentViewService } from './teachers.student-view.service';
 
 @ApiBearerAuth()
 @ApiTags('Teachers')
@@ -28,8 +28,8 @@ export class TeachersController {
   @Post()
   @UseInterceptors(TransactionInterceptor)
   @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
-  create(@Body() createTeacherDto: CreateTeacherDto, @CurrentUser() currentUser: AuthUser) {
-    return this.teachersService.create(createTeacherDto, currentUser);
+  create(@Body() createTeacherDto: CreateTeacherDto) {
+    return this.teachersService.create(createTeacherDto);
   }
 
   @Get()
@@ -41,19 +41,19 @@ export class TeachersController {
   findAll(@Query() queryDto: TeacherQueryDto, @CurrentUser() currentUser: AuthUser) {
     return isStudent(currentUser)
       ? this.teachersStudentViewService.findAll(queryDto, currentUser)
-      : this.teachersService.findAll(queryDto, currentUser);
+      : this.teachersService.findAll(queryDto);
   }
 
   @Get('attendances')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  getAttendance(@Query() queryDto: EmployeeAttendanceQueryDto, @CurrentUser() currentUser: AuthUser) {
-    return this.teachersHelper.getTeachersWithAttendance(queryDto, currentUser);
+  getAttendance(@Query() queryDto: EmployeeAttendanceQueryDto) {
+    return this.teachersHelper.getTeachersWithAttendance(queryDto);
   }
 
   @Get('options')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  getTeacherOptions(@Query() queryDto: QueryDto, @CurrentUser() currentUser: AuthUser) {
-    return this.teachersHelper.getTeacherOptions(queryDto, currentUser);
+  getTeacherOptions(@Query() queryDto: QueryDto) {
+    return this.teachersHelper.getTeacherOptions(queryDto);
   }
 
   @Get(':id/details') // used in single teacher page in frontend
@@ -79,11 +79,5 @@ export class TeachersController {
   @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
   update(@Param('id', ParseUUIDPipe) id: string, @Body() updateTeacherDto: UpdateTeacherDto) {
     return this.teachersService.update(id, updateTeacherDto);
-  }
-
-  @Delete(':id')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.DELETE })
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.teachersService.remove(id);
   }
 }
