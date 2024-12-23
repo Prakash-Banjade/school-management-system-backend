@@ -1,7 +1,7 @@
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { Brackets, DataSource, Not, Repository } from "typeorm";
 import { Student } from "../entities/student.entity";
-import { PastStudentsQueryDto, StudentAttendanceQueryDto, StudentQueryDto, StudentSortBy } from "../dto/student-query.dto";
+import { PastStudentsQueryDto, StudentAttendanceQueryDto, StudentQueryDto } from "../dto/student-query.dto";
 import { CreateStudentDto } from "../dto/create-student.dto";
 import { UpdateStudentDto } from "../dto/update-student.dto";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -18,6 +18,8 @@ import { ChargeHead, EChargeHeadType } from "src/finance-system/fee-management/c
 import { FeeInvoice } from "src/finance-system/fee-management/fee-invoice/entities/fee-invoice.entity";
 import { ELedgerItemType } from "src/finance-system/fee-management/student-ledgers/entities/ledger-item.entity";
 import { AuthUser } from "src/common/types/global.type";
+import { isUUID } from "class-validator";
+import applyBranchFilter from "src/utils/apply-branch-filter";
 
 @Injectable()
 export class StudentsHelper extends BaseRepository {
@@ -34,7 +36,7 @@ export class StudentsHelper extends BaseRepository {
             .offset(queryDto.skipPagination ? undefined : queryDto.skip)
             .limit(queryDto.skipPagination ? undefined : queryDto.take)
             .addSelect("CONCAT(student.firstName, ' ', student.lastName) AS fullName")
-            .orderBy(this.getOrderByKey(queryDto), queryDto.order)
+            .orderBy(queryDto.sortBy, queryDto.order)
             .leftJoin('student.routeStop', 'routeStop', queryDto.onlyBasicInfo ? '1 = 0' : '1 = 1') // only basic info will not have route stop
             .leftJoin('student.enrollments', 'enrollments')
             .leftJoin('enrollments.ledger', 'ledger', queryDto.includeLedgerAmount ? '1 = 1' : '1 = 0')
@@ -43,7 +45,6 @@ export class StudentsHelper extends BaseRepository {
             .leftJoin('student.profileImage', 'profileImage', queryDto.onlyBasicInfo ? '1 = 0' : '1 = 1') // only basic info will not have profile image
             .leftJoin('student.account', 'account')
             .where("enrollments.academicYearId = :academicYearId", { academicYearId: academicYearId })
-            .andWhere("account.branchId = :branchId", { branchId: currentUser.branchId ?? queryDto.branchId })
             .andWhere(new Brackets(qb => {
                 if (queryDto.search) {
                     qb.andWhere(new Brackets(subQb => {
@@ -64,6 +65,8 @@ export class StudentsHelper extends BaseRepository {
                     "ledger.amount as ledgerAmount"
                 ] : this.getStudentsSelectCols(queryDto.onlyBasicInfo)
             );
+
+        applyBranchFilter(queryBuilder, currentUser.branchId ?? queryDto.branchId);
 
         return paginatedRawData(queryDto, queryBuilder);
     }
@@ -98,32 +101,6 @@ export class StudentsHelper extends BaseRepository {
             ]
     }
 
-    private getOrderByKey(queryDto: StudentQueryDto) {
-        switch (queryDto.sortBy) {
-            case StudentSortBy.NAME: {
-                return 'fullName';
-            }
-            case StudentSortBy.ROLL_NO: {
-                return 'student.rollNo';
-            }
-            case StudentSortBy.STUDENT_ID: {
-                return 'student.studentId';
-            }
-            case StudentSortBy.GENDER: {
-                return 'student.gender';
-            }
-            case StudentSortBy.DOB: {
-                return 'student.dob';
-            }
-            case StudentSortBy.LEDGER_AMOUNT: {
-                return 'ledger.amount';
-            }
-            default: {
-                return 'student.createdAt';
-            }
-        }
-    }
-
     async checkIfStudentExists(studentDto: CreateStudentDto | UpdateStudentDto, student?: Student) {
         const { rollNo, email, bankAccountNumber, nationalIdCardNo } = studentDto;
 
@@ -151,7 +128,7 @@ export class StudentsHelper extends BaseRepository {
     async getStudentsWithAttendance(queryDto: StudentAttendanceQueryDto, currentUser: AuthUser) {
         const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
-        const studentsWithAttendance = await this.studentRepo.createQueryBuilder('student')
+        const queryBuilder = this.studentRepo.createQueryBuilder('student')
             .leftJoin("student.enrollments", "enrollments")
             .leftJoin("student.account", "account")
             .leftJoin("enrollments.classRoom", "classRoom")
@@ -164,7 +141,6 @@ export class StudentsHelper extends BaseRepository {
                 { attendanceDate: queryDto.date }
             )
             .where("enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
-            .andWhere('account.branchId = :branchId', { branchId: currentUser.branchId ?? queryDto.branchId })
             .andWhere(new Brackets((qb) => {
                 queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId OR parent.id = :classRoomId', { classRoomId: queryDto.classRoomId });
                 queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId });
@@ -180,10 +156,10 @@ export class StudentsHelper extends BaseRepository {
                 "attendance.date"
             ])
             .orderBy("student.rollNo", "ASC")
-            .getMany();
+
+        const studentsWithAttendance = await applyBranchFilter(queryBuilder, currentUser.branchId ?? queryDto.branchId).getMany();
 
         return studentsWithAttendance;
-
     }
 
     async getPastStudents(queryDto: PastStudentsQueryDto, currentUser: AuthUser) {
@@ -205,7 +181,6 @@ export class StudentsHelper extends BaseRepository {
                 'latestEnrollment',
                 'latestEnrollment.studentId = student.id AND latestEnrollment.rowNumber = 1' // Filter to only include the latest enrollment
             )
-            .where('account.branchId = :branchId', { branchId: currentUser.branchId ?? queryDto.branchId })
             .andWhere(new Brackets(qb => {
                 if (queryDto.search) {
                     qb.andWhere(new Brackets(subQb => {
@@ -232,15 +207,16 @@ export class StudentsHelper extends BaseRepository {
                 "latestEnrollment.id AS enrollmentId",
             ]);
 
-
+        applyBranchFilter(queryBuilder, currentUser.branchId ?? queryDto.branchId);
 
         return paginatedRawData(queryDto, queryBuilder);
     }
 
     async getFeeStudent(studentId: string, currentUser: AuthUser) {
         const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+        const isPk = isUUID(studentId); // this is done to check if the studentId is a uuid, pk has indexing
 
-        const student = await this.studentRepo.createQueryBuilder('student')
+        const studentQueryBuilder = this.studentRepo.createQueryBuilder('student')
             .leftJoin("student.enrollments", "enrollments", "enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
             .leftJoin('enrollments.classRoom', 'classRoom')
             .leftJoin("classRoom.parent", "parent")
@@ -248,8 +224,7 @@ export class StudentsHelper extends BaseRepository {
             .leftJoin("student.routeStop", "routeStop")
             .leftJoin("enrollments.ledger", "ledger")
             .leftJoin("student.account", "account")
-            .where("student.studentId = :studentId", { studentId })
-            .andWhere('account.branchId = :branchId', { branchId: currentUser.branchId })
+            .where(isPk ? "student.id = :studentId" : "student.studentId = :studentId", { studentId })
             .select([
                 "student.id AS id",
                 "student.studentId AS studentId",
@@ -271,7 +246,8 @@ export class StudentsHelper extends BaseRepository {
             .addGroupBy('enrollments.rollNo')
             .addGroupBy('enrollments.oneTimeChargeIds')
             .addGroupBy('ledger.id')
-            .getRawOne();
+
+        const student = await applyBranchFilter(studentQueryBuilder, currentUser.branchId).getRawOne();
 
         if (!student || !student.classRoomName) throw new NotFoundException('Student not found');
         if (!student.ledgerId) throw new InternalServerErrorException('Ledger associated with student not found');

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Query, UseInterceptors, ParseUUIDPipe } from '@nestjs/common';
 import { TeachersService } from './teachers.service';
 import { CreateTeacherDto } from './dto/create-teacher.dto';
 import { UpdateTeacherDto } from './dto/update-teacher.dto';
@@ -70,20 +70,14 @@ export class TeachersController {
 
   @Get(':id')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.teachersService.findOne(id);
+  findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() currentUser: AuthUser) {
+    return this.teachersService.findOne(id, currentUser);
   }
 
   @Patch(':id')
   @UseInterceptors(TransactionInterceptor)
   @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateTeacherDto: UpdateTeacherDto) {
-    return this.teachersService.update(id, updateTeacherDto);
-  }
-
-  @Delete(':id')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.DELETE })
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.teachersService.remove(id);
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateTeacherDto: UpdateTeacherDto, @CurrentUser() currentUser: AuthUser) {
+    return this.teachersService.update(id, updateTeacherDto, currentUser);
   }
 }

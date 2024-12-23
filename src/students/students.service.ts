@@ -2,7 +2,7 @@ import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundEx
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentClassDto, UpdateStudentDto } from './dto/update-student.dto';
 import { Student } from './entities/student.entity';
-import { DataSource } from 'typeorm';
+import { Brackets, DataSource } from 'typeorm';
 import { REQUEST } from '@nestjs/core';
 import { singleStudentColumnsConfig } from './helpers/studentsColumnsConfig';
 import { DormitoryRoomsService } from 'src/dormitory-system/dormitory-rooms/dormitory-rooms.service';
@@ -24,6 +24,7 @@ import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { StudentLedger } from 'src/finance-system/fee-management/student-ledgers/entities/student-ledger.entity';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { AcademicYearsService } from 'src/academic-years/academic-years.service';
+import applyBranchFilter from 'src/utils/apply-branch-filter';
 
 @Injectable({ scope: Scope.REQUEST })
 export class StudentsService extends BaseRepository {
@@ -109,7 +110,7 @@ export class StudentsService extends BaseRepository {
     return { message: 'Student created' }
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, currentUser: AuthUser) {
     const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
     const querybuilder = this.getRepository<Student>(Student).createQueryBuilder('student')
@@ -127,6 +128,8 @@ export class StudentsService extends BaseRepository {
       .andWhere("enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
 
     applySelectColumns(querybuilder, singleStudentColumnsConfig, 'student');
+
+    applyBranchFilter(querybuilder, currentUser.branchId);
 
     const existing = await querybuilder.getOne();
 
@@ -171,8 +174,8 @@ export class StudentsService extends BaseRepository {
     return student;
   }
 
-  async update(id: string, updateStudentDto: UpdateStudentDto) {
-    const existing = await this.findOne(id);
+  async update(id: string, updateStudentDto: UpdateStudentDto, currentUser: AuthUser) {
+    const existing = await this.findOne(id, currentUser);
     const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
     // check if credentials are already taken
@@ -251,6 +254,7 @@ export class StudentsService extends BaseRepository {
       throw new BadRequestException('Please select section');
     }
 
+    // !TODO: filter students by branch id
     const queryBuilder = this.getRepository<Student>(Student).createQueryBuilder()
       .update(Student)
       .set({ classRoom: classRoom })
@@ -275,13 +279,5 @@ export class StudentsService extends BaseRepository {
     return {
       message: 'Class Updated',
     }
-  }
-
-  async remove(id: string) {
-    const existing = await this.findOne(id)
-
-    await this.getRepository<Student>(Student).remove(existing)
-
-    return { message: 'Student deleted' }
   }
 }

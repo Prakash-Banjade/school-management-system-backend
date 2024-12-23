@@ -14,6 +14,7 @@ import { applySelectColumns } from 'src/utils/apply-select-cols';
 import paginatedData from 'src/utils/paginatedData';
 import { SalaryStructure } from 'src/finance-system/salary-management/salary-structures/entities/salary-structure.entity';
 import { AuthUser } from 'src/common/types/global.type';
+import applyBranchFilter from 'src/utils/apply-branch-filter';
 
 
 @Injectable({ scope: Scope.REQUEST })
@@ -60,7 +61,6 @@ export class TeachersService extends BaseRepository {
       .take(queryDto.take)
       .leftJoin("teacher.profileImage", "profileImage")
       .leftJoin('teacher.account', 'account')
-      .where('account.branchId = :branchId', { branchId: currentUser.branchId ?? queryDto.branchId })
       .andWhere(new Brackets(qb => {
         queryDto.search && qb.andWhere(new Brackets(qb => {
           qb.orWhere("LOWER(CONCAT(teacher.firstName, ' ', teacher.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
@@ -71,13 +71,17 @@ export class TeachersService extends BaseRepository {
       }));
 
     applySelectColumns(queryBuilder, teachersColumnsConfig, 'teacher');
+    applyBranchFilter(queryBuilder, currentUser.branchId ?? queryDto.branchId);
 
     return paginatedData(queryDto, queryBuilder);
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, currentUser: AuthUser) {
     const existingTeacher = await this.getRepository(Teacher).findOne({
-      where: { id },
+      where: {
+        id,
+        account: { branch: { id: currentUser.branchId } }
+      },
       relations: {
         profileImage: true,
         account: true,
@@ -98,8 +102,8 @@ export class TeachersService extends BaseRepository {
     return existingTeacher;
   }
 
-  async update(id: string, updateTeacherDto: UpdateTeacherDto) {
-    const existingTeacher = await this.findOne(id);
+  async update(id: string, updateTeacherDto: UpdateTeacherDto, currentUser: AuthUser) {
+    const existingTeacher = await this.findOne(id, currentUser);
 
     // check if teacher already exists
     await this.checkIfTeacherExists(updateTeacherDto, existingTeacher);
@@ -122,14 +126,6 @@ export class TeachersService extends BaseRepository {
     await this.getRepository(Teacher).save(existingTeacher);
 
     return { message: 'Teacher updated' };
-  }
-
-  async remove(id: string) {
-    const existingTeacher = await this.findOne(id);
-
-    await this.getRepository(Teacher).remove(existingTeacher);
-
-    return { message: 'Teacher deleted' };
   }
 
   async checkIfTeacherExists(teacherDto: CreateTeacherDto | UpdateTeacherDto, teacher?: Teacher) {

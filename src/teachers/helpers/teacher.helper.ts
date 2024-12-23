@@ -10,6 +10,7 @@ import { FastifyRequest } from "fastify";
 import { REQUEST } from "@nestjs/core";
 import { ClassRoutine } from "src/class-routines/entities/class-routine.entity";
 import { AuthUser } from "src/common/types/global.type";
+import applyBranchFilter from "src/utils/apply-branch-filter";
 
 @Injectable()
 export class TeachersHelper extends BaseRepository {
@@ -19,15 +20,14 @@ export class TeachersHelper extends BaseRepository {
     ) { super(dataSource, req); }
 
     async getTeachersWithAttendance(queryDto: EmployeeAttendanceQueryDto, currentUser: AuthUser) {
-        const teachersWithAttendance = await this.teacherRepo.createQueryBuilder('teacher')
+        const queryBuilder = this.teacherRepo.createQueryBuilder('teacher')
             .leftJoin("teacher.account", "account")
-            .where('account.branchId = :branchId', { branchId: currentUser.branchId ?? queryDto.branchId })
             .leftJoinAndMapOne(
                 "teacher.attendance",
                 Attendance,
                 "attendance",
                 "attendance.accountId = account.id AND DATE(attendance.date) = DATE(:attendanceDate)",
-                { attendanceDate: new Date(queryDto.date).toISOString().split('T')[0] }
+                { attendanceDate: queryDto.date }
             )
             .select([
                 "teacher.id",
@@ -41,19 +41,18 @@ export class TeachersHelper extends BaseRepository {
                 "attendance.inTime",
                 "attendance.outTime",
             ])
-            .getMany();
+
+        const teachersWithAttendance = await applyBranchFilter(queryBuilder, currentUser.branchId ?? queryDto.branchId).getMany();
 
         return teachersWithAttendance;
-
     }
 
     async getTeacherOptions(queryDto: QueryDto, currentUser: AuthUser) {
-        const teacherOptions = await this.teacherRepo.createQueryBuilder('teacher')
+        const queryBuilder = this.teacherRepo.createQueryBuilder('teacher')
             .orderBy("teacher.createdAt", queryDto.order)
             .limit(queryDto.take)
             .offset(queryDto.skip)
             .leftJoin("teacher.account", "account")
-            .where("account.branchId = :branchId", { branchId: currentUser.branchId ?? queryDto.branchId })
             .andWhere(new Brackets(qb => {
                 if (!!queryDto.search) {
                     qb.where("LOWER(CONCAT(teacher.firstName, ' ', teacher.lastName)) LIKE LOWER(:search)", {
@@ -65,7 +64,8 @@ export class TeachersHelper extends BaseRepository {
                 "teacher.id as value",
                 "CONCAT(teacher.firstName, ' ', teacher.lastName) as label"
             ])
-            .getRawMany();
+
+        const teacherOptions = await applyBranchFilter(queryBuilder, currentUser.branchId ?? queryDto.branchId).getRawMany();
 
         return teacherOptions;
     }

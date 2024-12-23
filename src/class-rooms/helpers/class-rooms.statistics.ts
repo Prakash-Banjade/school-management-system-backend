@@ -1,7 +1,5 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { DataSource, Repository } from "typeorm";
-import { ClassRoom } from "../entities/class-room.entity";
+import { DataSource } from "typeorm";
 import { AttendanceStatisticsQueryDto, ClassRoomAttendancePeriod } from "../dto/attendance-statistics-query.dto";
 import { Cache } from "cache-manager";
 import { CACHE_MANAGER } from "@nestjs/cache-manager";
@@ -12,12 +10,12 @@ import { FastifyRequest } from "fastify";
 import { REQUEST } from "@nestjs/core";
 import { Attendance } from "src/attendances/entities/attendance.entity";
 import { Student } from "src/students/entities/student.entity";
+import { ClassRoom } from "../entities/class-room.entity";
 
 @Injectable()
 export class ClassRoomsStatistics extends BaseRepository {
     constructor(
         dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
-        @InjectRepository(ClassRoom) private readonly classRoomRepo: Repository<ClassRoom>,
         @Inject(CACHE_MANAGER) private cacheManager: Cache,
     ) { super(dataSource, req); }
 
@@ -34,7 +32,7 @@ export class ClassRoomsStatistics extends BaseRepository {
                         ? "DATE(attendance.date) >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY) AND DATE(attendance.date) <= CURRENT_DATE()"
                         : null;
 
-        const classRoom = await this.classRoomRepo.createQueryBuilder('classRoom')
+        const classRoom = await this.getRepository(ClassRoom).createQueryBuilder('classRoom')
             .where("classRoom.id = :classRoomId", { classRoomId: classRoomId })
             .leftJoin("classRoom.children", "childClass")
             .select(["classRoom.id", "childClass.id"]).getOne();

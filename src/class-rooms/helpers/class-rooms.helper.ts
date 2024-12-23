@@ -1,7 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
 import { ClassRoom } from "../entities/class-room.entity";
-import { Brackets, DataSource, Repository } from "typeorm";
+import { Brackets, DataSource } from "typeorm";
 import { EClassType, Gender } from "src/common/types/global.type";
 import { applySelectColumns } from "src/utils/apply-select-cols";
 import { classRoomOptionsSelectCols } from "./class-room-select-cols.config";
@@ -18,14 +17,13 @@ import { REQUEST } from "@nestjs/core";
 export class ClassRoomsHelper extends BaseRepository {
     constructor(
         dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
-        @InjectRepository(ClassRoom) private readonly classRoomRepo: Repository<ClassRoom>,
         @Inject(CACHE_MANAGER) private cacheManager: Cache,
     ) { super(dataSource, req); }
 
     async findAll(queryDto: ClassRoomQueryDto) {
         const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
-        const queryBuilder = this.classRoomRepo.createQueryBuilder('classRoom')
+        const queryBuilder = this.getRepository(ClassRoom).createQueryBuilder('classRoom')
             .where('classRoom.classType = :classType', { classType: queryDto.classType })
             .andWhere(new Brackets(qb => {
                 queryDto.search && qb.andWhere('LOWER(classRoom.name) LIKE LOWER(:search)', { search: `%${queryDto.search}%` })
@@ -73,7 +71,7 @@ export class ClassRoomsHelper extends BaseRepository {
     }
 
     async getClassRoomsOptions(queryDto: ClassRoomOptionsQueryDto) {
-        const queryBuilder = this.classRoomRepo.createQueryBuilder('classRoom');
+        const queryBuilder = this.getRepository(ClassRoom).createQueryBuilder('classRoom');
 
         queryBuilder
             .orderBy("classRoom.createdAt", queryDto.order)
@@ -102,7 +100,7 @@ export class ClassRoomsHelper extends BaseRepository {
     async getClassRoomDetails(id: string) {
         const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
 
-        return this.classRoomRepo.createQueryBuilder('classRoom')
+        return this.getRepository(ClassRoom).createQueryBuilder('classRoom')
             .where('classRoom.id = :classroomId', { classroomId: id }) // Filter by specific classroom ID
             .leftJoin('classRoom.classTeacher', 'classTeacher')
             .leftJoin('classRoom.students', 'student', 'FIND_IN_SET(:currentAcademicYearId, student.academicYearIds) > 0', { currentAcademicYearId })

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Query, UseInterceptors } from '@nestjs/common';
 import { StaffsService } from './staffs.service';
 import { CreateStaffDto } from './dto/create-staff.dto';
 import { UpdateStaffDto } from './dto/update-staff.dto';
@@ -50,14 +50,14 @@ export class StaffsController {
 
   @Get(':id')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  findOne(@Param('id') id: string) {
-    return this.staffsService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() currentUser: AuthUser) {
+    return this.staffsService.findOne(id, currentUser);
   }
 
   @Patch(':id')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
   @UseInterceptors(TransactionInterceptor)
-  update(@Param('id') id: string, @Body() updateStaffDto: UpdateStaffDto) {
-    return this.staffsService.update(id, updateStaffDto);
+  update(@Param('id') id: string, @Body() updateStaffDto: UpdateStaffDto, @CurrentUser() currentUser: AuthUser) {
+    return this.staffsService.update(id, updateStaffDto, currentUser);
   }
 }

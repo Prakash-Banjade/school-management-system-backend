@@ -4,6 +4,7 @@ import { Repository } from "typeorm";
 import { Attendance } from "src/attendances/entities/attendance.entity";
 import { EmployeeAttendanceQueryDto } from "src/teachers/dto/employee-attendance-query.dto";
 import { AuthUser } from "src/common/types/global.type";
+import applyBranchFilter from "src/utils/apply-branch-filter";
 
 export class StaffsHelper {
     constructor(
@@ -11,9 +12,8 @@ export class StaffsHelper {
     ) { }
 
     async getStaffsWithAttendance(queryDto: EmployeeAttendanceQueryDto, currentUser: AuthUser) {
-        const staffsWithAttendance = await this.staffRepo.createQueryBuilder('staff')
+        const queryBuilder = this.staffRepo.createQueryBuilder('staff')
             .leftJoin("staff.account", "account")
-            .where('account.branchId = :branchId', { branchId: currentUser.branchId ?? queryDto.branchId })
             .leftJoinAndMapOne(
                 "staff.attendance",
                 Attendance,
@@ -34,7 +34,8 @@ export class StaffsHelper {
                 "attendance.inTime",
                 "attendance.outTime",
             ])
-            .getMany();
+
+        const staffsWithAttendance = await applyBranchFilter(queryBuilder, currentUser.branchId ?? queryDto.branchId).getMany();
 
         return staffsWithAttendance;
 

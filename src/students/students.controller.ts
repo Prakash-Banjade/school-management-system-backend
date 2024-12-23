@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Query, UseInterceptors, ForbiddenException, Req } from '@nestjs/common';
 import { StudentsService } from './students.service';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentClassDto, UpdateStudentDto } from './dto/update-student.dto';
@@ -11,6 +11,7 @@ import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
 import { isStudent } from 'src/utils/isStudent';
 import { StudentsHelper } from './helpers/students.helper';
+import { FastifyRequest } from 'fastify';
 
 @ApiBearerAuth()
 @ApiTags('Students')
@@ -31,8 +32,8 @@ export class StudentsController {
   @Get()
   @ApiPaginatedResponse(CreateStudentDto)
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  findAll(@Query() queryDto: StudentQueryDto, @CurrentUser() currentUser: AuthUser) {
-    return this.studentsHelper.findAll(queryDto, currentUser);
+  findAll(@Query() queryDto: StudentQueryDto, @Req() req: FastifyRequest) {
+    return this.studentsHelper.findAll(queryDto, req.user);
   }
 
   @Get('past')
@@ -66,13 +67,13 @@ export class StudentsController {
   @CheckAbilities({ subject: Role.STUDENT, action: Action.READ })
   getMyInfo(@CurrentUser() currentUser: AuthUser) {
     if (!isStudent(currentUser)) throw new ForbiddenException()
-    return this.studentsService.findOne(currentUser.studentId);
+    return this.studentsService.findOne(currentUser.studentId, currentUser);
   }
 
   @Get(':id')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  findOne(@Param('id') id: string) {
-    return this.studentsService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() currentUser: AuthUser) {
+    return this.studentsService.findOne(id, currentUser);
   }
 
   @Patch('change-class')
@@ -85,13 +86,7 @@ export class StudentsController {
   @Patch(':id')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
   @UseInterceptors(TransactionInterceptor)
-  update(@Param('id') id: string, @Body() updateStudentDto: UpdateStudentDto) {
-    return this.studentsService.update(id, updateStudentDto);
-  }
-
-  @Delete(':id')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.DELETE })
-  remove(@Param('id') id: string) {
-    return this.studentsService.remove(id);
+  update(@Param('id') id: string, @Body() updateStudentDto: UpdateStudentDto, @CurrentUser() currentUser: AuthUser) {
+    return this.studentsService.update(id, updateStudentDto, currentUser);
   }
 }

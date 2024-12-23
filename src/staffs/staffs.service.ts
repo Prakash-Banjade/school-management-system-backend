@@ -12,8 +12,9 @@ import { StaffQueryDto } from './dto/staff-query.dto';
 import paginatedData from 'src/utils/paginatedData';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { staffsColumnsConfig } from './helpers/staff-select-cols.config';
-import { AuthUser, EStaff } from 'src/common/types/global.type';
+import { AuthUser } from 'src/common/types/global.type';
 import { SalaryStructure } from 'src/finance-system/salary-management/salary-structures/entities/salary-structure.entity';
+import applyBranchFilter from 'src/utils/apply-branch-filter';
 
 @Injectable({ scope: Scope.REQUEST })
 export class StaffsService extends BaseRepository {
@@ -58,7 +59,6 @@ export class StaffsService extends BaseRepository {
       .take(queryDto.take)
       .leftJoin("staff.profileImage", "profileImage")
       .leftJoin('staff.account', 'account')
-      .where("account.branchId = :branchId", { branchId: currentUser.branchId ?? queryDto.branchId })
       .andWhere(new Brackets(qb => {
         queryDto.search && qb.andWhere(new Brackets(qb => {
           qb.orWhere("LOWER(CONCAT(staff.firstName, ' ', staff.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
@@ -70,30 +70,33 @@ export class StaffsService extends BaseRepository {
       }))
 
     applySelectColumns(queryBuilder, staffsColumnsConfig, 'staff');
+    applyBranchFilter(queryBuilder, currentUser.branchId ?? queryDto.branchId);
 
     return paginatedData(queryDto, queryBuilder);
   }
 
   async getOptions(queryDto: StaffQueryDto, currentUser: AuthUser) {
-    return this.getRepository(Staff).createQueryBuilder('staff')
+    const queryBuilder = this.getRepository(Staff).createQueryBuilder('staff')
       .orderBy("staff.createdAt", queryDto.order)
       .leftJoin("staff.account", "account")
-      .where("account.branchId = :branchId", { branchId: currentUser.branchId ?? queryDto.branchId })
-      .andWhere(new Brackets(qb => {
+      .where(new Brackets(qb => {
         queryDto.type?.length && qb.andWhere('staff.type IN (:...type)', { type: queryDto.type });
       }))
       .select([
         "staff.id as value",
         "CONCAT(staff.firstName, ' ', staff.lastName) as label",
-      ])
-      .getRawMany();
+      ]);
+
+    applyBranchFilter(queryBuilder, currentUser.branchId ?? queryDto.branchId);
+
+    return queryBuilder.getRawMany();
   }
 
-  async findOne(id: string, type?: EStaff) {
+  async findOne(id: string, currentUser: AuthUser) {
     const existingStaff = await this.getRepository(Staff).findOne({
       where: {
         id,
-        type,
+        account: { branch: { id: currentUser.branchId } }
       },
       relations: {
         profileImage: true,
@@ -105,9 +108,7 @@ export class StaffsService extends BaseRepository {
           url: true,
           originalName: true,
         },
-        account: {
-          id: true,
-        }
+        account: { id: true }
       }
     });
     if (!existingStaff) throw new NotFoundException('Staff not found');
@@ -115,8 +116,8 @@ export class StaffsService extends BaseRepository {
     return existingStaff;
   }
 
-  async update(id: string, updateStaffDto: UpdateStaffDto) {
-    const existingStaff = await this.findOne(id);
+  async update(id: string, updateStaffDto: UpdateStaffDto, currentUser: AuthUser) {
+    const existingStaff = await this.findOne(id, currentUser);
     await this.checkIfStaffExists(updateStaffDto, existingStaff);
 
     // evaluate profile image
