@@ -1,3 +1,4 @@
+import { Branch } from "src/branches/entities/branch.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { Dormitory } from "src/dormitory-system/dormitories/entities/dormitory.entity";
 import { RoomType } from "src/dormitory-system/room-types/entities/room-type.entity";
@@ -29,4 +30,7 @@ export class DormitoryRoom extends BaseEntity {
 
     @OneToMany(() => Student, student => student.dormitoryRoom)
     students: Student[]
+
+    @ManyToOne(() => Branch, (branch) => branch.dormitoryRooms, { onDelete: 'CASCADE', nullable: false })
+    branch: Branch;
 }

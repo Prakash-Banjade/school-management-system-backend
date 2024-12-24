@@ -26,10 +26,10 @@ export class UtilitiesService {
         return this.request?.cookies[CookieKey.ACADEMIC_YEAR_ID] ?? await this.cacheManager.get(CACHE_KEYS.CAY_ID);
     }
 
-    applyBranchFilter<T>(queryBuilder: SelectQueryBuilder<T>): SelectQueryBuilder<T> {
+    applyBranchFilter<T>(queryBuilder: SelectQueryBuilder<T>, query?: string): SelectQueryBuilder<T> {
         const branchId = this.getBranchId();
 
-        if (branchId) queryBuilder.andWhere('account.branchId = :branchId', { branchId });
+        if (branchId) queryBuilder.andWhere(query ?? 'account.branchId = :branchId', { branchId });
 
         return queryBuilder;
     }
