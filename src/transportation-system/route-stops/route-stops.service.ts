@@ -11,11 +11,13 @@ import { BaseRepository } from 'src/common/repository/base-repository';
 import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
 import { Vehicle } from '../vehicles/entities/vehicle.entity';
+import { UtilitiesService } from 'src/utilities/utilities.service';
 
 @Injectable()
 export class RouteStopsService extends BaseRepository {
   constructor(
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
+    private readonly utilitiesService: UtilitiesService
   ) { super(dataSource, req); }
 
   async create(createRouteStopDto: CreateRouteStopDto) {
@@ -93,7 +95,7 @@ export class RouteStopsService extends BaseRepository {
   };
 
   async findOneWithAvailableSeats(id: string) {
-    const existing = await this.getRepository(RouteStop).createQueryBuilder('routeStop')
+    const queryBuilder = this.getRepository(RouteStop).createQueryBuilder('routeStop')
       .leftJoin('routeStop.vehicle', 'vehicle')
       .leftJoin('routeStop.students', 'students')
       .where('routeStop.id = :id', { id })
@@ -102,7 +104,11 @@ export class RouteStopsService extends BaseRepository {
         'routeStop.name as name',
         'vehicle.capacity as capacity',
         'COUNT(students.id) as studentsCount'
-      ]).getRawOne();
+      ]);
+
+    this.utilitiesService.applyBranchFilter(queryBuilder, 'vehicle.branchId = :branchId');
+
+    const existing = await queryBuilder.getRawOne();
 
     if (!existing) throw new NotFoundException('Route stop not found');
 

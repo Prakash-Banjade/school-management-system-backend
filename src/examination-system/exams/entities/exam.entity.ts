@@ -20,6 +20,6 @@ export class Exam extends BaseEntity {
     @ManyToOne(() => AcademicYear, academicYear => academicYear.exams, { onDelete: 'CASCADE' })
     academicYear: AcademicYear;
 
-    @ManyToOne(() => Branch, branch => branch.exams, { onDelete: 'CASCADE', nullable: false })
+    @ManyToOne(() => Branch, branch => branch.exams, { onDelete: 'CASCADE' })
     branch: Branch;
 }

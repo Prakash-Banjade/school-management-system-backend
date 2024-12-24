@@ -31,6 +31,6 @@ export class DormitoryRoom extends BaseEntity {
     @OneToMany(() => Student, student => student.dormitoryRoom)
     students: Student[]
 
-    @ManyToOne(() => Branch, (branch) => branch.dormitoryRooms, { onDelete: 'CASCADE', nullable: false })
+    @ManyToOne(() => Branch, (branch) => branch.dormitoryRooms, { onDelete: 'CASCADE' })
     branch: Branch;
 }

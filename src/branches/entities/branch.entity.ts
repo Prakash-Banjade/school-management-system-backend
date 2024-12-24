@@ -2,6 +2,7 @@ import { Account } from "src/auth-system/accounts/entities/account.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { DormitoryRoom } from "src/dormitory-system/dormitory-rooms/entities/dormitory-room.entity";
 import { Exam } from "src/examination-system/exams/entities/exam.entity";
+import { Vehicle } from "src/transportation-system/vehicles/entities/vehicle.entity";
 import { Column, Entity, OneToMany } from "typeorm";
 
 @Entity()
@@ -24,5 +25,6 @@ export class Branch extends BaseEntity {
     @OneToMany(() => Exam, exam => exam.branch)
     exams: Exam[];
 
-
+    @OneToMany(() => Vehicle, vehicle => vehicle.branch)
+    vehicles: Vehicle[]
 }
