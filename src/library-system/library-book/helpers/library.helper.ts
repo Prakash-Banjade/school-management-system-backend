@@ -8,23 +8,33 @@ import { BookTransaction } from "src/library-system/book-transactions/entities/b
 import { QueryDto } from "src/common/dto/query.dto";
 import { AuthUser } from "src/common/types/global.type";
 import { isStudent } from "src/utils/utils";
+import { UtilitiesService } from "src/utilities/utilities.service";
 
 @Injectable()
 export class LibraryHelper extends BaseRepository {
     constructor(
-        dataSource: DataSource,
-        @Inject(REQUEST) private req: FastifyRequest,
+        dataSource: DataSource, @Inject(REQUEST) private req: FastifyRequest,
+        private readonly utilitiesService: UtilitiesService,
     ) {
         super(dataSource, req);
     }
 
     async getDashboardCount() {
+        const branchId = this.utilitiesService.getBranchId();
+
         const booksCount = this.getRepository(LibraryBook).createQueryBuilder('book')
             .select(['COUNT(book.id) AS totalCount'])
+            .where(new Brackets(qb => {
+                branchId && qb.andWhere('book.branchId = :branchId', { branchId });
+            }))
             .getRawOne();
 
         const transactionCount = this.getRepository(BookTransaction).createQueryBuilder("transaction")
             .leftJoin("transaction.student", "student")
+            .leftJoin("transaction.book", "book")
+            .where(new Brackets(qb => {
+                branchId && qb.andWhere('book.branchId = :branchId', { branchId });
+            }))
             .select([
                 "COUNT(transaction.id) AS totalCount",
                 `COUNT(CASE WHEN transaction.returnedAt IS NULL THEN 1 END) AS issuedCount`,
@@ -34,6 +44,10 @@ export class LibraryHelper extends BaseRepository {
 
         const studentsCount = this.getRepository(BookTransaction).createQueryBuilder("transaction")
             .leftJoin("transaction.student", "student")
+            .leftJoin("transaction.book", "book")
+            .where(new Brackets(qb => {
+                branchId && qb.andWhere('book.branchId = :branchId', { branchId });
+            }))
             .select([
                 "COUNT(DISTINCT student.id) AS totalStudentCount",
                 `COUNT(DISTINCT CASE WHEN transaction.returnedAt IS NULL THEN student.id END) AS issuedStudentCount`
@@ -42,6 +56,9 @@ export class LibraryHelper extends BaseRepository {
 
         const topBooks = await this.getRepository(BookTransaction).createQueryBuilder("transaction")
             .leftJoin("transaction.book", "book")
+            .where(new Brackets(qb => {
+                branchId && qb.andWhere('book.branchId = :branchId', { branchId });
+            }))
             .select([
                 "book.id AS bookId",
                 "book.bookName AS bookName",
@@ -68,10 +85,14 @@ export class LibraryHelper extends BaseRepository {
 
     async getDashboardCount_student(currentUser: AuthUser) {
         if (!isStudent(currentUser)) throw new ForbiddenException();
-        
+
         const transactionCount = await this.getRepository(BookTransaction).createQueryBuilder("transaction")
+            .leftJoin("transaction.book", "book")
             .leftJoin("transaction.student", "student")
             .where("student.id = :studentId", { studentId: currentUser.studentId })
+            .andWhere(new Brackets(qb => {
+                currentUser.branchId && qb.andWhere('book.branchId = :branchId', { branchId: currentUser.branchId });
+            }))
             .select([
                 "COUNT(transaction.id) AS totalCount",
                 `COUNT(CASE WHEN transaction.returnedAt IS NULL AND DATE(transaction.dueDate) >= DATE(:today) THEN 1 END) AS issuedCount`,
@@ -85,7 +106,7 @@ export class LibraryHelper extends BaseRepository {
 
     async getOptions(queryDto: QueryDto) {
 
-        const options = await this.getRepository(LibraryBook).createQueryBuilder('book')
+        const querybuilder = this.getRepository(LibraryBook).createQueryBuilder('book')
             .orderBy("book.createdAt", queryDto.order)
             .offset(queryDto.skip)
             .limit(queryDto.take)
@@ -98,9 +119,10 @@ export class LibraryHelper extends BaseRepository {
             .select([
                 "book.id as value",
                 "book.bookName as label"
-            ])
-            .getRawMany();
+            ]);
 
-        return options;
+        this.utilitiesService.applyBranchFilter(querybuilder, 'book.branchId = :branchId');
+
+        return querybuilder.getRawMany();
     }
 }

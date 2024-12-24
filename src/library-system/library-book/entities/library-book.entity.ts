@@ -2,6 +2,7 @@ import { Column, Entity, ManyToOne, OneToMany, OneToOne } from "typeorm";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { BookTransaction } from "src/library-system/book-transactions/entities/book-transaction.entity";
 import { BookCategory } from "src/library-system/book-categories/entities/book-category.entity";
+import { Branch } from "src/branches/entities/branch.entity";
 
 @Entity()
 export class LibraryBook extends BaseEntity {
@@ -31,4 +32,7 @@ export class LibraryBook extends BaseEntity {
 
     @ManyToOne(() => BookCategory, (bookCategory) => bookCategory.books, { onDelete: 'RESTRICT' })
     category: BookCategory;
+
+    @ManyToOne(() => Branch, (branch) => branch.libraryBooks, { onDelete: 'CASCADE' })
+    branch: Branch;
 }

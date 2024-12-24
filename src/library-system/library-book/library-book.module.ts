@@ -3,7 +3,6 @@ import { LibraryBookService } from './library-book.service';
 import { LibraryBookController } from './library-book.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LibraryBook } from './entities/library-book.entity';
-import { AccountsModule } from 'src/auth-system/accounts/accounts.module';
 import { BookCategoriesModule } from '../book-categories/book-categories.module';
 import { LibraryHelper } from './helpers/library.helper';
 
@@ -12,7 +11,6 @@ import { LibraryHelper } from './helpers/library.helper';
     TypeOrmModule.forFeature([
       LibraryBook,
     ]),
-    AccountsModule,
     BookCategoriesModule,
   ],
   controllers: [LibraryBookController],
