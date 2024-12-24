@@ -1,3 +1,4 @@
+import { Branch } from "src/branches/entities/branch.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { Student } from "src/students/entities/student.entity";
 import { Vehicle } from "src/transportation-system/vehicles/entities/vehicle.entity";
@@ -31,4 +32,7 @@ export class RouteStop extends BaseEntity {
 
     @OneToMany(() => Student, (student) => student.routeStop)
     students: Student[];
+
+    @ManyToOne(() => Branch, (branch) => branch.routeStops, { onDelete: 'CASCADE' })
+    branch: Branch;
 }

@@ -2,6 +2,7 @@ import { Account } from "src/auth-system/accounts/entities/account.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { DormitoryRoom } from "src/dormitory-system/dormitory-rooms/entities/dormitory-room.entity";
 import { Exam } from "src/examination-system/exams/entities/exam.entity";
+import { RouteStop } from "src/transportation-system/route-stops/entities/route-stop.entity";
 import { Vehicle } from "src/transportation-system/vehicles/entities/vehicle.entity";
 import { Column, Entity, OneToMany } from "typeorm";
 
@@ -27,4 +28,7 @@ export class Branch extends BaseEntity {
 
     @OneToMany(() => Vehicle, vehicle => vehicle.branch)
     vehicles: Vehicle[]
+
+    @OneToMany(() => RouteStop, routeStop => routeStop.branch)
+    routeStops: RouteStop[]
 }

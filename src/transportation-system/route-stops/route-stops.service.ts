@@ -12,12 +12,14 @@ import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
 import { Vehicle } from '../vehicles/entities/vehicle.entity';
 import { UtilitiesService } from 'src/utilities/utilities.service';
+import { BranchesService } from 'src/branches/branches.service';
 
 @Injectable()
 export class RouteStopsService extends BaseRepository {
   constructor(
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
-    private readonly utilitiesService: UtilitiesService
+    private readonly utilitiesService: UtilitiesService,
+    private readonly branchService: BranchesService,
   ) { super(dataSource, req); }
 
   async create(createRouteStopDto: CreateRouteStopDto) {
@@ -27,6 +29,7 @@ export class RouteStopsService extends BaseRepository {
     const newRouteStop = this.getRepository(RouteStop).create({
       ...createRouteStopDto,
       vehicle,
+      branch: await this.branchService.getBranch(this.utilitiesService.getBranchId())
     });
     await this.getRepository(RouteStop).save(newRouteStop);
 
@@ -46,8 +49,9 @@ export class RouteStopsService extends BaseRepository {
           qb.orWhere("LOWER(routeStop.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
             .orWhere("LOWER(vehicle.vehicleNumber) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
         )
-      }))
+      }));
 
+    this.utilitiesService.applyBranchFilter(queryBuilder, 'routeStop.branchId = :branchId');
     applySelectColumns(queryBuilder, routeStopSelectCols, 'routeStop');
 
     return paginatedData(queryDto, queryBuilder);
@@ -63,7 +67,7 @@ export class RouteStopsService extends BaseRepository {
   }
 
   getOptions(queryDto: RouteStopQueryDto) {
-    return this.getRepository(RouteStop).createQueryBuilder('routeStop')
+    const querybuilder = this.getRepository(RouteStop).createQueryBuilder('routeStop')
       .limit(queryDto.take)
       .offset(queryDto.skip)
       .leftJoin('routeStop.vehicle', 'vehicle')
@@ -78,13 +82,16 @@ export class RouteStopsService extends BaseRepository {
           THEN CONCAT(routeStop.name, ' - ', vehicle.vehicleNumber) 
           ELSE routeStop.name 
         END as label`,
-      ])
-      .getRawMany();
+      ]);
+
+    this.utilitiesService.applyBranchFilter(querybuilder, 'routeStop.branchId = :branchId');
+
+    return querybuilder.getRawMany();
   }
 
   async findOne(id: string) {
     const existing = await this.getRepository(RouteStop).findOne({
-      where: { id },
+      where: { id, branch: { id: this.utilitiesService.getBranchId() } },
       relations: ['vehicle'],
       select: routeStopSelectCols,
     })
