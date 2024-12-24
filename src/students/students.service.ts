@@ -113,7 +113,7 @@ export class StudentsService extends BaseRepository {
     const querybuilder = this.getRepository<Student>(Student).createQueryBuilder('student')
       .leftJoin('student.account', 'account')
       .leftJoin('student.profileImage', 'profileImage')
-      .leftJoin('student.enrollments', 'enrollments')
+      .innerJoin('student.enrollments', 'enrollments', "enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
       .leftJoin('enrollments.classRoom', 'classRoom')
       .leftJoin('classRoom.parent', 'parent')
       .leftJoin('student.guardians', 'guardians')
@@ -122,7 +122,6 @@ export class StudentsService extends BaseRepository {
       .leftJoin('student.routeStop', 'routeStop')
       .leftJoin('routeStop.vehicle', 'vehicle')
       .where('student.id = :id', { id })
-      .andWhere("enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
 
     applySelectColumns(querybuilder, singleStudentColumnsConfig, 'student');
 
@@ -144,7 +143,7 @@ export class StudentsService extends BaseRepository {
     const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
 
     const student = await this.getRepository<Student>(Student).createQueryBuilder('student')
-      .leftJoin("student.enrollments", "enrollments", "enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
+      .innerJoin("student.enrollments", "enrollments", "enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
       .leftJoin('enrollments.classRoom', 'classRoom')
       .leftJoin("classRoom.parent", "parent")
       .leftJoin("student.profileImage", "profileImage")

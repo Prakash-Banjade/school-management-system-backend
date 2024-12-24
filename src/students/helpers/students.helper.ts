@@ -204,7 +204,7 @@ export class StudentsHelper extends BaseRepository {
 
         return paginatedRawData(queryDto, queryBuilder);
     }
-
+    
     async getFeeStudent(studentId: string) {
         const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
         const isPk = isUUID(studentId); // this is done to check if the studentId is a uuid, pk has indexing
