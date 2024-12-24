@@ -9,8 +9,8 @@ import { ApiPaginatedResponse } from 'src/common/decorators/apiPaginatedResponse
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
-import { isStudent } from 'src/utils/isStudent';
 import { StudentsHelper } from './helpers/students.helper';
+import { isStudent } from 'src/utils/utils';
 
 @ApiBearerAuth()
 @ApiTags('Students')

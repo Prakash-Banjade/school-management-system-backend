@@ -1,4 +1,5 @@
 import { AcademicYear } from "src/academic-years/entities/academic-year.entity";
+import { Branch } from "src/branches/entities/branch.entity";
 import { ClassRoom } from "src/class-rooms/entities/class-room.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { ExamSubject } from "src/examination-system/exam-subjects/entities/exam-subject.entity";
@@ -18,4 +19,7 @@ export class Exam extends BaseEntity {
 
     @ManyToOne(() => AcademicYear, academicYear => academicYear.exams, { onDelete: 'CASCADE' })
     academicYear: AcademicYear;
+
+    @ManyToOne(() => Branch, branch => branch.exams, { onDelete: 'CASCADE', nullable: false })
+    branch: Branch;
 }

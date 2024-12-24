@@ -8,8 +8,8 @@ import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { ExamsHelper } from './helpers/exams.helper';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
-import { isStudent } from 'src/utils/isStudent';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
+import { isStudent } from 'src/utils/utils';
 
 @ApiBearerAuth()
 @ApiTags('Exams')
@@ -29,8 +29,8 @@ export class ExamsController {
 
   @Get()
   @CheckAbilities({ subject: Role.USER, action: Action.READ })
-  findAll(@Query() queryDto: ExamQueryDto, @CurrentUser() currentUser: AuthUser) {
-    return this.examsService.findAll(queryDto, currentUser);
+  findAll(@Query() queryDto: ExamQueryDto) {
+    return this.examsService.findAll(queryDto);
   }
 
   @Get('report/by-student')

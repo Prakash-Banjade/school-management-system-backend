@@ -13,6 +13,7 @@ import { BaseRepository } from 'src/common/repository/base-repository';
 import { FastifyRequest } from 'fastify';
 import { REQUEST } from '@nestjs/core';
 import { Account } from 'src/auth-system/accounts/entities/account.entity';
+import { isAdmin } from 'src/utils/utils';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AttendancesService extends BaseRepository {
@@ -56,7 +57,7 @@ export class AttendancesService extends BaseRepository {
         queryDto.status && qb.andWhere('attendance.status = :status', { status: queryDto.status })
         queryDto.month && qb.andWhere('MONTH(attendance.date) = :month', { month: queryDto.month });
 
-        if (currentUser.role === Role.ADMIN) { // admin access
+        if (isAdmin(currentUser)) { // admin access
           queryDto.accountId && qb.andWhere('account.id = :accountId', { accountId: queryDto.accountId })
         } else { // student access
           qb.andWhere('account.id = :accountId', { accountId: currentUser.accountId })

@@ -12,8 +12,8 @@ import { EmployeeAttendanceQueryDto } from './dto/employee-attendance-query.dto'
 import { TeachersHelper } from './helpers/teacher.helper';
 import { QueryDto } from 'src/common/dto/query.dto';
 import { TeachersStudentViewService } from './teachers.student-view.service';
-import { isStudent } from 'src/utils/isStudent';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
+import { isStudent } from 'src/utils/utils';
 
 @ApiBearerAuth()
 @ApiTags('Teachers')

@@ -8,13 +8,13 @@ import { FastifyRequest } from 'fastify';
 import { FilesService } from 'src/file-management/files/files.service';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { LessonPlan } from './entities/lesson-plan.entity';
-import { AuthUser, EClassType, ELessonPlanStatus } from 'src/common/types/global.type';
+import { AuthUser, EClassType } from 'src/common/types/global.type';
 import { LessonPlanQueryDto } from './dto/lesson-plan-query.dto';
-import { isStudent } from 'src/utils/isStudent';
 import { Account } from 'src/auth-system/accounts/entities/account.entity';
 import { lessonPlanSelectCols } from './helpers/lesson-plan-select-cols';
 import { paginatedRawData } from 'src/utils/paginatedData';
 import { Subject } from '../entities/subject.entity';
+import { isStudent } from 'src/utils/utils';
 
 @Injectable({ scope: Scope.REQUEST })
 export class LessonPlansService extends BaseRepository {

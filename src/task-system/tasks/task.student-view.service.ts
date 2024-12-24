@@ -6,9 +6,9 @@ import { PageMetaDto } from "src/common/dto/pageMeta.dto";
 import { PageDto } from "src/common/dto/page.dto.";
 import { TaskQueryDto } from "./dto/task-query.dto";
 import { AuthUser } from "src/common/types/global.type";
-import { isStudent } from "src/utils/isStudent";
 import { selectTaskCols_student } from "./helpers/select-task-cols.config";
 import { applySelectColumns } from "src/utils/apply-select-cols";
+import { isStudent } from "src/utils/utils";
 
 @Injectable()
 export class TaskStudentViewService {

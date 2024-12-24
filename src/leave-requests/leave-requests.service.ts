@@ -6,7 +6,6 @@ import { Brackets, DataSource } from 'typeorm';
 import { LeaveRequestQueryDto } from './dto/leave-request-query.dto';
 import { AuthUser, ELeaveRequestStatus, Role } from 'src/common/types/global.type';
 import paginatedData from 'src/utils/paginatedData';
-import { isStudent } from 'src/utils/isStudent';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { employeesLeaveRequestSelectCols, leaveRequestSelectCols } from './helpers/leave-requests-select-cols.config';
 import { BaseRepository } from 'src/common/repository/base-repository';
@@ -16,6 +15,7 @@ import { Account } from 'src/auth-system/accounts/entities/account.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { AttendanceEvent } from 'src/attendances/helpers/attendances.helper';
 import { CreateLeaveAttendanceEvent } from 'src/attendances/dto/create-attendance.dto';
+import { isAdmin, isStudent } from 'src/utils/utils';
 
 @Injectable({ scope: Scope.REQUEST })
 export class LeaveRequestsService extends BaseRepository {
@@ -61,7 +61,7 @@ export class LeaveRequestsService extends BaseRepository {
       .leftJoin('student.classRoom', 'classRoom')
       .leftJoin('classRoom.parent', 'parent')
       .andWhere(new Brackets(qb => {
-        if (currentUser.role === Role.ADMIN) { // admin access
+        if (isAdmin(currentUser)) { // admin access
           queryDto.classRoomId && qb.andWhere(new Brackets(qb => {
             qb.orWhere('parent.id = :classRoomId', { classRoomId: queryDto.classRoomId });
             qb.orWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });

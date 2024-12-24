@@ -1,46 +1,54 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateClassRoutineDto } from './dto/create-class-routine.dto';
 import { UpdateClassRoutineDto } from './dto/update-class-routine.dto';
-import { InjectRepository } from '@nestjs/typeorm';
 import { ClassRoutine } from './entities/class-routine.entity';
-import { Brackets, Repository } from 'typeorm';
-import { ClassRoomsService } from 'src/class-rooms/class-rooms.service';
-import { SubjectsService } from 'src/subjects/subjects.service';
+import { Brackets, DataSource } from 'typeorm';
 import { ClassRoutineQueryDto } from './dto/class-routine.query.dto';
 import paginatedData from 'src/utils/paginatedData';
 import { AuthUser, EClassType, Role } from 'src/common/types/global.type';
-import { isStudent } from 'src/utils/isStudent';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { classRoutinesSelectCols } from './helpers/class-routines-select-cols.config';
 import { Subject } from 'src/subjects/entities/subject.entity';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
+import { BaseRepository } from 'src/common/repository/base-repository';
+import { REQUEST } from '@nestjs/core';
+import { FastifyRequest } from 'fastify';
+import { isAdmin, isStudent } from 'src/utils/utils';
 
 @Injectable()
-export class ClassRoutinesService {
+export class ClassRoutinesService extends BaseRepository {
   constructor(
-    @InjectRepository(ClassRoutine) private classRoutineRepo: Repository<ClassRoutine>,
-    private readonly classRoomsService: ClassRoomsService,
-    private readonly subjectsService: SubjectsService,
-  ) { }
+    dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
+  ) { super(dataSource, req); }
 
   async create(createClassRoutineDto: CreateClassRoutineDto) {
-    const classRoom = await this.classRoomsService.findOne(createClassRoutineDto.classRoomId);
+    const classRoom = await this.getRepository(ClassRoom).findOne({
+      where: { id: createClassRoutineDto.classRoomId },
+      relations: ['parent'],
+      select: { id: true, classType: true, parent: { id: true } },
+    });
+    if (!classRoom) throw new NotFoundException('Class room not found');
+
     const subject = createClassRoutineDto.subjectId
-      ? await this.subjectsService.findOne(createClassRoutineDto.subjectId)
+      ? await this.getRepository(Subject).findOne({
+        where: { id: createClassRoutineDto.subjectId },
+        relations: { classRoom: true },
+        select: { id: true, classRoom: { id: true } }
+      })
       : null;
 
     // validate if class room have the subject
     subject && this.validateIfClassRoomHaveSubject(subject, classRoom);
 
-    const newClassRoutine = this.classRoutineRepo.create({
+    const newClassRoutine = this.getRepository(ClassRoutine).create({
       ...createClassRoutineDto,
       classRoom,
       subject
     });
 
-    const savedClassRoutine = await this.classRoutineRepo.save(newClassRoutine);
+    await this.getRepository(ClassRoutine).save(newClassRoutine);
 
-    return this.classRoutineMutationReturn(savedClassRoutine, 'created');
+    return { message: 'Class routine created' };
   }
 
   private validateIfClassRoomHaveSubject(subject: Subject | null, classRoom: ClassRoom) {
@@ -49,7 +57,7 @@ export class ClassRoutinesService {
   }
 
   async findAll(queryDto: ClassRoutineQueryDto, currentUser: AuthUser) {
-    const querybuilder = this.classRoutineRepo.createQueryBuilder('classRoutine');
+    const querybuilder = this.getRepository(ClassRoutine).createQueryBuilder('classRoutine');
 
     querybuilder
       .orderBy("classRoutine.createdAt", queryDto.order)
@@ -62,14 +70,14 @@ export class ClassRoutinesService {
       .where(new Brackets(qb => {
         queryDto.dayOfTheWeek && qb.andWhere('classRoutine.dayOfTheWeek = :dayOfTheWeek', { dayOfTheWeek: queryDto.dayOfTheWeek });
 
-        if (currentUser.role === Role.ADMIN && queryDto.classRoomId) { // routine can be associated with parent ot itself is a parent
+        if (isAdmin(currentUser) && queryDto.classRoomId) { // routine can be associated with parent ot itself is a parent
           qb.andWhere(new Brackets(qb => {
             qb.orWhere('parent.id = :classRoomId', { classRoomId: queryDto.classRoomId });
             qb.orWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
           }))
         }
 
-        if (currentUser.role === Role.ADMIN) { // admin access
+        if (isAdmin(currentUser)) { // admin access
           queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId }); // the sectionId send by the frontend is the class room id
           queryDto.subjectId && qb.andWhere('subject.id = :subjectId', { subjectId: queryDto.subjectId });
         } else if (isStudent(currentUser)) {
@@ -84,7 +92,7 @@ export class ClassRoutinesService {
   }
 
   async findOne(id: string) {
-    const existing = await this.classRoutineRepo.findOne({
+    const existing = await this.getRepository(ClassRoutine).findOne({
       where: { id },
       relations: ['classRoom', 'subject'],
     })
@@ -94,7 +102,7 @@ export class ClassRoutinesService {
   }
 
   async update(id: string, updateClassRoutineDto: UpdateClassRoutineDto) {
-    const existing = await this.classRoutineRepo.findOne({
+    const existing = await this.getRepository(ClassRoutine).findOne({
       where: { id },
       relations: ['classRoom'],
       select: { classRoom: { id: true } }
@@ -105,7 +113,8 @@ export class ClassRoutinesService {
 
     // update class room
     if (updateClassRoutineDto.classRoomId && (updateClassRoutineDto.classRoomId !== existing.classRoom?.id || !existing.classRoom)) {
-      const classRoom = await this.classRoomsService.findOne(updateClassRoutineDto.classRoomId);
+      const classRoom = await this.getRepository(ClassRoom).findOne({ where: { id: updateClassRoutineDto.classRoomId }, select: { id: true } });
+      if (!classRoom) throw new NotFoundException('Class room not found');
       existing.classRoom = classRoom;
     }
 
@@ -113,23 +122,14 @@ export class ClassRoutinesService {
       ...updateClassRoutineDto,
     });
 
-    const savedClassRoutine = await this.classRoutineRepo.save(existing);
+    await this.getRepository(ClassRoutine).save(existing);
 
-    return this.classRoutineMutationReturn(savedClassRoutine, 'updated');
+    return { message: 'Class routine updated' }
   }
 
   async remove(id: string) {
-    const existing = await this.classRoutineRepo.findOneBy({ id });
-    if (!existing) throw new NotFoundException('Class routine not found');
+    await this.getRepository(ClassRoutine).delete({ id });
 
-    await this.classRoutineRepo.remove(existing);
-
-    return this.classRoutineMutationReturn(existing, 'deleted');
-  }
-
-  private classRoutineMutationReturn = (classRoutine: ClassRoutine, type: 'created' | 'updated' | 'deleted') => {
-    return {
-      message: type === 'created' ? 'Class routine created successfully' : type === 'deleted' ? 'Class routine deleted successfully' : 'Class routine updated successfully',
-    }
+    return { message: 'Class routine deleted' };
   }
 }

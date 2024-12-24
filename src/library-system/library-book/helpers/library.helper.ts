@@ -7,7 +7,7 @@ import { LibraryBook } from "../entities/library-book.entity";
 import { BookTransaction } from "src/library-system/book-transactions/entities/book-transaction.entity";
 import { QueryDto } from "src/common/dto/query.dto";
 import { AuthUser } from "src/common/types/global.type";
-import { isStudent } from "src/utils/isStudent";
+import { isStudent } from "src/utils/utils";
 
 @Injectable()
 export class LibraryHelper extends BaseRepository {

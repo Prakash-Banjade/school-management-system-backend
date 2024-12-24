@@ -8,8 +8,8 @@ import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 import { TaskQueryDto } from './dto/task-query.dto';
-import { isStudent } from 'src/utils/isStudent';
 import { TaskStudentViewService } from './task.student-view.service';
+import { isStudent } from 'src/utils/utils';
 
 @ApiBearerAuth()
 @ApiTags('Tasks')

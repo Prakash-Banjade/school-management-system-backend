@@ -1,12 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { ExamSubjectsService } from './exam-subjects.service';
 import { UpdateExamSubjectDto } from './dto/update-exam-subject.dto';
 import { ExamSubjectQueryDto } from './dto/exam-subject-query.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, AuthUser, Role } from 'src/common/types/global.type';
-import { isStudent } from 'src/utils/isStudent';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
+import { isStudent } from 'src/utils/utils';
 
 @ApiBearerAuth()
 @ApiTags('Exam Subjects')

@@ -11,9 +11,9 @@ import paginatedData from 'src/utils/paginatedData';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { dormitoryRoomSelectCols } from './helpers/dormitory-select-cols.config';
 import { AuthUser } from 'src/common/types/global.type';
-import { isStudent } from 'src/utils/isStudent';
 import { UtilitiesService } from 'src/utilities/utilities.service';
 import { BranchesService } from 'src/branches/branches.service';
+import { isStudent } from 'src/utils/utils';
 
 @Injectable()
 export class DormitoryRoomsService {
