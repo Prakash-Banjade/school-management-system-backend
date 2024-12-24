@@ -108,6 +108,8 @@ export class PayrollsService extends BaseRepository {
 
         payroll.calculateNetSalary(); // calculate net salary
 
+        if (payroll.netSalary < 0) throw new BadRequestException('Something seems wrong with the salary structure or adjustments');
+
         await this.getRepository(Payroll).save(payroll);
 
         // update pay amount in employee
