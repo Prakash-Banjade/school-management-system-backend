@@ -9,14 +9,18 @@ import { paginatedRawData } from 'src/utils/paginatedData';
 import { UpdateSalaryStructureDto } from './dto/update-salary-structure.dto';
 import { Teacher } from 'src/teachers/entities/teacher.entity';
 import { Staff } from 'src/staffs/entities/staff.entity';
+import { UtilitiesService } from 'src/utilities/utilities.service';
 
 @Injectable()
 export class SalaryStructuresService extends BaseRepository {
     constructor(
-        dataSource: DataSource, @Inject(REQUEST) private req: FastifyRequest
+        dataSource: DataSource, @Inject(REQUEST) private req: FastifyRequest,
+        private readonly utilitiesService: UtilitiesService,
     ) { super(dataSource, req); }
 
     findAll(queryDto: SalaryStructuresQueryDto) {
+        const branchId = this.utilitiesService.getBranchId();
+
         const querybuilder = this.getRepository(SalaryStructure).createQueryBuilder('salaryStructure')
             .limit(queryDto.take)
             .offset(queryDto.skip)
@@ -32,6 +36,10 @@ export class SalaryStructuresService extends BaseRepository {
                         .orWhere('teacher.teacherId = :exactSearch', { exactSearch: queryDto.search })
                         .orWhere('staff.staffId = :exactSearch', { exactSearch: queryDto.search });
                 }));
+
+                if (branchId) {
+                    qb.andWhere('teacherAccount.branchId = :branchId OR staffAccount.branchId = :branchId', { branchId });
+                }
 
                 queryDto.designations?.length && qb.andWhere('teacherAccount.role IN (:...roles) OR staff.type IN (:...roles)', { roles: queryDto.designations });
             }))
@@ -72,7 +80,11 @@ export class SalaryStructuresService extends BaseRepository {
 
     async findOne(id: string) {
         const existing = await this.getRepository(SalaryStructure).findOne({
-            where: { id },
+            where: {
+                id,
+                teacher: { account: { branch: { id: this.utilitiesService.getBranchId() } } },
+                staff: { account: { branch: { id: this.utilitiesService.getBranchId() } } },
+            },
             select: { id: true, basicSalary: true, allowances: true }
         });
 

@@ -33,13 +33,12 @@ export class StudentsHelper extends BaseRepository {
             .addSelect("CONCAT(student.firstName, ' ', student.lastName) AS fullName")
             .orderBy(queryDto.sortBy, queryDto.order)
             .leftJoin('student.routeStop', 'routeStop', queryDto.onlyBasicInfo ? '1 = 0' : '1 = 1') // only basic info will not have route stop
-            .leftJoin('student.enrollments', 'enrollments')
+            .innerJoin('student.enrollments', 'enrollments', "enrollments.academicYearId = :academicYearId", { academicYearId: academicYearId })
             .leftJoin('enrollments.ledger', 'ledger', queryDto.includeLedgerAmount ? '1 = 1' : '1 = 0')
             .leftJoin('enrollments.classRoom', 'classRoom')
             .leftJoin('classRoom.parent', 'parent')
             .leftJoin('student.profileImage', 'profileImage', queryDto.onlyBasicInfo ? '1 = 0' : '1 = 1') // only basic info will not have profile image
             .leftJoin('student.account', 'account')
-            .where("enrollments.academicYearId = :academicYearId", { academicYearId: academicYearId })
             .andWhere(new Brackets(qb => {
                 if (queryDto.search) {
                     qb.andWhere(new Brackets(subQb => {
@@ -124,7 +123,7 @@ export class StudentsHelper extends BaseRepository {
         const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
 
         const queryBuilder = this.getRepository(Student).createQueryBuilder('student')
-            .leftJoin("student.enrollments", "enrollments")
+            .innerJoin("student.enrollments", "enrollments", "enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
             .leftJoin("student.account", "account")
             .leftJoin("enrollments.classRoom", "classRoom")
             .leftJoin("classRoom.parent", "parent")
@@ -135,7 +134,6 @@ export class StudentsHelper extends BaseRepository {
                 "attendance.accountId = account.id AND DATE(attendance.date) = DATE(:attendanceDate)",
                 { attendanceDate: queryDto.date }
             )
-            .where("enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
             .andWhere(new Brackets((qb) => {
                 queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId OR parent.id = :classRoomId', { classRoomId: queryDto.classRoomId });
                 queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId });
@@ -212,7 +210,7 @@ export class StudentsHelper extends BaseRepository {
         const isPk = isUUID(studentId); // this is done to check if the studentId is a uuid, pk has indexing
 
         const studentQueryBuilder = this.getRepository(Student).createQueryBuilder('student')
-            .leftJoin("student.enrollments", "enrollments", "enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
+            .innerJoin("student.enrollments", "enrollments", "enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
             .leftJoin('enrollments.classRoom', 'classRoom')
             .leftJoin("classRoom.parent", "parent")
             .leftJoin("student.profileImage", "profileImage")
