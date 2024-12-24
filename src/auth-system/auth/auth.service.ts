@@ -78,6 +78,12 @@ export class AuthService extends BaseRepository {
       .header('Content-Type', 'application/json')
       .send({
         access_token,
+        user: {
+          firstName: foundAccount.firstName,
+          lastName: foundAccount.lastName,
+          profileImageUrl: foundAccount.profileImage?.url,
+          branchName: foundAccount.branch?.name,
+        }
       })
   }
 
@@ -165,12 +171,15 @@ export class AuthService extends BaseRepository {
 
     const account = await this.accountsRepo.findOne({
       where: { id: req.accountId },
-      relations: { branch: true },
+      relations: { branch: true, profileImage: true },
       select: {
         id: true,
         email: true,
+        firstName: true,
+        lastName: true,
         role: true,
-        branch: { id: true } // necessary for jwt access token
+        profileImage: { url: true },
+        branch: { id: true, name: true } // necessary for jwt access token
       },
     }); // accountId is validated in the refresh token guard
     if (!account) throw new UnauthorizedException('Invalid refresh token');
@@ -186,6 +195,12 @@ export class AuthService extends BaseRepository {
       .header('Content-Type', 'application/json')
       .send({
         access_token,
+        user: {
+          firstName: account.firstName,
+          lastName: account.lastName,
+          profileImageUrl: account.profileImage?.url,
+          branchName: account.branch?.name
+        }
       })
   }
 

@@ -135,8 +135,8 @@ export class AuthHelper extends BaseRepository {
     async validateAccount(email: string, password: string): Promise<Account | { message: string }> {
         const foundAccount = await this.accountsRepo.findOne({
             where: { email },
-            relations: { branch: true },
-            select: { branch: { id: true } },
+            relations: { branch: true, profileImage: true },
+            select: { branch: { id: true, name: true }, profileImage: { url: true } },
         });
 
         if (!foundAccount) throw new UnauthorizedException(INVALID_AUTH_CREDENTIALS_MSG);
