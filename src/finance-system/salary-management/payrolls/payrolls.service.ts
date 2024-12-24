@@ -175,6 +175,7 @@ export class PayrollsService extends BaseRepository {
                 `,
             ])
             .groupBy('payroll.id')
+            .addGroupBy('salaryPayments.id')
             .orderBy('payroll.date', 'DESC')
             .limit(1)
             .getRawOne();
