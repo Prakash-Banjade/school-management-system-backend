@@ -1,4 +1,5 @@
 import { Account } from "src/auth-system/accounts/entities/account.entity";
+import { ClassRoom } from "src/class-rooms/entities/class-room.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { DormitoryRoom } from "src/dormitory-system/dormitory-rooms/entities/dormitory-room.entity";
 import { Exam } from "src/examination-system/exams/entities/exam.entity";
@@ -21,11 +22,11 @@ export class Branch extends BaseEntity {
     @OneToMany(() => Account, account => account.branch)
     accounts: Account[];
 
+    @OneToMany(() => ClassRoom, classRoom => classRoom.branch)
+    classRooms: ClassRoom;
+
     @OneToMany(() => DormitoryRoom, dormitoryRoom => dormitoryRoom.branch)
     dormitoryRooms: DormitoryRoom[];
-
-    @OneToMany(() => Exam, exam => exam.branch)
-    exams: Exam[];
 
     @OneToMany(() => Vehicle, vehicle => vehicle.branch)
     vehicles: Vehicle[]

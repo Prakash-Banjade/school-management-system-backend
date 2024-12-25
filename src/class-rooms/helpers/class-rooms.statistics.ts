@@ -1,9 +1,6 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { DataSource } from "typeorm";
 import { AttendanceStatisticsQueryDto, ClassRoomAttendancePeriod } from "../dto/attendance-statistics-query.dto";
-import { Cache } from "cache-manager";
-import { CACHE_MANAGER } from "@nestjs/cache-manager";
-import { CACHE_KEYS } from "src/common/CONSTANTS";
 import { EAttendanceStatus } from "src/common/types/global.type";
 import { BaseRepository } from "src/common/repository/base-repository";
 import { FastifyRequest } from "fastify";
@@ -11,16 +8,17 @@ import { REQUEST } from "@nestjs/core";
 import { Attendance } from "src/attendances/entities/attendance.entity";
 import { Student } from "src/students/entities/student.entity";
 import { ClassRoom } from "../entities/class-room.entity";
+import { UtilitiesService } from "src/utilities/utilities.service";
 
 @Injectable()
 export class ClassRoomsStatistics extends BaseRepository {
     constructor(
         dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
-        @Inject(CACHE_MANAGER) private cacheManager: Cache,
+        private readonly utilitiesService: UtilitiesService,
     ) { super(dataSource, req); }
 
     async getAttendanceStatistics(classRoomId: string, queryDto: AttendanceStatisticsQueryDto) {
-        const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+        const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
 
         const attendanceCondition = queryDto.period === ClassRoomAttendancePeriod.THIS_WEEK
             ? "WEEK(attendance.date) = WEEK(CURRENT_DATE()) AND YEAR(attendance.date) = YEAR(CURRENT_DATE())"

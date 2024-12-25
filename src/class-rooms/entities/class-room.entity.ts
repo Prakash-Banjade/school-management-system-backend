@@ -1,4 +1,5 @@
 import { BadRequestException } from "@nestjs/common";
+import { Branch } from "src/branches/entities/branch.entity";
 import { ClassRoutine } from "src/class-routines/entities/class-routine.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { EClassType } from "src/common/types/global.type";
@@ -43,6 +44,9 @@ export class ClassRoom extends BaseEntity {
 
     @Column({ type: "enum", enum: EClassType, default: EClassType.PRIMARY })
     classType: EClassType
+
+    @ManyToOne(() => Branch, branch => branch.classRooms, { onDelete: 'CASCADE' })
+    branch: Branch;
 
     @ManyToOne(() => Teacher, teacher => teacher.assignedClassRooms, { onDelete: 'SET NULL' })
     classTeacher: Teacher;
