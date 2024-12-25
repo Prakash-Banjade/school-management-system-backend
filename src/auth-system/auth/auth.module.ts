@@ -5,6 +5,7 @@ import { ImagesModule } from 'src/file-management/images/images.module';
 import { AuthHelper } from './helpers/auth.helper';
 import { JwtModule } from '../jwt/jwt.module';
 import { EncryptionModule } from '../encryption/encryption.module';
+import { RefreshTokenService } from './helpers/refresh-tokens.service';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { EncryptionModule } from '../encryption/encryption.module';
   providers: [
     AuthService,
     AuthHelper,
+    RefreshTokenService,
   ],
   exports: [AuthHelper]
 })

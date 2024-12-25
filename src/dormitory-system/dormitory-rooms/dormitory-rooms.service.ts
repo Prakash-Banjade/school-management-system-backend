@@ -3,7 +3,7 @@ import { CreateDormitoryRoomDto } from './dto/create-dormitory-room.dto';
 import { UpdateDormitoryRoomDto } from './dto/update-dormitory-room.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DormitoryRoom } from './entities/dormitory-room.entity';
-import { Brackets, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { DormitoriesService } from '../dormitories/dormitories.service';
 import { RoomTypesService } from '../room-types/room-types.service';
 import { QueryDto } from 'src/common/dto/query.dto';
@@ -11,7 +11,9 @@ import paginatedData from 'src/utils/paginatedData';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { dormitoryRoomSelectCols } from './helpers/dormitory-select-cols.config';
 import { AuthUser } from 'src/common/types/global.type';
-import { isStudent } from 'src/utils/isStudent';
+import { UtilitiesService } from 'src/utilities/utilities.service';
+import { BranchesService } from 'src/branches/branches.service';
+import { isStudent } from 'src/utils/utils';
 
 @Injectable()
 export class DormitoryRoomsService {
@@ -19,6 +21,8 @@ export class DormitoryRoomsService {
     @InjectRepository(DormitoryRoom) private readonly dormitoryRoomRepo: Repository<DormitoryRoom>,
     private readonly dormitoriesService: DormitoriesService,
     private readonly doomTypesService: RoomTypesService,
+    private readonly utilitiesService: UtilitiesService,
+    private readonly branchesService: BranchesService,
   ) { }
 
   async create(createDormitoryRoomDto: CreateDormitoryRoomDto) {
@@ -37,9 +41,12 @@ export class DormitoryRoomsService {
       ...createDormitoryRoomDto,
       dormitory,
       roomType,
+      branch: await this.branchesService.getBranch(this.utilitiesService.getBranchId())
     });
 
-    return this.dormitoryMutationReturn(await this.dormitoryRoomRepo.save(dormitoryRoom), 'created');
+    await this.dormitoryRoomRepo.save(dormitoryRoom)
+
+    return { message: 'Dormitory room created' }
   }
 
   async findAll(queryDto: QueryDto) {
@@ -55,24 +62,25 @@ export class DormitoryRoomsService {
       .leftJoin("students.classRoom", "classRoom")
       .leftJoin("classRoom.parent", "parent")
       .leftJoin("students.profileImage", "profileImage")
-      .where(new Brackets(qb => {
-
-      }))
 
     applySelectColumns(querybuilder, dormitoryRoomSelectCols, 'dormitoryRoom')
+    this.utilitiesService.applyBranchFilter(querybuilder, 'dormitoryRoom.branchId = :branchId');
 
     return paginatedData(queryDto, querybuilder)
   }
 
   getOptions(queryDto: QueryDto) {
-    return this.dormitoryRoomRepo.createQueryBuilder('dormitoryRoom')
+    const queryBuilder = this.dormitoryRoomRepo.createQueryBuilder('dormitoryRoom')
       .limit(queryDto.take)
       .offset(queryDto.skip)
       .select([
         'dormitoryRoom.id as value',
         'dormitoryRoom.roomNumber as label',
-      ])
-      .getRawMany();
+      ]);
+
+    this.utilitiesService.applyBranchFilter(queryBuilder, 'dormitoryRoom.branchId = :branchId');
+
+    return queryBuilder.getRawMany();
   }
 
   async getStudentDormitory(currentUser: AuthUser) {
@@ -120,7 +128,8 @@ export class DormitoryRoomsService {
   async findOne(id: string) {
     const existingDormitoryRoom = await this.dormitoryRoomRepo.findOne({
       where: {
-        id
+        id,
+        branch: { id: this.utilitiesService.getBranchId() }
       },
       relations: {
         dormitory: true,
@@ -135,7 +144,7 @@ export class DormitoryRoomsService {
   }
 
   async findOneWithAvailableBed(id: string) {
-    const existing = await this.dormitoryRoomRepo.createQueryBuilder('dormitoryRoom')
+    const queryBuilder = this.dormitoryRoomRepo.createQueryBuilder('dormitoryRoom')
       .leftJoin('dormitoryRoom.students', 'students')
       .where('dormitoryRoom.id = :id', { id })
       .select([
@@ -143,8 +152,11 @@ export class DormitoryRoomsService {
         'dormitoryRoom.roomNumber as roomNumber',
         'dormitoryRoom.noOfBeds as noOfBeds',
         'COUNT(DISTINCT students.id) as studentsCount'
-      ])
-      .getRawOne();
+      ]);
+
+    this.utilitiesService.applyBranchFilter(queryBuilder, 'dormitoryRoom.branchId = :branchId');
+
+    const existing = await queryBuilder.getRawOne();
 
     if (!existing) throw new NotFoundException('Dormitory room not found');
 
@@ -174,26 +186,14 @@ export class DormitoryRoomsService {
       roomType
     });
 
-    return this.dormitoryMutationReturn(await this.dormitoryRoomRepo.save(updatedDormitoryRoom), 'updated');
+    await this.dormitoryRoomRepo.save(updatedDormitoryRoom)
+
+    return { message: 'Dormitory room updated' }
   }
 
   async remove(id: string) {
-    const existingDormitoryRoom = await this.findOne(id);
+    await this.dormitoryRoomRepo.delete({ id });
 
-    const deletedDormitoryRoom = await this.dormitoryRoomRepo.remove(existingDormitoryRoom);
-
-    return this.dormitoryMutationReturn(deletedDormitoryRoom, 'deleted');
-  }
-
-  private dormitoryMutationReturn(dormitoryRoom: DormitoryRoom, type: 'created' | 'updated' | 'deleted') {
-    return {
-      message: type === 'created' ? 'Dormitory Room created successfully' : type === 'deleted' ? 'Dormitory Room deleted successfully' : 'Dormitory Room updated successfully',
-      dormitoryRoom: {
-        id: dormitoryRoom.id,
-        roomNumber: dormitoryRoom.roomNumber,
-        costPerBed: dormitoryRoom.costPerBed,
-        noOfBeds: dormitoryRoom.noOfBeds,
-      }
-    }
+    return { message: 'Dormitory room deleted' }
   }
 }

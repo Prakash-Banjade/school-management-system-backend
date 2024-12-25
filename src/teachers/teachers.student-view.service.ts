@@ -5,11 +5,11 @@ import { BaseRepository } from "src/common/repository/base-repository";
 import { Brackets, DataSource } from "typeorm";
 import { TeacherQueryDto } from "./dto/teacher-query.dto";
 import { AuthUser, EClassType } from "src/common/types/global.type";
-import { isStudent } from "src/utils/isStudent";
 import { Teacher } from "./entities/teacher.entity";
 import { PageMetaDto } from "src/common/dto/pageMeta.dto";
 import { PageDto } from "src/common/dto/page.dto.";
 import { ClassRoom } from "src/class-rooms/entities/class-room.entity";
+import { isStudent } from "src/utils/utils";
 
 @Injectable()
 export class TeachersStudentViewService extends BaseRepository {

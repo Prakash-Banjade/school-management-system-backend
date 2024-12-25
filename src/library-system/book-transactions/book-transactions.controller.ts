@@ -8,9 +8,9 @@ import { TransactionInterceptor } from 'src/common/interceptors/transaction.inte
 import { BookTransactionByStudentQueryDto, BookTransactionsQueryDto, UnpaidTransactionsQueryDto } from './dto/book-transactions-query.dto';
 import { RenewBookTransactionDto, ReturnBookTransactionDto } from './dto/update-book-transaction.dto';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
-import { isStudent } from 'src/utils/isStudent';
 import { BookTransactionsStudentViewService } from './book-transactions-student-view.service';
 import { BookTransactionsHelper } from './helpers/book-transactinos.helper';
+import { isStudent } from 'src/utils/utils';
 
 @ApiBearerAuth()
 @ApiTags('Library Book Transactions')

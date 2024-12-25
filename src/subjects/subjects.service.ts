@@ -8,13 +8,13 @@ import paginatedData from 'src/utils/paginatedData';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { singleSubjectSelelctCols, subjectSelectCols, subjectSelectCols_basic } from './helpers/subject-select-cols.config';
 import { AuthUser, EClassType, ESubjectType, Role } from 'src/common/types/global.type';
-import { isStudent } from 'src/utils/isStudent';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { FastifyRequest } from 'fastify';
 import { REQUEST } from '@nestjs/core';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { OptionalSubject } from 'src/optional-subject/entities/optional-subject.entity';
 import { Teacher } from 'src/teachers/entities/teacher.entity';
+import { isAdmin, isStudent } from 'src/utils/utils';
 
 @Injectable({ scope: Scope.REQUEST })
 export class SubjectsService extends BaseRepository {
@@ -70,7 +70,7 @@ export class SubjectsService extends BaseRepository {
 
         queryDto.types && qb.andWhere("subject.type IN (:...types)", { types: queryDto.types });
 
-        if (currentUser.role === Role.ADMIN) { // admin access
+        if (isAdmin(currentUser)) { // admin access
           queryDto.classRoomId && qb.andWhere("classRoom.id = :classRoomId", { classRoomId: queryDto.classRoomId })
         } else if (isStudent(currentUser)) { // student access
           qb.andWhere('classRoom.id = :classRoomId', { classRoomId: currentUser.classRoomId })

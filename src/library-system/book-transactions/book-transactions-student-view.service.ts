@@ -4,11 +4,11 @@ import { FastifyRequest } from "fastify";
 import { BaseRepository } from "src/common/repository/base-repository";
 import { Brackets, DataSource } from "typeorm";
 import { BookTransactionsQueryDto } from "./dto/book-transactions-query.dto";
-import { isStudent } from "src/utils/isStudent";
 import { BookTransaction } from "./entities/book-transaction.entity";
 import { AuthUser, EBookTransactionStatus } from "src/common/types/global.type";
 import { PageMetaDto } from "src/common/dto/pageMeta.dto";
 import { PageDto } from "src/common/dto/page.dto.";
+import { isStudent } from "src/utils/utils";
 
 @Injectable()
 export class BookTransactionsStudentViewService extends BaseRepository {

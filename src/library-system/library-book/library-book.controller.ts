@@ -9,7 +9,7 @@ import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { LibraryBookQueryDto } from './dto/library-book.query.dto';
 import { LibraryHelper } from './helpers/library.helper';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
-import { isStudent } from 'src/utils/isStudent';
+import { isStudent } from 'src/utils/utils';
 
 @ApiBearerAuth()
 @ApiTags('Library Book')

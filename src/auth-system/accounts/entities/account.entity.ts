@@ -44,9 +44,6 @@ export class Account extends BaseEntity {
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     passwordUpdatedAt: Date;
 
-    @Column({ type: 'simple-array', nullable: true })
-    refreshTokens: string[];
-
     @ManyToOne(() => Branch, branch => branch.accounts, { onDelete: 'RESTRICT', nullable: true })
     branch: Branch | null;
 

@@ -69,15 +69,13 @@ export class SalaryPaymentsService extends BaseRepository {
 
     async findAll(queryDto: SalaryPaymentQueryDto) {
         const querybuilder = this.getRepository(SalaryPayment).createQueryBuilder('salaryPayment')
-            .limit(queryDto.take)
-            .offset(queryDto.skip)
-            .orderBy('salaryPayment.paymentDate', 'DESC')
             .leftJoin('salaryPayment.payroll', 'payroll')
             .where(new Brackets(qb => {
-                queryDto.employeeId && qb.andWhere('payroll.teacherId = :employeeId OR payroll.staffId = :employeeId', { employeeId: queryDto.employeeId });
-
                 queryDto.dateFrom && qb.andWhere('DATE(salaryPayment.paymentDate) >= DATE(:dateFrom)', { dateFrom: queryDto.dateFrom });
                 queryDto.dateTo && qb.andWhere('DATE(salaryPayment.paymentDate) <= DATE(:dateTo)', { dateTo: queryDto.dateTo });
+            }))
+            .andWhere(new Brackets(qb => {
+                queryDto.employeeId && qb.andWhere('payroll.teacherId = :employeeId OR payroll.staffId = :employeeId', { employeeId: queryDto.employeeId });
             }))
             .select([
                 'salaryPayment.id as id',
@@ -85,7 +83,11 @@ export class SalaryPaymentsService extends BaseRepository {
                 'salaryPayment.paymentMethod as paymentMethod',
                 'salaryPayment.remark as remark',
                 'salaryPayment.amount as amount',
-            ]);
+                'payroll.date as salaryDate'
+            ])
+            .limit(queryDto.take)
+            .offset(queryDto.skip)
+            .orderBy('salaryPayment.createdAt', 'DESC')
 
         return paginatedRawData(queryDto, querybuilder);
     }
