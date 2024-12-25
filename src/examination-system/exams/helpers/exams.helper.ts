@@ -1,9 +1,7 @@
-import { CACHE_MANAGER } from "@nestjs/cache-manager";
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { REQUEST } from "@nestjs/core";
-import { Cache } from "cache-manager";
 import { FastifyRequest } from "fastify";
-import { CACHE_KEYS, WEAK_PERCENTAGE_THRESHOLD } from "src/common/CONSTANTS";
+import { WEAK_PERCENTAGE_THRESHOLD } from "src/common/CONSTANTS";
 import { BaseRepository } from "src/common/repository/base-repository";
 import { Student } from "src/students/entities/student.entity";
 import { Brackets, DataSource } from "typeorm";
@@ -31,11 +29,10 @@ export class ExamsHelper extends BaseRepository {
         if (!exam) throw new BadRequestException('Exam not found');
 
         const querybuilder = this.getRepository<Student>(Student).createQueryBuilder('student')
-            .leftJoin('student.enrollments', 'enrollments')
+            .innerJoin('student.enrollments', 'enrollments', "enrollments.academicYearId = :academicYearId", { academicYearId: await this.utilitiesService.getAcademicYearId() })
             .leftJoin('enrollments.classRoom', 'classRoom')
             .leftJoin('classRoom.parent', 'parent')
             .leftJoin('student.optionalSubjects', 'optionalSubjects', 'optionalSubjects.classRoomId = :classRoomId', { classRoomId: exam.classRoom.id })
-            .where("enrollments.academicYearId = :academicYearId", { academicYearId: await this.utilitiesService.getAcademicYearId() })
             .andWhere('CASE WHEN parent.id IS NULL THEN classRoom.id ELSE parent.id END = :classRoomId', { classRoomId: exam.classRoom.id })
             .andWhere(new Brackets(qb => {
                 queryDto.optionalSubjectId && qb.andWhere('optionalSubjects.subjectId = :optionalSubjectId', { optionalSubjectId: queryDto.optionalSubjectId });
@@ -57,7 +54,7 @@ export class ExamsHelper extends BaseRepository {
 
         const student = await this.getRepository(Student).createQueryBuilder('student')
             .where("student.studentId = :studentId OR student.id = :studentId", { studentId }) // the second condition of is due to when student request this api, we check of student.id from the currentUser
-            .leftJoin('student.enrollments', 'enrollment', "enrollment.academicYearId = :academicYearId", { academicYearId: await this.utilitiesService.getAcademicYearId() })
+            .innerJoin('student.enrollments', 'enrollment', "enrollment.academicYearId = :academicYearId", { academicYearId: await this.utilitiesService.getAcademicYearId() })
             .leftJoin('enrollment.classRoom', 'classRoom')
             .leftJoin('classRoom.parent', 'parent')
             .leftJoin('student.profileImage', 'profileImage')
@@ -86,13 +83,13 @@ export class ExamsHelper extends BaseRepository {
         const studentOptionalSubjectIds = (typeof student.optionalSubjectIds === 'string' ? JSON.parse(student.optionalSubjectIds) : student.optionalSubjectIds).filter(Boolean);
 
         const querybuilder = this.getRepository(Exam).createQueryBuilder('exam')
-            .where("exam.academicYearId = :academicYearId", { academicYearId: await this.utilitiesService.getAcademicYearId() })
             .leftJoin("exam.examType", "examType")
             .leftJoin("exam.classRoom", "classRoom")
-            .andWhere("exam.examTypeId = :examTypeId", { examTypeId: examTypeId })
-            .andWhere("classRoom.id = :classRoomId", { classRoomId: student.parentClassId ?? student.classRoomId })
             .leftJoin('exam.examSubjects', 'examSubjects')
             .leftJoin('examSubjects.subject', 'subject')
+            .where("exam.academicYearId = :academicYearId", { academicYearId: await this.utilitiesService.getAcademicYearId() })
+            .andWhere("exam.examTypeId = :examTypeId", { examTypeId: examTypeId })
+            .andWhere("classRoom.id = :classRoomId", { classRoomId: student.parentClassId ?? student.classRoomId })
             .andWhere(new Brackets(qb => {
                 studentOptionalSubjectIds?.length && (
                     qb.andWhere("CASE WHEN subject.type = :optional THEN subject.id IN (:...optionalSubjectIds) ELSE 1 = 1 END", { optional: ESubjectType.OPTIONAL, optionalSubjectIds: studentOptionalSubjectIds })
@@ -119,6 +116,7 @@ export class ExamsHelper extends BaseRepository {
                 "examReports.gpa",
                 "examReports.grade",
             ]);
+        this.utilitiesService.applyBranchFilter(querybuilder, 'classRoom.branchId = :branchId');
 
         const exam = await querybuilder.getOne();
 
@@ -127,7 +125,6 @@ export class ExamsHelper extends BaseRepository {
         // sum the obtained marks of all exam subjects and evaluate corresponding percentage, grade and gpa
         let totalObtainedMarks = 0;
         let fullMarks = 0;
-
 
         exam.examSubjects?.forEach(examSubject => {
             fullMarks += examSubject.theoryFM + examSubject.practicalFM;

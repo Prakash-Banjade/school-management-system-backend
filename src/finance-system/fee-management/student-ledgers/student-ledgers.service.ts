@@ -1,9 +1,6 @@
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
-import { Cache } from 'cache-manager';
 import { FastifyRequest } from 'fastify';
-import { CACHE_KEYS } from 'src/common/CONSTANTS';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { Student } from 'src/students/entities/student.entity';
 import { Brackets, DataSource } from 'typeorm';
@@ -12,17 +9,17 @@ import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { LedgerQueryDto } from './dto/ledger-query.dto';
 import { LedgerItem } from './entities/ledger-item.entity';
 import { PageMetaDto } from 'src/common/dto/pageMeta.dto';
-import { startOfDay } from 'date-fns';
+import { UtilitiesService } from 'src/utilities/utilities.service';
 
 @Injectable()
 export class StudentLedgersService extends BaseRepository {
     constructor(
         dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
-        @Inject(CACHE_MANAGER) private cacheManager: Cache,
+        private readonly utilitiesService: UtilitiesService,
     ) { super(dataSource, req); }
 
     async createStudentsLedger() { // TODO: remove in production
-        const academicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+        const academicYearId = await this.utilitiesService.getAcademicYearId();
 
         const students = await this.getRepository(Student).createQueryBuilder('student')
             .leftJoin('student.enrollments', 'enrollments')
@@ -40,7 +37,7 @@ export class StudentLedgersService extends BaseRepository {
     }
 
     async findAll(queryDto: LedgerQueryDto) {
-        const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+        const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
 
         const querybuilder = this.getRepository(LedgerItem).createQueryBuilder('ledgerItem')
             .leftJoin('ledgerItem.studentLedger', 'studentLedger')

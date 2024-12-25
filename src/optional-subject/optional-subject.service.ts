@@ -5,19 +5,17 @@ import { DataSource } from 'typeorm';
 import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
 import { OptionalSubject } from './entities/optional-subject.entity';
-import { Cache } from 'cache-manager';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { CACHE_KEYS } from 'src/common/CONSTANTS';
 import { OptionalSubjectQueryDto } from './dto/optional-subject-query.dto';
 import { Student } from 'src/students/entities/student.entity';
 import { AcademicYearsService } from 'src/academic-years/academic-years.service';
+import { UtilitiesService } from 'src/utilities/utilities.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class OptionalSubjectService extends BaseRepository {
   constructor(
     datasource: DataSource, @Inject(REQUEST) req: FastifyRequest,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly academicYearsService: AcademicYearsService,
+    private readonly utilitiesService: UtilitiesService
   ) { super(datasource, req) }
 
   async assignSubjects(dto: AssignOptionalSubjectDto) {
@@ -46,7 +44,7 @@ export class OptionalSubjectService extends BaseRepository {
   }
 
   async findAll(queryDto: OptionalSubjectQueryDto) {
-    const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+    const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
 
     const queryBuilder = this.getRepository(OptionalSubject).createQueryBuilder('optionalSubject')
       .leftJoin('optionalSubject.students', 'students')

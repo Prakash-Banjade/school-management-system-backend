@@ -6,22 +6,20 @@ import { applySelectColumns } from "src/utils/apply-select-cols";
 import { classRoomOptionsSelectCols } from "./class-room-select-cols.config";
 import { paginatedRawData } from "src/utils/paginatedData";
 import { ClassRoomOptionsQueryDto, ClassRoomQueryDto } from "../dto/classRoom-query.dto";
-import { CACHE_MANAGER } from "@nestjs/cache-manager";
-import { Cache } from "cache-manager";
-import { CACHE_KEYS } from "src/common/CONSTANTS";
 import { BaseRepository } from "src/common/repository/base-repository";
 import { FastifyRequest } from "fastify";
 import { REQUEST } from "@nestjs/core";
+import { UtilitiesService } from "src/utilities/utilities.service";
 
 @Injectable()
 export class ClassRoomsHelper extends BaseRepository {
     constructor(
         dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
-        @Inject(CACHE_MANAGER) private cacheManager: Cache,
+        private readonly utilitiesService: UtilitiesService,
     ) { super(dataSource, req); }
 
     async findAll(queryDto: ClassRoomQueryDto) {
-        const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+        const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
 
         const queryBuilder = this.getRepository(ClassRoom).createQueryBuilder('classRoom')
             .where('classRoom.classType = :classType', { classType: queryDto.classType })
@@ -67,6 +65,8 @@ export class ClassRoomsHelper extends BaseRepository {
             .groupBy('classRoom.id')  // Ensure group by to aggregate counts per classRoom
             .addGroupBy('parentClass.name')
 
+        this.utilitiesService.applyBranchFilter(queryBuilder, "classRoom.branchId = :branchId");
+
         return paginatedRawData(queryDto, queryBuilder);
     }
 
@@ -93,12 +93,14 @@ export class ClassRoomsHelper extends BaseRepository {
             'classRoom'
         );
 
+        this.utilitiesService.applyBranchFilter(queryBuilder, "classRoom.branchId = :branchId");
+
         return queryBuilder.getMany();
     }
 
     // this is used in single class room page in frontend
     async getClassRoomDetails(id: string) {
-        const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+        const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
 
         return this.getRepository(ClassRoom).createQueryBuilder('classRoom')
             .where('classRoom.id = :classroomId', { classroomId: id }) // Filter by specific classroom ID

@@ -8,7 +8,7 @@ import { ExamSubject } from '../exam-subjects/entities/exam-subject.entity';
 import { Subject } from 'src/subjects/entities/subject.entity';
 import { singleExamSelectCols } from './helpers/exam-select-cols';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
-import { AuthUser, EClassType } from 'src/common/types/global.type';
+import { EClassType } from 'src/common/types/global.type';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { FastifyRequest } from 'fastify';
@@ -18,7 +18,6 @@ import { isStudent } from 'src/utils/utils';
 import { AcademicYearsService } from 'src/academic-years/academic-years.service';
 import { ExamType } from '../exam-types/entities/exam-type.entity';
 import { UtilitiesService } from 'src/utilities/utilities.service';
-import { BranchesService } from 'src/branches/branches.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class ExamsService extends BaseRepository {
@@ -26,12 +25,13 @@ export class ExamsService extends BaseRepository {
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
     private readonly academicYearService: AcademicYearsService,
     private readonly utilitiesService: UtilitiesService,
-    private readonly branchesService: BranchesService,
   ) { super(dataSource, req); }
 
   async create(createExamDto: CreateExamDto) {
+    const branchId = this.utilitiesService.getBranchId();
+
     const classRoom = await this.getRepository(ClassRoom).findOne({
-      where: { id: createExamDto.classRoomId },
+      where: { id: createExamDto.classRoomId, branch: { id: branchId } },
       relations: { parent: true },
       select: { id: true, name: true, classType: true, parent: { id: true } },
     });
@@ -47,7 +47,7 @@ export class ExamsService extends BaseRepository {
       where: {
         examType: { id: examType.id },
         classRoom: { id: classRoom.id },
-        academicYear: { id: academicYear.id }
+        academicYear: { id: academicYear.id },
       },
       select: { id: true }
     });
@@ -78,7 +78,6 @@ export class ExamsService extends BaseRepository {
       classRoom,
       academicYear,
       examSubjects,
-      branch: await this.branchesService.getBranch(this.utilitiesService.getBranchId())
     });
 
     await this.getRepository(Exam).save(newExam);
@@ -132,6 +131,8 @@ export class ExamsService extends BaseRepository {
         'classRoom.name as classRoom',
       ])
 
+    this.utilitiesService.applyBranchFilter(queryBuilder, 'classRoom.branchId = :branchId');
+
     return paginatedRawData(queryDto, queryBuilder);
   }
 
@@ -150,6 +151,7 @@ export class ExamsService extends BaseRepository {
       .leftJoin('examSubjects.subject', 'subject')
 
     applySelectColumns(queryBuilder, singleExamSelectCols, 'exam');
+    this.utilitiesService.applyBranchFilter(queryBuilder, 'classRoom.branchId = :branchId');
 
     const existing = await queryBuilder.getOne();
 
@@ -162,7 +164,7 @@ export class ExamsService extends BaseRepository {
     const existing = await this.getRepository(Exam).findOne({
       where: {
         id,
-        branch: { id: this.utilitiesService.getBranchId() }
+        classRoom: { branch: { id: this.utilitiesService.getBranchId() } }
       },
       relations: {
         examType: true,
