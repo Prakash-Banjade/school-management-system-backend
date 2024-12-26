@@ -19,7 +19,7 @@ export const subjectSelectCols: FindOptionsSelect<Subject> = {
         id: true,
         name: true,
     },
-    teacher: {
+    teachers: {
         id: true,
         firstName: true,
         lastName: true,

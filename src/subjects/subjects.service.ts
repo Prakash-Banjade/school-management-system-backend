@@ -2,12 +2,12 @@ import { BadRequestException, ConflictException, Inject, Injectable, NotFoundExc
 import { CreateSubjectDto } from './dto/create-subject.dto';
 import { UpdateSubjectDto } from './dto/update-subject.dto';
 import { Subject } from './entities/subject.entity';
-import { Brackets, DataSource } from 'typeorm';
+import { Brackets, DataSource, In } from 'typeorm';
 import { SubjectOptionsQueryDto, SubjectQueryDto } from './dto/subject-query.dto';
 import paginatedData from 'src/utils/paginatedData';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { singleSubjectSelelctCols, subjectSelectCols, subjectSelectCols_basic } from './helpers/subject-select-cols.config';
-import { AuthUser, EClassType, ESubjectType, Role } from 'src/common/types/global.type';
+import { AuthUser, EClassType, ESubjectType } from 'src/common/types/global.type';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { FastifyRequest } from 'fastify';
 import { REQUEST } from '@nestjs/core';
@@ -15,26 +15,30 @@ import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { OptionalSubject } from 'src/optional-subject/entities/optional-subject.entity';
 import { Teacher } from 'src/teachers/entities/teacher.entity';
 import { isAdmin, isStudent } from 'src/utils/utils';
+import { UtilitiesService } from 'src/utilities/utilities.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class SubjectsService extends BaseRepository {
   constructor(
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
+    private readonly utilitiesService: UtilitiesService
   ) { super(dataSource, req); }
 
   async create(createSubjectDto: CreateSubjectDto) {
-    const founcSubjectWithSameCode = await this.getRepository(Subject).findOneBy({ subjectCode: createSubjectDto.subjectCode });
+    const founcSubjectWithSameCode = await this.getRepository(Subject).findOne({ where: { subjectCode: createSubjectDto.subjectCode }, select: { id: true } });
     if (founcSubjectWithSameCode) throw new ConflictException('Subject with same code already exists');
 
     // get teacher
-    const teacher = createSubjectDto.teacherId
-      ? await this.getRepository(Teacher).findOne({ where: { id: createSubjectDto.teacherId }, select: { id: true } })
-      : null;
+    const teachers = createSubjectDto.teacherIds?.length
+      ? await this.getRepository(Teacher).find({ where: { id: In(createSubjectDto.teacherIds) }, select: { id: true } })
+      : [];
 
     // get class room and validte if class room is primary
-    const classRoom = await this.getRepository(ClassRoom).findOne({ where: { id: createSubjectDto.classRoomId }, select: { id: true, classType: true } });
+    const classRoom = await this.getRepository(ClassRoom).findOne({
+      where: { id: createSubjectDto.classRoomId, classType: EClassType.PRIMARY },
+      select: { id: true, classType: true }
+    });
     if (!classRoom) throw new NotFoundException('Class room not found');
-    if (classRoom.classType !== EClassType.PRIMARY) throw new BadRequestException('Cannot assign subject to section class.');
 
     // create optional subject instance if subject is optional
     const optionalSubject = createSubjectDto.type === ESubjectType.OPTIONAL ? this.getRepository(OptionalSubject).create({
@@ -44,7 +48,7 @@ export class SubjectsService extends BaseRepository {
 
     const newSubject = this.getRepository(Subject).create({
       ...createSubjectDto,
-      teacher,
+      teachers,
       classRoom,
       optionalSubject, // entity will be created automatically due to cascading
     });
@@ -61,7 +65,8 @@ export class SubjectsService extends BaseRepository {
       .take(queryDto.skipPagination ? undefined : queryDto.take)
       .orderBy(queryDto.sortBy, queryDto.order)
       .leftJoin('subject.classRoom', 'classRoom')
-      .leftJoin('subject.teacher', 'teacher')
+      .leftJoin('subject.teachers', 'teachers')
+      .leftJoin('teachers.account', 'account')
       .andWhere(new Brackets(qb => {
         if (queryDto.search) {
           qb.orWhere("TRIM(LOWER(subject.subjectCode)) = TRIM(LOWER(:search))", { search: queryDto.search })
@@ -76,6 +81,7 @@ export class SubjectsService extends BaseRepository {
           qb.andWhere('classRoom.id = :classRoomId', { classRoomId: currentUser.classRoomId })
         }
       }))
+    this.utilitiesService.applyBranchFilter(queryBuilder, "classRoom.branchId = :branchId");
 
     applySelectColumns(
       queryBuilder,
@@ -104,7 +110,7 @@ export class SubjectsService extends BaseRepository {
       },
       relations: {
         classRoom: true,
-        teacher: true,
+        teachers: true,
         optionalSubject: true,
       },
       select: singleSubjectSelelctCols,
@@ -136,22 +142,19 @@ export class SubjectsService extends BaseRepository {
       }
     }
 
-    const teacher = updateSubjectDto.teacherId
-      ? await this.getRepository(Teacher).findOne({ where: { id: updateSubjectDto.teacherId }, select: { id: true } })
-      : updateSubjectDto.teacherId === null
-        ? null
-        : existing.teacher;
+    const teachers = updateSubjectDto.teacherIds?.length
+      ? await this.getRepository(Teacher).find({ where: { id: In(updateSubjectDto.teacherIds) }, select: { id: true } })
+      : []
 
     Object.assign(existing, updateSubjectDto);
-    existing.teacher = teacher;
+    existing.teachers = teachers;
 
     await this.getRepository(Subject).save(existing);
     return { message: 'Subject updated' };
   }
 
   async remove(id: string, currentUser: AuthUser) {
-    const existing = await this.findOne(id, currentUser);
-    await this.getRepository(Subject).softRemove(existing);
+    await this.getRepository(Subject).delete({ id });
 
     return { message: 'Subject deleted' };
   }

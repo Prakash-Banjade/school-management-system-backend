@@ -1,6 +1,6 @@
 import { BadRequestException } from "@nestjs/common";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Min, ValidateIf } from "class-validator";
+import { IsArray, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Min, ValidateIf } from "class-validator";
 import { ESubjectType } from "src/common/types/global.type";
 
 export class SubjectMarksDto {
@@ -58,7 +58,7 @@ export class CreateSubjectDto extends SubjectMarksDto {
     classRoomId: string;
 
     @ApiPropertyOptional({ type: 'enum', format: 'emum', description: 'Teacher id' })
-    @IsUUID()
+    @IsUUID('all', { each: true })
     @IsOptional()
-    teacherId?: string;
+    teacherIds?: string[];
 }

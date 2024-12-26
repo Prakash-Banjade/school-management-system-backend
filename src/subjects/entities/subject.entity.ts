@@ -1,6 +1,6 @@
 import { ClassRoom } from "src/class-rooms/entities/class-room.entity";
 import { Teacher } from "src/teachers/entities/teacher.entity";
-import { Column, Entity, ManyToOne, OneToMany, OneToOne } from "typeorm";
+import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne } from "typeorm";
 import { SubjectChapter } from "./subject-chapter.entity";
 import { Task } from "src/task-system/tasks/entities/task.entity";
 import { ClassRoutine } from "src/class-routines/entities/class-routine.entity";
@@ -42,8 +42,9 @@ export class Subject extends BaseEntity {
     |--------------------------------------------------
     */
 
-    @ManyToOne(() => Teacher, teacher => teacher.assignedSubjects, { onDelete: 'SET NULL', nullable: true })
-    teacher: Teacher;
+    @ManyToMany(() => Teacher, teacher => teacher.assignedSubjects, { cascade: true })
+    @JoinTable()
+    teachers: Teacher[];
 
     @ManyToOne(() => ClassRoom, classRoom => classRoom.subjects, { onDelete: 'SET NULL', nullable: true })
     classRoom: ClassRoom;

@@ -9,7 +9,7 @@ import { SalaryStructure } from "src/finance-system/salary-management/salary-str
 import { Subject } from "src/subjects/entities/subject.entity";
 import { TaskEvaluation } from "src/task-system/task-evaluations/entities/task-evaluation.entity";
 import { generateTeacherId } from "src/utils/generate-teacher-id";
-import { BeforeInsert, Column, Entity, JoinColumn, OneToMany, OneToOne } from "typeorm";
+import { BeforeInsert, Column, Entity, JoinColumn, ManyToMany, OneToMany, OneToOne } from "typeorm";
 
 @Entity()
 export class Teacher extends BaseEntity {
@@ -73,7 +73,7 @@ export class Teacher extends BaseEntity {
     @Column({ type: 'varchar' })
     accountNumber: string
 
-    @OneToMany(() => Subject, (subject) => subject.teacher)
+    @ManyToMany(() => Subject, (subject) => subject.teachers)
     assignedSubjects: Subject[]
 
     @OneToMany(() => TaskEvaluation, (taskEvaluation) => taskEvaluation.evaluator)

@@ -21,7 +21,7 @@ export const classRoutinesSelectCols: FindOptionsSelect<ClassRoutine> = {
         id: true,
         subjectName: true,
         subjectCode: true,
-        teacher: {
+        teachers: {
             id: true,
             firstName: true,
             lastName: true,
