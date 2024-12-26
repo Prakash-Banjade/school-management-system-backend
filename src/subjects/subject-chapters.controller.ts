@@ -4,8 +4,7 @@ import { CreateSubjectChapterDto, SubjectChapterQueryDto, UpdateChapterNoDto, Up
 import { SubjectChaptersService } from './subject-chapters.service';
 import { ApiPaginatedResponse } from 'src/common/decorators/apiPaginatedResponse.decorator';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action, AuthUser, Role } from 'src/common/types/global.type';
-import { CurrentUser } from 'src/common/decorators/user.decorator';
+import { Action, Role } from 'src/common/types/global.type';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 
 @ApiBearerAuth()
@@ -16,8 +15,8 @@ export class SubjectChaptersController {
 
     @Post()
     @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
-    create(@Body() createSubjectChapterDto: CreateSubjectChapterDto, @CurrentUser() currentUser: AuthUser) {
-        return this.subjectChaptersService.create(createSubjectChapterDto, currentUser);
+    create(@Body() createSubjectChapterDto: CreateSubjectChapterDto) {
+        return this.subjectChaptersService.create(createSubjectChapterDto);
     }
 
     @Get()

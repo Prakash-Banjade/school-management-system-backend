@@ -1,37 +1,40 @@
 import { ConflictException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { CreateClassRoomDto } from './dto/create-class-room.dto';
 import { UpdateClassRoomDto } from './dto/update-class-room.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { ClassRoom } from './entities/class-room.entity';
 import { REQUEST } from '@nestjs/core';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { FastifyRequest } from 'fastify';
 import { EClassType } from 'src/common/types/global.type';
-import { TeachersService } from 'src/teachers/teachers.service';
 import { classRoomColumnsConfig } from './helpers/class-room-select-cols.config';
 import { FeeStructuresService } from 'src/finance-system/fee-management/fee-structures/fee-structures.service';
+import { Teacher } from 'src/teachers/entities/teacher.entity';
+import { UtilitiesService } from 'src/utilities/utilities.service';
+import { BranchesService } from 'src/branches/branches.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class ClassRoomsService extends BaseRepository {
   constructor(
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
-    @InjectRepository(ClassRoom) private classRoomRepo: Repository<ClassRoom>,
-    private readonly teachersService: TeachersService,
     private readonly feeStructuresService: FeeStructuresService,
-  ) {
-    super(dataSource, req);
-  }
+    private readonly utilitiesService: UtilitiesService,
+    private readonly branchesService: BranchesService,
+  ) { super(dataSource, req) }
 
   async create(createClassRoomDto: CreateClassRoomDto) {
-    const existingWithSameName = await this.classRoomRepo.findOneBy({ name: createClassRoomDto.name, classType: EClassType.PRIMARY });
+    const existingWithSameName = await this.getRepository(ClassRoom).findOne({ where: { name: createClassRoomDto.name, classType: EClassType.PRIMARY }, select: { id: true } });
     if (existingWithSameName) throw new ConflictException('Class room with same name already exists');
 
     // evaluate parent class
-    const parentClass = createClassRoomDto.parentClassId ? await this.getRepository(ClassRoom).findOneBy({ id: createClassRoomDto.parentClassId }) : null;
+    const parentClass = createClassRoomDto.parentClassId
+      ? await this.getRepository(ClassRoom).findOne({ where: { id: createClassRoomDto.parentClassId }, select: { id: true } })
+      : null;
 
     // evaluate teacher
-    const classTeacher = createClassRoomDto.classTeacherId ? await this.teachersService.findOne(createClassRoomDto.classTeacherId) : null;
+    const classTeacher = createClassRoomDto.classTeacherId
+      ? await this.getRepository(Teacher).findOne({ where: { id: createClassRoomDto.classTeacherId }, select: { id: true } })
+      : null;
 
     // add mandatory charge heads structure for the class
     const feeStructures = await this.feeStructuresService.createMandatoryFeeStructures({
@@ -39,11 +42,12 @@ export class ClassRoomsService extends BaseRepository {
       monthlyFee: createClassRoomDto.monthlyFee,
     });
 
-    const newClassRoom = this.classRoomRepo.create({
+    const newClassRoom = this.getRepository(ClassRoom).create({
       ...createClassRoomDto,
       parent: parentClass,
       classTeacher,
       feeStructures,
+      branch: await this.branchesService.getBranch(this.utilitiesService.getBranchId()),
     });
 
     const savedClass = await this.getRepository(ClassRoom).save(newClassRoom);
@@ -54,8 +58,11 @@ export class ClassRoomsService extends BaseRepository {
   }
 
   async findOne(id: string) {
-    const existing = await this.classRoomRepo.findOne({
-      where: { id },
+    const existing = await this.getRepository(ClassRoom).findOne({
+      where: {
+        id,
+        branch: { id: this.utilitiesService.getBranchId() }
+      },
       relations: {
         parent: true,
         children: true,
@@ -74,12 +81,12 @@ export class ClassRoomsService extends BaseRepository {
 
     // check if the class room with the given name already exists
     if (updateClassRoomDto.name && updateClassRoomDto.name !== existing.name) {
-      const existingWithName = await this.classRoomRepo.findOneBy({ name: updateClassRoomDto.name });
+      const existingWithName = await this.getRepository(ClassRoom).findOne({ where: { name: updateClassRoomDto.name }, select: { id: true } });
       if (existingWithName) throw new ConflictException('Class room with same name already exists');
     }
 
     if (updateClassRoomDto.classTeacherId && (updateClassRoomDto.classTeacherId !== existing.classTeacher?.id || !updateClassRoomDto.classTeacherId)) {
-      const newClassTeacher = await this.teachersService.findOne(updateClassRoomDto.classTeacherId);
+      const newClassTeacher = await this.getRepository(Teacher).findOne({ where: { id: updateClassRoomDto.classTeacherId }, select: { id: true } });
       existing.classTeacher = newClassTeacher;
     } else if (updateClassRoomDto.classTeacherId === null) {
       existing.classTeacher = null;
@@ -87,24 +94,15 @@ export class ClassRoomsService extends BaseRepository {
 
     // update the class room
     Object.assign(existing, updateClassRoomDto);
-    const savedClassRoom = await this.classRoomRepo.save(existing);
+    const savedClassRoom = await this.getRepository(ClassRoom).save(existing);
 
     return {
       message: savedClassRoom.classType === EClassType.SECTION ? 'Class section updated' : 'Class room updated',
     }
   }
 
-  async remove(id: string) {
-    const existing = await this.findOne(id);
-    await this.classRoomRepo.remove(existing);
-
-    return {
-      message: existing.classType === EClassType.SECTION ? 'Class section removed' : 'Class room removed',
-    }
-  }
-
   async createFeeStructures() {
-    const classRooms = await this.classRoomRepo.find({
+    const classRooms = await this.getRepository(ClassRoom).find({
       where: { classType: EClassType.PRIMARY },
       select: { id: true, admissionFee: true, monthlyFee: true }
     });

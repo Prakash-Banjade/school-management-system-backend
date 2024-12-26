@@ -1,31 +1,27 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
 import { ClassRoom } from "../entities/class-room.entity";
-import { Brackets, DataSource, Repository } from "typeorm";
+import { Brackets, DataSource } from "typeorm";
 import { EClassType, Gender } from "src/common/types/global.type";
 import { applySelectColumns } from "src/utils/apply-select-cols";
 import { classRoomOptionsSelectCols } from "./class-room-select-cols.config";
 import { paginatedRawData } from "src/utils/paginatedData";
 import { ClassRoomOptionsQueryDto, ClassRoomQueryDto } from "../dto/classRoom-query.dto";
-import { CACHE_MANAGER } from "@nestjs/cache-manager";
-import { Cache } from "cache-manager";
-import { CACHE_KEYS } from "src/common/CONSTANTS";
 import { BaseRepository } from "src/common/repository/base-repository";
 import { FastifyRequest } from "fastify";
 import { REQUEST } from "@nestjs/core";
+import { UtilitiesService } from "src/utilities/utilities.service";
 
 @Injectable()
 export class ClassRoomsHelper extends BaseRepository {
     constructor(
         dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
-        @InjectRepository(ClassRoom) private readonly classRoomRepo: Repository<ClassRoom>,
-        @Inject(CACHE_MANAGER) private cacheManager: Cache,
+        private readonly utilitiesService: UtilitiesService,
     ) { super(dataSource, req); }
 
     async findAll(queryDto: ClassRoomQueryDto) {
-        const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+        const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
 
-        const queryBuilder = this.classRoomRepo.createQueryBuilder('classRoom')
+        const queryBuilder = this.getRepository(ClassRoom).createQueryBuilder('classRoom')
             .where('classRoom.classType = :classType', { classType: queryDto.classType })
             .andWhere(new Brackets(qb => {
                 queryDto.search && qb.andWhere('LOWER(classRoom.name) LIKE LOWER(:search)', { search: `%${queryDto.search}%` })
@@ -69,11 +65,13 @@ export class ClassRoomsHelper extends BaseRepository {
             .groupBy('classRoom.id')  // Ensure group by to aggregate counts per classRoom
             .addGroupBy('parentClass.name')
 
+        this.utilitiesService.applyBranchFilter(queryBuilder, "classRoom.branchId = :branchId");
+
         return paginatedRawData(queryDto, queryBuilder);
     }
 
     async getClassRoomsOptions(queryDto: ClassRoomOptionsQueryDto) {
-        const queryBuilder = this.classRoomRepo.createQueryBuilder('classRoom');
+        const queryBuilder = this.getRepository(ClassRoom).createQueryBuilder('classRoom');
 
         queryBuilder
             .orderBy("classRoom.createdAt", queryDto.order)
@@ -95,14 +93,16 @@ export class ClassRoomsHelper extends BaseRepository {
             'classRoom'
         );
 
+        this.utilitiesService.applyBranchFilter(queryBuilder, "classRoom.branchId = :branchId");
+
         return queryBuilder.getMany();
     }
 
     // this is used in single class room page in frontend
     async getClassRoomDetails(id: string) {
-        const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+        const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
 
-        return this.classRoomRepo.createQueryBuilder('classRoom')
+        return this.getRepository(ClassRoom).createQueryBuilder('classRoom')
             .where('classRoom.id = :classroomId', { classroomId: id }) // Filter by specific classroom ID
             .leftJoin('classRoom.classTeacher', 'classTeacher')
             .leftJoin('classRoom.students', 'student', 'FIND_IN_SET(:currentAcademicYearId, student.academicYearIds) > 0', { currentAcademicYearId })

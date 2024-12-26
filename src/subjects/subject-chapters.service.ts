@@ -1,35 +1,31 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, DataSource, Repository } from 'typeorm';
+import { Brackets, DataSource } from 'typeorm';
 import { SubjectChapter } from './entities/subject-chapter.entity';
 import { CreateSubjectChapterDto, SubjectChapterQueryDto, UpdateChapterNoDto, UpdateSubjectChapterDto } from './dto/subject-chapter.dto';
-import { SubjectsService } from './subjects.service';
-import { QueryDto } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
-import { AuthUser } from 'src/common/types/global.type';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { subjectChapterSelectCols } from './helpers/subject-chapter-select-colst';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { FastifyRequest } from 'fastify';
 import { REQUEST } from '@nestjs/core';
+import { Subject } from './entities/subject.entity';
 
 @Injectable()
 export class SubjectChaptersService extends BaseRepository {
     constructor(
-        dataSource: DataSource,
-        @Inject(REQUEST) req: FastifyRequest,
-        @InjectRepository(SubjectChapter) private readonly subjectChaptersRepo: Repository<SubjectChapter>,
-        private readonly subjectsService: SubjectsService,
-    ) { 
+        dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
+    ) {
         super(dataSource, req);
     }
 
-    async create(createSubjectChapterDto: CreateSubjectChapterDto, currentUser: AuthUser) {
-        const subject = await this.subjectsService.findOne(createSubjectChapterDto.subjectId, currentUser);
+    async create(createSubjectChapterDto: CreateSubjectChapterDto) {
+        const subject = await this.getRepository(Subject).findOne({ where: { id: createSubjectChapterDto.subjectId }, select: { id: true } });
+        if (!subject) throw new NotFoundException('Subject not found');
 
         const lastChapter = await this.getRepository(SubjectChapter).findOne({
             where: { subject: { id: subject.id } },
             order: { chapterNo: 'DESC' },
+            select: { chapterNo: true }
         });
 
         const newSubjectChapter = this.getRepository(SubjectChapter).create({

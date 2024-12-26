@@ -4,7 +4,6 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { Brackets, DataSource, In } from 'typeorm';
 import { Task } from './entities/task.entity';
 import { SubjectsService } from 'src/subjects/subjects.service';
-import { AccountsService } from 'src/auth-system/accounts/accounts.service';
 import { AuthUser, EClassType } from 'src/common/types/global.type';
 import { selectTaskCols } from './helpers/select-task-cols.config';
 import { BaseRepository } from 'src/common/repository/base-repository';
@@ -14,21 +13,21 @@ import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { TaskQueryDto } from './dto/task-query.dto';
 import { FilesService } from 'src/file-management/files/files.service';
 import { paginatedRawData } from 'src/utils/paginatedData';
+import { UtilitiesService } from 'src/utilities/utilities.service';
+import { Account } from 'src/auth-system/accounts/entities/account.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class TasksService extends BaseRepository {
   constructor(
     dataSource: DataSource,
     @Inject(REQUEST) private req: FastifyRequest,
-    private readonly accountsService: AccountsService,
     private readonly subjectsService: SubjectsService,
     private readonly filesService: FilesService,
-  ) {
-    super(dataSource, req);
-  }
+    private readonly utilitiesService: UtilitiesService,
+  ) { super(dataSource, req) }
 
   async create(createTaskDto: CreateTaskDto, currentUser: AuthUser) {
-    const account = await this.accountsService.findOne(currentUser.accountId);
+    const account = await this.getRepository(Account).findOne({ where: { id: currentUser.accountId }, select: { id: true } });
 
     const attachments = createTaskDto.attachmentIds?.length
       ? await this.filesService.findAllByIds(createTaskDto.attachmentIds)
@@ -97,6 +96,8 @@ export class TasksService extends BaseRepository {
       ])
       .groupBy("task.id");
 
+    this.utilitiesService.applyBranchFilter(queryBuilder, "classRoom.branchId = :branchId");
+
     return paginatedRawData(queryDto, queryBuilder);
   }
 
@@ -118,7 +119,10 @@ export class TasksService extends BaseRepository {
 
   async findOne(id: string) {
     const existingTask = await this.getRepository(Task).findOne({
-      where: { id },
+      where: {
+        id,
+        classRooms: { branch: { id: this.utilitiesService.getBranchId() } }
+      },
       relations: {
         subject: true,
         setBy: true,
@@ -174,8 +178,7 @@ export class TasksService extends BaseRepository {
   }
 
   async remove(id: string) {
-    const existing = await this.getRepository(Task).findOne({ where: { id }, select: { id: true } });
-    await this.getRepository(Task).remove(existing);
+    await this.getRepository(Task).delete({ id });
 
     return { message: 'Task removed' }
   }

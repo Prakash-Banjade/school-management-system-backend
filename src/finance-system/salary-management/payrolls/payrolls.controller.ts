@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseInterceptors } from '@nestjs/common';
 import { PayrollsService } from './payrolls.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { GetEmployeesQueryDto } from './dto/payroll-query.dto';

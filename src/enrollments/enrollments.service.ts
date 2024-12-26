@@ -15,13 +15,15 @@ import paginatedData from 'src/utils/paginatedData';
 import { getRegistrationNumber } from 'src/utils/get-registration-number';
 import { AcademicYearsService } from 'src/academic-years/academic-years.service';
 import { StudentLedger } from 'src/finance-system/fee-management/student-ledgers/entities/student-ledger.entity';
+import { UtilitiesService } from 'src/utilities/utilities.service';
+import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class EnrollmentsService extends BaseRepository {
   constructor(
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
-    private readonly classRoomService: ClassRoomsService,
     private readonly academicYearService: AcademicYearsService,
+    private readonly utilitiesService: UtilitiesService
   ) {
     super(dataSource, req);
   }
@@ -29,6 +31,8 @@ export class EnrollmentsService extends BaseRepository {
   async create(createEnrollmentDto: CreateEnrollmentDto) {
     const { isPast, latestAcademicYear } = await this.academicYearService.isPast();
     if (isPast) throw new ConflictException('Promotion are only allowed from latest academic year');
+
+    const branchId = this.utilitiesService.getBranchId();
 
     // check if any of the student is aready enrolled in the academic year or is not begin demoted
     await this.checkIfEnrollmentExists(latestAcademicYear, createEnrollmentDto.studentsWithRollNo.map(student => student.studentId),);
@@ -54,6 +58,7 @@ export class EnrollmentsService extends BaseRepository {
         'latestEnrollment',
         'latestEnrollment.studentId = student.id'
       )
+      .leftJoin('student.account', 'account')
       .leftJoinAndMapOne(
         'student.ledger',
         StudentLedger,
@@ -66,11 +71,21 @@ export class EnrollmentsService extends BaseRepository {
         'ledger.amount as ledgerAmount',
       ])
       .whereInIds(createEnrollmentDto.studentsWithRollNo.map(student => student.studentId))
+      .where(new Brackets(qb => {
+        branchId && qb.andWhere('account.branchId = :branchId', { branchId });
+      }))
       .getRawMany();
 
     if (students.length !== createEnrollmentDto.studentsWithRollNo?.length) throw new NotFoundException('Student not found');
 
-    const newClassRoom = await this.classRoomService.findOne(createEnrollmentDto.classRoomId);
+    const newClassRoom = await this.getRepository(ClassRoom).findOne({
+      where: {
+        id: createEnrollmentDto.classRoomId,
+        branch: { id: branchId }
+      },
+      select: { id: true }
+    });
+    if (!newClassRoom) throw new NotFoundException('Class room not found');
 
     // create the enrollment
     const enrollments = this.getRepository<Enrollment>(Enrollment).create(students.map((student, ind) => ({
@@ -97,9 +112,7 @@ export class EnrollmentsService extends BaseRepository {
 
     await this.getRepository<Student>(Student).save(promotedStudents);
 
-    return {
-      message: "Promotion Successful",
-    }
+    return { message: "Promotion Successful" }
   };
 
   private async checkIfEnrollmentExists(academicYear: AcademicYear, studentIds: string[],) {
@@ -135,6 +148,7 @@ export class EnrollmentsService extends BaseRepository {
       }))
 
     applySelectColumns(queryBuilder, enrollmentSelectColumns, 'enrollment');
+    this.utilitiesService.applyBranchFilter(queryBuilder, "classRoom.branchId = :branchId");
 
     return paginatedData(queryDto, queryBuilder);
   }

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Query, UseInterceptors, ForbiddenException } from '@nestjs/common';
 import { StudentsService } from './students.service';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentClassDto, UpdateStudentDto } from './dto/update-student.dto';
@@ -9,8 +9,8 @@ import { ApiPaginatedResponse } from 'src/common/decorators/apiPaginatedResponse
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
-import { isStudent } from 'src/utils/isStudent';
 import { StudentsHelper } from './helpers/students.helper';
+import { isStudent } from 'src/utils/utils';
 
 @ApiBearerAuth()
 @ApiTags('Students')
@@ -24,42 +24,42 @@ export class StudentsController {
   @Post()
   @UseInterceptors(TransactionInterceptor)
   @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
-  create(@Body() createStudentDto: CreateStudentDto, @CurrentUser() currentUser: AuthUser) {
-    return this.studentsService.create(createStudentDto, currentUser);
+  create(@Body() createStudentDto: CreateStudentDto) {
+    return this.studentsService.create(createStudentDto);
   }
 
   @Get()
   @ApiPaginatedResponse(CreateStudentDto)
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  findAll(@Query() queryDto: StudentQueryDto, @CurrentUser() currentUser: AuthUser) {
-    return this.studentsHelper.findAll(queryDto, currentUser);
+  findAll(@Query() queryDto: StudentQueryDto) {
+    return this.studentsHelper.findAll(queryDto);
   }
 
-  @Get('past')
+  @Get('past') // used in frontend in students promotion
   @ApiPaginatedResponse(CreateStudentDto)
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  findAllFromPast(@Query() queryDto: PastStudentsQueryDto, @CurrentUser() currentUser: AuthUser) {
-    return this.studentsHelper.getPastStudents(queryDto, currentUser);
+  findAllFromPast(@Query() queryDto: PastStudentsQueryDto) {
+    return this.studentsHelper.getPastStudents(queryDto);
   }
 
   @Get('attendances')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  findAllAttendance(@Query() queryDto: StudentAttendanceQueryDto, @CurrentUser() currentUser: AuthUser) {
-    return this.studentsHelper.getStudentsWithAttendance(queryDto, currentUser);
+  findAllAttendance(@Query() queryDto: StudentAttendanceQueryDto) {
+    return this.studentsHelper.getStudentsWithAttendance(queryDto);
   }
 
   @Get('library/:studentId')
   @ApiOperation({ summary: 'Find library student' })
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  findLibraryStudent(@Param('studentId') studentId: string, @CurrentUser() currentUser: AuthUser) {
-    return this.studentsService.findLibraryStudent(studentId, currentUser);
+  findLibraryStudent(@Param('studentId') studentId: string) {
+    return this.studentsService.findLibraryStudent(studentId);
   }
 
   @Get('fee/:studentId')
   @ApiOperation({ summary: 'Find fee student' })
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  findFeeStudent(@Param('studentId') studentId: string, @CurrentUser() currentUser: AuthUser) {
-    return this.studentsHelper.getFeeStudent(studentId, currentUser);
+  findFeeStudent(@Param('studentId') studentId: string) {
+    return this.studentsHelper.getFeeStudent(studentId);
   }
 
   @Get('me')
@@ -87,11 +87,5 @@ export class StudentsController {
   @UseInterceptors(TransactionInterceptor)
   update(@Param('id') id: string, @Body() updateStudentDto: UpdateStudentDto) {
     return this.studentsService.update(id, updateStudentDto);
-  }
-
-  @Delete(':id')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.DELETE })
-  remove(@Param('id') id: string) {
-    return this.studentsService.remove(id);
   }
 }

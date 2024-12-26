@@ -2,28 +2,26 @@ import { Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { UpdateExamSubjectDto } from './dto/update-exam-subject.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ExamSubject } from './entities/exam-subject.entity';
-import { Brackets, DataSource, In, Repository } from 'typeorm';
+import { Brackets, DataSource, Repository } from 'typeorm';
 import { ExamSubjectQueryDto } from './dto/exam-subject-query.dto';
 import { paginatedRawData } from 'src/utils/paginatedData';
 import { examSubjectOptionsSelectCols, examSubjectSelectCols } from './helpers/exam-subject-select-cols';
-import { Cache } from 'cache-manager';
-import { CACHE_KEYS } from 'src/common/CONSTANTS';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { FastifyRequest } from 'fastify';
 import { REQUEST } from '@nestjs/core';
+import { UtilitiesService } from 'src/utilities/utilities.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class ExamSubjectsService extends BaseRepository {
   constructor(
     dataSource: DataSource, @Inject(REQUEST) private req: FastifyRequest,
     @InjectRepository(ExamSubject) private examSubjectRepo: Repository<ExamSubject>,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private readonly utilitiesService: UtilitiesService,
   ) { super(dataSource, req); }
 
   async findAll(queryDto: ExamSubjectQueryDto) {
     const querybuilder = this.examSubjectRepo.createQueryBuilder('examSubject');
-    const currentAcademicYearId: string = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+    const currentAcademicYearId: string = await this.utilitiesService.getAcademicYearId();
 
     querybuilder
       .orderBy("examSubject.examDate", queryDto.order)
@@ -45,6 +43,8 @@ export class ExamSubjectsService extends BaseRepository {
       .groupBy('examSubject.id')
       .select(queryDto.asOptions ? examSubjectOptionsSelectCols : examSubjectSelectCols);
 
+    this.utilitiesService.applyBranchFilter(querybuilder, "classRoom.branchId = :branchId");
+
     if (queryDto.asOptions) {
       return querybuilder.getRawMany();
     }
@@ -53,13 +53,14 @@ export class ExamSubjectsService extends BaseRepository {
   }
 
   async findOne(id: string) {
-    const currentAcademicYearId: string = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+    const currentAcademicYearId: string = await this.utilitiesService.getAcademicYearId();
 
     const existing = await this.examSubjectRepo.findOne({
       where: {
         id,
         exam: {
-          academicYear: { id: currentAcademicYearId } // fetch for only current academic year
+          academicYear: { id: currentAcademicYearId }, // fetch for only current academic year
+          classRoom: { branch: { id: this.utilitiesService.getBranchId() } }
         }
       },
       relations: {
@@ -78,17 +79,12 @@ export class ExamSubjectsService extends BaseRepository {
     Object.assign(existing, updateExamSubjectDto);
     await this.examSubjectRepo.save(existing);
 
-    return {
-      message: 'Exam subject updated',
-    }
+    return { message: 'Exam subject updated' }
   }
 
   async remove(id: string) {
-    const existing = await this.findOne(id);
-    await this.examSubjectRepo.remove(existing);
+    await this.examSubjectRepo.delete({ id });
 
-    return {
-      message: 'Exam subject deleted',
-    }
+    return { message: 'Exam subject deleted' }
   }
 }

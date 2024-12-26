@@ -4,14 +4,14 @@ import { JwtService } from "@nestjs/jwt";
 import { IS_PUBLIC_KEY } from "../decorators/setPublicRoute.decorator";
 import { FastifyReply, FastifyRequest } from "fastify";
 import { Tokens } from "../CONSTANTS";
-import { ConfigService } from "@nestjs/config";
+import { EnvService } from "src/env/env.service";
 
 @Injectable()
 export class AuthGuard implements CanActivate {
     constructor(
         private jwtService: JwtService,
         private reflector: Reflector,
-        private readonly configService: ConfigService,
+        private readonly envService: EnvService,
     ) { }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -29,11 +29,11 @@ export class AuthGuard implements CanActivate {
         if (!access_token || !refresh_token) throw new UnauthorizedException();
         try {
             await this.jwtService.verifyAsync(refresh_token, {
-                secret: this.configService.getOrThrow<string>('REFRESH_TOKEN_SECRET'),
+                secret: this.envService.REFRESH_TOKEN_SECRET,
             })
 
             const payload = await this.jwtService.verifyAsync(access_token, {
-                secret: this.configService.getOrThrow<string>('ACCESS_TOKEN_SECRET'),
+                secret: this.envService.ACCESS_TOKEN_SECRET,
             });
 
             request['user'] = payload;

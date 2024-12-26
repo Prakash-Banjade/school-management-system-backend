@@ -13,8 +13,8 @@ import paginatedData from 'src/utils/paginatedData';
 import { AuthUser, EFileMimeType, ETask, ETaskSubmissionStatus } from 'src/common/types/global.type';
 import { FilesService } from 'src/file-management/files/files.service';
 import { Task } from '../tasks/entities/task.entity';
-import { isStudent } from 'src/utils/isStudent';
 import { Student } from 'src/students/entities/student.entity';
+import { isStudent } from 'src/utils/utils';
 
 @Injectable()
 export class TaskSubmissionsService extends BaseRepository {

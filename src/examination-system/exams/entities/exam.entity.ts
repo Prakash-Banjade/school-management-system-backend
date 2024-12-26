@@ -7,15 +7,15 @@ import { Entity, ManyToOne, OneToMany } from "typeorm";
 
 @Entity()
 export class Exam extends BaseEntity {
-    @ManyToOne(() => ExamType, examType => examType.exams, { onDelete: 'RESTRICT' })
+    @ManyToOne(() => ExamType, examType => examType.exams, { onDelete: 'RESTRICT', nullable: false })
     examType: ExamType;
 
-    @ManyToOne(() => ClassRoom, classRoom => classRoom.exams, { onDelete: 'CASCADE' })
+    @ManyToOne(() => ClassRoom, classRoom => classRoom.exams, { onDelete: 'CASCADE', nullable: false })
     classRoom: ClassRoom;
 
     @OneToMany(() => ExamSubject, examSubject => examSubject.exam, { cascade: true })
     examSubjects: ExamSubject[];
 
-    @ManyToOne(() => AcademicYear, academicYear => academicYear.exams, { onDelete: 'CASCADE' })
+    @ManyToOne(() => AcademicYear, academicYear => academicYear.exams, { onDelete: 'CASCADE', nullable: false })
     academicYear: AcademicYear;
 }

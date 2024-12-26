@@ -10,7 +10,6 @@ import { MailModule } from './mail/mail.module';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuthGuard } from './common/guards/auth.guard';
-import { envSchema } from './env.schema';
 import { DormitorySystemModule } from './dormitory-system/dormitory-system.module';
 import { FinanceSystemModule } from './finance-system/finance-system.module';
 import { AcademicYearsModule } from './academic-years/academic-years.module';
@@ -43,13 +42,13 @@ import { GeneralSettingsModule } from './general-settings/general-settings.modul
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { BranchesModule } from './branches/branches.module';
+import { UtilitiesModule } from './utilities/utilities.module';
+import { EnvModule } from './env/env.module';
+import { LessonPlansModule } from './lesson-plans/lesson-plans.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      validationSchema: envSchema,
-    }),
+    EnvModule,
     NestjsFormDataModule.config({
       storage: MemoryStoredFile,
       isGlobal: true,
@@ -115,6 +114,8 @@ import { BranchesModule } from './branches/branches.module';
     EventsModule,
     GeneralSettingsModule,
     BranchesModule,
+    UtilitiesModule,
+    LessonPlansModule,
   ],
   controllers: [AppController],
   providers: [

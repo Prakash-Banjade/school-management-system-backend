@@ -1,34 +1,36 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
-import { IsBoolean, IsDateString, IsEnum, IsOptional, IsString, IsUUID } from "class-validator";
+import { IsBoolean, IsDateString, IsOptional, IsString, IsUUID } from "class-validator";
 import { ClassWithSectionQueryDto } from "src/common/dto/classWithSectionQuery.dto";
 import { QueryDto } from "src/common/dto/query.dto";
 
-export enum StudentSortBy {
-    NAME = "name",
-    ROLL_NO = "rollNo",
-    CLASS_ROOM = "classRoomName",
-    SUB_CLASS = "subClassName",
-    GENDER = "gender",
-    DOB = "dob",
-    STUDENT_ID = "studentId",
-    LEDGER_AMOUNT = "ledgerAmount",
+const studentSortByQuery = {
+    name: "fullName",
+    rollNo: "student.rollNo",
+    studentId: "student.studentId",
+    gender: "student.gender",
+    dob: "student.dob",
+    amount: "ledger.amount",
 }
 
 export class StudentQueryDto extends ClassWithSectionQueryDto {
     @ApiPropertyOptional({ type: String, description: 'Search by student ID' })
     @IsOptional()
-    studentId: string;
+    studentId?: string;
 
     @ApiPropertyOptional({ type: String, description: 'Search by roll no', example: '44' })
     @IsString()
     @IsOptional()
-    rollNo: string;
+    rollNo?: string;
 
-    @ApiPropertyOptional({ type: 'enum', enum: StudentSortBy, description: 'Sort By Key' })
+    @ApiPropertyOptional({ type: 'enum', description: 'Sort By Key' })
     @IsOptional()
-    @IsEnum(StudentSortBy)
-    sortBy: string;
+    @IsString()
+    @Transform(({ value }) => {
+        if (value in studentSortByQuery) return studentSortByQuery[value];
+        return 'student.createdAt';
+    })
+    sortBy?: string;
 
     @ApiPropertyOptional()
     @IsOptional()

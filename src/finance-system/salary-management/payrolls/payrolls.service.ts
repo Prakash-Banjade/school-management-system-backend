@@ -2,7 +2,7 @@ import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundEx
 import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
 import { BaseRepository } from 'src/common/repository/base-repository';
-import { DataSource } from 'typeorm';
+import { Brackets, DataSource } from 'typeorm';
 import { CreatePayrollDto, UpdatePayrollDto } from './dto/payroll.dto';
 import { IAllowance, SalaryStructure } from '../salary-structures/entities/salary-structure.entity';
 import { Payroll } from './entities/payroll.entity';
@@ -11,11 +11,13 @@ import { Staff } from 'src/staffs/entities/staff.entity';
 import { ESalaryAdjustmentType } from '../salary-adjustments/entities/salary-adjustment.entity';
 import { isBefore, isSameMonth, isSameYear } from 'date-fns';
 import { SalaryPayment } from '../salary-payemnts/entities/salary-payment.entity';
+import { UtilitiesService } from 'src/utilities/utilities.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class PayrollsService extends BaseRepository {
     constructor(
-        dataSource: DataSource, @Inject(REQUEST) private req: FastifyRequest
+        dataSource: DataSource, @Inject(REQUEST) private req: FastifyRequest,
+        private readonly utilitiesService: UtilitiesService,
     ) { super(dataSource, req); }
 
     async create(dto: CreatePayrollDto) {
@@ -31,6 +33,8 @@ export class PayrollsService extends BaseRepository {
         } | null = await this.getRepository(SalaryStructure).createQueryBuilder('salaryStructure')
             .leftJoin('salaryStructure.teacher', 'teacher')
             .leftJoin('salaryStructure.staff', 'staff')
+            .leftJoin('teacher.account', 'teacherAccount', 'teacher.id IS NOT NULL')
+            .leftJoin('staff.account', 'staffAccount', 'staff.id IS NOT NULL')
             .leftJoin(
                 qb => {
                     return qb
@@ -49,6 +53,9 @@ export class PayrollsService extends BaseRepository {
                 '(SELECT MAX(innerPayroll.createdAt) FROM payroll innerPayroll WHERE (innerPayroll.teacherId = teacher.id OR innerPayroll.staffId = staff.id))'
             )
             .where('teacher.id = :employeeId OR staff.id = :employeeId', { employeeId: dto.employeeId })
+            .andWhere(new Brackets(qb => {
+                qb.andWhere('teacherAccount.branchId = :branchId OR staffAccount.branchId = :branchId', { branchId: this.utilitiesService.getBranchId() });
+            }))
             .select([
                 'salaryStructure.id as id',
                 'salaryStructure.basicSalary as basicSalary',
@@ -108,6 +115,8 @@ export class PayrollsService extends BaseRepository {
 
         payroll.calculateNetSalary(); // calculate net salary
 
+        if (payroll.netSalary < 0) throw new BadRequestException('Something seems wrong with the salary structure or adjustments');
+
         await this.getRepository(Payroll).save(payroll);
 
         // update pay amount in employee
@@ -166,6 +175,7 @@ export class PayrollsService extends BaseRepository {
                 `,
             ])
             .groupBy('payroll.id')
+            .addGroupBy('salaryPayments.id')
             .orderBy('payroll.date', 'DESC')
             .limit(1)
             .getRawOne();

@@ -26,13 +26,13 @@ export class ExamTypesController {
   }
 
   @Get('options')
-  @CheckAbilities({ subject: Role.SUPER_ADMIN, action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   getOptions(@Query() queryDto: QueryDto) {
     return this.examTypesService.getOptions(queryDto);
   }
 
   @Get(':id')
-  @CheckAbilities({ subject: Role.SUPER_ADMIN, action: Action.READ })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.examTypesService.findOne(id);
   }

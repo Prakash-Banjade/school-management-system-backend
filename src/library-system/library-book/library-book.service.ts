@@ -9,16 +9,20 @@ import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { libraryBookRequestSelectCols } from './helpers/library-book-request-select-cols';
 import { LibraryBookQueryDto } from './dto/library-book.query.dto';
 import { BookCategoriesService } from '../book-categories/book-categories.service';
+import { BranchesService } from 'src/branches/branches.service';
+import { UtilitiesService } from 'src/utilities/utilities.service';
 
 @Injectable()
 export class LibraryBookService {
   constructor(
     @InjectRepository(LibraryBook) private libraryBookRepo: Repository<LibraryBook>,
     private readonly bookCategoriesService: BookCategoriesService,
+    private readonly utilitiesService: UtilitiesService,
+    private readonly branchesService: BranchesService
   ) { }
 
   async create(createLibraryBookDto: CreateLibraryBookDto) {
-    const existingWithSameCode = await this.libraryBookRepo.findOne({ where: { bookCode: createLibraryBookDto.bookCode?.trim() } });
+    const existingWithSameCode = await this.libraryBookRepo.findOne({ where: { bookCode: createLibraryBookDto.bookCode?.trim() }, select: { id: true } });
     if (existingWithSameCode) throw new ConflictException('Book code already exists');
 
     const category = await this.bookCategoriesService.findOne(createLibraryBookDto.categoryId);
@@ -26,10 +30,11 @@ export class LibraryBookService {
     const libraryBook = this.libraryBookRepo.create({
       ...createLibraryBookDto,
       category,
+      branch: await this.branchesService.getBranch(this.utilitiesService.getBranchId())
     });
-    const saved = await this.libraryBookRepo.save(libraryBook);
+    await this.libraryBookRepo.save(libraryBook);
 
-    return this.libraryBookMutationReturn(saved, 'created');
+    return { message: 'Library book added' }
   }
 
   async findAll(queryDto: LibraryBookQueryDto) {
@@ -51,6 +56,7 @@ export class LibraryBookService {
         queryDto.categories?.length && qb.andWhere("category.name IN (:...categories)", { categories: queryDto.categories });
       }))
 
+    this.utilitiesService.applyBranchFilter(queryBuilder, 'libraryBook.branchId = :branchId');
     applySelectColumns(queryBuilder, libraryBookRequestSelectCols, 'libraryBook');
 
     return paginatedData(queryDto, queryBuilder)
@@ -58,7 +64,10 @@ export class LibraryBookService {
 
   async findOne(id: string) {
     const existing = await this.libraryBookRepo.findOne({
-      where: { id },
+      where: {
+        id,
+        branch: { id: this.utilitiesService.getBranchId() }
+      },
       relations: {
         category: true,
       },
@@ -84,7 +93,7 @@ export class LibraryBookService {
     Object.assign(existing, updateLibraryBookDto);
     await this.libraryBookRepo.save(existing);
 
-    return this.libraryBookMutationReturn(existing, "updated")
+    return { message: 'Library book updated' }
   }
 
   async updateCount(book: LibraryBook, type: 'issued' | 'returned') {
@@ -93,19 +102,8 @@ export class LibraryBookService {
   }
 
   async remove(id: string) {
-    const existing = await this.findOne(id);
-    await this.libraryBookRepo.remove(existing);
+    await this.libraryBookRepo.delete({ id });
 
-    return this.libraryBookMutationReturn(existing, "deleted")
-  }
-
-  private libraryBookMutationReturn(libraryBook: LibraryBook, type: 'created' | 'updated' | 'deleted') {
-    return {
-      message: type === 'created' ? 'Library book created successfully' : type === 'deleted' ? 'Library book deleted successfully' : 'Library book updated successfully',
-      libraryBook: {
-        id: libraryBook.id,
-        name: libraryBook.bookName,
-      }
-    }
+    return { message: 'Library book deleted' };
   }
 }

@@ -13,13 +13,14 @@ import { Student } from 'src/students/entities/student.entity';
 import { paginatedRawData } from 'src/utils/paginatedData';
 import { MAX_BOOK_ISSUE_LIMIT } from 'src/common/CONSTANTS';
 import { startOfDayString } from 'src/utils/utils';
+import { UtilitiesService } from 'src/utilities/utilities.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class BookTransactionsService extends BaseRepository {
   constructor(
-    datasource: DataSource,
-    @Inject(REQUEST) req: FastifyRequest,
+    datasource: DataSource, @Inject(REQUEST) req: FastifyRequest,
     private readonly libraryBookService: LibraryBookService,
+    private readonly utilitiesService: UtilitiesService
   ) {
     super(datasource, req);
   }
@@ -73,6 +74,7 @@ export class BookTransactionsService extends BaseRepository {
 
   async findAll(queryDto: BookTransactionsQueryDto) {
     const queryBuilder = this.getRepository(BookTransaction).createQueryBuilder('transaction');
+    const branchId = this.utilitiesService.getBranchId();
 
     queryBuilder
       .orderBy("transaction.updatedAt", queryDto.order)
@@ -90,6 +92,8 @@ export class BookTransactionsService extends BaseRepository {
               .orWhere("TRIM(student.studentId) = TRIM(:exactSearch)", { exactSearch: queryDto.search })
           }))
         };
+
+        branchId && qb.andWhere('book.branchId = :branchId', { branchId });
 
         if (queryDto.status && queryDto.status in this.transactionByStatusQuery) {
           qb.andWhere(this.transactionByStatusQuery[queryDto.status])
@@ -197,7 +201,10 @@ export class BookTransactionsService extends BaseRepository {
 
     // decrement issued count in books
     const bookTransactions = await this.getRepository(BookTransaction).find({
-      where: { id: In(ids) },
+      where: {
+        id: In(ids),
+        book: { branch: { id: this.utilitiesService.getBranchId() } }
+      },
       relations: { book: true },
       select: { id: true, book: { id: true, issuedCount: true } }
     });
@@ -215,7 +222,7 @@ export class BookTransactionsService extends BaseRepository {
     // check if any book transaction has lowered the due date
     const bookTransactions = await this.getRepository(BookTransaction).createQueryBuilder('transaction')
       .whereInIds(ids)
-      .andWhere("DATE(transaction.dueDate) >= :dueDate", { dueDate })
+      .andWhere("DATE(transaction.dueDate) >= DATE(:dueDate)", { dueDate })
       .andWhere("returnedAt IS NULL")
       .getMany();
 

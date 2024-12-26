@@ -8,14 +8,18 @@ import { SalaryStructure } from "../../salary-structures/entities/salary-structu
 import { paginatedRawData } from "src/utils/paginatedData";
 import { Payroll } from "../entities/payroll.entity";
 import { ESalaryAdjustmentType } from "../../salary-adjustments/entities/salary-adjustment.entity";
+import { UtilitiesService } from "src/utilities/utilities.service";
 
 @Injectable()
 export class PayrollsHelper extends BaseRepository {
     constructor(
         dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
+        private readonly utilitiesService: UtilitiesService,
     ) { super(dataSource, req) }
 
     getEmployees(queryDto: GetEmployeesQueryDto) {
+        const branchId = this.utilitiesService.getBranchId();
+
         // getting employees based on the salary structure instead of account or individual teacher or staff entity
         const querybuilder = this.getRepository(SalaryStructure).createQueryBuilder('salaryStructure')
             .limit(queryDto.take)
@@ -31,6 +35,10 @@ export class PayrollsHelper extends BaseRepository {
                         .orWhere('teacher.teacherId = :exactSearch', { exactSearch: queryDto.search })
                         .orWhere('staff.staffId = :exactSearch', { exactSearch: queryDto.search });
                 }));
+
+                if (branchId) {
+                    qb.andWhere('teacherAccount.branchId = :branchId OR staffAccount.branchId = :branchId', { branchId });
+                }
 
                 queryDto.designations?.length && qb.andWhere('teacherAccount.role IN (:...roles) OR staff.type IN (:...roles)', { roles: queryDto.designations });
             }))

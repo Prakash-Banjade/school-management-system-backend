@@ -11,19 +11,17 @@ import { ImagesService } from 'src/file-management/images/images.service';
 import { AccountsService } from 'src/auth-system/accounts/accounts.service';
 import { FastifyRequest } from 'fastify';
 import { StudentsHelper } from './helpers/students.helper';
-import { AuthUser, EClassType } from 'src/common/types/global.type';
+import { EClassType } from 'src/common/types/global.type';
 import { FilesService } from 'src/file-management/files/files.service';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { AcademicYear } from 'src/academic-years/entities/academic-year.entity';
 import { getRegistrationNumber } from 'src/utils/get-registration-number';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
-import { CACHE_KEYS } from 'src/common/CONSTANTS';
 import { RouteStopsService } from 'src/transportation-system/route-stops/route-stops.service';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { StudentLedger } from 'src/finance-system/fee-management/student-ledgers/entities/student-ledger.entity';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { AcademicYearsService } from 'src/academic-years/academic-years.service';
+import { UtilitiesService } from 'src/utilities/utilities.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class StudentsService extends BaseRepository {
@@ -32,16 +30,16 @@ export class StudentsService extends BaseRepository {
     private readonly imageService: ImagesService,
     private readonly filesService: FilesService,
     private readonly accountsService: AccountsService,
-    private dormitoryRoomsService: DormitoryRoomsService,
+    private readonly dormitoryRoomsService: DormitoryRoomsService,
     private readonly studentsHelper: StudentsHelper,
     private readonly routeStopsService: RouteStopsService,
     private readonly academicYearService: AcademicYearsService,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private readonly utilitiesService: UtilitiesService,
   ) {
     super(dataSource, req);
   }
 
-  async create(createStudentDto: CreateStudentDto, currentUser: AuthUser) {
+  async create(createStudentDto: CreateStudentDto) {
     await this.studentsHelper.checkIfStudentExists(createStudentDto);
 
     // evaluate class room
@@ -104,18 +102,18 @@ export class StudentsService extends BaseRepository {
     const savedStudent = await this.getRepository<Student>(Student).save(newStudent);
 
     // CREATE ACCOUNT
-    await this.accountsService.createAccount(savedStudent, currentUser);
+    await this.accountsService.createAccount(savedStudent);
 
     return { message: 'Student created' }
   }
 
   async findOne(id: string) {
-    const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+    const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
 
     const querybuilder = this.getRepository<Student>(Student).createQueryBuilder('student')
       .leftJoin('student.account', 'account')
       .leftJoin('student.profileImage', 'profileImage')
-      .leftJoin('student.enrollments', 'enrollments')
+      .innerJoin('student.enrollments', 'enrollments', "enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
       .leftJoin('enrollments.classRoom', 'classRoom')
       .leftJoin('classRoom.parent', 'parent')
       .leftJoin('student.guardians', 'guardians')
@@ -124,9 +122,10 @@ export class StudentsService extends BaseRepository {
       .leftJoin('student.routeStop', 'routeStop')
       .leftJoin('routeStop.vehicle', 'vehicle')
       .where('student.id = :id', { id })
-      .andWhere("enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
 
     applySelectColumns(querybuilder, singleStudentColumnsConfig, 'student');
+
+    this.utilitiesService.applyBranchFilter(querybuilder);
 
     const existing = await querybuilder.getOne();
 
@@ -140,18 +139,18 @@ export class StudentsService extends BaseRepository {
     return existing;
   }
 
-  async findLibraryStudent(studentId: string, currentUser: AuthUser) {
-    const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+  async findLibraryStudent(studentId: string) {
+    const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
 
     const student = await this.getRepository<Student>(Student).createQueryBuilder('student')
-      .leftJoin("student.enrollments", "enrollments", "enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
+      .innerJoin("student.enrollments", "enrollments", "enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
       .leftJoin('enrollments.classRoom', 'classRoom')
       .leftJoin("classRoom.parent", "parent")
       .leftJoin("student.profileImage", "profileImage")
       .leftJoin("student.bookTransactions", "bookTransactions")
       .leftJoin("student.account", "account")
       .where("student.studentId = :studentId", { studentId })
-      .andWhere('account.branchId = :branchId', { branchId: currentUser.branchId })
+      .andWhere('account.branchId = :branchId', { branchId: this.utilitiesService.getBranchId() })
       .select([
         "student.id AS id",
         "CONCAT(student.firstName, ' ', student.lastName) AS name",
@@ -173,7 +172,7 @@ export class StudentsService extends BaseRepository {
 
   async update(id: string, updateStudentDto: UpdateStudentDto) {
     const existing = await this.findOne(id);
-    const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+    const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
 
     // check if credentials are already taken
     await this.studentsHelper.checkIfStudentExists(updateStudentDto, existing);
@@ -251,10 +250,11 @@ export class StudentsService extends BaseRepository {
       throw new BadRequestException('Please select section');
     }
 
+    // !TODO: filter students by branch id
     const queryBuilder = this.getRepository<Student>(Student).createQueryBuilder()
       .update(Student)
       .set({ classRoom: classRoom })
-      .where("FIND_IN_SET(:currentAcademicYearId, student.academicYearIds) > 0", { currentAcademicYearId: await this.cacheManager.get(CACHE_KEYS.CAY_ID) })
+      .where("FIND_IN_SET(:currentAcademicYearId, student.academicYearIds) > 0", { currentAcademicYearId: await this.utilitiesService.getAcademicYearId() })
       .andWhere("student.id IN (:...studentIds)", { studentIds: updateStudentClassDto.studentIds });
 
     const result = await queryBuilder.execute();
@@ -265,7 +265,7 @@ export class StudentsService extends BaseRepository {
     const enrollmentQuerybuilder = this.getRepository<Enrollment>(Enrollment).createQueryBuilder()
       .update(Enrollment)
       .set({ classRoom: classRoom })
-      .where("academicYearId = :currentAcademicYearId", { currentAcademicYearId: await this.cacheManager.get(CACHE_KEYS.CAY_ID) })
+      .where("academicYearId = :currentAcademicYearId", { currentAcademicYearId: await this.utilitiesService.getAcademicYearId() })
       .andWhere("studentId IN (:...studentIds)", { studentIds: updateStudentClassDto.studentIds });
 
     const enrollmentResult = await enrollmentQuerybuilder.execute();
@@ -275,13 +275,5 @@ export class StudentsService extends BaseRepository {
     return {
       message: 'Class Updated',
     }
-  }
-
-  async remove(id: string) {
-    const existing = await this.findOne(id)
-
-    await this.getRepository<Student>(Student).remove(existing)
-
-    return { message: 'Student deleted' }
   }
 }

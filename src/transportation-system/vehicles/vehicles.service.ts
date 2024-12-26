@@ -12,11 +12,15 @@ import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
 import { Staff } from 'src/staffs/entities/staff.entity';
 import { Vehicle } from './entities/vehicle.entity';
+import { UtilitiesService } from 'src/utilities/utilities.service';
+import { BranchesService } from 'src/branches/branches.service';
 
 @Injectable()
 export class VehiclesService extends BaseRepository {
   constructor(
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
+    private readonly utilitiesService: UtilitiesService,
+    private readonly branchService: BranchesService
   ) { super(dataSource, req); }
 
   async create(createVehicleDto: CreateVehicleDto) {
@@ -28,6 +32,7 @@ export class VehiclesService extends BaseRepository {
     const vehicle = this.getRepository(Vehicle).create({
       ...createVehicleDto,
       driver,
+      branch: await this.branchService.getBranch(this.utilitiesService.getBranchId())
     });
 
     await this.getRepository(Vehicle).save(vehicle);
@@ -46,15 +51,16 @@ export class VehiclesService extends BaseRepository {
       .where(new Brackets(qb => {
         queryDto.search && qb.andWhere({ vehicleNumber: ILike(`%${queryDto.search}%`) })
         queryDto.types?.length && qb.andWhere('vehicle.type IN (:...types)', { types: queryDto.types })
-      }))
+      }));
 
     applySelectColumns(querybuilder, vehicleSelectCols, 'vehicle');
+    this.utilitiesService.applyBranchFilter(querybuilder, 'vehicle.branchId = :branchId');
 
     return paginatedData(queryDto, querybuilder);
   }
 
   async getOptions(queryDto: VehiclesQueryDto) {
-    return this.getRepository(Vehicle).createQueryBuilder('vehicle')
+    const querybuilder = this.getRepository(Vehicle).createQueryBuilder('vehicle')
       .orderBy("vehicle.createdAt", queryDto.order)
       .limit(queryDto.take)
       .offset(queryDto.skip)
@@ -65,12 +71,18 @@ export class VehiclesService extends BaseRepository {
         "vehicle.id as value",
         "vehicle.vehicleNumber as label",
       ])
-      .getRawMany();
+
+    this.utilitiesService.applyBranchFilter(querybuilder, 'vehicle.branchId = :branchId');
+
+    return querybuilder.getRawMany();
   }
 
   async findOne(id: string) {
     const existing = await this.getRepository(Vehicle).findOne({
-      where: { id },
+      where: {
+        id,
+        branch: { id: this.utilitiesService.getBranchId() }
+      },
       relations: {
         driver: true,
         stops: true,
@@ -103,7 +115,13 @@ export class VehiclesService extends BaseRepository {
   }
 
   async remove(id: string) {
-    const existing = await this.getRepository(Vehicle).findOne({ where: { id }, select: { id: true } });
+    const existing = await this.getRepository(Vehicle).findOne({
+      where: {
+        id,
+        branch: { id: this.utilitiesService.getBranchId() }
+      },
+      select: { id: true }
+    });
     if (!existing) throw new NotFoundException('Vehicle not found');
 
     await this.getRepository(Vehicle).remove(existing)

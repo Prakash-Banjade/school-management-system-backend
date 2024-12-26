@@ -6,7 +6,7 @@ import { LedgerItem } from 'src/finance-system/fee-management/student-ledgers/en
 
 @Entity()
 export class BookTransaction extends BaseEntity {
-    @ManyToOne(() => LibraryBook, (libraryBook) => libraryBook.transactions, { onDelete: 'CASCADE' })
+    @ManyToOne(() => LibraryBook, (libraryBook) => libraryBook.transactions, { onDelete: 'CASCADE', nullable: false })
     book: LibraryBook;
 
     @ManyToOne(() => Student, (student) => student.bookTransactions, { onDelete: 'CASCADE' })

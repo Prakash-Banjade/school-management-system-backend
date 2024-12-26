@@ -1,12 +1,11 @@
 import { BadRequestException, ConflictException, ForbiddenException, HttpStatus, Inject, Injectable, InternalServerErrorException, NotFoundException, Scope, UnauthorizedException } from '@nestjs/common';
-import { DataSource, IsNull, Like, Not } from 'typeorm';
+import { DataSource, IsNull, Not } from 'typeorm';
 import { PasswordChangeRequest } from './entities/password-change-request.entity';
 import { EmailVerificationPending } from './entities/email-verification-pending.entity';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { REQUEST } from '@nestjs/core';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { Account } from '../accounts/entities/account.entity';
-import { ConfigService } from '@nestjs/config';
 import { AuthUser } from 'src/common/types/global.type';
 import { MAX_PREV_PASSWORDS, PASSWORD_SALT_COUNT, Tokens } from 'src/common/CONSTANTS';
 import { RegisterDto } from './dto/register.dto';
@@ -25,6 +24,8 @@ import { ResetPasswordMailEventDto, UserCredentialsEventDto } from 'src/mail/dto
 import { TokenExpiredError } from '@nestjs/jwt';
 import { IVerifyEncryptedHashTokenPairReturn } from './helpers/interface';
 import { generateRandomPassword } from 'src/utils/generatePassword';
+import { RefreshTokenService } from './helpers/refresh-tokens.service';
+import { EnvService } from 'src/env/env.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AuthService extends BaseRepository {
@@ -32,9 +33,10 @@ export class AuthService extends BaseRepository {
     private readonly datasource: DataSource,
     @Inject(REQUEST) req: FastifyRequest,
     private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
+    private readonly envService: EnvService,
     private readonly authHelper: AuthHelper,
-    private readonly eventEmitter: EventEmitter2
+    private readonly eventEmitter: EventEmitter2,
+    private readonly refreshTokenService: RefreshTokenService,
   ) { super(datasource, req) }
 
   private readonly accountsRepo = this.datasource.getRepository<Account>(Account)
@@ -49,6 +51,9 @@ export class AuthService extends BaseRepository {
     if (!(data instanceof Account)) return data; // this can be a message after sending mail to unverified user
 
     const foundAccount = data;
+    this.refreshTokenService.setEmail(signInDto.email);
+
+    let refreshTokens = await this.refreshTokenService.getRefreshTokens();
 
     const { access_token, refresh_token } = await this.jwtService.getAuthTokens(foundAccount);
 
@@ -56,33 +61,39 @@ export class AuthService extends BaseRepository {
       const { value: existingRefreshToken, valid } = req.unsignCookie(existingRefreshCookie);
 
       const newRefreshTokenArray = valid
-        ? (foundAccount?.refreshTokens?.filter((rt) => rt !== existingRefreshToken) ?? [])
-        : (foundAccount.refreshTokens ?? [])
+        ? (refreshTokens?.filter((rt) => rt !== existingRefreshToken) ?? [])
+        : (refreshTokens ?? [])
 
       if (existingRefreshToken) reply.clearCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME, this.getRefreshCookieOptions()); // CLEAR COOKIE, BCZ A NEW ONE IS TO BE GENERATED
 
-      foundAccount.refreshTokens = [...newRefreshTokenArray];
+      refreshTokens = [...newRefreshTokenArray];
     }
 
-    foundAccount.refreshTokens = [...(foundAccount.refreshTokens ?? []), refresh_token];
+    refreshTokens = [...(refreshTokens ?? []), refresh_token];
 
-    await this.getRepository(Account).save(foundAccount);
+    await this.refreshTokenService.setRefreshTokens(refreshTokens);
 
     return reply
       .setCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME, refresh_token, this.getRefreshCookieOptions())
       .header('Content-Type', 'application/json')
       .send({
         access_token,
+        user: {
+          firstName: foundAccount.firstName,
+          lastName: foundAccount.lastName,
+          profileImageUrl: foundAccount.profileImage?.url,
+          branchName: foundAccount.branch?.name,
+        }
       })
   }
 
   private getRefreshCookieOptions(): CookieSerializeOptions {
     return {
-      secure: this.configService.get('NODE_ENV') === 'production',
+      secure: this.envService.NODE_ENV === 'production',
       httpOnly: true,
       signed: true,
-      sameSite: this.configService.get('NODE_ENV') === 'production' ? 'none' : 'lax',
-      expires: new Date(Date.now() + (parseInt(this.configService.getOrThrow('REFRESH_TOKEN_EXPIRATION_SEC')) * 1000)),
+      sameSite: this.envService.NODE_ENV === 'production' ? 'none' : 'lax',
+      expires: new Date(Date.now() + (this.envService.REFRESH_TOKEN_EXPIRATION_SEC * 1000)),
       path: '/', // necessary to be able to access cookie from out of this route path context, like auth.guard.ts
     }
   }
@@ -116,7 +127,7 @@ export class AuthService extends BaseRepository {
   }
 
   async verifyEmailResetToken(verificationToken: string) {
-    const result = await this.authHelper.verifyEncryptedHashTokenPair<{ email: string }>(verificationToken, this.configService.getOrThrow('EMAIL_VERIFICATION_SECRET'));
+    const result = await this.authHelper.verifyEncryptedHashTokenPair<{ email: string }>(verificationToken, this.envService.EMAIL_VERIFICATION_SECRET);
     if (result?.error || !result?.payload?.email) {
       if (result.error instanceof TokenExpiredError) throw new BadRequestException('OTP has been expired');
       throw new BadRequestException(result.error?.message || 'Invalid token');
@@ -153,50 +164,54 @@ export class AuthService extends BaseRepository {
     return await this.authHelper.sendConfirmationEmail(newAccount);
   }
 
-  async refresh(req: FastifyRequest, reply: FastifyReply): Promise<{ access_token: string }> {
+  async refresh(req: FastifyRequest, reply: FastifyReply) {
     reply.clearCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME, this.getRefreshCookieOptions()); // a new refresh token is to be generated
     const oldRefreshToken = req.unsignCookie(req.cookies[Tokens.REFRESH_TOKEN_COOKIE_NAME])?.value;
+    this.refreshTokenService.setEmail(req.user?.email);
 
     const account = await this.accountsRepo.findOne({
-      where: { id: req.accountId, refreshTokens: Like(`%${oldRefreshToken}%`) },
-      relations: { branch: true },
+      where: { id: req.accountId },
+      relations: { branch: true, profileImage: true },
       select: {
         id: true,
         email: true,
+        firstName: true,
+        lastName: true,
         role: true,
-        refreshTokens: true,
-        password: true,
-        verifiedAt: true,
-        branch: { id: true } // necessary for jwt access token
-      }, // TODO: password and verifiedAt is selected for entity listener
+        profileImage: { url: true },
+        branch: { id: true, name: true } // necessary for jwt access token
+      },
     }); // accountId is validated in the refresh token guard
     if (!account) throw new UnauthorizedException('Invalid refresh token');
 
     const { access_token, refresh_token } = await this.jwtService.getAuthTokens(account);
 
-    const newRefreshTokenArray = account.refreshTokens?.filter((rt) => rt !== oldRefreshToken);
-    account.refreshTokens = [...newRefreshTokenArray, refresh_token];
+    const refreshTokens = await this.refreshTokenService.getRefreshTokens();
 
-    await this.getRepository(Account).save(account);
+    await this.refreshTokenService.setRefreshTokens(refreshTokens?.filter((rt) => rt !== oldRefreshToken));
 
     return reply
       .setCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME, refresh_token, this.getRefreshCookieOptions())
       .header('Content-Type', 'application/json')
       .send({
         access_token,
+        user: {
+          firstName: account.firstName,
+          lastName: account.lastName,
+          profileImageUrl: account.profileImage?.url,
+          branchName: account.branch?.name
+        }
       })
   }
 
   async logout(req: FastifyRequest, reply: FastifyReply) {
     const refreshToken = req.unsignCookie(req.cookies[Tokens.REFRESH_TOKEN_COOKIE_NAME])?.value; // validated from refreshtoken guard
 
-    const account = await this.accountsRepo.findOneBy({ id: req.accountId, refreshTokens: Like(`%${refreshToken}%`) });
-    if (!account) throw new UnauthorizedException('Invalid refresh token');
+    this.refreshTokenService.setEmail(req.user?.email);
+    const refreshTokens = await this.refreshTokenService.getRefreshTokens();
 
-    const newRefreshTokenArray = account.refreshTokens?.filter((rt) => rt !== refreshToken);
-    account.refreshTokens = newRefreshTokenArray;
-
-    await this.getRepository(Account).save(account);
+    const newRefreshTokenArray: string[] | undefined = refreshTokens?.filter((rt) => rt !== refreshToken);
+    await this.refreshTokenService.setRefreshTokens(newRefreshTokenArray);
 
     return reply.clearCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME, this.getRefreshCookieOptions()).status(HttpStatus.NO_CONTENT).send();
   }
@@ -238,8 +253,8 @@ export class AuthService extends BaseRepository {
 
     const [resetToken, hashedResetToken] = await this.authHelper.getEncryptedHashTokenPair(
       { email: foundAccount.email },
-      this.configService.getOrThrow('FORGOT_PASSWORD_SECRET'),
-      parseInt(this.configService.getOrThrow('FORGOT_PASSWORD_EXPIRATION_SEC'))
+      this.envService.FORGOT_PASSWORD_SECRET,
+      this.envService.FORGOT_PASSWORD_EXPIRATION_SEC
     )
 
     // existing request
@@ -266,7 +281,7 @@ export class AuthService extends BaseRepository {
     }));
 
     return {
-      message: `Link is valid for ${Number(this.configService.getOrThrow('FORGOT_PASSWORD_EXPIRATION_SEC')) / 60} minutes`,
+      message: `Link is valid for ${this.envService.FORGOT_PASSWORD_EXPIRATION_SEC / 60} minutes`,
     };
   }
 
@@ -275,7 +290,7 @@ export class AuthService extends BaseRepository {
    */
   async verifyResetToken(providedResetToken: string, data = false) {
     // hash the provided token to check in database
-    const result = await this.authHelper.verifyEncryptedHashTokenPair<{ email: string }>(providedResetToken, this.configService.getOrThrow('FORGOT_PASSWORD_SECRET'));
+    const result = await this.authHelper.verifyEncryptedHashTokenPair<{ email: string }>(providedResetToken, this.envService.FORGOT_PASSWORD_SECRET);
     if (result?.error || !result?.payload?.email) {
       // Todo: if token is not valid, remove the password change request from the database
       if (result.error instanceof TokenExpiredError) throw new BadRequestException('Link has been expired');
@@ -297,13 +312,6 @@ export class AuthService extends BaseRepository {
     if (!passwordChangeRequest) throw new NotFoundException('Invalid request');
 
     // Check if the reset token has expired # JWT WILL VERIFY THE EXPIRATION
-    //// const now = new Date();
-    //// const resetTokenExpiration = new Date(passwordChangeRequest.createdAt);
-    //// resetTokenExpiration.setSeconds(resetTokenExpiration.getSeconds() + parseInt(this.configService.getOrThrow('FORGOT_PASSWORD_EXPIRATION_SEC')));
-    //// if (now > resetTokenExpiration) {
-    ////   await this.passwordChangeRequestRepo.remove(passwordChangeRequest);
-    ////   throw new BadRequestException('Reset token has expired');
-    //// }
 
     // retrieve the user from the database
     const account = await this.accountsRepo.findOneBy({ email: passwordChangeRequest.email });

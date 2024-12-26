@@ -1,4 +1,5 @@
 import { BadRequestException } from "@nestjs/common";
+import { Branch } from "src/branches/entities/branch.entity";
 import { ClassRoutine } from "src/class-routines/entities/class-routine.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { EClassType } from "src/common/types/global.type";
@@ -8,7 +9,7 @@ import { FeeStructure } from "src/finance-system/fee-management/fee-structures/e
 import { OptionalSubject } from "src/optional-subject/entities/optional-subject.entity";
 import { Student } from "src/students/entities/student.entity";
 import { Subject } from "src/subjects/entities/subject.entity";
-import { LessonPlan } from "src/subjects/lesson-plans/entities/lesson-plan.entity";
+import { LessonPlan } from "src/lesson-plans/entities/lesson-plan.entity";
 import { Task } from "src/task-system/tasks/entities/task.entity";
 import { Teacher } from "src/teachers/entities/teacher.entity";
 import { BeforeInsert, BeforeUpdate, Column, Entity, ManyToMany, ManyToOne, OneToMany, Tree, TreeChildren, TreeParent } from "typeorm";
@@ -43,6 +44,9 @@ export class ClassRoom extends BaseEntity {
 
     @Column({ type: "enum", enum: EClassType, default: EClassType.PRIMARY })
     classType: EClassType
+
+    @ManyToOne(() => Branch, branch => branch.classRooms, { onDelete: 'CASCADE' })
+    branch: Branch;
 
     @ManyToOne(() => Teacher, teacher => teacher.assignedClassRooms, { onDelete: 'SET NULL' })
     classTeacher: Teacher;

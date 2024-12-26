@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, UseInterceptors, Query } from '@nestjs/common';
 import { ClassRoomsService } from './class-rooms.service';
 import { CreateClassRoomDto } from './dto/create-class-room.dto';
 import { UpdateClassRoomDto } from './dto/update-class-room.dto';
@@ -72,11 +72,5 @@ export class ClassRoomsController {
   @UseInterceptors(TransactionInterceptor)
   update(@Param('id') id: string, @Body() updateClassRoomDto: UpdateClassRoomDto) {
     return this.classRoomsService.update(id, updateClassRoomDto);
-  }
-
-  @Delete(':id')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.DELETE })
-  remove(@Param('id') id: string) {
-    return this.classRoomsService.remove(id);
   }
 }

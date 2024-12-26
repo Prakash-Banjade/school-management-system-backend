@@ -3,23 +3,23 @@ import { Staff } from "../entities/staff.entity";
 import { Repository } from "typeorm";
 import { Attendance } from "src/attendances/entities/attendance.entity";
 import { EmployeeAttendanceQueryDto } from "src/teachers/dto/employee-attendance-query.dto";
-import { AuthUser } from "src/common/types/global.type";
+import { UtilitiesService } from "src/utilities/utilities.service";
 
 export class StaffsHelper {
     constructor(
         @InjectRepository(Staff) private readonly staffRepo: Repository<Staff>,
+        private readonly utilitiesService: UtilitiesService,
     ) { }
 
-    async getStaffsWithAttendance(queryDto: EmployeeAttendanceQueryDto, currentUser: AuthUser) {
-        const staffsWithAttendance = await this.staffRepo.createQueryBuilder('staff')
+    async getStaffsWithAttendance(queryDto: EmployeeAttendanceQueryDto) {
+        const queryBuilder = this.staffRepo.createQueryBuilder('staff')
             .leftJoin("staff.account", "account")
-            .where('account.branchId = :branchId', { branchId: currentUser.branchId ?? queryDto.branchId })
             .leftJoinAndMapOne(
                 "staff.attendance",
                 Attendance,
                 "attendance",
                 "attendance.accountId = account.id AND DATE(attendance.date) = DATE(:attendanceDate)",
-                { attendanceDate: new Date(queryDto.date).toISOString().split('T')[0] }
+                { attendanceDate: queryDto.date }
             )
             .select([
                 "staff.id",
@@ -34,7 +34,8 @@ export class StaffsHelper {
                 "attendance.inTime",
                 "attendance.outTime",
             ])
-            .getMany();
+
+        const staffsWithAttendance = await this.utilitiesService.applyBranchFilter(queryBuilder).getMany();
 
         return staffsWithAttendance;
 

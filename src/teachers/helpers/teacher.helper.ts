@@ -1,6 +1,5 @@
-import { InjectRepository } from "@nestjs/typeorm";
 import { Teacher } from "../entities/teacher.entity";
-import { Brackets, DataSource, Repository } from "typeorm";
+import { Brackets, DataSource } from "typeorm";
 import { Attendance } from "src/attendances/entities/attendance.entity";
 import { EmployeeAttendanceQueryDto } from "../dto/employee-attendance-query.dto";
 import { QueryDto } from "src/common/dto/query.dto";
@@ -9,25 +8,24 @@ import { BaseRepository } from "src/common/repository/base-repository";
 import { FastifyRequest } from "fastify";
 import { REQUEST } from "@nestjs/core";
 import { ClassRoutine } from "src/class-routines/entities/class-routine.entity";
-import { AuthUser } from "src/common/types/global.type";
+import { UtilitiesService } from "src/utilities/utilities.service";
 
 @Injectable()
 export class TeachersHelper extends BaseRepository {
     constructor(
         dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
-        @InjectRepository(Teacher) private readonly teacherRepo: Repository<Teacher>,
+        private readonly utilitiesService: UtilitiesService,
     ) { super(dataSource, req); }
 
-    async getTeachersWithAttendance(queryDto: EmployeeAttendanceQueryDto, currentUser: AuthUser) {
-        const teachersWithAttendance = await this.teacherRepo.createQueryBuilder('teacher')
+    async getTeachersWithAttendance(queryDto: EmployeeAttendanceQueryDto) {
+        const queryBuilder = this.getRepository(Teacher).createQueryBuilder('teacher')
             .leftJoin("teacher.account", "account")
-            .where('account.branchId = :branchId', { branchId: currentUser.branchId ?? queryDto.branchId })
             .leftJoinAndMapOne(
                 "teacher.attendance",
                 Attendance,
                 "attendance",
                 "attendance.accountId = account.id AND DATE(attendance.date) = DATE(:attendanceDate)",
-                { attendanceDate: new Date(queryDto.date).toISOString().split('T')[0] }
+                { attendanceDate: queryDto.date }
             )
             .select([
                 "teacher.id",
@@ -41,19 +39,18 @@ export class TeachersHelper extends BaseRepository {
                 "attendance.inTime",
                 "attendance.outTime",
             ])
-            .getMany();
+
+        const teachersWithAttendance = await this.utilitiesService.applyBranchFilter(queryBuilder).getMany();
 
         return teachersWithAttendance;
-
     }
 
-    async getTeacherOptions(queryDto: QueryDto, currentUser: AuthUser) {
-        const teacherOptions = await this.teacherRepo.createQueryBuilder('teacher')
+    async getTeacherOptions(queryDto: QueryDto) {
+        const queryBuilder = this.getRepository(Teacher).createQueryBuilder('teacher')
             .orderBy("teacher.createdAt", queryDto.order)
             .limit(queryDto.take)
             .offset(queryDto.skip)
             .leftJoin("teacher.account", "account")
-            .where("account.branchId = :branchId", { branchId: currentUser.branchId ?? queryDto.branchId })
             .andWhere(new Brackets(qb => {
                 if (!!queryDto.search) {
                     qb.where("LOWER(CONCAT(teacher.firstName, ' ', teacher.lastName)) LIKE LOWER(:search)", {
@@ -65,13 +62,14 @@ export class TeachersHelper extends BaseRepository {
                 "teacher.id as value",
                 "CONCAT(teacher.firstName, ' ', teacher.lastName) as label"
             ])
-            .getRawMany();
+
+        const teacherOptions = await this.utilitiesService.applyBranchFilter(queryBuilder).getRawMany();
 
         return teacherOptions;
     }
 
     async getDetails(id: string) { // used in single teacher page in frontend
-        const querybuilder = this.teacherRepo.createQueryBuilder('teacher')
+        const querybuilder = this.getRepository(Teacher).createQueryBuilder('teacher')
             .leftJoin('teacher.account', 'account')
             .leftJoin('teacher.profileImage', 'profileImage')
             .leftJoin('teacher.assignedClassRooms', 'assignedClassRooms')

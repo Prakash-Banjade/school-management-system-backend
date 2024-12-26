@@ -4,24 +4,22 @@ import { UpdateSubjectDto } from './dto/update-subject.dto';
 import { Subject } from './entities/subject.entity';
 import { Brackets, DataSource } from 'typeorm';
 import { SubjectOptionsQueryDto, SubjectQueryDto } from './dto/subject-query.dto';
-import { TeachersService } from 'src/teachers/teachers.service';
 import paginatedData from 'src/utils/paginatedData';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { singleSubjectSelelctCols, subjectSelectCols, subjectSelectCols_basic } from './helpers/subject-select-cols.config';
 import { AuthUser, EClassType, ESubjectType, Role } from 'src/common/types/global.type';
-import { isStudent } from 'src/utils/isStudent';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { FastifyRequest } from 'fastify';
 import { REQUEST } from '@nestjs/core';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { OptionalSubject } from 'src/optional-subject/entities/optional-subject.entity';
+import { Teacher } from 'src/teachers/entities/teacher.entity';
+import { isAdmin, isStudent } from 'src/utils/utils';
 
 @Injectable({ scope: Scope.REQUEST })
 export class SubjectsService extends BaseRepository {
   constructor(
-    dataSource: DataSource,
-    @Inject(REQUEST) private req: FastifyRequest,
-    private readonly teachersService: TeachersService,
+    dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
   ) { super(dataSource, req); }
 
   async create(createSubjectDto: CreateSubjectDto) {
@@ -29,7 +27,9 @@ export class SubjectsService extends BaseRepository {
     if (founcSubjectWithSameCode) throw new ConflictException('Subject with same code already exists');
 
     // get teacher
-    const teacher = createSubjectDto.teacherId ? await this.teachersService.findOne(createSubjectDto.teacherId) : null;
+    const teacher = createSubjectDto.teacherId
+      ? await this.getRepository(Teacher).findOne({ where: { id: createSubjectDto.teacherId }, select: { id: true } })
+      : null;
 
     // get class room and validte if class room is primary
     const classRoom = await this.getRepository(ClassRoom).findOne({ where: { id: createSubjectDto.classRoomId }, select: { id: true, classType: true } });
@@ -70,7 +70,7 @@ export class SubjectsService extends BaseRepository {
 
         queryDto.types && qb.andWhere("subject.type IN (:...types)", { types: queryDto.types });
 
-        if (currentUser.role === Role.ADMIN) { // admin access
+        if (isAdmin(currentUser)) { // admin access
           queryDto.classRoomId && qb.andWhere("classRoom.id = :classRoomId", { classRoomId: queryDto.classRoomId })
         } else if (isStudent(currentUser)) { // student access
           qb.andWhere('classRoom.id = :classRoomId', { classRoomId: currentUser.classRoomId })
@@ -137,7 +137,7 @@ export class SubjectsService extends BaseRepository {
     }
 
     const teacher = updateSubjectDto.teacherId
-      ? await this.teachersService.findOne(updateSubjectDto.teacherId)
+      ? await this.getRepository(Teacher).findOne({ where: { id: updateSubjectDto.teacherId }, select: { id: true } })
       : updateSubjectDto.teacherId === null
         ? null
         : existing.teacher;
