@@ -20,29 +20,18 @@ export class DashboardService extends BaseRepository {
 
     async getAdminDashboardCounts() {
         const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
-        const branchId = this.utilitiesService.getBranchId();
 
         const studentsCountQueryBuilder = this.getRepository(Student).createQueryBuilder('student')
             .leftJoin('student.account', 'account')
-            .leftJoin('student.enrollments', 'enrollments', 'enrollments.academicYearId = :academicYearId', { academicYearId: currentAcademicYearId })
-            .where(new Brackets(qb => {
-                qb.where('enrollments.id IS NOT NULL')
-                branchId && qb.andWhere('account.branchId = :branchId', { branchId })
-            }))
+            .innerJoin('student.enrollments', 'enrollments', 'enrollments.academicYearId = :academicYearId', { academicYearId: currentAcademicYearId })
         this.utilitiesService.applyBranchFilter(studentsCountQueryBuilder);
 
         const teachersCountQueryBuilder = this.getRepository(Teacher).createQueryBuilder('teacher')
             .leftJoin('teacher.account', 'account')
-            .where(new Brackets(qb => {
-                branchId && qb.andWhere('account.branchId = :branchId', { branchId })
-            }))
         this.utilitiesService.applyBranchFilter(teachersCountQueryBuilder);
 
         const staffsCountQueryBuilder = this.getRepository(Staff).createQueryBuilder('staff')
             .leftJoin('staff.account', 'account')
-            .where(new Brackets(qb => {
-                branchId && qb.andWhere('account.branchId = :branchId', { branchId })
-            }))
         this.utilitiesService.applyBranchFilter(staffsCountQueryBuilder);
 
         const classRoomsCountQueryBuilder = this.getRepository(ClassRoom).createQueryBuilder('classRoom')
@@ -52,6 +41,7 @@ export class DashboardService extends BaseRepository {
                 'COUNT(DISTINCT CASE WHEN classRoom.classType = :primary AND children.id IS NULL THEN classRoom.id END) as primaryWithNoSectionsCount',
             ])
             .setParameter('primary', EClassType.PRIMARY)
+        this.utilitiesService.applyBranchFilter(classRoomsCountQueryBuilder, "classRoom.branchId = :branchId");
 
         const [studentsCount, teachersCount, staffsCount, classRoomsCount] = await Promise.all([
             studentsCountQueryBuilder.getCount(),

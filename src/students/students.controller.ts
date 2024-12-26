@@ -35,7 +35,7 @@ export class StudentsController {
     return this.studentsHelper.findAll(queryDto);
   }
 
-  @Get('past')
+  @Get('past') // used in frontend in students promotion
   @ApiPaginatedResponse(CreateStudentDto)
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findAllFromPast(@Query() queryDto: PastStudentsQueryDto) {

@@ -164,7 +164,7 @@ export class AuthService extends BaseRepository {
     return await this.authHelper.sendConfirmationEmail(newAccount);
   }
 
-  async refresh(req: FastifyRequest, reply: FastifyReply): Promise<{ access_token: string }> {
+  async refresh(req: FastifyRequest, reply: FastifyReply) {
     reply.clearCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME, this.getRefreshCookieOptions()); // a new refresh token is to be generated
     const oldRefreshToken = req.unsignCookie(req.cookies[Tokens.REFRESH_TOKEN_COOKIE_NAME])?.value;
     this.refreshTokenService.setEmail(req.user?.email);

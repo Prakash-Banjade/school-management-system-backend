@@ -164,7 +164,7 @@ export class StudentsHelper extends BaseRepository {
             .leftJoin('classRoom.parent', 'parent')
             .leftJoin('student.account', 'account')
             .leftJoin(
-                // Subquery to get the latest enrollment using ROW_NUMBER
+                // Subquery to get the latest enrollment using ROW_NUMBER, don't touch this sub query
                 qb => qb
                     .select('enrollment.studentId', 'studentId')
                     .addSelect('enrollment.id', 'id')
