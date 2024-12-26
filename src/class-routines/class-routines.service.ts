@@ -14,11 +14,13 @@ import { BaseRepository } from 'src/common/repository/base-repository';
 import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
 import { isAdmin, isStudent } from 'src/utils/utils';
+import { UtilitiesService } from 'src/utilities/utilities.service';
 
 @Injectable()
 export class ClassRoutinesService extends BaseRepository {
   constructor(
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
+    private readonly utilitiesService: UtilitiesService,
   ) { super(dataSource, req); }
 
   async create(createClassRoutineDto: CreateClassRoutineDto) {
@@ -83,10 +85,10 @@ export class ClassRoutinesService extends BaseRepository {
         } else if (isStudent(currentUser)) {
           qb.andWhere('classRoom.id = :classRoomId', { classRoomId: currentUser.classRoomId });
         }
-
       }))
 
     applySelectColumns(querybuilder, classRoutinesSelectCols, 'classRoutine');
+    this.utilitiesService.applyBranchFilter(querybuilder, 'classRoom.branchId = :branchId');
 
     return paginatedData(queryDto, querybuilder);
   }
@@ -103,7 +105,7 @@ export class ClassRoutinesService extends BaseRepository {
 
   async update(id: string, updateClassRoutineDto: UpdateClassRoutineDto) {
     const existing = await this.getRepository(ClassRoutine).findOne({
-      where: { id },
+      where: { id, classRoom: { branch: { id: this.utilitiesService.getBranchId() } } },
       relations: ['classRoom'],
       select: { classRoom: { id: true } }
     });
