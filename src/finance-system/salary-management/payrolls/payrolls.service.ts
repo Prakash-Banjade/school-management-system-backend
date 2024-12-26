@@ -202,11 +202,7 @@ export class PayrollsService extends BaseRepository {
 
     async update(id: string, dto: UpdatePayrollDto) {
         const existing = await this.getRepository(Payroll).findOne({
-            where: {
-                id,
-                teacher: { account: { branch: { id: this.utilitiesService.getBranchId() } } },
-                staff: { account: { branch: { id: this.utilitiesService.getBranchId() } } },
-            },
+            where: { id },
             relations: {
                 salaryPayments: true,
                 salaryAdjustments: true,
