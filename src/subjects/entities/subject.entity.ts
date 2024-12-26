@@ -8,7 +8,7 @@ import { ExamSubject } from "src/examination-system/exam-subjects/entities/exam-
 import { BaseEntity } from "src/common/entities/base.entity";
 import { ESubjectType } from "src/common/types/global.type";
 import { OptionalSubject } from "src/optional-subject/entities/optional-subject.entity";
-import { LessonPlan } from "../lesson-plans/entities/lesson-plan.entity";
+import { LessonPlan } from "../../lesson-plans/entities/lesson-plan.entity";
 
 @Entity()
 export class Subject extends BaseEntity {

@@ -60,7 +60,8 @@ export class FilesService {
       where: [
         { id: In(ids), mimeType: mimeType },
         { url: In(ids), mimeType: mimeType }
-      ]
+      ],
+      select: { id: true }
     })
   }
 

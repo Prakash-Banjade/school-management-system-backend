@@ -9,7 +9,7 @@ import { FeeStructure } from "src/finance-system/fee-management/fee-structures/e
 import { OptionalSubject } from "src/optional-subject/entities/optional-subject.entity";
 import { Student } from "src/students/entities/student.entity";
 import { Subject } from "src/subjects/entities/subject.entity";
-import { LessonPlan } from "src/subjects/lesson-plans/entities/lesson-plan.entity";
+import { LessonPlan } from "src/lesson-plans/entities/lesson-plan.entity";
 import { Task } from "src/task-system/tasks/entities/task.entity";
 import { Teacher } from "src/teachers/entities/teacher.entity";
 import { BeforeInsert, BeforeUpdate, Column, Entity, ManyToMany, ManyToOne, OneToMany, Tree, TreeChildren, TreeParent } from "typeorm";

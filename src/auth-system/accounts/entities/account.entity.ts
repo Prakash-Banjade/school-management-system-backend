@@ -12,7 +12,7 @@ import { Staff } from "src/staffs/entities/staff.entity";
 import { Attendance } from "src/attendances/entities/attendance.entity";
 import { LeaveRequest } from "src/leave-requests/entities/leave-request.entity";
 import { Task } from "src/task-system/tasks/entities/task.entity";
-import { LessonPlan } from "src/subjects/lesson-plans/entities/lesson-plan.entity";
+import { LessonPlan } from "src/lesson-plans/entities/lesson-plan.entity";
 import { Branch } from "src/branches/entities/branch.entity";
 
 @Entity()

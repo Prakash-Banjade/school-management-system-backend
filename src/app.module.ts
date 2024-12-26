@@ -44,6 +44,7 @@ import { join } from 'path';
 import { BranchesModule } from './branches/branches.module';
 import { UtilitiesModule } from './utilities/utilities.module';
 import { EnvModule } from './env/env.module';
+import { LessonPlansModule } from './lesson-plans/lesson-plans.module';
 
 @Module({
   imports: [
@@ -114,6 +115,7 @@ import { EnvModule } from './env/env.module';
     GeneralSettingsModule,
     BranchesModule,
     UtilitiesModule,
+    LessonPlansModule,
   ],
   controllers: [AppController],
   providers: [

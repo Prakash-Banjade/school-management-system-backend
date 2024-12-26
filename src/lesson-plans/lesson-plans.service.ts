@@ -13,18 +13,20 @@ import { LessonPlanQueryDto } from './dto/lesson-plan-query.dto';
 import { Account } from 'src/auth-system/accounts/entities/account.entity';
 import { lessonPlanSelectCols } from './helpers/lesson-plan-select-cols';
 import { paginatedRawData } from 'src/utils/paginatedData';
-import { Subject } from '../entities/subject.entity';
+import { Subject } from '../subjects/entities/subject.entity';
 import { isStudent } from 'src/utils/utils';
+import { UtilitiesService } from 'src/utilities/utilities.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class LessonPlansService extends BaseRepository {
   constructor(
     datasource: DataSource, @Inject(REQUEST) private req: FastifyRequest,
     private readonly filesService: FilesService,
+    private readonly utilitiesService: UtilitiesService
   ) { super(datasource, req); }
 
   async create(dto: CreateLessonPlanDto, currentUser: AuthUser) {
-    const account = await this.getRepository(Account).findOneBy({ id: currentUser.accountId });
+    const account = await this.getRepository(Account).findOne({ where: { id: currentUser.accountId }, select: { id: true } });
 
     const attachments = dto.attachmentIds?.length
       ? await this.filesService.findAllByIds(dto.attachmentIds)
@@ -98,18 +100,23 @@ export class LessonPlansService extends BaseRepository {
       ])
       .groupBy("lessonPlan.id")
 
+    this.utilitiesService.applyBranchFilter(queryBuilder, 'classRoom.branchId = :branchId');
+
     return paginatedRawData(queryDto, queryBuilder);
   }
 
   async findOne(id: string) {
     const existing = await this.getRepository(LessonPlan).findOne({
-      where: { id },
+      where: {
+        id,
+        classRooms: { branch: { id: this.utilitiesService.getBranchId() } }
+      },
       relations: {
         subject: true,
         createdBy: true,
         attachments: true,
         classRooms: {
-          parent: true
+          parent: true,
         }
       },
       select: lessonPlanSelectCols,
@@ -160,10 +167,13 @@ export class LessonPlansService extends BaseRepository {
   }
 
   async updateStatus(id: string, dto: UpdateLessonPlanStatusDto) {
-    const existing = await this.findOne(id);
-
-    // if (existing.status === ELessonPlanStatus.Completed) throw new BadRequestException('Lesson plan already completed');
-    // if (existing.status === ELessonPlanStatus.Not_Started && dto.status === ELessonPlanStatus.Completed) throw new BadRequestException('Lesson plan not started yet');
+    const existing = await this.getRepository(LessonPlan).findOne({
+      where: {
+        id,
+        classRooms: { branch: { id: this.utilitiesService.getBranchId() } }
+      },
+      select: { id: true, status: true }
+    })
 
     existing.status = dto.status;
 
@@ -183,13 +193,7 @@ export class LessonPlansService extends BaseRepository {
   }
 
   async remove(id: string) {
-    const existing = await this.getRepository(LessonPlan).findOne({
-      where: { id },
-      select: { id: true }
-    });
-    if (!existing) throw new NotFoundException('Lesson plan not found');
-
-    await this.getRepository(LessonPlan).remove(existing);
+    await this.getRepository(LessonPlan).delete({ id });
 
     return { message: 'Lesson plan deleted' };
   }
