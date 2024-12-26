@@ -10,15 +10,17 @@ import { EClassType } from 'src/common/types/global.type';
 import { classRoomColumnsConfig } from './helpers/class-room-select-cols.config';
 import { FeeStructuresService } from 'src/finance-system/fee-management/fee-structures/fee-structures.service';
 import { Teacher } from 'src/teachers/entities/teacher.entity';
+import { UtilitiesService } from 'src/utilities/utilities.service';
+import { BranchesService } from 'src/branches/branches.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class ClassRoomsService extends BaseRepository {
   constructor(
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
     private readonly feeStructuresService: FeeStructuresService,
-  ) {
-    super(dataSource, req);
-  }
+    private readonly utilitiesService: UtilitiesService,
+    private readonly branchesService: BranchesService,
+  ) { super(dataSource, req) }
 
   async create(createClassRoomDto: CreateClassRoomDto) {
     const existingWithSameName = await this.getRepository(ClassRoom).findOne({ where: { name: createClassRoomDto.name, classType: EClassType.PRIMARY }, select: { id: true } });
@@ -45,6 +47,7 @@ export class ClassRoomsService extends BaseRepository {
       parent: parentClass,
       classTeacher,
       feeStructures,
+      branch: await this.branchesService.getBranch(this.utilitiesService.getBranchId()),
     });
 
     const savedClass = await this.getRepository(ClassRoom).save(newClassRoom);
@@ -56,7 +59,10 @@ export class ClassRoomsService extends BaseRepository {
 
   async findOne(id: string) {
     const existing = await this.getRepository(ClassRoom).findOne({
-      where: { id },
+      where: {
+        id,
+        branch: { id: this.utilitiesService.getBranchId() }
+      },
       relations: {
         parent: true,
         children: true,
