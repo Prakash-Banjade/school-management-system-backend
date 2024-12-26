@@ -33,7 +33,7 @@ export class EnvService implements OnModuleInit {
     MAIL_PASSWORD: string;
 
     onModuleInit() {
-        this.PORT = +this.configService.getOrThrow<string>('PORT');
+        this.PORT = +this.configService.get<string>('PORT');
         this.DATABASE_URL = this.configService.getOrThrow<string>('DATABASE_URL');
         this.DB_SYNCHRONIZE = this.configService.getOrThrow<'true' | 'false'>('DB_SYNCHRONIZE');
         this.REDIS_URL = this.configService.getOrThrow<string>('REDIS_URL');
