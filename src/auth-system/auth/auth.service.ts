@@ -6,7 +6,6 @@ import { BaseRepository } from 'src/common/repository/base-repository';
 import { REQUEST } from '@nestjs/core';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { Account } from '../accounts/entities/account.entity';
-import { ConfigService } from '@nestjs/config';
 import { AuthUser } from 'src/common/types/global.type';
 import { MAX_PREV_PASSWORDS, PASSWORD_SALT_COUNT, Tokens } from 'src/common/CONSTANTS';
 import { RegisterDto } from './dto/register.dto';
@@ -26,6 +25,7 @@ import { TokenExpiredError } from '@nestjs/jwt';
 import { IVerifyEncryptedHashTokenPairReturn } from './helpers/interface';
 import { generateRandomPassword } from 'src/utils/generatePassword';
 import { RefreshTokenService } from './helpers/refresh-tokens.service';
+import { EnvService } from 'src/env/env.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AuthService extends BaseRepository {
@@ -33,7 +33,7 @@ export class AuthService extends BaseRepository {
     private readonly datasource: DataSource,
     @Inject(REQUEST) req: FastifyRequest,
     private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
+    private readonly envService: EnvService,
     private readonly authHelper: AuthHelper,
     private readonly eventEmitter: EventEmitter2,
     private readonly refreshTokenService: RefreshTokenService,
@@ -89,11 +89,11 @@ export class AuthService extends BaseRepository {
 
   private getRefreshCookieOptions(): CookieSerializeOptions {
     return {
-      secure: this.configService.get('NODE_ENV') === 'production',
+      secure: this.envService.NODE_ENV === 'production',
       httpOnly: true,
       signed: true,
-      sameSite: this.configService.get('NODE_ENV') === 'production' ? 'none' : 'lax',
-      expires: new Date(Date.now() + (parseInt(this.configService.getOrThrow('REFRESH_TOKEN_EXPIRATION_SEC')) * 1000)),
+      sameSite: this.envService.NODE_ENV === 'production' ? 'none' : 'lax',
+      expires: new Date(Date.now() + (this.envService.REFRESH_TOKEN_EXPIRATION_SEC * 1000)),
       path: '/', // necessary to be able to access cookie from out of this route path context, like auth.guard.ts
     }
   }
@@ -127,7 +127,7 @@ export class AuthService extends BaseRepository {
   }
 
   async verifyEmailResetToken(verificationToken: string) {
-    const result = await this.authHelper.verifyEncryptedHashTokenPair<{ email: string }>(verificationToken, this.configService.getOrThrow('EMAIL_VERIFICATION_SECRET'));
+    const result = await this.authHelper.verifyEncryptedHashTokenPair<{ email: string }>(verificationToken, this.envService.EMAIL_VERIFICATION_SECRET);
     if (result?.error || !result?.payload?.email) {
       if (result.error instanceof TokenExpiredError) throw new BadRequestException('OTP has been expired');
       throw new BadRequestException(result.error?.message || 'Invalid token');
@@ -253,8 +253,8 @@ export class AuthService extends BaseRepository {
 
     const [resetToken, hashedResetToken] = await this.authHelper.getEncryptedHashTokenPair(
       { email: foundAccount.email },
-      this.configService.getOrThrow('FORGOT_PASSWORD_SECRET'),
-      parseInt(this.configService.getOrThrow('FORGOT_PASSWORD_EXPIRATION_SEC'))
+      this.envService.FORGOT_PASSWORD_SECRET,
+      this.envService.FORGOT_PASSWORD_EXPIRATION_SEC
     )
 
     // existing request
@@ -281,7 +281,7 @@ export class AuthService extends BaseRepository {
     }));
 
     return {
-      message: `Link is valid for ${Number(this.configService.getOrThrow('FORGOT_PASSWORD_EXPIRATION_SEC')) / 60} minutes`,
+      message: `Link is valid for ${this.envService.FORGOT_PASSWORD_EXPIRATION_SEC / 60} minutes`,
     };
   }
 
@@ -290,7 +290,7 @@ export class AuthService extends BaseRepository {
    */
   async verifyResetToken(providedResetToken: string, data = false) {
     // hash the provided token to check in database
-    const result = await this.authHelper.verifyEncryptedHashTokenPair<{ email: string }>(providedResetToken, this.configService.getOrThrow('FORGOT_PASSWORD_SECRET'));
+    const result = await this.authHelper.verifyEncryptedHashTokenPair<{ email: string }>(providedResetToken, this.envService.FORGOT_PASSWORD_SECRET);
     if (result?.error || !result?.payload?.email) {
       // Todo: if token is not valid, remove the password change request from the database
       if (result.error instanceof TokenExpiredError) throw new BadRequestException('Link has been expired');
@@ -312,13 +312,6 @@ export class AuthService extends BaseRepository {
     if (!passwordChangeRequest) throw new NotFoundException('Invalid request');
 
     // Check if the reset token has expired # JWT WILL VERIFY THE EXPIRATION
-    //// const now = new Date();
-    //// const resetTokenExpiration = new Date(passwordChangeRequest.createdAt);
-    //// resetTokenExpiration.setSeconds(resetTokenExpiration.getSeconds() + parseInt(this.configService.getOrThrow('FORGOT_PASSWORD_EXPIRATION_SEC')));
-    //// if (now > resetTokenExpiration) {
-    ////   await this.passwordChangeRequestRepo.remove(passwordChangeRequest);
-    ////   throw new BadRequestException('Reset token has expired');
-    //// }
 
     // retrieve the user from the database
     const account = await this.accountsRepo.findOneBy({ email: passwordChangeRequest.email });

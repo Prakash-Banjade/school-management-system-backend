@@ -1,14 +1,14 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import { FastifyReply, FastifyRequest } from "fastify";
 import { Tokens } from "../CONSTANTS";
+import { EnvService } from "src/env/env.service";
 
 @Injectable()
 export class RefreshTokenGuard implements CanActivate {
     constructor(
         private jwtService: JwtService,
-        private readonly configService: ConfigService,
+        private readonly envService: EnvService,
     ) { }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -23,7 +23,7 @@ export class RefreshTokenGuard implements CanActivate {
 
         try {
             const { accountId } = await this.jwtService.verifyAsync(refreshCookieValue, {
-                secret: this.configService.getOrThrow('REFRESH_TOKEN_SECRET'),
+                secret: this.envService.REFRESH_TOKEN_SECRET,
             })
 
             request.accountId = accountId;

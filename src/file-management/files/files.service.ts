@@ -13,13 +13,13 @@ import { applySelectColumns } from 'src/utils/apply-select-cols';
 import paginatedData from 'src/utils/paginatedData';
 import { FastifyReply } from 'fastify';
 import { EFileMimeType } from 'src/common/types/global.type';
-import { ConfigService } from '@nestjs/config';
+import { EnvService } from 'src/env/env.service';
 
 @Injectable()
 export class FilesService {
   constructor(
     @InjectRepository(File) private filesRepository: Repository<File>,
-    private readonly configService: ConfigService,
+    private readonly envService: EnvService,
   ) { }
 
   async upload(createFileDto: CreateFileDto) {
@@ -95,7 +95,7 @@ export class FilesService {
       res.header('Content-Type', contentTypeFormat);
       res.header('Content-Length', stats.size);
       res.header('Content-Disposition', 'inline');
-      res.header('Access-Control-Allow-Origin', this.configService.get<string>('CLIENT_URL'));
+      res.header('Access-Control-Allow-Origin', this.envService.CLIENT_URL);
       res.header('Cross-Origin-Resource-Policy', 'cross-origin');
 
       // Stream the file directly to the response

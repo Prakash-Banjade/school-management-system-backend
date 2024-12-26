@@ -8,7 +8,6 @@ import { FastifyRequest } from "fastify";
 import { REQUEST } from "@nestjs/core";
 import { EmailVerificationPending } from "../entities/email-verification-pending.entity";
 import { JwtService, TokenExpiredError } from "@nestjs/jwt";
-import { ConfigService } from "@nestjs/config";
 import { EmailVerificationDto } from "../dto/email-verification.dto";
 import * as bcrypt from 'bcrypt';
 import { EncryptionService } from "src/auth-system/encryption/encryption.service";
@@ -17,6 +16,7 @@ import { EventEmitter2 } from "@nestjs/event-emitter";
 import { MailEvents } from "src/mail/mail.service";
 import { ConfirmationMailEventDto } from "src/mail/dto/events.dto";
 import { IVerifyEncryptedHashTokenPairReturn } from "./interface";
+import { EnvService } from "src/env/env.service";
 
 @Injectable({ scope: Scope.REQUEST })
 export class AuthHelper extends BaseRepository {
@@ -24,7 +24,7 @@ export class AuthHelper extends BaseRepository {
         private readonly datasource: DataSource,
         @Inject(REQUEST) req: FastifyRequest,
         private readonly jwtService: JwtService,
-        private readonly configService: ConfigService,
+        private readonly envService: EnvService,
         private readonly encryptionService: EncryptionService,
         private readonly eventEmitter: EventEmitter2,
     ) {
@@ -48,8 +48,8 @@ export class AuthHelper extends BaseRepository {
         const verificationToken = await this.jwtService.signAsync(
             { email: account.email },
             {
-                secret: this.configService.getOrThrow('EMAIL_VERIFICATION_SECRET'),
-                expiresIn: parseInt(this.configService.getOrThrow('EMAIL_VERIFICATION_EXPIRATION_SEC')),
+                secret: this.envService.EMAIL_VERIFICATION_SECRET,
+                expiresIn: this.envService.EMAIL_VERIFICATION_EXPIRATION_SEC,
             }
         );
 
@@ -82,7 +82,7 @@ export class AuthHelper extends BaseRepository {
         // send mail
         this.eventEmitter.emit(MailEvents.CONFIRMATION, new ConfirmationMailEventDto({
             otp,
-            expirationMin: this.configService.getOrThrow('EMAIL_VERIFICATION_EXPIRATION_SEC') / 60,
+            expirationMin: this.envService.EMAIL_VERIFICATION_EXPIRATION_SEC / 60,
             receiverEmail: account.email,
             receiverName: account.firstName + ' ' + account.lastName,
             token: encryptedVerificationToken
@@ -101,7 +101,7 @@ export class AuthHelper extends BaseRepository {
             const decryptedToken = this.encryptionService.decrypt(verificationToken);
             // verify jwt token
             payload = await this.jwtService.verifyAsync(decryptedToken, {
-                secret: this.configService.get('EMAIL_VERIFICATION_SECRET'),
+                secret: this.envService.EMAIL_VERIFICATION_SECRET,
             });
         } catch (e) {
             if (e instanceof TokenExpiredError) throw new BadRequestException({

@@ -1,29 +1,24 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { JwtService as JwtSer } from '@nestjs/jwt';
 import { AuthUser, Role } from 'src/common/types/global.type';
 import { Account } from '../accounts/entities/account.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Student } from 'src/students/entities/student.entity';
 import { Repository } from 'typeorm';
+import { EnvService } from 'src/env/env.service';
 
 @Injectable()
 export class JwtService {
     constructor(
         private readonly jwtService: JwtSer,
-        private readonly configService: ConfigService,
+        private readonly envService: EnvService,
         @InjectRepository(Student) private readonly studentRepo: Repository<Student>,
     ) { }
 
-    private readonly ACCESS_TOKEN_SECRET = this.configService.getOrThrow<string>('ACCESS_TOKEN_SECRET');
-    private readonly ACCESS_TOKEN_EXPIRATION_SEC = +this.configService.getOrThrow<number>('ACCESS_TOKEN_EXPIRATION_SEC');
-    private readonly REFRESH_TOKEN_SECRET = this.configService.getOrThrow<string>('REFRESH_TOKEN_SECRET');
-    private readonly REFRESH_TOKEN_EXPIRATION_SEC = +this.configService.getOrThrow<number>('REFRESH_TOKEN_EXPIRATION_SEC');
-
     async createAccessToken(payload: AuthUser): Promise<string> {
         return await this.jwtService.signAsync(payload, {
-            secret: this.ACCESS_TOKEN_SECRET,
-            expiresIn: this.ACCESS_TOKEN_EXPIRATION_SEC,
+            secret: this.envService.ACCESS_TOKEN_SECRET,
+            expiresIn: this.envService.ACCESS_TOKEN_EXPIRATION_SEC,
         });
     }
 
@@ -31,8 +26,8 @@ export class JwtService {
         return await this.jwtService.signAsync(
             { accountId: payload.accountId },
             {
-                secret: this.REFRESH_TOKEN_SECRET,
-                expiresIn: this.REFRESH_TOKEN_EXPIRATION_SEC,
+                secret: this.envService.REFRESH_TOKEN_SECRET,
+                expiresIn: this.envService.REFRESH_TOKEN_EXPIRATION_SEC,
             },
         );
     }
