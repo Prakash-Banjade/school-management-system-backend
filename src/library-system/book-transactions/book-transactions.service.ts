@@ -222,7 +222,7 @@ export class BookTransactionsService extends BaseRepository {
     // check if any book transaction has lowered the due date
     const bookTransactions = await this.getRepository(BookTransaction).createQueryBuilder('transaction')
       .whereInIds(ids)
-      .andWhere("DATE(transaction.dueDate) >= :dueDate", { dueDate })
+      .andWhere("DATE(transaction.dueDate) >= DATE(:dueDate)", { dueDate })
       .andWhere("returnedAt IS NULL")
       .getMany();
 
