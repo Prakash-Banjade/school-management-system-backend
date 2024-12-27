@@ -142,7 +142,7 @@ export class StudentsService extends BaseRepository {
   async findLibraryStudent(studentId: string) {
     const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
 
-    const student = await this.getRepository<Student>(Student).createQueryBuilder('student')
+    const queryBuilder = this.getRepository<Student>(Student).createQueryBuilder('student')
       .innerJoin("student.enrollments", "enrollments", "enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
       .leftJoin('enrollments.classRoom', 'classRoom')
       .leftJoin("classRoom.parent", "parent")
@@ -150,7 +150,6 @@ export class StudentsService extends BaseRepository {
       .leftJoin("student.bookTransactions", "bookTransactions")
       .leftJoin("student.account", "account")
       .where("student.studentId = :studentId", { studentId })
-      .andWhere('account.branchId = :branchId', { branchId: this.utilitiesService.getBranchId() })
       .select([
         "student.id AS id",
         "CONCAT(student.firstName, ' ', student.lastName) AS name",
@@ -163,7 +162,9 @@ export class StudentsService extends BaseRepository {
       ])
       .groupBy('student.id')
       .addGroupBy('classRoom.id')
-      .getRawOne();
+    this.utilitiesService.applyBranchFilter(queryBuilder);
+
+    const student = await queryBuilder.getRawOne();
 
     if (!student || !student.classRoomName) throw new NotFoundException('Student not found');
 
