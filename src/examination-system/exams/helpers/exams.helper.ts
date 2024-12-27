@@ -95,7 +95,7 @@ export class ExamsHelper extends BaseRepository {
                     qb.andWhere("CASE WHEN subject.type = :optional THEN subject.id IN (:...optionalSubjectIds) ELSE 1 = 1 END", { optional: ESubjectType.OPTIONAL, optionalSubjectIds: studentOptionalSubjectIds })
                 )
             }))
-            .leftJoin('examSubjects.examReports', 'examReports', 'examReports.studentId = :studentId', { studentId: student.id })
+            .innerJoin('examSubjects.examReports', 'examReports', 'examReports.studentId = :studentId', { studentId: student.id })
             .select([
                 "exam.id",
                 "examType.id",
