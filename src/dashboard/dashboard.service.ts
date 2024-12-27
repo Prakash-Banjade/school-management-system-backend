@@ -65,13 +65,12 @@ export class DashboardService extends BaseRepository {
             .orderBy('leaveRequest.createdAt', 'DESC')
             .leftJoin('leaveRequest.account', 'account')
             .leftJoin('account.student', 'student')
-            .leftJoin('student.enrollments', 'enrollments', 'enrollments.academicYearId = :academicYearId', { academicYearId: currentAcademicYearId })
+            .innerJoin('student.enrollments', 'enrollments', 'enrollments.academicYearId = :academicYearId', { academicYearId: currentAcademicYearId })
             .leftJoin('enrollments.classRoom', 'classRoom')
             .leftJoin('classRoom.parent', 'parent')
             .leftJoin('student.profileImage', 'profileImage')
             .where('account.role = :role', { role: Role.STUDENT })
             .andWhere('leaveRequest.status = :status', { status: ELeaveRequestStatus.PENDING })
-            .andWhere('enrollments.id IS NOT NULL')
         this.utilitiesService.applyBranchFilter(studentsLeaveRequestsQueryBuilder);
 
         const studentsLeaveRequests = await studentsLeaveRequestsQueryBuilder.clone()
