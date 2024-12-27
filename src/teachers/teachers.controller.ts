@@ -3,7 +3,7 @@ import { TeachersService } from './teachers.service';
 import { CreateTeacherDto } from './dto/create-teacher.dto';
 import { UpdateTeacherDto } from './dto/update-teacher.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { TeacherQueryDto } from './dto/teacher-query.dto';
+import { TeacherOptionsQueryDto, TeacherQueryDto } from './dto/teacher-query.dto';
 import { ApiPaginatedResponse } from 'src/common/decorators/apiPaginatedResponse.decorator';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
@@ -52,7 +52,7 @@ export class TeachersController {
 
   @Get('options')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  getTeacherOptions(@Query() queryDto: QueryDto) {
+  getTeacherOptions(@Query() queryDto: TeacherOptionsQueryDto) {
     return this.teachersHelper.getTeacherOptions(queryDto);
   }
 

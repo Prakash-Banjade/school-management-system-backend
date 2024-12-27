@@ -36,19 +36,19 @@ export class SubjectsController {
 
   @Get(':id')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  findOne(@Param('id') id: string, @CurrentUser() currentUser: AuthUser) {
-    return this.subjectsService.findOne(id, currentUser);
+  findOne(@Param('id') id: string) {
+    return this.subjectsService.findOne(id);
   }
 
   @Patch(':id')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
-  update(@Param('id') id: string, @Body() updateSubjectDto: UpdateSubjectDto, @CurrentUser() currentUser: AuthUser) {
-    return this.subjectsService.update(id, updateSubjectDto, currentUser);
+  update(@Param('id') id: string, @Body() updateSubjectDto: UpdateSubjectDto) {
+    return this.subjectsService.update(id, updateSubjectDto);
   }
 
   @Delete(':id')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.DELETE })
-  remove(@Param('id') id: string, @CurrentUser() currentUser: AuthUser) {
-    return this.subjectsService.remove(id, currentUser);
+  remove(@Param('id') id: string) {
+    return this.subjectsService.remove(id);
   }
 }

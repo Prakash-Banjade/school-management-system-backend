@@ -2,13 +2,13 @@ import { Teacher } from "../entities/teacher.entity";
 import { Brackets, DataSource } from "typeorm";
 import { Attendance } from "src/attendances/entities/attendance.entity";
 import { EmployeeAttendanceQueryDto } from "../dto/employee-attendance-query.dto";
-import { QueryDto } from "src/common/dto/query.dto";
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { BaseRepository } from "src/common/repository/base-repository";
 import { FastifyRequest } from "fastify";
 import { REQUEST } from "@nestjs/core";
 import { ClassRoutine } from "src/class-routines/entities/class-routine.entity";
 import { UtilitiesService } from "src/utilities/utilities.service";
+import { TeacherOptionsQueryDto } from "../dto/teacher-query.dto";
 
 @Injectable()
 export class TeachersHelper extends BaseRepository {
@@ -45,12 +45,18 @@ export class TeachersHelper extends BaseRepository {
         return teachersWithAttendance;
     }
 
-    async getTeacherOptions(queryDto: QueryDto) {
+    async getTeacherOptions(queryDto: TeacherOptionsQueryDto) {
         const queryBuilder = this.getRepository(Teacher).createQueryBuilder('teacher')
             .orderBy("teacher.createdAt", queryDto.order)
             .limit(queryDto.take)
             .offset(queryDto.skip)
             .leftJoin("teacher.account", "account")
+            .innerJoin(
+                "teacher.assignedSubjects",
+                "assignedSubjects",
+                queryDto.assignedSubjectId ? "assignedSubjects.id = :assignedSubjectId" : "1 = 0",
+                { assignedSubjectId: queryDto.assignedSubjectId }
+            )
             .andWhere(new Brackets(qb => {
                 if (!!queryDto.search) {
                     qb.where("LOWER(CONCAT(teacher.firstName, ' ', teacher.lastName)) LIKE LOWER(:search)", {
@@ -60,7 +66,7 @@ export class TeachersHelper extends BaseRepository {
             }))
             .select([
                 "teacher.id as value",
-                "CONCAT(teacher.firstName, ' ', teacher.lastName) as label"
+                "CONCAT(teacher.firstName, ' ', teacher.lastName) as label",
             ])
 
         const teacherOptions = await this.utilitiesService.applyBranchFilter(queryBuilder).getRawMany();
@@ -111,7 +117,7 @@ export class TeachersHelper extends BaseRepository {
             .leftJoin('classRoutine.classRoom', 'classRoom')
             .leftJoin('classRoom.parent', 'parent')
             .leftJoin('classRoutine.subject', 'subject')
-            .where('subject.teacherId = :teacherId', { teacherId: id })
+            .where('classRoutine.teacherId = :teacherId', { teacherId: id })
             .andWhere(new Brackets(qb => {
                 if (dayOfTheWeek) qb.andWhere('classRoutine.dayOfTheWeek = :dayOfTheWeek', { dayOfTheWeek });
             }))

@@ -15,6 +15,7 @@ import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
 import { isAdmin, isStudent } from 'src/utils/utils';
 import { UtilitiesService } from 'src/utilities/utilities.service';
+import { Teacher } from 'src/teachers/entities/teacher.entity';
 
 @Injectable()
 export class ClassRoutinesService extends BaseRepository {
@@ -39,13 +40,23 @@ export class ClassRoutinesService extends BaseRepository {
       })
       : null;
 
+    const teacher = createClassRoutineDto.teacherId && await this.getRepository(Teacher).findOne({
+      where: {
+        id: createClassRoutineDto.teacherId,
+        account: { branch: { id: this.utilitiesService.getBranchId() } },
+        assignedSubjects: { id: subject?.id }
+      },
+      select: { id: true }
+    });
+
     // validate if class room have the subject
     subject && this.validateIfClassRoomHaveSubject(subject, classRoom);
 
     const newClassRoutine = this.getRepository(ClassRoutine).create({
       ...createClassRoutineDto,
       classRoom,
-      subject
+      subject,
+      teacher: teacher ?? null,
     });
 
     await this.getRepository(ClassRoutine).save(newClassRoutine);
@@ -68,7 +79,7 @@ export class ClassRoutinesService extends BaseRepository {
       .leftJoin('classRoutine.classRoom', 'classRoom')
       .leftJoin('classRoom.parent', 'parent')
       .leftJoin('classRoutine.subject', 'subject')
-      .leftJoin('subject.teacher', 'teacher')
+      .leftJoin('classRoutine.teacher', 'teacher')
       .where(new Brackets(qb => {
         queryDto.dayOfTheWeek && qb.andWhere('classRoutine.dayOfTheWeek = :dayOfTheWeek', { dayOfTheWeek: queryDto.dayOfTheWeek });
 
@@ -106,8 +117,8 @@ export class ClassRoutinesService extends BaseRepository {
   async update(id: string, updateClassRoutineDto: UpdateClassRoutineDto) {
     const existing = await this.getRepository(ClassRoutine).findOne({
       where: { id, classRoom: { branch: { id: this.utilitiesService.getBranchId() } } },
-      relations: ['classRoom'],
-      select: { classRoom: { id: true } }
+      relations: ['classRoom', 'teacher'],
+      select: { classRoom: { id: true }, teacher: { id: true } }
     });
     if (!existing) throw new NotFoundException('Class routine not found');
 
@@ -118,6 +129,12 @@ export class ClassRoutinesService extends BaseRepository {
       const classRoom = await this.getRepository(ClassRoom).findOne({ where: { id: updateClassRoutineDto.classRoomId }, select: { id: true } });
       if (!classRoom) throw new NotFoundException('Class room not found');
       existing.classRoom = classRoom;
+    }
+
+    if (updateClassRoutineDto.teacherId && (updateClassRoutineDto.teacherId !== existing.teacher?.id || !existing.teacher)) {
+      const teacher = await this.getRepository(Teacher).findOne({ where: { id: updateClassRoutineDto.teacherId }, select: { id: true } });
+      if (!teacher) throw new NotFoundException('Teacher not found');
+      existing.teacher = teacher;
     }
 
     Object.assign(existing, {

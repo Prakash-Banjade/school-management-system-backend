@@ -42,11 +42,11 @@ export class Subject extends BaseEntity {
     |--------------------------------------------------
     */
 
-    @ManyToMany(() => Teacher, teacher => teacher.assignedSubjects, { cascade: true })
+    @ManyToMany(() => Teacher, teacher => teacher.assignedSubjects)
     @JoinTable()
     teachers: Teacher[];
 
-    @ManyToOne(() => ClassRoom, classRoom => classRoom.subjects, { onDelete: 'SET NULL', nullable: true })
+    @ManyToOne(() => ClassRoom, classRoom => classRoom.subjects, { nullable: false })
     classRoom: ClassRoom;
 
     @OneToOne(() => OptionalSubject, (optionalSubject) => optionalSubject.subject, { cascade: true })

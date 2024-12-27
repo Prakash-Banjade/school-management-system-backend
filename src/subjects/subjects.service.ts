@@ -100,14 +100,9 @@ export class SubjectsService extends BaseRepository {
       .getMany();
   }
 
-  async findOne(id: string, currentUser?: AuthUser) {
+  async findOne(id: string) {
     const existing = await this.getRepository(Subject).findOne({
-      where: {
-        id,
-        classRoom: {
-          id: currentUser && isStudent(currentUser) ? currentUser.classRoomId : undefined, // different access for student and admin
-        }
-      },
+      where: { id },
       relations: {
         classRoom: true,
         teachers: true,
@@ -120,8 +115,8 @@ export class SubjectsService extends BaseRepository {
     return existing;
   }
 
-  async update(id: string, updateSubjectDto: UpdateSubjectDto, currentUser: AuthUser) {
-    const existing = await this.findOne(id, currentUser);
+  async update(id: string, updateSubjectDto: UpdateSubjectDto) {
+    const existing = await this.findOne(id);
 
     // check if subject code is already taken
     if (updateSubjectDto.subjectCode && updateSubjectDto.subjectCode !== existing.subjectCode) {
@@ -153,7 +148,7 @@ export class SubjectsService extends BaseRepository {
     return { message: 'Subject updated' };
   }
 
-  async remove(id: string, currentUser: AuthUser) {
+  async remove(id: string) {
     await this.getRepository(Subject).delete({ id });
 
     return { message: 'Subject deleted' };

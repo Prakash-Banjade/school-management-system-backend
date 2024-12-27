@@ -1,5 +1,6 @@
 import { Account } from "src/auth-system/accounts/entities/account.entity";
 import { ClassRoom } from "src/class-rooms/entities/class-room.entity";
+import { ClassRoutine } from "src/class-routines/entities/class-routine.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { EBloodGroup, EMaritalStatus, Gender } from "src/common/types/global.type";
 import { Image } from "src/file-management/images/entities/image.entity";
@@ -75,6 +76,9 @@ export class Teacher extends BaseEntity {
 
     @ManyToMany(() => Subject, (subject) => subject.teachers)
     assignedSubjects: Subject[]
+
+    @OneToMany(() => ClassRoutine, (classRoutine) => classRoutine.teacher)
+    classRoutines: ClassRoutine[]
 
     @OneToMany(() => TaskEvaluation, (taskEvaluation) => taskEvaluation.evaluator)
     taskEvaluations: TaskEvaluation[];
