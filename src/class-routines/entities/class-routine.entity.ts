@@ -33,6 +33,7 @@ export class ClassRoutine extends BaseEntity {
     refineSubjectWithType() {
         if (this.type === ERoutineType.BREAK) {
             this.subject = null
+            this.teacher = null
         };
     }
 }
