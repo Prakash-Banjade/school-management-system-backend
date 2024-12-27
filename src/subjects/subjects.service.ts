@@ -36,7 +36,7 @@ export class SubjectsService extends BaseRepository {
 
     // get teacher
     const teachers = createSubjectDto.teacherIds?.length
-      ? await this.getRepository(Teacher).find({ where: { id: In(createSubjectDto.teacherIds) }, select: { id: true } })
+      ? await this.getRepository(Teacher).find({ where: { id: In(createSubjectDto.teacherIds), account: { branch: { id: this.utilitiesService.getBranchId() } } }, select: { id: true } })
       : [];
 
     // get class room and validte if class room is primary
