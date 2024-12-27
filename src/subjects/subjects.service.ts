@@ -25,7 +25,13 @@ export class SubjectsService extends BaseRepository {
   ) { super(dataSource, req); }
 
   async create(createSubjectDto: CreateSubjectDto) {
-    const founcSubjectWithSameCode = await this.getRepository(Subject).findOne({ where: { subjectCode: createSubjectDto.subjectCode }, select: { id: true } });
+    const founcSubjectWithSameCode = await this.getRepository(Subject).findOne({
+      where: {
+        subjectCode: createSubjectDto.subjectCode,
+        classRoom: { branch: { id: this.utilitiesService.getBranchId() } }
+      },
+      select: { id: true }
+    });
     if (founcSubjectWithSameCode) throw new ConflictException('Subject with same code already exists');
 
     // get teacher
