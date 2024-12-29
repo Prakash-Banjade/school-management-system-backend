@@ -10,7 +10,8 @@ import { REQUEST } from "@nestjs/core";
 import { CreateLeaveAttendanceEvent } from "../dto/create-attendance.dto";
 import { Account } from "src/auth-system/accounts/entities/account.entity";
 import { OnEvent } from "@nestjs/event-emitter";
-import { isAdmin } from "src/utils/utils";
+import { isAdmin, startOfDayString } from "src/utils/utils";
+import { format } from "date-fns";
 
 export const enum AttendanceEvent {
     CREATE_LEAVE = "attendance:create_leave"
@@ -111,7 +112,7 @@ export class AttendancesHelper extends BaseRepository {
                 .delete()
                 .from(Attendance)
                 .where('accountId = :accountId', { accountId: dto.accountId })
-                .andWhere('DATE(date) BETWEEN DATE(:dateFrom) AND DATE(:dateTo)', { dateFrom: dto.dateFrom, dateTo: dto.dateTo })
+                .andWhere('date >= :dateFrom AND date <= :dateTo', { dateFrom: format(dto.dateFrom, 'yyyy-MM-dd'), dateTo: format(dto.dateTo, 'yyyy-MM-dd') })
                 .execute();
 
             const dateFrom = new Date(dto.dateFrom);
@@ -122,7 +123,7 @@ export class AttendancesHelper extends BaseRepository {
             while (dateFrom <= dateTo) {
                 const attendance = this.getRepository(Attendance).create({
                     account,
-                    date: dateFrom.toISOString(),
+                    date: startOfDayString(dateFrom),
                     status: EAttendanceStatus.LEAVE,
                 });
 
