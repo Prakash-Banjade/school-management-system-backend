@@ -23,7 +23,14 @@ export class ClassRoomsService extends BaseRepository {
   ) { super(dataSource, req) }
 
   async create(createClassRoomDto: CreateClassRoomDto) {
-    const existingWithSameName = await this.getRepository(ClassRoom).findOne({ where: { name: createClassRoomDto.name, classType: EClassType.PRIMARY }, select: { id: true } });
+    const existingWithSameName = await this.getRepository(ClassRoom).findOne({
+      where: {
+        name: createClassRoomDto.name,
+        classType: EClassType.PRIMARY,
+        branch: { id: this.utilitiesService.getBranchId() }
+      },
+      select: { id: true }
+    });
     if (existingWithSameName) throw new ConflictException('Class room with same name already exists');
 
     // evaluate parent class
