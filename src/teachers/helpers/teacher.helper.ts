@@ -70,6 +70,7 @@ export class TeachersHelper extends BaseRepository {
                 "teacher.id as value",
                 "CONCAT(teacher.firstName, ' ', teacher.lastName) as label",
             ])
+            .groupBy("teacher.id");
 
         const teacherOptions = await this.utilitiesService.applyBranchFilter(queryBuilder).getRawMany();
 
