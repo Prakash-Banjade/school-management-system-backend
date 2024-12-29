@@ -5,10 +5,10 @@ import { ChargeHead } from "../../charge-heads/entities/charge-head.entity";
 
 @Entity()
 export class FeeStructure extends BaseEntity {
-    @ManyToOne(() => ClassRoom, classRoom => classRoom.feeStructures, { onDelete: 'CASCADE' })
+    @ManyToOne(() => ClassRoom, classRoom => classRoom.feeStructures, { onDelete: 'CASCADE', nullable: false })
     classRoom: ClassRoom;
 
-    @ManyToOne(() => ChargeHead, chargeHead => chargeHead.feeStructures, { onDelete: 'CASCADE' })
+    @ManyToOne(() => ChargeHead, chargeHead => chargeHead.feeStructures, { onDelete: 'CASCADE', nullable: true })
     chargeHead: ChargeHead;
 
     @Column({ type: 'float', precision: 10, scale: 2 })

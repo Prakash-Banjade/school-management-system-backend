@@ -41,4 +41,9 @@ export class ChargeHeadOptionsQueryDto extends QueryDto {
     @IsString()
     @IsOptional()
     type?: string;
+
+    @ApiPropertyOptional()
+    @IsString()
+    @IsOptional()
+    classRoomId?: string;
 }
