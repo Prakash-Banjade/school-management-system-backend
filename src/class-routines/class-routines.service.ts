@@ -24,36 +24,49 @@ export class ClassRoutinesService extends BaseRepository {
     private readonly utilitiesService: UtilitiesService,
   ) { super(dataSource, req); }
 
-  async create(createClassRoutineDto: CreateClassRoutineDto) {
+  async create(dto: CreateClassRoutineDto) {
     const classRoom = await this.getRepository(ClassRoom).findOne({
-      where: { id: createClassRoutineDto.classRoomId },
-      relations: ['parent'],
-      select: { id: true, classType: true, parent: { id: true } },
+      where: {
+        id: dto.classRoomId,
+        branch: { id: this.utilitiesService.getBranchId() }
+      },
+      relations: {
+        parent: true,
+        branch: true,
+      },
+      select: {
+        id: true,
+        classType: true,
+        parent: { id: true },
+        branch: { id: true }
+      },
     });
     if (!classRoom) throw new NotFoundException('Class room not found');
 
-    const subject = createClassRoutineDto.subjectId
+    const subject = dto.subjectId
       ? await this.getRepository(Subject).findOne({
-        where: { id: createClassRoutineDto.subjectId },
+        where: { id: dto.subjectId },
         relations: { classRoom: true },
         select: { id: true, classRoom: { id: true } }
       })
       : null;
 
-    const teacher = createClassRoutineDto.teacherId && await this.getRepository(Teacher).findOne({
+    const teacher = dto.teacherId && await this.getRepository(Teacher).findOne({
       where: {
-        id: createClassRoutineDto.teacherId,
-        account: { branch: { id: this.utilitiesService.getBranchId() } },
-        assignedSubjects: { id: subject?.id }
+        id: dto.teacherId,
+        assignedSubjects: { id: subject?.id },
       },
-      select: { id: true }
+      relations: { account: { branch: true } },
+      select: { id: true, account: { id: true, branch: { id: true } } }
     });
+    if (dto.teacherId && !teacher) throw new NotFoundException('Teacher not found');
+    if (teacher && (teacher.account.branch?.id !== classRoom.branch?.id)) throw new BadRequestException('Teacher does not belong to the class room branch');
 
     // validate if class room have the subject
     subject && this.validateIfClassRoomHaveSubject(subject, classRoom);
 
     const newClassRoutine = this.getRepository(ClassRoutine).create({
-      ...createClassRoutineDto,
+      ...dto,
       classRoom,
       subject,
       teacher: teacher ?? null,

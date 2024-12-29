@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { CreateLeaveRequestDto } from './dto/create-leave-request.dto';
 import { UpdateLeaveRequestDto, UpdateLeaveRequestStatusDto } from './dto/update-leave-request.dto';
 import { LeaveRequest } from './entities/leave-request.entity';
@@ -134,6 +134,8 @@ export class LeaveRequestsService extends BaseRepository {
 
   async updateStatus(id: string, updateLeaveRequestStatusDto: UpdateLeaveRequestStatusDto) {
     const existing = await this.findOne(id);
+
+    if (existing.status !== ELeaveRequestStatus.PENDING) throw new BadRequestException('Cannot change the status now');
 
     existing.status = updateLeaveRequestStatusDto.status;
     await this.getRepository(LeaveRequest).save(existing);
