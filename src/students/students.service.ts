@@ -75,7 +75,7 @@ export class StudentsService extends BaseRepository {
 
     const academicYear = await this.getRepository<AcademicYear>(AcademicYear).findOne({ // enroll in current academic year
       where: { isActive: true },
-      select: { id: true }
+      select: { id: true, startDate: true }
     });
     if (!academicYear) throw new ForbiddenException('No active academic year');
 
