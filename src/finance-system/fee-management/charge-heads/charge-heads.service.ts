@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, Inject, Injectable, NotFoundExc
 import { CreateChargeHeadDto } from './dto/create-charge-head.dto';
 import { UpdateChargeHeadDto } from './dto/update-charge-head.dto';
 import { BaseRepository } from 'src/common/repository/base-repository';
-import { Brackets, DataSource } from 'typeorm';
+import { Brackets, DataSource, Not } from 'typeorm';
 import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
 import { ChargeHead, EChargeHeadPeriod } from './entities/charge-head.entity';
@@ -81,8 +81,14 @@ export class ChargeHeadsService extends BaseRepository {
 
     querybuilder
       .orderBy('chargeHead.createdAt', queryDto.order)
-      .offset(queryDto.skip)
-      .limit(queryDto.take)
+      .offset(queryDto.skipPagination ? undefined : queryDto.skip)
+      .limit(queryDto.skipPagination ? undefined : queryDto.skip)
+      .leftJoin(
+        'chargeHead.feeStructures',
+        'feeStructures',
+        !!queryDto.classRoomId ? 'feeStructures.classRoomId = :classRoomId' : '1 = 0',
+        { classRoomId: queryDto.classRoomId }
+      )
       .where(new Brackets(qb => {
         queryDto.search && qb.andWhere("LOWER(chargeHead.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
         !queryDto.defaults && qb.andWhere("chargeHead.name NOT IN (:...defaultChargeHeads)", { defaultChargeHeads: Object.values(CHARGE_HEADS) })
@@ -92,6 +98,7 @@ export class ChargeHeadsService extends BaseRepository {
         'chargeHead.id as value',
         'chargeHead.name as label',
         'chargeHead.period as period',
+        'feeStructures.amount as amount',
       ] : [
         'chargeHead.id as value',
         'chargeHead.name as label',
@@ -115,7 +122,12 @@ export class ChargeHeadsService extends BaseRepository {
 
     // check if name is taken
     if (dto.name && dto.name !== existing.name) {
-      const extingWithSameName = await this.getRepository(ChargeHead).findOneBy({ name: dto.name });
+      const extingWithSameName = await this.getRepository(ChargeHead).findOne({
+        where: {
+          name: dto.name,
+          id: Not(existing.id)
+        }
+      });
       if (extingWithSameName) throw new ConflictException('Charge head with same name already exists');
     }
 

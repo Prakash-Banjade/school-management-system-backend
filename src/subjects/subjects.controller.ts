@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors } from '@nestjs/common';
 import { SubjectsService } from './subjects.service';
 import { CreateSubjectDto } from './dto/create-subject.dto';
 import { UpdateSubjectDto } from './dto/update-subject.dto';
@@ -8,6 +8,7 @@ import { ApiPaginatedResponse } from 'src/common/decorators/apiPaginatedResponse
 import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
+import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 
 @ApiBearerAuth()
 @ApiTags('Subjects')
@@ -17,6 +18,7 @@ export class SubjectsController {
 
   @Post()
   @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
+  @UseInterceptors(TransactionInterceptor)
   create(@Body() createSubjectDto: CreateSubjectDto) {
     return this.subjectsService.create(createSubjectDto);
   }

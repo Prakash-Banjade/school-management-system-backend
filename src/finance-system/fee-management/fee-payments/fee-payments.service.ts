@@ -35,13 +35,15 @@ export class FeePaymentsService extends BaseRepository {
 
         const feeInvoice = await this.getRepository(FeeInvoice).createQueryBuilder('feeInvoice')
             .where('feeInvoice.id = :feeInvoiceId', { feeInvoiceId: dto.feeInvoiceId })
+            .leftJoin('feeInvoice.feePayments', 'feePayments')
             .leftJoin('feeInvoice.ledgerItem', 'ledgerItem')
             .leftJoin('ledgerItem.studentLedger', 'studentLedger')
-            .select(['feeInvoice.id', 'ledgerItem.id', 'ledgerItem.ledgerAmount', 'studentLedger.id', 'studentLedger.amount'])
+            .select(['feeInvoice.id', 'ledgerItem.id', 'ledgerItem.ledgerAmount', 'studentLedger.id', 'studentLedger.amount', 'feePayments.id', 'feePayments.amount'])
             .getOne();
         if (!feeInvoice || !feeInvoice.ledgerItem?.studentLedger?.id) throw new NotFoundException('Fee invoice not found');
 
-        if (dto.paidAmount > feeInvoice.ledgerItem?.ledgerAmount) throw new NotFoundException('Payment amount cannot be greater than the previous due amount');
+        const totalFeesPaid = feeInvoice.feePayments?.reduce((acc, curr) => acc + curr.amount, 0) ?? 0;
+        if (dto.paidAmount > (feeInvoice.ledgerItem?.ledgerAmount - totalFeesPaid)) throw new NotFoundException('Payment amount cannot be greater than the outstanding amount');
 
         // update student ledger
         feeInvoice.ledgerItem.studentLedger.updateAmount(dto.paidAmount * (-1)); // subtracting the payment amount from the student ledger

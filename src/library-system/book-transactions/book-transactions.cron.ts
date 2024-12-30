@@ -29,7 +29,7 @@ export class BookTransactionsCron {
         }))?.libraryFine ?? 0;
 
         for (const transaction of overDueTransactions) {
-            const dueDays = differenceInDays(startOfDay(new Date()), startOfDay(new Date(transaction.dueDate)));
+            const dueDays = differenceInDays(startOfDay(new Date()), startOfDay(transaction.dueDate));
 
             const dueAmount = dueDays * libraryFine;
 

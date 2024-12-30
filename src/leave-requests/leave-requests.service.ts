@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { CreateLeaveRequestDto } from './dto/create-leave-request.dto';
 import { UpdateLeaveRequestDto, UpdateLeaveRequestStatusDto } from './dto/update-leave-request.dto';
 import { LeaveRequest } from './entities/leave-request.entity';
@@ -15,7 +15,7 @@ import { Account } from 'src/auth-system/accounts/entities/account.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { AttendanceEvent } from 'src/attendances/helpers/attendances.helper';
 import { CreateLeaveAttendanceEvent } from 'src/attendances/dto/create-attendance.dto';
-import { isAdmin, isStudent } from 'src/utils/utils';
+import { isAdmin, isStudent, startOfDayString } from 'src/utils/utils';
 
 @Injectable({ scope: Scope.REQUEST })
 export class LeaveRequestsService extends BaseRepository {
@@ -135,6 +135,8 @@ export class LeaveRequestsService extends BaseRepository {
   async updateStatus(id: string, updateLeaveRequestStatusDto: UpdateLeaveRequestStatusDto) {
     const existing = await this.findOne(id);
 
+    if (existing.status !== ELeaveRequestStatus.PENDING) throw new BadRequestException('Cannot change the status now');
+
     existing.status = updateLeaveRequestStatusDto.status;
     await this.getRepository(LeaveRequest).save(existing);
 
@@ -142,8 +144,8 @@ export class LeaveRequestsService extends BaseRepository {
     if (updateLeaveRequestStatusDto.status === ELeaveRequestStatus.APPROVED) {
       this.eventEmitter.emit(AttendanceEvent.CREATE_LEAVE, new CreateLeaveAttendanceEvent({
         accountId: existing.account?.id,
-        dateFrom: existing.leaveFrom?.toISOString(),
-        dateTo: existing.leaveTo?.toISOString(),
+        dateFrom: startOfDayString(existing.leaveFrom),
+        dateTo: startOfDayString(existing.leaveTo),
       }));
     }
 

@@ -51,7 +51,7 @@ export class TeachersHelper extends BaseRepository {
             .limit(queryDto.take)
             .offset(queryDto.skip)
             .leftJoin("teacher.account", "account")
-            .innerJoin(
+            .leftJoin(
                 "teacher.assignedSubjects",
                 "assignedSubjects",
                 queryDto.assignedSubjectId ? "assignedSubjects.id = :assignedSubjectId" : "1 = 0",
@@ -63,11 +63,14 @@ export class TeachersHelper extends BaseRepository {
                         search: `%${queryDto.search}%`
                     });
                 }
+
+                queryDto.assignedSubjectId && qb.andWhere('assignedSubjects.id IS NOT NULL');
             }))
             .select([
                 "teacher.id as value",
                 "CONCAT(teacher.firstName, ' ', teacher.lastName) as label",
             ])
+            .groupBy("teacher.id");
 
         const teacherOptions = await this.utilitiesService.applyBranchFilter(queryBuilder).getRawMany();
 

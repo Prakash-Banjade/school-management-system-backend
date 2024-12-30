@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { CreateSubjectDto } from './dto/create-subject.dto';
 import { UpdateSubjectDto } from './dto/update-subject.dto';
 import { Subject } from './entities/subject.entity';
@@ -25,12 +25,18 @@ export class SubjectsService extends BaseRepository {
   ) { super(dataSource, req); }
 
   async create(createSubjectDto: CreateSubjectDto) {
-    const founcSubjectWithSameCode = await this.getRepository(Subject).findOne({ where: { subjectCode: createSubjectDto.subjectCode }, select: { id: true } });
+    const founcSubjectWithSameCode = await this.getRepository(Subject).findOne({
+      where: {
+        subjectCode: createSubjectDto.subjectCode,
+        classRoom: { branch: { id: this.utilitiesService.getBranchId() } }
+      },
+      select: { id: true }
+    });
     if (founcSubjectWithSameCode) throw new ConflictException('Subject with same code already exists');
 
     // get teacher
     const teachers = createSubjectDto.teacherIds?.length
-      ? await this.getRepository(Teacher).find({ where: { id: In(createSubjectDto.teacherIds) }, select: { id: true } })
+      ? await this.getRepository(Teacher).find({ where: { id: In(createSubjectDto.teacherIds), account: { branch: { id: this.utilitiesService.getBranchId() } } }, select: { id: true } })
       : [];
 
     // get class room and validte if class room is primary
@@ -93,16 +99,23 @@ export class SubjectsService extends BaseRepository {
   }
 
   async getOptions(queryDto: SubjectOptionsQueryDto) {
-    return this.getRepository(Subject).createQueryBuilder('subject')
+    const querybuilder = this.getRepository(Subject).createQueryBuilder('subject')
       .orderBy("subject.createdAt", queryDto.order)
-      .where('subject.classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId })
+      .leftJoin('subject.classRoom', 'classRoom')
+      .where('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId })
       .select(["subject.id", "subject.subjectName"])
-      .getMany();
+
+    this.utilitiesService.applyBranchFilter(querybuilder, "classRoom.branchId = :branchId");
+
+    return querybuilder.getMany();
   }
 
   async findOne(id: string) {
     const existing = await this.getRepository(Subject).findOne({
-      where: { id },
+      where: {
+        id,
+        classRoom: { branch: { id: this.utilitiesService.getBranchId() } }
+      },
       relations: {
         classRoom: true,
         teachers: true,

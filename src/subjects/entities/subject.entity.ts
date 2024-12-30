@@ -15,7 +15,7 @@ export class Subject extends BaseEntity {
     @Column({ type: 'varchar' })
     subjectName: string;
 
-    @Column({ type: 'varchar', unique: true })
+    @Column({ type: 'varchar' })
     subjectCode: string;
 
     @Column({ type: 'longtext' })
