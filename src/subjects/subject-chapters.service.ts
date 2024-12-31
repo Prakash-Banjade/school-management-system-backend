@@ -25,7 +25,7 @@ export class SubjectChaptersService extends BaseRepository {
         const lastChapter = await this.getRepository(SubjectChapter).findOne({
             where: { subject: { id: subject.id } },
             order: { chapterNo: 'DESC' },
-            select: { chapterNo: true }
+            select: { id: true, chapterNo: true }
         });
 
         const newSubjectChapter = this.getRepository(SubjectChapter).create({
@@ -33,9 +33,9 @@ export class SubjectChaptersService extends BaseRepository {
             subject,
             chapterNo: lastChapter ? lastChapter.chapterNo + 1 : 1
         });
-        const savedChapter = await this.getRepository(SubjectChapter).save(newSubjectChapter);
+        await this.getRepository(SubjectChapter).save(newSubjectChapter);
 
-        return this.subjectChapterMutationReturn(savedChapter, 'created');
+        return { message: 'Subject chapter added' }
 
     }
 
@@ -81,8 +81,11 @@ export class SubjectChaptersService extends BaseRepository {
 
         Object.assign(existing, updateSubjectChapterDto);
 
-        const updatedSubjectChapter = await this.getRepository(SubjectChapter).save(existing);
-        return this.subjectChapterMutationReturn(updatedSubjectChapter, 'updated');
+        await this.getRepository(SubjectChapter).save(existing);
+
+        return {
+            message: 'Subject chapter updated',
+        }
     }
 
     async updateChapterNo(updateChapterNoDto: UpdateChapterNoDto) {
@@ -100,7 +103,7 @@ export class SubjectChaptersService extends BaseRepository {
 
     async remove(id: string) {
         const existing = await this.findOne(id);
-        const deletedChapter = await this.getRepository(SubjectChapter).remove(existing);
+        await this.getRepository(SubjectChapter).remove(existing);
 
         // update chapter no of next chapters
         await this.getRepository(SubjectChapter).createQueryBuilder()
@@ -111,15 +114,6 @@ export class SubjectChaptersService extends BaseRepository {
             .where("subjectId = :subjectId AND chapterNo > :chapterNo", { subjectId: existing.subject.id, chapterNo: existing.chapterNo }) // update the chapter no of next chapters of associated subject
             .execute();
 
-        return this.subjectChapterMutationReturn(deletedChapter, 'deleted')
-    }
-
-    private subjectChapterMutationReturn = (subjectChapter: SubjectChapter, type: 'created' | 'updated' | 'deleted') => {
-        return {
-            message: type === 'created' ? 'Chapter created' : type === 'deleted' ? 'Chapter deleted' : 'Chapter updated',
-            subjectChapter: {
-                id: subjectChapter.id,
-            }
-        }
+        return { message: 'Subject chapter removed' }
     }
 }
