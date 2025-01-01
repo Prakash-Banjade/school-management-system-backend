@@ -7,7 +7,7 @@ import { AuthSystemModule } from './auth-system/auth-system.module';
 import { FileManagementModule } from './file-management/file-management.module';
 import { MemoryStoredFile, NestjsFormDataModule } from 'nestjs-form-data';
 import { MailModule } from './mail/mail.module';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuthGuard } from './common/guards/auth.guard';
 import { DormitorySystemModule } from './dormitory-system/dormitory-system.module';
@@ -74,7 +74,7 @@ import { LessonPlansModule } from './lesson-plans/lesson-plans.module';
 
         return {
           store: store as unknown as CacheStore,
-          ttl: 3 * 60000, // 3 minutes (milliseconds)
+          ttl: 1 * 60000, // 1 minute (milliseconds)
           max: 1000,
         };
       },

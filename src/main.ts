@@ -3,7 +3,7 @@ import { AppModule } from './app.module';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { AllExceptionsFilter } from './common/filters/all-exception.filter';
 import { setupSwagger } from './config/swagger.config';
-import { ValidationPipe } from '@nestjs/common';
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import fastifyCookie from '@fastify/cookie';
 import { ConfigService } from '@nestjs/config';
 import fastifyHelmet from '@fastify/helmet';
@@ -39,7 +39,7 @@ async function bootstrap() {
       if (origin === configService.get<string>('CLIENT_URL')) {
         return callback(null, true);
       }
-      return callback(new Error('Not allowed by CORS'), false);
+      return callback(new BadRequestException('Not allowed by CORS'), false);
     },
     allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
     optionsSuccessStatus: 200,

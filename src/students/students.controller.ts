@@ -5,7 +5,6 @@ import { UpdateStudentClassDto, UpdateStudentDto } from './dto/update-student.dt
 import { PastStudentsQueryDto, StudentAttendanceQueryDto, StudentQueryDto } from './dto/student-query.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
-import { ApiPaginatedResponse } from 'src/common/decorators/apiPaginatedResponse.decorator';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
@@ -22,21 +21,18 @@ export class StudentsController {
   ) { }
 
   @Post()
-  @UseInterceptors(TransactionInterceptor)
   @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
   create(@Body() createStudentDto: CreateStudentDto) {
     return this.studentsService.create(createStudentDto);
   }
 
   @Get()
-  @ApiPaginatedResponse(CreateStudentDto)
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findAll(@Query() queryDto: StudentQueryDto) {
     return this.studentsHelper.findAll(queryDto);
   }
 
   @Get('past') // used in frontend in students promotion
-  @ApiPaginatedResponse(CreateStudentDto)
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findAllFromPast(@Query() queryDto: PastStudentsQueryDto) {
     return this.studentsHelper.getPastStudents(queryDto);
