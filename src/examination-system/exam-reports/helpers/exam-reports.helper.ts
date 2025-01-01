@@ -24,14 +24,13 @@ export class ExamReportsHelper extends BaseRepository {
             .leftJoin('examReport.examSubject', 'examSubject')
             .leftJoin('examSubject.subject', 'subject')
             .leftJoin('examSubject.exam', 'exam')
-            .leftJoin('exam.classRoom', 'classRoom')
-            .leftJoin('classRoom.parent', 'parent')
-            .leftJoin('exam.examType', 'examType')
             .innerJoin('student.enrollments', 'enrollments', "enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
+            .leftJoin('enrollments.classRoom', 'classRoom')
+            .leftJoin('classRoom.parent', 'parent')
             .where('exam.academicYearId = :academicYearId', { academicYearId: currentAcademicYearId })
             .andWhere('examReport.examSubjectId = :examSubjectId', { examSubjectId })
             .andWhere('exam.classRoomId = :classRoomId', { classRoomId })
-            .andWhere('examType.id = :examTypeId', { examTypeId })
+            .andWhere('exam.examTypeId = :examTypeId', { examTypeId })
 
         const count = await queryBuilder.clone()
             .andWhere('CASE WHEN parent.id IS NULL THEN classRoom.id = :classRoomId ELSE parent.id = :classRoomId END', { classRoomId }) // ensure the student is also in the same classRoom

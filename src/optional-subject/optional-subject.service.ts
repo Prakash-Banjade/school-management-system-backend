@@ -47,23 +47,16 @@ export class OptionalSubjectService extends BaseRepository {
     const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
 
     const queryBuilder = this.getRepository(OptionalSubject).createQueryBuilder('optionalSubject')
-      .leftJoin('optionalSubject.students', 'students')
-      .leftJoin(
-        'students.enrollments',
-        'enrollments',
-        'enrollments.academicYearId = :academicYearId',
-        { academicYearId: currentAcademicYearId }
-      )
+      .leftJoin('optionalSubject.students', 'students', 'FIND_IN_SET(:currentAcademicYearId, students.academicYearIds) > 0', { currentAcademicYearId })
       .leftJoin('optionalSubject.subject', 'subject')
       .where('optionalSubject.classRoomId = :classRoomId', { classRoomId: queryDto.classRoomId })
       .select([
         'optionalSubject.id as id',
         'subject.id as subjectId',
         'subject.subjectName as subjectName',
-        `JSON_ARRAYAGG(CASE WHEN enrollments.academicYearId = '${currentAcademicYearId}' THEN students.id ELSE NULL END) as studentIds`,
+        `JSON_ARRAYAGG(students.id) as studentIds`,
       ])
       .groupBy('optionalSubject.id')
-      .addGroupBy('subject.id');
 
     const data = await queryBuilder.getRawMany();
 
