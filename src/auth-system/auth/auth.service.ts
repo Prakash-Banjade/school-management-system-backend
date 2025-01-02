@@ -151,7 +151,7 @@ export class AuthService extends BaseRepository {
 
       await this.getRepository(Account).save(foundAccount);
 
-      return await this.authHelper.sendConfirmationEmail(foundAccount);
+      return await this.authHelper.sendEmailConfirmation(foundAccount);
     }
 
     // create new account
@@ -161,7 +161,7 @@ export class AuthService extends BaseRepository {
     });
     await this.getRepository(Account).save(newAccount);
 
-    return await this.authHelper.sendConfirmationEmail(newAccount);
+    return await this.authHelper.sendEmailConfirmation(newAccount);
   }
 
   async refresh(req: FastifyRequest, reply: FastifyReply) {

@@ -43,7 +43,7 @@ export class AuthHelper extends BaseRepository {
      * 4. Save the hashed token in db
      * 5. Send the encrypted token to the user's email
      */
-    async sendConfirmationEmail(account: Account) {
+    async sendEmailConfirmation(account: Account) {
         const otp = generateOtp();
         const verificationToken = await this.jwtService.signAsync(
             { email: account.email },
@@ -142,7 +142,7 @@ export class AuthHelper extends BaseRepository {
         if (!foundAccount) throw new UnauthorizedException(INVALID_AUTH_CREDENTIALS_MSG);
 
         // if account is not verified, send confirmation email
-        if (!foundAccount.verifiedAt) return await this.sendConfirmationEmail(foundAccount);
+        if (!foundAccount.verifiedAt) return await this.sendEmailConfirmation(foundAccount);
 
         const isPasswordValid = await bcrypt.compare(
             password,
