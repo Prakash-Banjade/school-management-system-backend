@@ -48,6 +48,7 @@
     "@nestjs/swagger": "^7.4.2",
     "@nestjs/throttler": "^6.2.1",
     "@nestjs/typeorm": "^10.0.2",
+    "@simplewebauthn/server": "^13.0.0",
     "bcrypt": "^5.1.1",
     "cache-manager": "^5.7.6",
     "cache-manager-redis-yet": "^5.1.5",
