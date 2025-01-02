@@ -5,6 +5,7 @@ import { CaslModule } from './casl/casl.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtModule } from './jwt/jwt.module';
 import { EncryptionModule } from './encryption/encryption.module';
+import { PasskeyModule } from './passkey/passkey.module';
 
 @Module({
     imports: [
@@ -14,6 +15,7 @@ import { EncryptionModule } from './encryption/encryption.module';
         AuthModule,
         JwtModule,
         EncryptionModule,
+        PasskeyModule,
     ]
 })
 export class AuthSystemModule { }

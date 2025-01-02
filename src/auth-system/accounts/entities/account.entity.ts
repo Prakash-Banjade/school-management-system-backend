@@ -14,6 +14,7 @@ import { LeaveRequest } from "src/leave-requests/entities/leave-request.entity";
 import { Task } from "src/task-system/tasks/entities/task.entity";
 import { LessonPlan } from "src/lesson-plans/entities/lesson-plan.entity";
 import { Branch } from "src/branches/entities/branch.entity";
+import { Passkey } from "src/auth-system/passkey/entities/passkey.entity";
 
 @Entity()
 export class Account extends BaseEntity {
@@ -43,6 +44,9 @@ export class Account extends BaseEntity {
 
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     passwordUpdatedAt: Date;
+
+    @OneToMany(() => Passkey, passkey => passkey.account)
+    passkeys: Passkey[];
 
     @ManyToOne(() => Branch, branch => branch.accounts, { onDelete: 'RESTRICT', nullable: true })
     branch: Branch | null;
