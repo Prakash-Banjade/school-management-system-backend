@@ -217,13 +217,26 @@ export class AuthService extends BaseRepository {
   }
 
   async changePassword(changePasswordDto: ChangePasswordDto, currentUser: AuthUser) {
-    const account = await this.authHelper.validateAccount(currentUser.email, changePasswordDto.oldPassword);
-    if (!(account instanceof Account)) return account; // this can be a message after sending mail to unverified user
+    const account = await this.accountsRepo.findOne({
+      where: { id: currentUser.accountId, verifiedAt: Not(IsNull()) },
+      select: { id: true, password: true, prevPasswords: true, passwordUpdatedAt: true, verifiedAt: true }
+    });
+    if (!account) throw new InternalServerErrorException('Associated account not found');
 
-    // check if the new password is
+    // check if the current password is correct
+    const isPasswordMatch = await bcrypt.compare(changePasswordDto.currentPassword, account.password);
+    if (!isPasswordMatch) throw new BadRequestException({
+      message: 'Invalid password',
+      field: 'currentPassword'
+    });
+
+    // check if the new password is one of the last MAX_PREV_PASSWORDS passwords
     for (const prevPassword of account.prevPasswords) {
       const isMatch = await bcrypt.compare(changePasswordDto.newPassword, prevPassword);
-      if (isMatch) throw new ForbiddenException(`New password cannot be one of the last ${MAX_PREV_PASSWORDS} passwords`)
+      if (isMatch) throw new ForbiddenException({
+        message: `New password cannot be one of the last ${MAX_PREV_PASSWORDS} passwords`,
+        field: 'newPassword'
+      });
     }
 
     const hashedPwd = bcrypt.hashSync(changePasswordDto.newPassword, PASSWORD_SALT_COUNT);
@@ -237,11 +250,14 @@ export class AuthService extends BaseRepository {
       account.prevPasswords.shift(); // remove the oldest one, index [0]
     }
 
-    await this.getRepository(Account).save(account);
+    await this.accountsRepo.update({ id: account.id }, account);
 
-    return {
-      message: "Password changed"
+    if (changePasswordDto.logout) {
+      this.refreshTokenService.setEmail(currentUser.email);
+      await this.refreshTokenService.setRefreshTokens([]);
     }
+
+    return { message: "Password changed" }
   }
 
   async forgotPassword(email: string) {
