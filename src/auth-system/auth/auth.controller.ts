@@ -90,6 +90,7 @@ export class AuthController {
     @ApiConsumes('multipart/form-data')
     @FormDataRequest()
     @UseInterceptors(TransactionInterceptor)
+    @CheckAbilities({ subject: Role.USER, action: Action.UPDATE })
     changePassword(@Body() changePasswordDto: ChangePasswordDto, @CurrentUser() currentUser: AuthUser) {
         return this.authService.changePassword(changePasswordDto, currentUser);
     }

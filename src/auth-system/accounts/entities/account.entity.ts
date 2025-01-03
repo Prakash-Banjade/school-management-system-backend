@@ -73,9 +73,7 @@ export class Account extends BaseEntity {
     @BeforeInsert()
     @BeforeUpdate()
     validateEmail() {
-        if (!this.email) throw new BadRequestException('Email required');
-
-        if (!EMAIL_REGEX.test(this.email)) throw new BadRequestException('Invalid email');
+        if (this.email && !EMAIL_REGEX.test(this.email)) throw new BadRequestException('Invalid email');
     }
 
     // Below relations are due to common use cases. Eg. Both student and teacher can have attendances, so instead of creating a separate relations i.e 

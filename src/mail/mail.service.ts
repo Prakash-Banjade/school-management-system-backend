@@ -10,7 +10,7 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { ConfirmationMailEventDto, FeeInvoiceCreatedEventDto, ResetPasswordMailEventDto, UserCredentialsEventDto } from './dto/events.dto';
 import Mail from 'nodemailer/lib/mailer';
 import { thisSchool } from 'src/common/CONSTANTS';
-import { EnvService } from 'src/env/env.service';
+import { ConfigService } from '@nestjs/config';
 
 export enum MailEvents {
     CONFIRMATION = 'mail.confirmation',
@@ -27,11 +27,11 @@ export class MailService {
     private readonly templates: ITemplates;
     private readonly backendDomain: string;
 
-    constructor(private readonly envService: EnvService) {
+    constructor(private readonly configService: ConfigService) {
         this.transport = createTransport(emailConfig);
         this.email = `"SMS Backend" <${emailConfig.auth.user}>`;
-        this.domain = this.envService.CLIENT_URL;
-        this.backendDomain = this.envService.BACKEND_URL;
+        this.domain = this.configService.get('CLIENT_URL');
+        this.backendDomain = this.configService.get('BACKEND_URL');
 
         this.templates = {
             confirmation: MailService.parseTemplate('email-verification-otp.hbs'),
@@ -70,7 +70,7 @@ export class MailService {
     }
 
     @OnEvent(MailEvents.CONFIRMATION)
-    public async sendConfirmationEmail(dto: ConfirmationMailEventDto) {
+    public async sendEmailConfirmation(dto: ConfirmationMailEventDto) {
         const subject = 'Confirm your email';
         const html = this.templates.confirmation({
             ...dto,

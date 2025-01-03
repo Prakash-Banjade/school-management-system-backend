@@ -64,7 +64,7 @@ export class AccountsService extends BaseRepository {
     await this.getRepository(Account).save(account);
 
     // send account confirmation mail to the user
-    return this.authHelper.sendConfirmationEmail({
+    return this.authHelper.sendEmailConfirmation({
       id: account.id,
       email: account.email,
       firstName: account.firstName,
@@ -93,7 +93,7 @@ export class AccountsService extends BaseRepository {
     });
     await this.getRepository(Account).save(account);
 
-    return this.authHelper.sendConfirmationEmail({
+    return this.authHelper.sendEmailConfirmation({
       id: account.id,
       email: account.email,
       firstName: account.firstName,
