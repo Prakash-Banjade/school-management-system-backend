@@ -87,7 +87,7 @@ export class AuthService extends BaseRepository {
       })
   }
 
-  private getRefreshCookieOptions(): CookieSerializeOptions {
+  getRefreshCookieOptions(): CookieSerializeOptions {
     return {
       secure: this.envService.NODE_ENV === 'production',
       httpOnly: true,

@@ -19,6 +19,6 @@ import { RefreshTokenService } from './helpers/refresh-tokens.service';
     AuthHelper,
     RefreshTokenService,
   ],
-  exports: [AuthHelper]
+  exports: [AuthService, AuthHelper, RefreshTokenService],
 })
 export class AuthModule { }
