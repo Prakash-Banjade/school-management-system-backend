@@ -8,6 +8,9 @@ export class WebAuthnCredential extends BaseEntity {
     @ManyToOne(() => Account, account => account.webAuthnCredentials, { onDelete: 'CASCADE' })
     account: Account
 
+    @Column({ type: "varchar" })
+    name: string;
+
     @Column()
     credentialId: string;
 
@@ -25,4 +28,7 @@ export class WebAuthnCredential extends BaseEntity {
 
     @Column({ type: 'simple-array' })
     transports?: AuthenticatorTransportFuture[];
+
+    @Column({ type: 'timestamp', nullable: true })
+    lastUsed: Date;
 }

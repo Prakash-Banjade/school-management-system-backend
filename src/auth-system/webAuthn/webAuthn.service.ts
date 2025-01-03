@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, InternalServerErrorException, NotFoundException, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { BaseRepository } from 'src/common/repository/base-repository';
@@ -15,7 +15,7 @@ import { Tokens } from 'src/common/CONSTANTS';
 import { JwtService } from '../jwt/jwt.service';
 import { AuthService } from '../auth/auth.service';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class WebAuthnService extends BaseRepository {
     constructor(
         dataSource: DataSource, @Inject(REQUEST) request: FastifyRequest,
@@ -85,6 +85,7 @@ export class WebAuthnService extends BaseRepository {
             counter: registrationInfo.credential?.counter,
             deviceType: registrationInfo.credentialDeviceType,
             transports: registrationInfo.credential.transports,
+            name: await this.getCredentialName(account.id),
         })
 
         await this.getRepository(WebAuthnCredential).save(newWebAuthn);
@@ -92,6 +93,20 @@ export class WebAuthnService extends BaseRepository {
         await this.getRepository(PasskeyChallenge).remove(passkeyChallenge); // remvoe the challenge now
 
         return { message: 'Passkey registered. You can now use it to log in.', verified: true };
+    }
+
+    async getCredentialName(accountId: string) {
+        const defaultName = "MY PASSKEY";
+
+        const credentials = await this.getRepository(WebAuthnCredential).createQueryBuilder('cred')
+            .where('cred.accountId = :accountId', { accountId })
+            .andWhere('cred.name LIKE :defaultName', { defaultName: `${defaultName} %` })
+            .limit(1)
+            .select(['cred.id', 'cred.name', 'cred.createdAt'])
+            .orderBy('cred.createdAt', 'DESC')
+            .getOne();
+
+        return incrementPasskey(credentials?.name ?? defaultName);
     }
 
     async getAccount(select?: FindOptionsSelect<Account>, relations?: FindOptionsRelations<Account>): Promise<Account> {
@@ -191,6 +206,10 @@ export class WebAuthnService extends BaseRepository {
 
         if (!result.verified) throw new ForbiddenException('Invalid passkey');
 
+        // update last used
+        credential.lastUsed = new Date();
+        await this.getRepository(WebAuthnCredential).save(credential);
+
         // NOT IT IS CONFIRMED THE USER IS A VALID ONE
         return this.login(account, req, reply);
     }
@@ -232,4 +251,57 @@ export class WebAuthnService extends BaseRepository {
                 }
             })
     }
+
+    async findAll() {
+        const { accountId } = this.utilitiesService.getCurrentUser();
+
+        const credentials = await this.getRepository(WebAuthnCredential).find({
+            where: { account: { id: accountId } },
+            select: { id: true, name: true, createdAt: true, lastUsed: true }
+        });
+
+        return credentials;
+    }
+
+    async updateName(id: string, name: string) {
+        const { accountId } = this.utilitiesService.getCurrentUser();
+
+        const credential = await this.getRepository(WebAuthnCredential).findOne({
+            where: { id, account: { id: accountId } },
+            select: { id: true, name: true }
+        });
+
+        if (!credential) throw new NotFoundException('Credential not found');
+
+        // check if name is taken
+        const existingWithSameName = await this.getRepository(WebAuthnCredential).findOne({
+            where: { id: Not(credential.id), name, account: { id: accountId } },
+            select: { id: true }
+        });
+
+        if (existingWithSameName) throw new BadRequestException({
+            message: 'You already have a credential with this name',
+            field: 'name',
+        });
+
+        await this.getRepository(WebAuthnCredential).update({ id }, { name });
+
+        return { message: 'Name updated' }
+    }
+
+    async delete(id: string) {
+        const { accountId } = this.utilitiesService.getCurrentUser();
+
+        await this.getRepository(WebAuthnCredential).delete({ id, account: { id: accountId } });
+
+        return { message: 'Passkey removed' }
+    }
+}
+
+function incrementPasskey(passkey: string) {
+    // Match the part of the string ending with a number
+    const match = passkey.match(/(.*?)(\d+)?$/);
+    const prefix = match[1].trim(); // The text part, trimmed for safety
+    const number = match[2] ? parseInt(match[2], 10) : 0; // Default to 0 if no number found
+    return `${prefix} ${number + 1}`; // Increment and reconstruct
 }

@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req, Res, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Req, Res, UseInterceptors } from '@nestjs/common';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, Role } from 'src/common/types/global.type';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
@@ -7,6 +7,7 @@ import { WebAuthnService } from './webAuthn.service';
 import { LoginChallengeDto } from './dto/login-challenge.dto';
 import { LoginVerifyDto } from './dto/login-verify.dto';
 import { FastifyReply, FastifyRequest } from 'fastify';
+import { UpdateWebAuthnCredentialDto } from './dto/webAuthnCredential.dto';
 
 @Controller('web-authn')
 export class WebAuthnController {
@@ -40,5 +41,23 @@ export class WebAuthnController {
     @UseInterceptors(TransactionInterceptor)
     verifyLogin(@Body() loginVerifyDto: LoginVerifyDto, @Req() req: FastifyRequest, @Res({ passthrough: true }) reply: FastifyReply) {
         return this.webAuthnService.verifyLoginPasskey(loginVerifyDto, req, reply);
+    }
+
+    @Patch(':id')
+    @CheckAbilities({ subject: Role.USER, action: Action.UPDATE })
+    update(@Param('id', ParseUUIDPipe) id: string, @Body() { name }: UpdateWebAuthnCredentialDto) {
+        return this.webAuthnService.updateName(id, name);
+    }
+
+    @Get()
+    @CheckAbilities({ subject: Role.USER, action: Action.READ })
+    getCredentials() {
+        return this.webAuthnService.findAll();
+    }
+
+    @Delete(':id')
+    @CheckAbilities({ subject: Role.USER, action: Action.DELETE })
+    delete(@Param('id', ParseUUIDPipe) id: string) {
+        return this.webAuthnService.delete(id);
     }
 }
