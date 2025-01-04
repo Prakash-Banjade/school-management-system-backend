@@ -3,7 +3,7 @@ import * as Joi from 'joi';
 export const envSchema = Joi.object({
     DATABASE_URL: Joi.string().uri().required(), // Validates that it's a valid URL
     DB_SYNCHRONIZE: Joi.string().valid('true', 'false').required(), // Validates that it's a boolean
-    
+
     REDIS_URL: Joi.string().uri().required(), // Validates that it's a valid URL
 
     ACCESS_TOKEN_SECRET: Joi.string().required(),
@@ -29,6 +29,12 @@ export const envSchema = Joi.object({
     FORGOT_PASSWORD_EXPIRATION_SEC: Joi.string()
         .pattern(/^\d+$/, { name: 'number' })
         .messages({ 'string.pattern.name': 'Forgot password expiration must be a number' })
+        .required(),
+
+    SUDO_ACCESS_TOKEN_SECRET: Joi.string().required(),
+    SUDO_ACCESS_TOKEN_EXPIRATION_SEC: Joi.string()
+        .pattern(/^\d+$/, { name: 'number' })
+        .messages({ 'string.pattern.name': 'Sudo access token expiration must be a number' })
         .required(),
 
     CLIENT_URL: Joi.string().uri().required(), // Client URL should be a valid URL

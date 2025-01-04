@@ -3,7 +3,8 @@ import { Column, Entity } from "typeorm";
 
 export enum EPasskeyChallengeType {
     Register = 'register',
-    Login = 'login'
+    Login = 'login',
+    Sudo = 'sudo'
 }
 
 @Entity()

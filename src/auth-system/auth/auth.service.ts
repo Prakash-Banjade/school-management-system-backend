@@ -44,18 +44,22 @@ export class AuthService extends BaseRepository {
   private readonly passwordChangeRequestRepo = this.datasource.getRepository<PasswordChangeRequest>(PasswordChangeRequest);
 
   async login(signInDto: SignInDto, req: FastifyRequest, reply: FastifyReply) {
-    const existingRefreshCookie = req.cookies?.[Tokens.REFRESH_TOKEN_COOKIE_NAME];
-
     const data = await this.authHelper.validateAccount(signInDto.email, signInDto.password);
 
     if (!(data instanceof Account)) return data; // this can be a message after sending mail to unverified user
 
     const foundAccount = data;
-    this.refreshTokenService.setEmail(signInDto.email);
+
+    return this.proceedLogin(foundAccount, req, reply);
+  }
+
+  async proceedLogin(account: Account, req: FastifyRequest, reply: FastifyReply) {
+    const existingRefreshCookie = req.cookies?.[Tokens.REFRESH_TOKEN_COOKIE_NAME];
+    this.refreshTokenService.setEmail(account.email);
 
     let refreshTokens = await this.refreshTokenService.getRefreshTokens();
 
-    const { access_token, refresh_token } = await this.jwtService.getAuthTokens(foundAccount);
+    const { access_token, refresh_token } = await this.jwtService.getAuthTokens(account);
 
     if (existingRefreshCookie) {
       const { value: existingRefreshToken, valid } = req.unsignCookie(existingRefreshCookie);
@@ -79,10 +83,10 @@ export class AuthService extends BaseRepository {
       .send({
         access_token,
         user: {
-          firstName: foundAccount.firstName,
-          lastName: foundAccount.lastName,
-          profileImageUrl: foundAccount.profileImage?.url,
-          branchName: foundAccount.branch?.name,
+          firstName: account.firstName,
+          lastName: account.lastName,
+          profileImageUrl: account.profileImage?.url,
+          branchName: account.branch?.name,
         }
       })
   }

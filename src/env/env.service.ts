@@ -22,6 +22,8 @@ export class EnvService implements OnModuleInit {
     EMAIL_VERIFICATION_EXPIRATION_SEC: number;
     FORGOT_PASSWORD_SECRET: string;
     FORGOT_PASSWORD_EXPIRATION_SEC: number;
+    SUDO_ACCESS_TOKEN_SECRET: string;
+    SUDO_ACCESS_TOKEN_EXPIRATION_SEC: number;
     CLIENT_URL: string;
     CLIENT_DOMAIN: string;
     BACKEND_URL: string;
@@ -47,6 +49,8 @@ export class EnvService implements OnModuleInit {
         this.EMAIL_VERIFICATION_EXPIRATION_SEC = +this.configService.getOrThrow<string>('EMAIL_VERIFICATION_EXPIRATION_SEC');
         this.FORGOT_PASSWORD_SECRET = this.configService.getOrThrow<string>('FORGOT_PASSWORD_SECRET');
         this.FORGOT_PASSWORD_EXPIRATION_SEC = +this.configService.getOrThrow<string>('FORGOT_PASSWORD_EXPIRATION_SEC');
+        this.SUDO_ACCESS_TOKEN_SECRET = this.configService.getOrThrow<string>('SUDO_ACCESS_TOKEN_SECRET');
+        this.SUDO_ACCESS_TOKEN_EXPIRATION_SEC = +this.configService.getOrThrow<string>('SUDO_ACCESS_TOKEN_EXPIRATION_SEC');
         this.CLIENT_URL = this.configService.getOrThrow<string>('CLIENT_URL');
         this.CLIENT_DOMAIN = this.configService.getOrThrow<string>('CLIENT_DOMAIN');
         this.BACKEND_URL = this.configService.getOrThrow<string>('BACKEND_URL');

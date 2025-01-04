@@ -3,30 +3,34 @@ import { Account } from "src/auth-system/accounts/entities/account.entity";
 import { generateOtp } from "src/utils/generateOPT";
 import * as crypto from 'crypto'
 import { BaseRepository } from "src/common/repository/base-repository";
-import { DataSource } from "typeorm";
-import { FastifyRequest } from "fastify";
+import { DataSource, IsNull, Not } from "typeorm";
+import { FastifyReply, FastifyRequest } from "fastify";
 import { REQUEST } from "@nestjs/core";
 import { EmailVerificationPending } from "../entities/email-verification-pending.entity";
-import { JwtService, TokenExpiredError } from "@nestjs/jwt";
+import { JwtService as JwtSer, TokenExpiredError } from "@nestjs/jwt";
 import { EmailVerificationDto } from "../dto/email-verification.dto";
 import * as bcrypt from 'bcrypt';
 import { EncryptionService } from "src/auth-system/encryption/encryption.service";
-import { INVALID_AUTH_CREDENTIALS_MSG } from "src/common/CONSTANTS";
+import { INVALID_AUTH_CREDENTIALS_MSG, Tokens } from "src/common/CONSTANTS";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { MailEvents } from "src/mail/mail.service";
 import { ConfirmationMailEventDto } from "src/mail/dto/events.dto";
 import { IVerifyEncryptedHashTokenPairReturn } from "./interface";
 import { EnvService } from "src/env/env.service";
+import { UtilitiesService } from "src/utilities/utilities.service";
+import { JwtService } from "src/auth-system/jwt/jwt.service";
 
 @Injectable({ scope: Scope.REQUEST })
 export class AuthHelper extends BaseRepository {
     constructor(
         private readonly datasource: DataSource,
         @Inject(REQUEST) req: FastifyRequest,
-        private readonly jwtService: JwtService,
+        private readonly jwtService: JwtSer,
+        private readonly myJwtService: JwtService,
         private readonly envService: EnvService,
         private readonly encryptionService: EncryptionService,
         private readonly eventEmitter: EventEmitter2,
+        private readonly utilitiesService: UtilitiesService
     ) {
         super(datasource, req);
     }
@@ -194,5 +198,37 @@ export class AuthHelper extends BaseRepository {
         } catch (e) {
             return { payload: null, tokenHash: null, error: e };
         }
+    }
+
+    async verifySudoPassword(password: string, reply: FastifyReply) {
+        const { accountId } = this.utilitiesService.getCurrentUser();
+
+        const account = await this.getRepository(Account).findOne({
+            where: { id: accountId, verifiedAt: Not(IsNull()) },
+            select: { id: true, password: true }
+        });
+        if (!account) return { verified: false };
+
+        const isPasswordValid = await bcrypt.compare(password, account.password);
+
+        if (!isPasswordValid) return { verified: false };
+
+        const sudoAccessToken = await this.myJwtService.getSudoAccessToken(account.id);
+
+        return reply
+            .setCookie(
+                Tokens.SUDO_ACCESS_TOKEN_COOKIE_NAME,
+                sudoAccessToken,
+                {
+                    secure: this.envService.NODE_ENV === 'production',
+                    httpOnly: true,
+                    signed: true,
+                    sameSite: this.envService.NODE_ENV === 'production' ? 'none' : 'lax',
+                    expires: new Date(Date.now() + (this.envService.SUDO_ACCESS_TOKEN_EXPIRATION_SEC * 1000)),
+                    path: '/',
+                }
+            )
+            .header('Content-Type', 'application/json')
+            .send({ verified: true })
     }
 }
