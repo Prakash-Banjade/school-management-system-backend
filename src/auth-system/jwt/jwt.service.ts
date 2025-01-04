@@ -32,6 +32,16 @@ export class JwtService {
         );
     }
 
+    async getSudoAccessToken(accountId: string): Promise<string> {
+        return this.jwtService.signAsync(
+            { accountId },
+            {
+                secret: this.envService.SUDO_ACCESS_TOKEN_SECRET,
+                expiresIn: this.envService.SUDO_ACCESS_TOKEN_EXPIRATION_SEC,
+            }
+        );
+    }
+
     /**
      * the payload will contain additional `classRoomId` if the user is a student
      * @param account the account

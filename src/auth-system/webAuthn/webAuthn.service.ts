@@ -9,11 +9,11 @@ import { generateAuthenticationOptions, generateRegistrationOptions, verifyAuthe
 import { EnvService } from 'src/env/env.service';
 import { EPasskeyChallengeType, PasskeyChallenge } from './entities/passkey-challenge.entity';
 import { WebAuthnCredential } from './entities/webAuthnCredential.entity';
-import { LoginVerifyDto } from './dto/login-verify.dto';
-import { RefreshTokenService } from '../auth/helpers/refresh-tokens.service';
+import { AuthVerifyDto } from './dto/login-verify.dto';
 import { Tokens } from 'src/common/CONSTANTS';
 import { JwtService } from '../jwt/jwt.service';
 import { AuthService } from '../auth/auth.service';
+import { AuthChallengeDto } from './dto/login-challenge.dto';
 
 @Injectable({ scope: Scope.REQUEST })
 export class WebAuthnService extends BaseRepository {
@@ -21,16 +21,21 @@ export class WebAuthnService extends BaseRepository {
         dataSource: DataSource, @Inject(REQUEST) request: FastifyRequest,
         private readonly utilitiesService: UtilitiesService,
         private readonly envService: EnvService,
-        private readonly refreshTokenService: RefreshTokenService,
         private readonly jwtService: JwtService,
         private readonly authService: AuthService,
     ) { super(dataSource, request); }
 
-    async registerPassKey() {
+    async registerPassKey(req: FastifyRequest) {
+        const accountIdFromSudoGuard = req['accountId']; // this is available from sudo guard in the controller
+
+        if (!accountIdFromSudoGuard) throw new ForbiddenException('Unauthorized');
+
         const account = await this.getAccount(
             { id: true, email: true, webAuthnCredentials: { id: true, credentialId: true } },
             { webAuthnCredentials: true }
         );
+
+        if (account.id !== accountIdFromSudoGuard) throw new ForbiddenException('Unauthorized');
 
         const challengePayload = await generateRegistrationOptions({
             rpID: this.envService.CLIENT_DOMAIN,
@@ -122,9 +127,9 @@ export class WebAuthnService extends BaseRepository {
         return account;
     }
 
-    async getLoginChallenge(email: string) {
+    async getAuthChallenge(dto: AuthChallengeDto) {
         const account = await this.getRepository(Account).findOne({
-            where: { email, verifiedAt: Not(IsNull()) },
+            where: { email: dto.email, verifiedAt: Not(IsNull()) },
             relations: { webAuthnCredentials: true },
             select: { id: true, email: true, webAuthnCredentials: { id: true, credentialId: true, transports: true } }
         });
@@ -142,22 +147,22 @@ export class WebAuthnService extends BaseRepository {
         });
 
         // remove previous login challenge
-        await this.getRepository(PasskeyChallenge).delete({ type: EPasskeyChallengeType.Login, email: account.email });
+        await this.getRepository(PasskeyChallenge).delete({ type: dto.type, email: account.email });
 
         await this.getRepository(PasskeyChallenge).save({
             challenge: challengePayload.challenge,
-            type: EPasskeyChallengeType.Login,
+            type: dto.type,
             email: account.email
         });
 
         return { challengePayload };
     }
 
-    async verifyLoginPasskey(loginVerifyDto: LoginVerifyDto, req: FastifyRequest, reply: FastifyReply) {
+    async verifyLoginPasskey(dto: AuthVerifyDto, req: FastifyRequest, reply: FastifyReply) {
         const account = await this.getRepository(Account).createQueryBuilder('account')
-            .where('account.email = :email', { email: loginVerifyDto.email })
+            .where('account.email = :email', { email: dto.email })
             .andWhere('account.verifiedAt IS NOT NULL')
-            .leftJoin('account.webAuthnCredentials', 'webAuthnCredentials', 'webAuthnCredentials.credentialId = :credentialId', { credentialId: loginVerifyDto.authenticationResponse?.id })
+            .leftJoin('account.webAuthnCredentials', 'webAuthnCredentials', 'webAuthnCredentials.credentialId = :credentialId', { credentialId: dto.authenticationResponse?.id })
             .leftJoin('account.branch', 'branch')
             .leftJoin('account.profileImage', 'profileImage')
             .select([
@@ -189,13 +194,13 @@ export class WebAuthnService extends BaseRepository {
 
         const credential = account.webAuthnCredentials[0];
 
-        if (!credential || credential.credentialId !== loginVerifyDto.authenticationResponse?.id) throw new ForbiddenException('Invalid passkey');
+        if (!credential || credential.credentialId !== dto.authenticationResponse?.id) throw new ForbiddenException('Invalid passkey');
 
         const result = await verifyAuthenticationResponse({
             expectedChallenge: passkeyChallenge.challenge,
             expectedOrigin: this.envService.CLIENT_URL,
             expectedRPID: this.envService.CLIENT_DOMAIN,
-            response: loginVerifyDto.authenticationResponse,
+            response: dto.authenticationResponse,
             credential: {
                 id: credential.credentialId,
                 publicKey: new Uint8Array(credential.publicKey),
@@ -210,46 +215,77 @@ export class WebAuthnService extends BaseRepository {
         credential.lastUsed = new Date();
         await this.getRepository(WebAuthnCredential).save(credential);
 
-        // NOT IT IS CONFIRMED THE USER IS A VALID ONE
-        return this.login(account, req, reply);
+        // NOW IT IS CONFIRMED THE USER IS A VALID ONE
+        return this.authService.proceedLogin(account, req, reply);
     }
 
-    async login(account: Account, req: FastifyRequest, reply: FastifyReply) {
-        const existingRefreshCookie = req.cookies?.[Tokens.REFRESH_TOKEN_COOKIE_NAME];
-        this.refreshTokenService.setEmail(account.email);
+    async verifySudoPasskey(authenticationResponse: any, reply: FastifyReply) {
+        const currentUser = this.utilitiesService.getCurrentUser();
 
-        let refreshTokens = await this.refreshTokenService.getRefreshTokens();
+        const account = await this.getRepository(Account).createQueryBuilder('account')
+            .where('account.id = :accountId', { accountId: currentUser.accountId })
+            .andWhere('account.verifiedAt IS NOT NULL')
+            .leftJoin('account.webAuthnCredentials', 'webAuthnCredentials', 'webAuthnCredentials.credentialId = :credentialId', { credentialId: authenticationResponse?.id })
+            .select([
+                'account.id',
+                'webAuthnCredentials.id',
+                'webAuthnCredentials.credentialId',
+                'webAuthnCredentials.publicKey',
+                'webAuthnCredentials.transports',
+                'webAuthnCredentials.counter',
+            ]).getOne();
+        if (!account) throw new BadRequestException('Invalid email');
 
-        const { access_token, refresh_token } = await this.jwtService.getAuthTokens(account);
+        const passkeyChallenge = await this.getRepository(PasskeyChallenge).findOne({
+            where: { type: EPasskeyChallengeType.Sudo, email: account.email },
+            select: { id: true, challenge: true }
+        });
+        if (!passkeyChallenge) return { verified: false };
 
-        if (existingRefreshCookie) {
-            const { value: existingRefreshToken, valid } = req.unsignCookie(existingRefreshCookie);
+        // now remove the challenge
+        await this.getRepository(PasskeyChallenge).remove(passkeyChallenge);
 
-            const newRefreshTokenArray = valid
-                ? (refreshTokens?.filter((rt) => rt !== existingRefreshToken) ?? [])
-                : (refreshTokens ?? [])
+        const credential = account.webAuthnCredentials[0];
 
-            if (existingRefreshToken) reply.clearCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME, this.authService.getRefreshCookieOptions()); // CLEAR COOKIE, BCZ A NEW ONE IS TO BE GENERATED
+        if (!credential) throw new ForbiddenException('You have not registered a passkey');
+        if (credential.credentialId !== authenticationResponse?.id) return { verified: false };
 
-            refreshTokens = [...newRefreshTokenArray];
-        }
+        const result = await verifyAuthenticationResponse({
+            expectedChallenge: passkeyChallenge.challenge,
+            expectedOrigin: this.envService.CLIENT_URL,
+            expectedRPID: this.envService.CLIENT_DOMAIN,
+            response: authenticationResponse,
+            credential: {
+                id: credential.credentialId,
+                publicKey: new Uint8Array(credential.publicKey),
+                counter: credential.counter,
+                transports: credential.transports
+            }
+        });
 
-        refreshTokens = [...(refreshTokens ?? []), refresh_token];
+        if (!result.verified) return { verified: false };
 
-        await this.refreshTokenService.setRefreshTokens(refreshTokens);
+        // update last used
+        credential.lastUsed = new Date();
+        await this.getRepository(WebAuthnCredential).save(credential);
+
+        const sudoAccessToken = await this.jwtService.getSudoAccessToken(account.id);
 
         return reply
-            .setCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME, refresh_token, this.authService.getRefreshCookieOptions())
-            .header('Content-Type', 'application/json')
-            .send({
-                access_token,
-                user: {
-                    firstName: account.firstName,
-                    lastName: account.lastName,
-                    profileImageUrl: account.profileImage?.url,
-                    branchName: account.branch?.name,
+            .setCookie(
+                Tokens.SUDO_ACCESS_TOKEN_COOKIE_NAME,
+                sudoAccessToken,
+                {
+                    secure: this.envService.NODE_ENV === 'production',
+                    httpOnly: true,
+                    signed: true,
+                    sameSite: this.envService.NODE_ENV === 'production' ? 'none' : 'lax',
+                    expires: new Date(Date.now() + (this.envService.SUDO_ACCESS_TOKEN_EXPIRATION_SEC * 1000)),
+                    path: '/',
                 }
-            })
+            )
+            .header('Content-Type', 'application/json')
+            .send({ verified: true })
     }
 
     async findAll() {

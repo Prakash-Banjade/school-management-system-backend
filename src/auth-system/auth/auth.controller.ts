@@ -17,11 +17,15 @@ import { ResetPasswordDto } from './dto/resetPassword.dto';
 import { UpdateEmailDto } from './dto/update-email.dto';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { VerifyTokenDto } from './dto/verify-token.dto';
+import { AuthHelper } from './helpers/auth.helper';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-    constructor(private authService: AuthService) { }
+    constructor(
+        private readonly authService: AuthService,
+        private readonly authHelper: AuthHelper
+    ) { }
 
     @Public()
     @Post('login')
@@ -129,5 +133,14 @@ export class AuthController {
     @FormDataRequest()
     updateEmail(@Body() updateEmailDto: UpdateEmailDto, @CurrentUser() currentUser: AuthUser) {
         return this.authService.updateEmail(updateEmailDto, currentUser);
+    }
+
+    @Post('verify-sudo')
+    @HttpCode(HttpStatus.OK)
+    @ApiConsumes('multipart/form-data')
+    @FormDataRequest()
+    @CheckAbilities({ subject: Role.USER, action: Action.READ })
+    verifySudoPassword(@Body('sudo_password') password: string, @Res({ passthrough: true }) res: FastifyReply) {
+        return this.authHelper.verifySudoPassword(password, res);
     }
 }
