@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import { AuthUser, Role } from "src/common/types/global.type";
+import { createHash } from 'crypto';
 
 export const ISO_TIME = 'T00:00:00Z' as const;
 
@@ -18,4 +19,8 @@ export function isStudent(authUser: AuthUser): authUser is Extract<AuthUser, { r
 
 export function isAdmin(authUser: AuthUser): boolean {
     return ([Role.ADMIN, Role.SUPER_ADMIN] as Role[]).includes(authUser.role as Role);
+}
+
+export function generateDeviceId(userAgent: string, ipAddress: string): string {
+    return createHash('sha256').update(`${userAgent}-${ipAddress}`).digest('hex');
 }

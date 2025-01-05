@@ -5,7 +5,7 @@ import { EmailVerificationPending } from './entities/email-verification-pending.
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { REQUEST } from '@nestjs/core';
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { Account } from '../accounts/entities/account.entity';
+import { Account, TLoginDevice } from '../accounts/entities/account.entity';
 import { AuthUser } from 'src/common/types/global.type';
 import { MAX_PREV_PASSWORDS, PASSWORD_SALT_COUNT, Tokens } from 'src/common/CONSTANTS';
 import { RegisterDto } from './dto/register.dto';
@@ -26,6 +26,7 @@ import { IVerifyEncryptedHashTokenPairReturn } from './helpers/interface';
 import { generateRandomPassword } from 'src/utils/generatePassword';
 import { RefreshTokenService } from './helpers/refresh-tokens.service';
 import { EnvService } from 'src/env/env.service';
+import { generateDeviceId } from 'src/utils/utils';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AuthService extends BaseRepository {
@@ -54,6 +55,8 @@ export class AuthService extends BaseRepository {
   }
 
   async proceedLogin(account: Account, req: FastifyRequest, reply: FastifyReply) {
+    await this.handleDevice(account, req);
+
     const existingRefreshCookie = req.cookies?.[Tokens.REFRESH_TOKEN_COOKIE_NAME];
     this.refreshTokenService.setEmail(account.email);
 
@@ -89,6 +92,30 @@ export class AuthService extends BaseRepository {
           branchName: account.branch?.name,
         }
       })
+  }
+
+  async handleDevice(account: Account, req: FastifyRequest) {
+    const userAgent = req.headers['user-agent'];
+    const ipAddress = req.ip;
+    const deviceId = generateDeviceId(userAgent, ipAddress);
+    const now = new Date();
+
+    const deviceIndex = (account.loginDevices ?? [])?.findIndex((device) => device.deviceId === deviceId);
+
+    if (deviceIndex === -1) {
+      const newDevice: TLoginDevice = {
+        deviceId,
+        ua: userAgent,
+        firstLogin: now,
+        lastLogin: now,
+      };
+
+      account.loginDevices = [...(account.loginDevices ?? []), newDevice];
+    } else {
+      account.loginDevices[deviceIndex].lastLogin = now;
+    }
+
+    await this.accountsRepo.save(account);
   }
 
   getRefreshCookieOptions(): CookieSerializeOptions {

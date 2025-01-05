@@ -16,6 +16,8 @@ import { LessonPlan } from "src/lesson-plans/entities/lesson-plan.entity";
 import { Branch } from "src/branches/entities/branch.entity";
 import { WebAuthnCredential } from "src/auth-system/webAuthn/entities/webAuthnCredential.entity";
 
+export type TLoginDevice = { deviceId: string; ua: string; firstLogin: Date; lastLogin: Date };
+
 @Entity()
 export class Account extends BaseEntity {
     @Column({ type: 'varchar' })
@@ -47,6 +49,9 @@ export class Account extends BaseEntity {
 
     @OneToMany(() => WebAuthnCredential, passkey => passkey.account)
     webAuthnCredentials: WebAuthnCredential[];
+
+    @Column({ type: 'json', nullable: true })
+    loginDevices: TLoginDevice[];
 
     @ManyToOne(() => Branch, branch => branch.accounts, { onDelete: 'RESTRICT', nullable: true })
     branch: Branch | null;

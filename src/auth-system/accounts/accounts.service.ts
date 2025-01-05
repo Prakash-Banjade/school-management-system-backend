@@ -16,6 +16,7 @@ import { User } from '../users/entities/user.entity';
 import { Branch } from 'src/branches/entities/branch.entity';
 import { BranchesService } from 'src/branches/branches.service';
 import { UtilitiesService } from 'src/utilities/utilities.service';
+import { generateDeviceId } from 'src/utils/utils';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AccountsService extends BaseRepository {
@@ -101,13 +102,6 @@ export class AccountsService extends BaseRepository {
     } as Account);
   }
 
-  async findOne(id: string) {
-    const existingAccount = await this.getRepository(Account).findOneBy({ id });
-    if (!existingAccount) throw new Error('Account not found');
-
-    return existingAccount;
-  }
-
   async updateEmail(accountId: string, newEmail: string) {
     // check if email is taken
     const accountWithEmail = await this.getRepository(Account).findOne({
@@ -119,5 +113,26 @@ export class AccountsService extends BaseRepository {
     if (accountWithEmail) throw new ConflictException('This email is already taken');
 
     await this.getRepository(Account).update({ id: accountId }, { email: newEmail });
+  }
+
+  async getDevices(req: FastifyRequest) {
+    const { accountId } = this.utilitiesService.getCurrentUser();
+
+    const account = await this.getRepository(Account).findOne({
+      where: { id: accountId },
+      select: { id: true, loginDevices: true },
+    });
+
+    const currentDeviceId = generateDeviceId(req.headers['user-agent'], req.ip);
+
+    const devices = typeof account.loginDevices === 'string'
+      ? JSON.parse(account.loginDevices)
+      : account.loginDevices === null
+        ? []
+        : account.loginDevices;
+
+    return devices
+      .sort((a: any, b: any) => new Date(b.lastLogin)?.getTime() - new Date(a.lastLogin)?.getTime())
+      .map((device: any) => ({ ...device, current: device.deviceId === currentDeviceId }));
   }
 }
