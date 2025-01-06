@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { DataSource, Not } from 'typeorm';
-import { Account } from './entities/account.entity';
+import { Account, TLoginDevice } from './entities/account.entity';
 import { Teacher } from 'src/teachers/entities/teacher.entity';
 import { REQUEST } from '@nestjs/core';
 import { Student } from 'src/students/entities/student.entity';
@@ -17,6 +17,7 @@ import { Branch } from 'src/branches/entities/branch.entity';
 import { BranchesService } from 'src/branches/branches.service';
 import { UtilitiesService } from 'src/utilities/utilities.service';
 import { generateDeviceId } from 'src/utils/utils';
+import { RefreshTokenService } from '../auth/helpers/refresh-tokens.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AccountsService extends BaseRepository {
@@ -25,6 +26,7 @@ export class AccountsService extends BaseRepository {
     private readonly authHelper: AuthHelper,
     private readonly branchesService: BranchesService,
     private readonly utilitiesService: UtilitiesService,
+    private readonly refreshTokenService: RefreshTokenService,
   ) {
     super(dataSource, req);
   }
@@ -127,14 +129,53 @@ export class AccountsService extends BaseRepository {
 
     const currentDeviceId = generateDeviceId(req.headers['user-agent'], req.ip);
 
-    const devices = typeof account.loginDevices === 'string'
+    const devices: TLoginDevice[] = typeof account.loginDevices === 'string'
       ? JSON.parse(account.loginDevices)
       : account.loginDevices === null
         ? []
         : account.loginDevices;
 
+    this.refreshTokenService.init({});
+    const tokens = await this.refreshTokenService.getAll(); // this will return all the refresh tokens of the current user
+
     return devices
       .sort((a: any, b: any) => new Date(b.lastLogin)?.getTime() - new Date(a.lastLogin)?.getTime())
-      .map((device: any) => ({ ...device, current: device.deviceId === currentDeviceId }));
+      .map((device: any) => ({
+        ...device,
+        current: device.deviceId === currentDeviceId,
+        signedIn: tokens.some((token) => token.deviceId === device.deviceId),
+      }));
+  }
+
+  async revokeDevice(deviceId: string) {
+    const { accountId } = this.utilitiesService.getCurrentUser();
+    const currentDeviceId = this.utilitiesService.getDeviceId();
+
+    if (deviceId === currentDeviceId) throw new BadRequestException('Cannot revoke current device');
+
+    const account = await this.getRepository(Account).findOne({
+      where: { id: accountId },
+      select: { id: true, email: true, loginDevices: true, verifiedAt: true },
+    });
+
+    if (!account) throw new NotFoundException('Account not found');
+
+    const devices: TLoginDevice[] = typeof account.loginDevices === 'string'
+      ? JSON.parse(account.loginDevices)
+      : account.loginDevices === null
+        ? []
+        : account.loginDevices;
+
+    const filteredDevices = devices.filter((device) => device.deviceId !== deviceId);
+
+    await this.getRepository(Account).update({ id: accountId }, { loginDevices: filteredDevices });
+
+    this.refreshTokenService.init({
+      deviceId,
+      email: account.email
+    });
+    await this.refreshTokenService.remove();
+
+    return { message: 'Device revoked' };
   }
 }

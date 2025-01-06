@@ -58,27 +58,16 @@ export class AuthService extends BaseRepository {
     await this.handleDevice(account, req);
 
     const existingRefreshCookie = req.cookies?.[Tokens.REFRESH_TOKEN_COOKIE_NAME];
-    this.refreshTokenService.setEmail(account.email);
-
-    let refreshTokens = await this.refreshTokenService.getRefreshTokens();
 
     const { access_token, refresh_token } = await this.jwtService.getAuthTokens(account);
 
+    // remove old refresh token from cookie
     if (existingRefreshCookie) {
       const { value: existingRefreshToken, valid } = req.unsignCookie(existingRefreshCookie);
-
-      const newRefreshTokenArray = valid
-        ? (refreshTokens?.filter((rt) => rt !== existingRefreshToken) ?? [])
-        : (refreshTokens ?? [])
-
-      if (existingRefreshToken) reply.clearCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME, this.getRefreshCookieOptions()); // CLEAR COOKIE, BCZ A NEW ONE IS TO BE GENERATED
-
-      refreshTokens = [...newRefreshTokenArray];
+      if (existingRefreshToken && valid) reply.clearCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME, this.getRefreshCookieOptions()); // CLEAR COOKIE, BCZ A NEW ONE IS TO BE GENERATED
     }
 
-    refreshTokens = [...(refreshTokens ?? []), refresh_token];
-
-    await this.refreshTokenService.setRefreshTokens(refreshTokens);
+    await this.refreshTokenService.set(refresh_token); // set the new refresh_token to the redis cache
 
     return reply
       .setCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME, refresh_token, this.getRefreshCookieOptions())
@@ -114,6 +103,8 @@ export class AuthService extends BaseRepository {
     } else {
       account.loginDevices[deviceIndex].lastLogin = now;
     }
+
+    this.refreshTokenService.init({ email: account.email, deviceId }); // initialize the refresh token instance from here to provide the email and device
 
     await this.accountsRepo.save(account);
   }
@@ -196,9 +187,10 @@ export class AuthService extends BaseRepository {
   }
 
   async refresh(req: FastifyRequest, reply: FastifyReply) {
+    const { value: existingCookie, valid } = req.unsignCookie(req.cookies?.[Tokens.REFRESH_TOKEN_COOKIE_NAME]);
+    if (!valid) throw new UnauthorizedException('Invalid refresh token');
+
     reply.clearCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME, this.getRefreshCookieOptions()); // a new refresh token is to be generated
-    const oldRefreshToken = req.unsignCookie(req.cookies[Tokens.REFRESH_TOKEN_COOKIE_NAME])?.value;
-    this.refreshTokenService.setEmail(req.user?.email);
 
     const account = await this.accountsRepo.findOne({
       where: { id: req.accountId },
@@ -215,11 +207,15 @@ export class AuthService extends BaseRepository {
     }); // accountId is validated in the refresh token guard
     if (!account) throw new UnauthorizedException('Invalid refresh token');
 
+    this.refreshTokenService.init({ email: account.email });
+
+    // check if refreshtoken exists
+    const rtPayload = await this.refreshTokenService.get(); // refreshToken Payload
+    if (!rtPayload || (rtPayload && rtPayload.refreshToken !== existingCookie)) throw new UnauthorizedException('Invalid refresh token');
+
+    // set new refresh_token
     const { access_token, refresh_token } = await this.jwtService.getAuthTokens(account);
-
-    const refreshTokens = await this.refreshTokenService.getRefreshTokens();
-
-    await this.refreshTokenService.setRefreshTokens(refreshTokens?.filter((rt) => rt !== oldRefreshToken));
+    await this.refreshTokenService.set(refresh_token); // set the new refresh_token to the redis cache for the current device
 
     return reply
       .setCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME, refresh_token, this.getRefreshCookieOptions())
@@ -235,14 +231,9 @@ export class AuthService extends BaseRepository {
       })
   }
 
-  async logout(req: FastifyRequest, reply: FastifyReply) {
-    const refreshToken = req.unsignCookie(req.cookies[Tokens.REFRESH_TOKEN_COOKIE_NAME])?.value; // validated from refreshtoken guard
-
-    this.refreshTokenService.setEmail(req.user?.email);
-    const refreshTokens = await this.refreshTokenService.getRefreshTokens();
-
-    const newRefreshTokenArray: string[] | undefined = refreshTokens?.filter((rt) => rt !== refreshToken);
-    await this.refreshTokenService.setRefreshTokens(newRefreshTokenArray);
+  async logout(reply: FastifyReply) {
+    this.refreshTokenService.init({});
+    this.refreshTokenService.remove(); // remove the current token from redis cache
 
     return reply.clearCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME, this.getRefreshCookieOptions()).status(HttpStatus.NO_CONTENT).send();
   }
@@ -284,8 +275,8 @@ export class AuthService extends BaseRepository {
     await this.accountsRepo.update({ id: account.id }, account);
 
     if (changePasswordDto.logout) {
-      this.refreshTokenService.setEmail(currentUser.email);
-      await this.refreshTokenService.setRefreshTokens([]);
+      this.refreshTokenService.init({});
+      await this.refreshTokenService.removeAll();
     }
 
     return { message: "Password changed" }
@@ -385,6 +376,10 @@ export class AuthService extends BaseRepository {
 
     // clear the reset token from the database
     await this.passwordChangeRequestRepo.remove(passwordChangeRequest);
+
+    // logout of all devices
+    this.refreshTokenService.init({ email: account.email });
+    await this.refreshTokenService.removeAll();
 
     // Return success response
     return { message: 'Password reset successful' };

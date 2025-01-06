@@ -5,6 +5,7 @@ import { Cache } from 'cache-manager';
 import { FastifyRequest } from 'fastify';
 import { CACHE_KEYS, CookieKey } from 'src/common/CONSTANTS';
 import { AuthUser } from 'src/common/types/global.type';
+import { generateDeviceId } from 'src/utils/utils';
 import { SelectQueryBuilder } from 'typeorm';
 
 @Injectable({ scope: Scope.REQUEST })
@@ -20,6 +21,13 @@ export class UtilitiesService {
 
     getBranchId(): string | undefined {
         return this.request?.user?.branchId ?? this.request.cookies[CookieKey.BRANCH_ID];
+    }
+
+    getDeviceId(): string | undefined {
+        const ua = this.request.headers['user-agent'];
+        const ipAddress = this.request.ip;
+
+        return generateDeviceId(ua, ipAddress);
     }
 
     async getAcademicYearId(): Promise<string | undefined> {

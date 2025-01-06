@@ -85,8 +85,8 @@ export class AuthController {
     @FormDataRequest()
     @UseGuards(RefreshTokenGuard)
     @CheckAbilities({ subject: Role.USER, action: Action.READ })
-    logout(@Req() req: FastifyRequest, @Res({ passthrough: true }) res: FastifyReply) {
-        return this.authService.logout(req, res);
+    logout(@Res({ passthrough: true }) res: FastifyReply) {
+        return this.authService.logout(res);
     }
 
     @Post('change-password')

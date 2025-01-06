@@ -171,6 +171,7 @@ export class WebAuthnService extends BaseRepository {
                 'account.firstName',
                 'account.lastName',
                 'account.role',
+                'account.verifiedAt',
                 'webAuthnCredentials.id',
                 'webAuthnCredentials.credentialId',
                 'webAuthnCredentials.publicKey',
