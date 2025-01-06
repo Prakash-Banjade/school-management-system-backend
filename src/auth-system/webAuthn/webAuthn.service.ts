@@ -138,6 +138,8 @@ export class WebAuthnService extends BaseRepository {
             field: 'email'
         });
 
+        if (account.webAuthnCredentials.length === 0) throw new ForbiddenException('You have not registered a passkey');
+
         const challengePayload = await generateAuthenticationOptions({
             rpID: this.envService.CLIENT_DOMAIN,
             allowCredentials: account.webAuthnCredentials?.map(c => ({

@@ -27,6 +27,7 @@ import { generateRandomPassword } from 'src/utils/generatePassword';
 import { RefreshTokenService } from './helpers/refresh-tokens.service';
 import { EnvService } from 'src/env/env.service';
 import { generateDeviceId } from 'src/utils/utils';
+import { LoginDevice } from '../accounts/entities/login-devices.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AuthService extends BaseRepository {
@@ -55,11 +56,11 @@ export class AuthService extends BaseRepository {
   }
 
   async proceedLogin(account: Account, req: FastifyRequest, reply: FastifyReply) {
-    await this.handleDevice(account, req);
+    await this.handleDevice(account, req); // refreshtoken instance initialized here
 
     const existingRefreshCookie = req.cookies?.[Tokens.REFRESH_TOKEN_COOKIE_NAME];
 
-    const { access_token, refresh_token } = await this.jwtService.getAuthTokens(account);
+    const { access_token, refresh_token } = await this.jwtService.getAuthTokens(account, req);
 
     // remove old refresh token from cookie
     if (existingRefreshCookie) {
@@ -89,24 +90,29 @@ export class AuthService extends BaseRepository {
     const deviceId = generateDeviceId(userAgent, ipAddress);
     const now = new Date();
 
-    const deviceIndex = (account.loginDevices ?? [])?.findIndex((device) => device.deviceId === deviceId);
+    const loginDevice = await this.getRepository(LoginDevice).findOne({
+      where: { deviceId, account: { id: account.id } },
+      select: { id: true },
+    });
 
-    if (deviceIndex === -1) {
-      const newDevice: TLoginDevice = {
+    if (!loginDevice) {
+      const newLoginDevice = this.getRepository(LoginDevice).create({
         deviceId,
+        account,
         ua: userAgent,
         firstLogin: now,
         lastLogin: now,
-      };
+        lastActivityRecord: now,
+      });
 
-      account.loginDevices = [...(account.loginDevices ?? []), newDevice];
+      await this.getRepository(LoginDevice).save(newLoginDevice);
     } else {
-      account.loginDevices[deviceIndex].lastLogin = now;
+      loginDevice.lastLogin = now;
+      loginDevice.lastActivityRecord = now;
+      await this.getRepository(LoginDevice).save(loginDevice);
     }
 
     this.refreshTokenService.init({ email: account.email, deviceId }); // initialize the refresh token instance from here to provide the email and device
-
-    await this.accountsRepo.save(account);
   }
 
   getRefreshCookieOptions(): CookieSerializeOptions {
@@ -207,14 +213,24 @@ export class AuthService extends BaseRepository {
     }); // accountId is validated in the refresh token guard
     if (!account) throw new UnauthorizedException('Invalid refresh token');
 
-    this.refreshTokenService.init({ email: account.email });
+    const deviceId = generateDeviceId(req.headers['user-agent'], req.ip);
+    this.refreshTokenService.init({ email: account.email, deviceId });
 
     // check if refreshtoken exists
     const rtPayload = await this.refreshTokenService.get(); // refreshToken Payload
     if (!rtPayload || (rtPayload && rtPayload.refreshToken !== existingCookie)) throw new UnauthorizedException('Invalid refresh token');
 
+    // update the last activity record of the device
+    const device = await this.getRepository(LoginDevice).findOne({
+      where: { deviceId, account: { id: account.id } },
+      select: { id: true },
+    });
+    if (!device) throw new UnauthorizedException('Unrecognized device'); // TODO: better to send mail to the user about unrecognized login or take some other action
+
+    await this.getRepository(LoginDevice).update(device.id, { lastActivityRecord: new Date() });
+
     // set new refresh_token
-    const { access_token, refresh_token } = await this.jwtService.getAuthTokens(account);
+    const { access_token, refresh_token } = await this.jwtService.getAuthTokens(account, req);
     await this.refreshTokenService.set(refresh_token); // set the new refresh_token to the redis cache for the current device
 
     return reply

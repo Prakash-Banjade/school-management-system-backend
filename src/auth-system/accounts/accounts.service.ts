@@ -18,6 +18,7 @@ import { BranchesService } from 'src/branches/branches.service';
 import { UtilitiesService } from 'src/utilities/utilities.service';
 import { generateDeviceId } from 'src/utils/utils';
 import { RefreshTokenService } from '../auth/helpers/refresh-tokens.service';
+import { LoginDevice } from './entities/login-devices.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AccountsService extends BaseRepository {
@@ -117,65 +118,36 @@ export class AccountsService extends BaseRepository {
     await this.getRepository(Account).update({ id: accountId }, { email: newEmail });
   }
 
-  async getDevices(req: FastifyRequest) {
+  async getDevices() {
     const { accountId } = this.utilitiesService.getCurrentUser();
 
-    const account = await this.getRepository(Account).findOne({
-      where: { id: accountId },
-      select: { id: true, loginDevices: true },
+    const loginDevices = await this.getRepository(LoginDevice).find({
+      where: { account: { id: accountId } },
+      order: { lastLogin: 'DESC' },
+      select: { id: true, deviceId: true, ua: true, firstLogin: true, lastActivityRecord: true },
     });
-
-    if (!account) throw new NotFoundException('Account not found');
-
-    const currentDeviceId = generateDeviceId(req.headers['user-agent'], req.ip);
-
-    const devices: TLoginDevice[] = typeof account.loginDevices === 'string'
-      ? JSON.parse(account.loginDevices)
-      : account.loginDevices === null
-        ? []
-        : account.loginDevices;
 
     this.refreshTokenService.init({});
     const tokens = await this.refreshTokenService.getAll(); // this will return all the refresh tokens of the current user
 
-    return devices
-      .sort((a: any, b: any) => new Date(b.lastLogin)?.getTime() - new Date(a.lastLogin)?.getTime())
+    return loginDevices
       .map((device: any) => ({
         ...device,
-        current: device.deviceId === currentDeviceId,
         signedIn: tokens.some((token) => token.deviceId === device.deviceId),
       }));
   }
 
   async revokeDevice(deviceId: string) {
-    const { accountId } = this.utilitiesService.getCurrentUser();
-    const currentDeviceId = this.utilitiesService.getDeviceId();
+    const { email, deviceId: currentDeviceId } = this.utilitiesService.getCurrentUser();
 
     if (deviceId === currentDeviceId) throw new BadRequestException('Cannot revoke current device');
 
-    const account = await this.getRepository(Account).findOne({
-      where: { id: accountId },
-      select: { id: true, email: true, loginDevices: true, verifiedAt: true },
-    });
-
-    if (!account) throw new NotFoundException('Account not found');
-
-    const devices: TLoginDevice[] = typeof account.loginDevices === 'string'
-      ? JSON.parse(account.loginDevices)
-      : account.loginDevices === null
-        ? []
-        : account.loginDevices;
-
-    const filteredDevices = devices.filter((device) => device.deviceId !== deviceId);
-
-    await this.getRepository(Account).update({ id: accountId }, { loginDevices: filteredDevices });
-
     this.refreshTokenService.init({
       deviceId,
-      email: account.email
+      email: email
     });
     await this.refreshTokenService.remove();
 
-    return { message: 'Device revoked' };
+    return { message: 'Device signed out' };
   }
 }

@@ -6,6 +6,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Student } from 'src/students/entities/student.entity';
 import { Repository } from 'typeorm';
 import { EnvService } from 'src/env/env.service';
+import { FastifyRequest } from 'fastify';
+import { generateDeviceId } from 'src/utils/utils';
 
 @Injectable()
 export class JwtService {
@@ -47,8 +49,10 @@ export class JwtService {
      * @param account the account
      * @returns the access and refresh tokens
      */
-    async getAuthTokens(account: Account) {
+    async getAuthTokens(account: Account, req: FastifyRequest) {
         let payload: AuthUser;
+
+        const deviceId = generateDeviceId(req.headers['user-agent'], req.ip);
 
         if (account.role === Role.STUDENT) {
             const student = await this.studentRepo.findOne({
@@ -72,14 +76,16 @@ export class JwtService {
                 role: Role.STUDENT,
                 classRoomId: student.classRoom.id,
                 studentId: student.id,
-                branchId: student.account?.branch?.id ?? undefined
+                branchId: student.account?.branch?.id ?? undefined,
+                deviceId,
             };
         } else {
             payload = {
                 accountId: account.id,
                 email: account.email,
                 role: account.role,
-                branchId: account.branch?.id ?? undefined
+                branchId: account.branch?.id ?? undefined,
+                deviceId,
             };
         }
 

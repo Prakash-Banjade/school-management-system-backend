@@ -4,6 +4,7 @@ export type AuthUser = {
     email: string;
     role: Omit<Role, Role.STUDENT>;
     branchId: string | undefined;
+    deviceId: string;
 } | {
     accountId: string;
     email: string;
@@ -11,6 +12,7 @@ export type AuthUser = {
     classRoomId: string;
     studentId: string;
     branchId: string;
+    deviceId: string;
 }
 
 export enum Action {

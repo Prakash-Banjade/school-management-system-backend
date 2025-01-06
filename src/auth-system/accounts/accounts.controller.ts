@@ -3,7 +3,6 @@ import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { AccountsService } from "./accounts.service";
 import { CheckAbilities } from "src/common/decorators/abilities.decorator";
 import { Action, Role } from "src/common/types/global.type";
-import { FastifyRequest } from "fastify";
 
 @ApiBearerAuth()
 @ApiTags('Accounts')
@@ -15,8 +14,8 @@ export class AccountsController {
 
     @Get('devices')
     @CheckAbilities({ subject: Role.USER, action: Action.READ })
-    getDevices(@Req() req: FastifyRequest) {
-        return this.accountsService.getDevices(req);
+    getDevices() {
+        return this.accountsService.getDevices();
     }
 
     @Patch('devices/:deviceId/revoke')

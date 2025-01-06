@@ -23,13 +23,6 @@ export class UtilitiesService {
         return this.request?.user?.branchId ?? this.request.cookies[CookieKey.BRANCH_ID];
     }
 
-    getDeviceId(): string | undefined {
-        const ua = this.request.headers['user-agent'];
-        const ipAddress = this.request.ip;
-
-        return generateDeviceId(ua, ipAddress);
-    }
-
     async getAcademicYearId(): Promise<string | undefined> {
         return this.request?.cookies[CookieKey.ACADEMIC_YEAR_ID] ?? await this.cacheManager.get(CACHE_KEYS.CAY_ID);
     }

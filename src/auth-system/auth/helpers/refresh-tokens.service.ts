@@ -22,7 +22,7 @@ export class RefreshTokenService {
 
     init({ email, deviceId }: { email?: string, deviceId?: string }) {
         this.email = email ?? this.utilitiesService.getCurrentUser()?.email;
-        this.deviceId = deviceId ?? this.utilitiesService.getDeviceId()
+        this.deviceId = deviceId ?? this.utilitiesService.getCurrentUser().deviceId;
     }
 
     async get() {
