@@ -72,11 +72,8 @@ export class Account extends BaseEntity {
     images: Image[];
 
     @BeforeInsert()
-    @BeforeUpdate()
     hashPassword() {
-        if (!this.password) throw new BadRequestException('Password required');
-
-        if (!BCRYPT_HASH.test(this.password)) this.password = bcrypt.hashSync(this.password, PASSWORD_SALT_COUNT);
+        if (this.password && !BCRYPT_HASH.test(this.password)) this.password = bcrypt.hashSync(this.password, PASSWORD_SALT_COUNT);
     }
 
     @BeforeInsert()
