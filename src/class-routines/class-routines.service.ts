@@ -130,12 +130,17 @@ export class ClassRoutinesService extends BaseRepository {
   async update(id: string, updateClassRoutineDto: UpdateClassRoutineDto) {
     const existing = await this.getRepository(ClassRoutine).findOne({
       where: { id, classRoom: { branch: { id: this.utilitiesService.getBranchId() } } },
-      relations: ['classRoom', 'teacher'],
-      select: { classRoom: { id: true }, teacher: { id: true } }
+      relations: ['classRoom', 'teacher', 'subject'],
+      select: { classRoom: { id: true }, teacher: { id: true }, subject: { id: true } }
     });
     if (!existing) throw new NotFoundException('Class routine not found');
 
-    // subject is not updated
+    // update subject
+    if (updateClassRoutineDto.subjectId && (updateClassRoutineDto.subjectId !== existing.subject?.id || !existing.subject)) {
+      const subject = await this.getRepository(Subject).findOne({ where: { id: updateClassRoutineDto.subjectId }, select: { id: true } });
+      if (!subject) throw new NotFoundException('Subject not found');
+      existing.subject = subject;
+    }
 
     // update class room
     if (updateClassRoutineDto.classRoomId && (updateClassRoutineDto.classRoomId !== existing.classRoom?.id || !existing.classRoom)) {
