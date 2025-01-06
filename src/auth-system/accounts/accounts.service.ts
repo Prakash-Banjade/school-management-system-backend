@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Inject, Injectable, Scope } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { DataSource, Not } from 'typeorm';
 import { Account } from './entities/account.entity';
 import { Teacher } from 'src/teachers/entities/teacher.entity';
@@ -122,6 +122,8 @@ export class AccountsService extends BaseRepository {
       where: { id: accountId },
       select: { id: true, loginDevices: true },
     });
+
+    if (!account) throw new NotFoundException('Account not found');
 
     const currentDeviceId = generateDeviceId(req.headers['user-agent'], req.ip);
 
