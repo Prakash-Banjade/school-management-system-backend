@@ -100,15 +100,27 @@ export class AuthService extends BaseRepository {
     });
 
     if (!loginDevice) {
-      const webAuthn = await this.getRepository(WebAuthnCredential).findOne({
-        where: { account: { id: account.id } },
-        select: { id: true }
-      });
+      if (!!account.twoFaEnabledAt) {  // 2fa is enabled, so require 2fa verification else add the device to db
+        const webAuthn = await this.getRepository(WebAuthnCredential).findOne({
+          where: { account: { id: account.id } },
+          select: { id: true }
+        });
 
-      return ({
-        message: AuthMessage.DEVICE_NOT_FOUND,
-        hasPasskey: !!webAuthn,
-      })
+        return ({
+          message: AuthMessage.DEVICE_NOT_FOUND,
+          hasPasskey: !!webAuthn,
+        })
+      }
+
+      // if 2fa is not enabled, create a new device and save in db directly
+      await this.getRepository(LoginDevice).save({
+        account,
+        deviceId,
+        firstLogin: now,
+        lastActivityRecord: now,
+        lastLogin: now,
+        ua: userAgent,
+      });
 
     } else {
       loginDevice.lastLogin = now;

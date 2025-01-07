@@ -72,6 +72,7 @@ export class Auth2faHelper extends BaseRepository {
                 firstName: true,
                 lastName: true,
                 role: true,
+                twoFaEnabledAt: true,
                 branch: { id: true, name: true },
                 profileImage: { url: true }
             }

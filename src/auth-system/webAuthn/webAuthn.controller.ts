@@ -52,6 +52,13 @@ export class WebAuthnController {
         return this.webAuthnService.verifySudoPasskey(data, reply);
     }
 
+    @Post('verify-2fa')
+    @Public()
+    @UseInterceptors(TransactionInterceptor)
+    verify2faPasskey(@Body() dto: AuthVerifyDto, @Res({ passthrough: true }) reply: FastifyReply, @Req() req: FastifyRequest) {
+        return this.webAuthnService.verify2faPasskey(dto, reply, req);
+    }
+
     @Patch(':id')
     @CheckAbilities({ subject: Role.USER, action: Action.UPDATE })
     update(@Param('id', ParseUUIDPipe) id: string, @Body() { name }: UpdateWebAuthnCredentialDto) {

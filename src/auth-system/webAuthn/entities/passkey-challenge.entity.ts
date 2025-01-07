@@ -4,7 +4,8 @@ import { Column, Entity } from "typeorm";
 export enum EPasskeyChallengeType {
     Register = 'register',
     Login = 'login',
-    Sudo = 'sudo'
+    Sudo = 'sudo',
+    TwoFaVerify = 'twofa_verify'
 }
 
 @Entity()

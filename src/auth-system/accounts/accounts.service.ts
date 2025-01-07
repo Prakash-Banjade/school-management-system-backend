@@ -1,5 +1,5 @@
-import { BadRequestException, ConflictException, Inject, Injectable, Scope } from '@nestjs/common';
-import { DataSource, Not } from 'typeorm';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
+import { DataSource, IsNull, Not } from 'typeorm';
 import { Account } from './entities/account.entity';
 import { Teacher } from 'src/teachers/entities/teacher.entity';
 import { REQUEST } from '@nestjs/core';
@@ -148,5 +148,37 @@ export class AccountsService extends BaseRepository {
     await this.refreshTokenService.remove();
 
     return { message: 'Device signed out' };
+  }
+
+  async get2FaStatus() {
+    const { accountId } = this.utilitiesService.getCurrentUser();
+
+    const account = await this.getRepository(Account).findOne({
+      where: { id: accountId },
+      select: { id: true, twoFaEnabledAt: true }
+    });
+
+    if (!account) throw new NotFoundException('No associated account found');
+
+    return {
+      twoFaEnabledAt: account.twoFaEnabledAt
+    }
+  }
+
+  async toggle2Fa(enable2Fa: boolean) {
+    const { accountId } = this.utilitiesService.getCurrentUser();
+
+    const account = await this.getRepository(Account).findOne({
+      where: { id: accountId },
+      select: { id: true, verifiedAt: true, twoFaEnabledAt: true }
+    });
+
+    if (!account) throw new NotFoundException('No associated account found');
+
+    account.twoFaEnabledAt = enable2Fa ? new Date() : null;
+
+    await this.getRepository(Account).save(account);
+
+    return;
   }
 }
