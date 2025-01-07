@@ -15,6 +15,7 @@ import { generateDeviceId } from "src/utils/utils";
 import { AuthService } from "../auth.service";
 import { LoginDevice } from "src/auth-system/accounts/entities/login-devices.entity";
 import * as crypto from 'crypto'
+import { RefreshTokenService } from "./refresh-tokens.service";
 
 @Injectable({ scope: Scope.REQUEST })
 export class Auth2faHelper extends BaseRepository {
@@ -24,6 +25,7 @@ export class Auth2faHelper extends BaseRepository {
         private readonly authService: AuthService,
         private readonly envService: EnvService,
         private readonly eventEmitter: EventEmitter2,
+        private readonly refreshTokenService: RefreshTokenService,
     ) { super(dataSource, req) }
 
     async send2faOtp(email: string, req: FastifyRequest) {
@@ -63,7 +65,16 @@ export class Auth2faHelper extends BaseRepository {
 
         const account = await this.getRepository(Account).findOne({
             where: { email: foundRequest.email, verifiedAt: Not(IsNull()) },
-            select: { id: true, email: true, firstName: true, lastName: true, role: true, branch: { id: true, name: true } }
+            relations: { branch: true, profileImage: true },
+            select: {
+                id: true,
+                email: true,
+                firstName: true,
+                lastName: true,
+                role: true,
+                branch: { id: true, name: true },
+                profileImage: { url: true }
+            }
         });
         if (!account) throw new UnauthorizedException('Invalid email');
 
@@ -80,7 +91,8 @@ export class Auth2faHelper extends BaseRepository {
         // remove from db
         await this.getRepository(OtpVerificationPending).remove(foundRequest);
 
-        return await this.authService.proceedLogin(account, req, reply, false); // skip device check
+        this.refreshTokenService.init({ email: account.email, deviceId }); // initialize the refresh token instance from here bcz it's not going to happen inside proceedLogin
+        return this.authService.proceedLogin(account, req, reply, false); // skip device check
     }
 
     async resend2faOtp(verificationToken: string, req: FastifyRequest) {

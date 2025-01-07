@@ -14,8 +14,8 @@ export class AccountsCronJob {
     async removeInactiveDevices() {
         console.log('Removing inactive devices...');
 
-        return this.devicesRepo.createQueryBuilder('devices')
-            .where('devices.lastActivityRecord < :date', { date: sub(new Date(), { days: 28 }) })
+        return this.devicesRepo.createQueryBuilder()
+            .where('lastActivityRecord < :date', { date: sub(new Date(), { days: 28 }) })
             .delete()
             .execute();
 
