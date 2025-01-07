@@ -5,7 +5,7 @@ import { Account } from "src/auth-system/accounts/entities/account.entity";
 import { BaseRepository } from "src/common/repository/base-repository";
 import { DataSource, IsNull, Not } from "typeorm";
 import { AuthHelper } from "./auth.helper";
-import { EOptVerificationType } from "../entities/otp-verification-pending.entity";
+import { EOptVerificationType, OtpVerificationPending } from "../entities/otp-verification-pending.entity";
 import { EnvService } from "src/env/env.service";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { MailEvents } from "src/mail/mail.service";
@@ -14,6 +14,7 @@ import { OtpVerificationDto } from "../dto/otp-verification.dto";
 import { generateDeviceId } from "src/utils/utils";
 import { AuthService } from "../auth.service";
 import { LoginDevice } from "src/auth-system/accounts/entities/login-devices.entity";
+import * as crypto from 'crypto'
 
 @Injectable({ scope: Scope.REQUEST })
 export class Auth2faHelper extends BaseRepository {
@@ -47,13 +48,18 @@ export class Auth2faHelper extends BaseRepository {
         return {
             message: "OTP sent",
             token: encryptedVerificationToken,
+            expiresIn: this.envService.TWOFACTOR_VERIFICATION_EXPIRATION_SEC
         }
     }
 
     async verify2faOtp(otpVerificationDto: OtpVerificationDto, req: FastifyRequest, reply: FastifyReply) {
         const deviceId = generateDeviceId(req.headers['user-agent'], req.ip);
 
-        const foundRequest = await this.authHelper.verifyPendingOtp(otpVerificationDto, EOptVerificationType.TWOFACTOR_VERIFICATION, deviceId);
+        const foundRequest = await this.authHelper.verifyPendingOtp({
+            otpVerificationDto,
+            type: EOptVerificationType.TWOFACTOR_VERIFICATION,
+            deviceId
+        });
 
         const account = await this.getRepository(Account).findOne({
             where: { email: foundRequest.email, verifiedAt: Not(IsNull()) },
@@ -71,7 +77,47 @@ export class Auth2faHelper extends BaseRepository {
             ua: req.headers['user-agent'],
         });
 
+        // remove from db
+        await this.getRepository(OtpVerificationPending).remove(foundRequest);
+
         return await this.authService.proceedLogin(account, req, reply, false); // skip device check
+    }
+
+    async resend2faOtp(verificationToken: string, req: FastifyRequest) {
+        const deviceId = generateDeviceId(req.headers['user-agent'], req.ip);
+
+        const hashedVerificationToken = crypto
+            .createHash('sha256')
+            .update(verificationToken)
+            .digest('hex');
+
+        const foundRequest = await this.getRepository(OtpVerificationPending).findOne({
+            where: { hashedVerificationToken },
+            select: { email: true }
+        });
+        if (!foundRequest) throw new UnauthorizedException('Invalid token');
+
+        const account = await this.getRepository(Account).findOne({
+            where: { email: foundRequest.email, verifiedAt: Not(IsNull()) },
+            select: { id: true, email: true, firstName: true, lastName: true }
+        });
+        if (!account) throw new UnauthorizedException('Invalid email');
+
+        const { otp, encryptedVerificationToken } = await this.authHelper.generateOtp(account, EOptVerificationType.TWOFACTOR_VERIFICATION, deviceId);
+
+        // send mail
+        this.eventEmitter.emit(MailEvents.TWOFA_OTP, new TwoFAMailEventDto({
+            otp,
+            expirationMin: this.envService.TWOFACTOR_VERIFICATION_EXPIRATION_SEC / 60,
+            receiverEmail: account.email,
+            receiverName: account.firstName + ' ' + account.lastName,
+        }));
+
+        return {
+            message: "OTP sent",
+            token: encryptedVerificationToken,
+            expiresIn: this.envService.TWOFACTOR_VERIFICATION_EXPIRATION_SEC
+        }
     }
 
 }

@@ -59,7 +59,7 @@ export class AuthService extends BaseRepository {
   async proceedLogin(account: Account, req: FastifyRequest, reply: FastifyReply, checkDevice: boolean = true) {
     if (checkDevice) {
       const message = await this.handleDevice(account, req); // refreshtoken instance initialized here
-      if ('message' in message) return message; // this can be first time login message
+      if (message && 'message' in message) return message; // this can be first time login message
     }
 
     const existingRefreshCookie = req.cookies?.[Tokens.REFRESH_TOKEN_COOKIE_NAME];
@@ -131,7 +131,10 @@ export class AuthService extends BaseRepository {
   }
 
   async verifyEmail(otpVerificationDto: OtpVerificationDto, req: FastifyRequest) {
-    const foundRequest = await this.authHelper.verifyPendingOtp(otpVerificationDto, EOptVerificationType.EMAIL_VERIFICATION);
+    const foundRequest = await this.authHelper.verifyPendingOtp({
+      otpVerificationDto,
+      type: EOptVerificationType.EMAIL_VERIFICATION,
+    });
 
     // GET ACCOUNT FROM DATABASE
     const foundAccount = await this.accountsRepo.findOneBy({ email: foundRequest.email });

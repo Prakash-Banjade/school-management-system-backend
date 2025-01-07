@@ -19,6 +19,8 @@ import { VerifyTokenDto } from './dto/verify-token.dto';
 import { AuthHelper } from './helpers/auth.helper';
 import { OtpVerificationDto } from './dto/otp-verification.dto';
 import { Auth2faHelper } from './helpers/auth-2fa.helper';
+import { TransformInstanceToInstance } from 'class-transformer';
+import { Throttle } from '@nestjs/throttler';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -156,7 +158,17 @@ export class AuthController {
     @Public()
     @Post('verify-two-fa-otp')
     @HttpCode(HttpStatus.OK)
+    @UseInterceptors(TransformInstanceToInstance)
     verify2faOtp(@Body() dto: OtpVerificationDto, @Req() req: FastifyRequest, @Res({ passthrough: true }) reply: FastifyReply) {
         return this.auth2faHelper.verify2faOtp(dto, req, reply);
+    }
+
+    @Public()
+    @Post('resend-two-fa-otp')
+    @HttpCode(HttpStatus.OK)
+    @UseInterceptors(TransformInstanceToInstance)
+    @Throttle({ default: { limit: 3, ttl: 60000 } }) // 1 request per minute
+    resend2faOtp(@Body("verificationToken") verificationToken: string, @Req() req: FastifyRequest) {
+        return this.auth2faHelper.resend2faOtp(verificationToken, req);
     }
 }
