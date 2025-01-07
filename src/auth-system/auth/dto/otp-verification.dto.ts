@@ -3,7 +3,7 @@ import { ApiProperty } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { IsInt, IsNotEmpty, IsString } from "class-validator";
 
-export class EmailVerificationDto {
+export class OtpVerificationDto {
     @ApiProperty({ type: Number })
     @Transform(({ value }) => {
         if (isNaN(parseInt(value))) throw new BadRequestException('Invalid OTP')

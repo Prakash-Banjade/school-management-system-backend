@@ -1,6 +1,6 @@
-import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, Scope } from '@nestjs/common';
 import { DataSource, Not } from 'typeorm';
-import { Account, TLoginDevice } from './entities/account.entity';
+import { Account } from './entities/account.entity';
 import { Teacher } from 'src/teachers/entities/teacher.entity';
 import { REQUEST } from '@nestjs/core';
 import { Student } from 'src/students/entities/student.entity';
@@ -16,7 +16,6 @@ import { User } from '../users/entities/user.entity';
 import { Branch } from 'src/branches/entities/branch.entity';
 import { BranchesService } from 'src/branches/branches.service';
 import { UtilitiesService } from 'src/utilities/utilities.service';
-import { generateDeviceId } from 'src/utils/utils';
 import { RefreshTokenService } from '../auth/helpers/refresh-tokens.service';
 import { LoginDevice } from './entities/login-devices.entity';
 

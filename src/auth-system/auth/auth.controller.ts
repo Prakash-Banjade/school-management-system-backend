@@ -4,7 +4,6 @@ import { ApiConsumes, ApiExcludeEndpoint, ApiTags } from '@nestjs/swagger';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { RegisterDto } from './dto/register.dto';
 import { SignInDto } from './dto/signIn.dto';
-import { EmailVerificationDto } from './dto/email-verification.dto';
 import { Public } from 'src/common/decorators/setPublicRoute.decorator';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 import { FormDataRequest } from 'nestjs-form-data';
@@ -12,19 +11,22 @@ import { RefreshTokenGuard } from 'src/common/guards/refresh-token.guard';
 import { ChangePasswordDto } from './dto/changePassword.dto';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
 import { Action, AuthUser, Role } from 'src/common/types/global.type';
-import { PasswordChangeRequestDto } from './dto/password-change-req.dto';
+import { EmailOnlyDto } from './dto/email-only.dto';
 import { ResetPasswordDto } from './dto/resetPassword.dto';
 import { UpdateEmailDto } from './dto/update-email.dto';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { VerifyTokenDto } from './dto/verify-token.dto';
 import { AuthHelper } from './helpers/auth.helper';
+import { OtpVerificationDto } from './dto/otp-verification.dto';
+import { Auth2faHelper } from './helpers/auth-2fa.helper';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
     constructor(
         private readonly authService: AuthService,
-        private readonly authHelper: AuthHelper
+        private readonly authHelper: AuthHelper,
+        private readonly auth2faHelper: Auth2faHelper,
     ) { }
 
     @Public()
@@ -67,8 +69,8 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     @ApiConsumes('multipart/form-data')
     @FormDataRequest()
-    verifyEmail(@Body() emailVerificationDto: EmailVerificationDto) {
-        return this.authService.verifyEmail(emailVerificationDto);
+    verifyEmail(@Body() otpVerificationDto: OtpVerificationDto, @Req() req: FastifyRequest) {
+        return this.authService.verifyEmail(otpVerificationDto, req);
     }
 
     @Public()
@@ -106,7 +108,7 @@ export class AuthController {
     @ApiConsumes('multipart/form-data')
     @FormDataRequest()
     @UseInterceptors(TransactionInterceptor)
-    forgotPassword(@Body() { email }: PasswordChangeRequestDto) {
+    forgotPassword(@Body() { email }: EmailOnlyDto) {
         return this.authService.forgotPassword(email)
     }
 
@@ -142,5 +144,19 @@ export class AuthController {
     @CheckAbilities({ subject: Role.USER, action: Action.READ })
     verifySudoPassword(@Body('sudo_password') password: string, @Res({ passthrough: true }) res: FastifyReply) {
         return this.authHelper.verifySudoPassword(password, res);
+    }
+
+    @Public()
+    @Post('send-two-fa-otp')
+    @HttpCode(HttpStatus.OK)
+    send2faOtp(@Body() { email }: EmailOnlyDto, @Req() req: FastifyRequest) {
+        return this.auth2faHelper.send2faOtp(email, req);
+    }
+
+    @Public()
+    @Post('verify-two-fa-otp')
+    @HttpCode(HttpStatus.OK)
+    verify2faOtp(@Body() dto: OtpVerificationDto, @Req() req: FastifyRequest, @Res({ passthrough: true }) reply: FastifyReply) {
+        return this.auth2faHelper.verify2faOtp(dto, req, reply);
     }
 }

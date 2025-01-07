@@ -7,7 +7,7 @@ import * as nodemailer from 'nodemailer';
 import Handlebars from 'handlebars';
 import { join } from 'path';
 import { OnEvent } from '@nestjs/event-emitter';
-import { ConfirmationMailEventDto, FeeInvoiceCreatedEventDto, ResetPasswordMailEventDto, UserCredentialsEventDto } from './dto/events.dto';
+import { ConfirmationMailEventDto, FeeInvoiceCreatedEventDto, ResetPasswordMailEventDto, TwoFAMailEventDto, UserCredentialsEventDto } from './dto/events.dto';
 import Mail from 'nodemailer/lib/mailer';
 import { thisSchool } from 'src/common/CONSTANTS';
 import { ConfigService } from '@nestjs/config';
@@ -16,7 +16,8 @@ export enum MailEvents {
     CONFIRMATION = 'mail.confirmation',
     USER_CREDENTIALS = 'mail.user-credentials',
     RESET_PASSWORD = 'mail.reset-password',
-    FEE_INVOICE_CREATED = 'fee-invoice:created'
+    FEE_INVOICE_CREATED = 'fee-invoice:created',
+    TWOFA_OTP = 'twofa.otp',
 }
 
 @Injectable()
@@ -38,6 +39,7 @@ export class MailService {
             resetPassword: MailService.parseTemplate('reset-password.hbs'),
             invoiceCreated: MailService.parseTemplate('fee-system/fee-invoice-created.hbs'),
             userCredentials: MailService.parseTemplate('sendUserCredentials.hbs'),
+            twoFaOtp: MailService.parseTemplate('two-fa-otp.hbs'),
         };
     }
 
@@ -126,5 +128,19 @@ export class MailService {
             html,
             dto.attachments,
         );
+    }
+
+    @OnEvent(MailEvents.TWOFA_OTP)
+    public async send2faOtpMail(dto: TwoFAMailEventDto) {
+        const subject = '2-Step Authentication';
+        const html = this.templates.twoFaOtp({
+            ...dto,
+            otp: dto.otp.toString(),
+            clientUrl: this.domain,
+            schoolName: thisSchool.name,
+            schoolAddress: thisSchool.address,
+            schoolLogo: `${this.backendDomain}/logo.webp`,
+        });
+        this.sendEmail(dto.receiverEmail, subject, html);
     }
 }

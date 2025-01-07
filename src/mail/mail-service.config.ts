@@ -28,4 +28,5 @@ export interface ITemplates<T = any> {
     resetPassword: TemplateDelegate<T>;
     invoiceCreated: TemplateDelegate<T>;
     userCredentials: TemplateDelegate<T>;
+    twoFaOtp: TemplateDelegate<T>;
 }
