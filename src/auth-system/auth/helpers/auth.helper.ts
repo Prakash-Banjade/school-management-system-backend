@@ -58,7 +58,6 @@ export class AuthHelper extends BaseRepository {
                 expiresIn: otpSecret.expiration,
             }
         );
-        console.log(verificationToken, otpSecret.expiration)
 
         const encryptedVerificationToken = this.encryptionService.encrypt(verificationToken);
 
@@ -75,7 +74,6 @@ export class AuthHelper extends BaseRepository {
         });
 
         if (existingVerificationRequest) { // update the existing one
-            // console.log()
             Object.assign(existingVerificationRequest, {
                 otp: String(otp),  // opt is saved as hash in db, logic is implemented in email-verification-pending.entity.ts
                 hashedVerificationToken,
