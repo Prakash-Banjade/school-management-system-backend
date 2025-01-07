@@ -14,6 +14,8 @@ import { Tokens } from 'src/common/CONSTANTS';
 import { JwtService } from '../jwt/jwt.service';
 import { AuthService } from '../auth/auth.service';
 import { AuthChallengeDto } from './dto/login-challenge.dto';
+import { LoginDevice } from '../accounts/entities/login-devices.entity';
+import { generateDeviceId } from 'src/utils/utils';
 
 @Injectable({ scope: Scope.REQUEST })
 export class WebAuthnService extends BaseRepository {
@@ -174,6 +176,7 @@ export class WebAuthnService extends BaseRepository {
                 'account.lastName',
                 'account.role',
                 'account.verifiedAt',
+                'account.twoFaEnabledAt',
                 'webAuthnCredentials.id',
                 'webAuthnCredentials.credentialId',
                 'webAuthnCredentials.publicKey',
@@ -289,6 +292,79 @@ export class WebAuthnService extends BaseRepository {
             )
             .header('Content-Type', 'application/json')
             .send({ verified: true })
+    }
+
+    async verify2faPasskey(dto: AuthVerifyDto, reply: FastifyReply, req: FastifyRequest) {
+        const account = await this.getRepository(Account).createQueryBuilder('account')
+            .where('account.email = :email', { email: dto.email })
+            .andWhere('account.verifiedAt IS NOT NULL')
+            .leftJoin('account.webAuthnCredentials', 'webAuthnCredentials', 'webAuthnCredentials.credentialId = :credentialId', { credentialId: dto.authenticationResponse?.id })
+            .leftJoin('account.branch', 'branch')
+            .leftJoin('account.profileImage', 'profileImage')
+            .select([
+                'account.id',
+                'account.email',
+                'account.firstName',
+                'account.lastName',
+                'account.role',
+                'account.verifiedAt',
+                'account.twoFaEnabledAt',
+                'webAuthnCredentials.id',
+                'webAuthnCredentials.credentialId',
+                'webAuthnCredentials.publicKey',
+                'webAuthnCredentials.transports',
+                'webAuthnCredentials.counter',
+                'branch.id',
+                'branch.name',
+                'profileImage.id',
+                'profileImage.url',
+            ]).getOne();
+        if (!account) throw new BadRequestException('Invalid email');
+
+        const passkeyChallenge = await this.getRepository(PasskeyChallenge).findOne({
+            where: { type: EPasskeyChallengeType.TwoFaVerify, email: account.email },
+            select: { id: true, challenge: true }
+        });
+        if (!passkeyChallenge) throw new ForbiddenException('Invalid Operation');
+
+        // now remove the challenge
+        await this.getRepository(PasskeyChallenge).remove(passkeyChallenge);
+
+        const credential = account.webAuthnCredentials[0];
+
+        if (!credential || credential.credentialId !== dto.authenticationResponse?.id) throw new ForbiddenException('Invalid passkey');
+
+        const result = await verifyAuthenticationResponse({
+            expectedChallenge: passkeyChallenge.challenge,
+            expectedOrigin: this.envService.CLIENT_URL,
+            expectedRPID: this.envService.CLIENT_DOMAIN,
+            response: dto.authenticationResponse,
+            credential: {
+                id: credential.credentialId,
+                publicKey: new Uint8Array(credential.publicKey),
+                counter: credential.counter,
+                transports: credential.transports
+            }
+        });
+
+        if (!result.verified) throw new ForbiddenException('Invalid passkey');
+
+        // update last used
+        credential.lastUsed = new Date();
+        await this.getRepository(WebAuthnCredential).save(credential);
+
+        // create new device
+        await this.getRepository(LoginDevice).save({
+            account,
+            deviceId: generateDeviceId(req.headers['user-agent'], req.ip),
+            firstLogin: new Date(),
+            lastLogin: new Date(),
+            lastActivityRecord: new Date(),
+            ua: req.headers['user-agent'],
+        });
+
+        // NOW IT IS CONFIRMED THE USER IS A VALID ONE and no need to check device
+        return this.authService.proceedLogin(account, req, reply, false);
     }
 
     async findAll() {

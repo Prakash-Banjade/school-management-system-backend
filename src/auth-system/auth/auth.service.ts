@@ -1,18 +1,16 @@
 import { BadRequestException, ConflictException, ForbiddenException, HttpStatus, Inject, Injectable, InternalServerErrorException, NotFoundException, Scope, UnauthorizedException } from '@nestjs/common';
 import { DataSource, IsNull, Not } from 'typeorm';
 import { PasswordChangeRequest } from './entities/password-change-request.entity';
-import { EmailVerificationPending } from './entities/email-verification-pending.entity';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { REQUEST } from '@nestjs/core';
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { Account, TLoginDevice } from '../accounts/entities/account.entity';
+import { Account } from '../accounts/entities/account.entity';
 import { AuthUser } from 'src/common/types/global.type';
-import { MAX_PREV_PASSWORDS, PASSWORD_SALT_COUNT, Tokens } from 'src/common/CONSTANTS';
+import { AuthMessage, MAX_PREV_PASSWORDS, PASSWORD_SALT_COUNT, Tokens } from 'src/common/CONSTANTS';
 import { RegisterDto } from './dto/register.dto';
 import { SignInDto } from './dto/signIn.dto';
 import { AuthHelper } from './helpers/auth.helper';
 import { JwtService } from '../jwt/jwt.service';
-import { EmailVerificationDto } from './dto/email-verification.dto';
 import { CookieSerializeOptions } from '@fastify/cookie';
 import { ChangePasswordDto } from './dto/changePassword.dto';
 import * as bcrypt from 'bcrypt';
@@ -28,6 +26,9 @@ import { RefreshTokenService } from './helpers/refresh-tokens.service';
 import { EnvService } from 'src/env/env.service';
 import { generateDeviceId } from 'src/utils/utils';
 import { LoginDevice } from '../accounts/entities/login-devices.entity';
+import { WebAuthnCredential } from '../webAuthn/entities/webAuthnCredential.entity';
+import { EOptVerificationType, OtpVerificationPending } from './entities/otp-verification-pending.entity';
+import { OtpVerificationDto } from './dto/otp-verification.dto';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AuthService extends BaseRepository {
@@ -42,7 +43,7 @@ export class AuthService extends BaseRepository {
   ) { super(datasource, req) }
 
   private readonly accountsRepo = this.datasource.getRepository<Account>(Account)
-  private readonly emailVerificationPendingRepo = this.datasource.getRepository<EmailVerificationPending>(EmailVerificationPending)
+  private readonly otpVerificationPendingRepo = this.datasource.getRepository<OtpVerificationPending>(OtpVerificationPending)
   private readonly passwordChangeRequestRepo = this.datasource.getRepository<PasswordChangeRequest>(PasswordChangeRequest);
 
   async login(signInDto: SignInDto, req: FastifyRequest, reply: FastifyReply) {
@@ -55,8 +56,11 @@ export class AuthService extends BaseRepository {
     return this.proceedLogin(foundAccount, req, reply);
   }
 
-  async proceedLogin(account: Account, req: FastifyRequest, reply: FastifyReply) {
-    await this.handleDevice(account, req); // refreshtoken instance initialized here
+  async proceedLogin(account: Account, req: FastifyRequest, reply: FastifyReply, checkDevice: boolean = true) {
+    if (checkDevice) {
+      const message = await this.handleDevice(account, req); // refreshtoken instance initialized here
+      if (message && 'message' in message) return message; // this can be first time login message
+    }
 
     const existingRefreshCookie = req.cookies?.[Tokens.REFRESH_TOKEN_COOKIE_NAME];
 
@@ -96,16 +100,28 @@ export class AuthService extends BaseRepository {
     });
 
     if (!loginDevice) {
-      const newLoginDevice = this.getRepository(LoginDevice).create({
-        deviceId,
+      if (!!account.twoFaEnabledAt) {  // 2fa is enabled, so require 2fa verification else add the device to db
+        const webAuthn = await this.getRepository(WebAuthnCredential).findOne({
+          where: { account: { id: account.id } },
+          select: { id: true }
+        });
+
+        return ({
+          message: AuthMessage.DEVICE_NOT_FOUND,
+          hasPasskey: !!webAuthn,
+        })
+      }
+
+      // if 2fa is not enabled, create a new device and save in db directly
+      await this.getRepository(LoginDevice).save({
         account,
-        ua: userAgent,
+        deviceId,
         firstLogin: now,
-        lastLogin: now,
         lastActivityRecord: now,
+        lastLogin: now,
+        ua: userAgent,
       });
 
-      await this.getRepository(LoginDevice).save(newLoginDevice);
     } else {
       loginDevice.lastLogin = now;
       loginDevice.lastActivityRecord = now;
@@ -126,8 +142,11 @@ export class AuthService extends BaseRepository {
     }
   }
 
-  async verifyEmail(emailVerificationDto: EmailVerificationDto) {
-    const foundRequest = await this.authHelper.verifyPendingEmail(emailVerificationDto);
+  async verifyEmail(otpVerificationDto: OtpVerificationDto, req: FastifyRequest) {
+    const foundRequest = await this.authHelper.verifyPendingOtp({
+      otpVerificationDto,
+      type: EOptVerificationType.EMAIL_VERIFICATION,
+    });
 
     // GET ACCOUNT FROM DATABASE
     const foundAccount = await this.accountsRepo.findOneBy({ email: foundRequest.email });
@@ -140,7 +159,17 @@ export class AuthService extends BaseRepository {
     foundAccount.prevPasswords = [bcrypt.hashSync(newPassword, PASSWORD_SALT_COUNT)];
     await this.getRepository(Account).save(foundAccount);
 
-    await this.emailVerificationPendingRepo.remove(foundRequest); // remove from db
+    await this.otpVerificationPendingRepo.remove(foundRequest); // remove from db
+
+    // add login device // TODO: might need to check for existing with same deviceId
+    await this.getRepository(LoginDevice).save({
+      account: foundAccount,
+      deviceId: generateDeviceId(req.headers['user-agent'], req.ip),
+      firstLogin: new Date(),
+      lastLogin: new Date(),
+      lastActivityRecord: new Date(),
+      ua: req.headers['user-agent'],
+    });
 
     // send user credentials mail
     this.eventEmitter.emit(MailEvents.USER_CREDENTIALS, new UserCredentialsEventDto({
@@ -149,9 +178,7 @@ export class AuthService extends BaseRepository {
       username: foundAccount.firstName + ' ' + foundAccount.lastName,
     }));
 
-    return {
-      message: 'Account verified successfully',
-    };
+    return { message: 'Account verified successfully' };
   }
 
   async verifyEmailResetToken(verificationToken: string) {

@@ -54,6 +54,9 @@ export class Account extends BaseEntity {
     @OneToMany(() => LoginDevice, loginDevice => loginDevice.account)
     loginDevices: LoginDevice[];
 
+    @Column({ type: 'timestamp', nullable: true })
+    twoFaEnabledAt: Date | null;
+
     @ManyToOne(() => Branch, branch => branch.accounts, { onDelete: 'RESTRICT', nullable: true })
     branch: Branch | null;
 

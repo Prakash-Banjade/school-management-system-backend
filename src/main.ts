@@ -39,7 +39,7 @@ async function bootstrap() {
       if (origin === configService.get<string>('CLIENT_URL')) {
         return callback(null, true);
       }
-      return callback(new BadRequestException('Not allowed by CORS'), false);
+      return callback(new BadRequestException('Wrong Step'), false);
     },
     allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
     optionsSuccessStatus: 200,

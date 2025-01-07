@@ -37,6 +37,12 @@ export const envSchema = Joi.object({
         .messages({ 'string.pattern.name': 'Sudo access token expiration must be a number' })
         .required(),
 
+    TWOFACTOR_VERIFICATION_SECRET: Joi.string().required(),
+    TWOFACTOR_VERIFICATION_EXPIRATION_SEC: Joi.string()
+        .pattern(/^\d+$/, { name: 'number' })
+        .messages({ 'string.pattern.name': 'Two-factor verification expiration must be a number' })
+        .required(),
+
     CLIENT_URL: Joi.string().uri().required(), // Client URL should be a valid URL
     BACKEND_URL: Joi.string().uri().required(),
     CLIENT_DOMAIN: Joi.string().required(),
