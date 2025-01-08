@@ -6,7 +6,7 @@ import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from "typeorm";
 @Entity()
 export class TaskEvaluation extends BaseEntity {
 
-    @OneToOne(() => TaskSubmission, submission => submission.evaluation, { onDelete: 'CASCADE' })
+    @OneToOne(() => TaskSubmission, submission => submission.evaluation, { onDelete: 'CASCADE', nullable: false })
     @JoinColumn()
     submission: TaskSubmission;
 

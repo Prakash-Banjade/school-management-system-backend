@@ -1,14 +1,21 @@
 import { BadRequestException } from "@nestjs/common";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { Transform } from "class-transformer";
 import { IsDateString, IsNotEmpty, IsOptional, IsString, Length, ValidateIf } from "class-validator";
-import { isBefore } from "date-fns";
+import { differenceInDays, isBefore, startOfDay } from "date-fns";
 import { IsFutureDate } from "src/common/decorators/isFutureDate.decorator";
 
 export class CreateLeaveRequestDto {
     @ApiProperty({ type: String, format: 'date-time', example: '2022-10-18T00:00:00.000Z', description: 'Leave from date' })
     @IsDateString()
-    @IsNotEmpty()
     @IsFutureDate({ message: 'Leave from date cannot be in the past' })
+    @Transform(({ value }) => {
+        if (isNaN(Date.parse(value))) throw new BadRequestException('Invalid leave from date');
+
+        if (differenceInDays(startOfDay(new Date(value)), startOfDay(new Date())) > 7) throw new BadRequestException('Leave from date cannot be more than 7 days in the future');
+
+        return value;
+    })
     leaveFrom: string;
 
     @ApiProperty({ type: String, format: 'date-time', example: '2022-10-18T00:00:00.000Z', description: 'Leave to date' })
@@ -27,7 +34,7 @@ export class CreateLeaveRequestDto {
 
     @ApiPropertyOptional({ type: String, description: 'Leave description' })
     @IsString()
-    @IsOptional()
     @Length(0, 500, { message: 'Description must be less than 500 characters' })
-    description?: string;
+    @IsNotEmpty()
+    description: string;
 }

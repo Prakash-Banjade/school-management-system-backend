@@ -17,7 +17,7 @@ export class LeaveRequest extends BaseEntity {
     @Column({ type: "text" })
     title: string;
 
-    @Column({ type: "longtext", nullable: true })
+    @Column({ type: "longtext", nullable: false })
     description: string;
 
     @Column({ type: 'enum', enum: ELeaveRequestStatus, default: ELeaveRequestStatus.PENDING })
