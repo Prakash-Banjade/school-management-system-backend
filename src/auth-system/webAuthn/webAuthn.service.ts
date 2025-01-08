@@ -355,13 +355,8 @@ export class WebAuthnService extends BaseRepository {
 
         // create new device
         const deviceId = generateDeviceId(req.headers['user-agent'], req.ip);
-        const existingWithSameDeviceId = await this.getRepository(LoginDevice).findOne({
-            where: { deviceId },
-            select: { id: true }
-        });
 
         await this.getRepository(LoginDevice).save({
-            id: existingWithSameDeviceId?.id ?? undefined,
             account,
             deviceId,
             firstLogin: new Date(),

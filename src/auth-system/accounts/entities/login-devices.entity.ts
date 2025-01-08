@@ -7,7 +7,7 @@ export class LoginDevice extends BaseEntity {
     @ManyToOne(() => Account, account => account.loginDevices, { onDelete: 'CASCADE', nullable: false })
     account: Account;
 
-    @Column({ type: 'varchar', nullable: false, unique: true })
+    @Column({ type: 'varchar', nullable: false })
     deviceId: string;
 
     @Column({ type: 'text', nullable: false })

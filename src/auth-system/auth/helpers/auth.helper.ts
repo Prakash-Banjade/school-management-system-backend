@@ -133,7 +133,7 @@ export class AuthHelper extends BaseRepository {
             });
         } catch (e) {
             if (e instanceof TokenExpiredError) throw new BadRequestException({
-                error: 'TokenExpiredError',
+                error: AuthMessage.TOKEN_EXPIRED,
                 message: 'OTP has been expired'
             });
             throw new BadRequestException('Invalid token');

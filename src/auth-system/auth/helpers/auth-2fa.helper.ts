@@ -80,13 +80,7 @@ export class Auth2faHelper extends BaseRepository {
         if (!account) throw new UnauthorizedException('Invalid email');
 
         // add login device
-        const existingWithSameDeviceId = await this.getRepository(LoginDevice).findOne({
-            where: { deviceId },
-            select: { id: true }
-        });
-
         await this.getRepository(LoginDevice).save({
-            id: existingWithSameDeviceId?.id ?? undefined,
             account,
             deviceId: generateDeviceId(req.headers['user-agent'], req.ip),
             firstLogin: new Date(),
