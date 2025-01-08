@@ -7,7 +7,7 @@ export class LoginDevice extends BaseEntity {
     @ManyToOne(() => Account, account => account.loginDevices, { onDelete: 'CASCADE', nullable: false })
     account: Account;
 
-    @Column({ type: 'text', nullable: false })
+    @Column({ type: 'varchar', nullable: false, unique: true })
     deviceId: string;
 
     @Column({ type: 'text', nullable: false })
@@ -21,4 +21,7 @@ export class LoginDevice extends BaseEntity {
 
     @Column({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' })
     lastActivityRecord: Date
+
+    @Column({ type: 'boolean', default: false })
+    isTrusted: boolean;
 }

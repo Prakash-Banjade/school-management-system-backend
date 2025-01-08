@@ -95,7 +95,11 @@ export class AuthService extends BaseRepository {
     const now = new Date();
 
     const loginDevice = await this.getRepository(LoginDevice).findOne({
-      where: { deviceId, account: { id: account.id } },
+      where: {
+        deviceId,
+        account: { id: account.id },
+        isTrusted: true,
+      },
       select: { id: true },
     });
 
@@ -120,6 +124,7 @@ export class AuthService extends BaseRepository {
         lastActivityRecord: now,
         lastLogin: now,
         ua: userAgent,
+        isTrusted: true
       });
 
     } else {
@@ -169,6 +174,7 @@ export class AuthService extends BaseRepository {
       lastLogin: new Date(),
       lastActivityRecord: new Date(),
       ua: req.headers['user-agent'],
+      isTrusted: true
     });
 
     // send user credentials mail
