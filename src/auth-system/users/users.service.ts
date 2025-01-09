@@ -118,7 +118,11 @@ export class UsersService extends BaseRepository {
       where: { id: currentUser.accountId },
       relations: { profileImage: true },
       select: {
-        profileImage: { id: true }
+        id: true,
+        firstName: true,
+        lastName: true,
+        profileImage: { id: true },
+        verifiedAt: true
       }
     });
     if (!existingAccount) throw new InternalServerErrorException('Unable to update the associated profile. Please contact support.');
@@ -132,20 +136,16 @@ export class UsersService extends BaseRepository {
       ...updateUserDto,
     });
 
-    // assign profile image
-
     await this.getRepository(User).save(existingUser);
 
     Object.assign(existingAccount, {
       firstName: updateUserDto.firstName || existingAccount.firstName,
-      lastName: updateUserDto.lastName,
+      lastName: updateUserDto.lastName || existingAccount.lastName,
       profileImage
     })
 
     await this.getRepository(Account).save(existingAccount);
 
-    return {
-      message: 'Profile Updated'
-    }
+    return { message: 'Profile Updated' }
   }
 }

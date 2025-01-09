@@ -55,16 +55,6 @@ export class AuthController {
         return this.authService.refresh(req, res);
     }
 
-    // @Public()
-    // @Post('register')
-    @ApiExcludeEndpoint()
-    @UseInterceptors(TransactionInterceptor)
-    @ApiConsumes('multipart/form-data')
-    @FormDataRequest()
-    register(@Body() registerDto: RegisterDto) {
-        return this.authService.register(registerDto);
-    }
-
     @Public()
     @Post('verify-email')
     @UseInterceptors(TransactionInterceptor)

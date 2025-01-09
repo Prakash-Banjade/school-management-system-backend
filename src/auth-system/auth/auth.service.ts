@@ -154,7 +154,10 @@ export class AuthService extends BaseRepository {
     });
 
     // GET ACCOUNT FROM DATABASE
-    const foundAccount = await this.accountsRepo.findOneBy({ email: foundRequest.email });
+    const foundAccount = await this.accountsRepo.findOne({
+      where: { email: foundRequest.email },
+      select: { id: true, email: true, firstName: true, lastName: true }
+    });
     if (!foundAccount) throw new NotFoundException('Account not found');
 
     const newPassword = generateRandomPassword();
@@ -195,34 +198,6 @@ export class AuthService extends BaseRepository {
     };
 
     return { message: "VALID TOKEN" };
-  }
-
-  async register(registerDto: RegisterDto) {
-    const foundAccount = await this.accountsRepo.findOneBy({
-      email: registerDto.email,
-    });
-
-    if (foundAccount && foundAccount.verifiedAt) throw new ConflictException('User with this email already exists');
-
-    // handle if the account is not verified
-    if (foundAccount && !foundAccount.verifiedAt) {
-      Object.assign(foundAccount, {
-        ...registerDto,
-      })
-
-      await this.getRepository(Account).save(foundAccount);
-
-      return await this.authHelper.sendEmailConfirmation(foundAccount);
-    }
-
-    // create new account
-    const newAccount = this.accountsRepo.create({
-      ...registerDto,
-      prevPasswords: [bcrypt.hashSync(registerDto.password, PASSWORD_SALT_COUNT)],
-    });
-    await this.getRepository(Account).save(newAccount);
-
-    return await this.authHelper.sendEmailConfirmation(newAccount);
   }
 
   async refresh(req: FastifyRequest, reply: FastifyReply) {
@@ -401,7 +376,10 @@ export class AuthService extends BaseRepository {
     // Check if the reset token has expired # JWT WILL VERIFY THE EXPIRATION
 
     // retrieve the user from the database
-    const account = await this.accountsRepo.findOneBy({ email: passwordChangeRequest.email });
+    const account = await this.accountsRepo.findOne({
+      where: { email: passwordChangeRequest.email },
+      select: { id: true, email: true, prevPasswords: true, verifiedAt: true }
+    });
     if (!account) throw new InternalServerErrorException('The requested Account was not available in the database.');
 
     // check if the new password is one of the last MAX_PREV_PASSWORDS passwords
@@ -435,7 +413,10 @@ export class AuthService extends BaseRepository {
   }
 
   async updateEmail(updateEmailDto: UpdateEmailDto, currentUser: AuthUser) {
-    const account = await this.accountsRepo.findOneBy({ id: currentUser.accountId });
+    const account = await this.accountsRepo.findOne({
+      where: { id: currentUser.accountId },
+      select: { id: true, password: true, verifiedAt: true }
+    });
     if (!account) throw new InternalServerErrorException('Unable to update the associated profile. Please contact support.');
 
     const isPasswordMatch = await bcrypt.compare(updateEmailDto.password, account.password);
@@ -445,8 +426,6 @@ export class AuthService extends BaseRepository {
 
     await this.getRepository(Account).save(account);
 
-    return {
-      message: 'Email updated'
-    }
+    return { message: 'Email updated' }
   }
 }
