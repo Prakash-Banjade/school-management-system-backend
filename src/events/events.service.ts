@@ -31,7 +31,19 @@ export class EventsService {
         queryDto.dateFrom && qb.andWhere('DATE(event.dateFrom) >= DATE(:dateFrom)', { dateFrom: queryDto.dateFrom });
         queryDto.dateTo && qb.andWhere('DATE(event.dateTo) <= DATE_ADD(DATE(:dateTo), INTERVAL 1 DAY)', { dateTo: queryDto.dateTo });
       }))
-      .select(['event.id', 'event.createdAt', 'event.title', 'event.description', 'event.dateFrom', 'event.dateTo', 'event.eventLocation', 'event.members'])
+      .select([
+        'event.id',
+        'event.createdAt',
+        'event.title',
+        'event.description',
+        'event.dateFrom',
+        'event.dateTo',
+        'event.eventLocation',
+        'event.members',
+        'event.beginTime',
+        'event.endingTime',
+        'event.members',
+      ]);
 
     return paginatedData(queryDto, querybuilder);
   }
@@ -39,7 +51,18 @@ export class EventsService {
   async findOne(id: string): Promise<Event> {
     const event = await this.eventRepository.findOne({
       where: { id },
-      select: ['id', 'createdAt', 'title', 'description', 'dateFrom', 'dateTo', 'eventLocation', 'members'],
+      select: {
+        id: true,
+        createdAt: true,
+        title: true,
+        description: true,
+        dateFrom: true,
+        dateTo: true,
+        eventLocation: true,
+        members: true,
+        beginTime: true,
+        endingTime: true,
+      }
     });
     if (!event) throw new NotFoundException(`Event with ID ${id} not found`);
     return event;
