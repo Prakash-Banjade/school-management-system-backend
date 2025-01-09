@@ -3,6 +3,7 @@ import { LeaveRequestsService } from './leave-requests.service';
 import { LeaveRequestsController } from './leave-requests.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LeaveRequest } from './entities/leave-request.entity';
+import { LeaveRequestsCron } from './leave-requests.cron';
 
 @Module({
   imports: [
@@ -11,6 +12,6 @@ import { LeaveRequest } from './entities/leave-request.entity';
     ]),
   ],
   controllers: [LeaveRequestsController],
-  providers: [LeaveRequestsService],
+  providers: [LeaveRequestsService, LeaveRequestsCron],
 })
 export class LeaveRequestsModule { }

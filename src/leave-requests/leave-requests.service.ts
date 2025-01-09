@@ -16,13 +16,14 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { AttendanceEvent } from 'src/attendances/helpers/attendances.helper';
 import { CreateLeaveAttendanceEvent } from 'src/attendances/dto/create-attendance.dto';
 import { isAdmin, isStudent, startOfDayString } from 'src/utils/utils';
+import { UtilitiesService } from 'src/utilities/utilities.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class LeaveRequestsService extends BaseRepository {
   constructor(
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
     private readonly eventEmitter: EventEmitter2,
-
+    private readonly utilitiesService: UtilitiesService,
   ) { super(dataSource, req) }
 
   async create(createLeaveRequestDto: CreateLeaveRequestDto, currentUser: AuthUser) {
@@ -36,7 +37,7 @@ export class LeaveRequestsService extends BaseRepository {
     await this.getRepository(LeaveRequest).save(newLeaveRequest);
 
     return {
-      message: 'Leave request created successfully',
+      message: 'Leave request applied successfully. You will be notified once it has been approved.',
     }
   }
 
@@ -78,6 +79,7 @@ export class LeaveRequestsService extends BaseRepository {
       }));
 
     applySelectColumns(querybuilder, leaveRequestSelectCols, 'leaveRequest');
+    this.utilitiesService.applyBranchFilter(querybuilder, 'classRoom.branchId = :branchId');
 
     return paginatedData(queryDto, querybuilder);
   }
@@ -111,8 +113,29 @@ export class LeaveRequestsService extends BaseRepository {
       }));
 
     applySelectColumns(querybuilder, employeesLeaveRequestSelectCols, 'leaveRequest');
+    this.utilitiesService.applyBranchFilter(querybuilder);
 
     return paginatedData(queryDto, querybuilder);
+  }
+
+  async getMyLeaveRequests() {
+    const { accountId } = this.utilitiesService.getCurrentUser();
+
+    return this.getRepository(LeaveRequest).find({
+      where: {
+        account: { id: accountId }
+      },
+      order: { createdAt: 'DESC' },
+      select: {
+        id: true,
+        title: true,
+        leaveFrom: true,
+        leaveTo: true,
+        status: true,
+        description: true,
+        requestedOn: true,
+      }
+    });
   }
 
   async findOne(id: string) {

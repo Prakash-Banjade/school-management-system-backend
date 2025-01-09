@@ -354,14 +354,31 @@ export class WebAuthnService extends BaseRepository {
         await this.getRepository(WebAuthnCredential).save(credential);
 
         // create new device
-        await this.getRepository(LoginDevice).save({
-            account,
-            deviceId: generateDeviceId(req.headers['user-agent'], req.ip),
-            firstLogin: new Date(),
-            lastLogin: new Date(),
-            lastActivityRecord: new Date(),
-            ua: req.headers['user-agent'],
+        const deviceId = generateDeviceId(req.headers['user-agent'], req.ip);
+
+        const existing = await this.getRepository(LoginDevice).findOne({ // there can be the same device but untrusted, so if yes, update that
+            where: { account: { id: account.id }, deviceId },
+            select: { id: true }
         });
+
+        if (existing?.id) {
+            existing.lastLogin = new Date();
+            existing.lastActivityRecord = new Date();
+            existing.isTrusted = true;
+
+            await this.getRepository(LoginDevice).save(existing);
+        } else {
+            await this.getRepository(LoginDevice).save({
+                id: existing?.id,
+                account,
+                deviceId,
+                firstLogin: new Date(),
+                lastLogin: new Date(),
+                lastActivityRecord: new Date(),
+                ua: req.headers['user-agent'],
+                isTrusted: true
+            });
+        }
 
         // NOW IT IS CONFIRMED THE USER IS A VALID ONE and no need to check device
         return this.authService.proceedLogin(account, req, reply, false);

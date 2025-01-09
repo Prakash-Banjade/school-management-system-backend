@@ -18,7 +18,9 @@ export class CreateClassRoutineDto {
     @ApiProperty()
     @IsNotEmpty()
     @IsMilitaryTime({ message: "Invalid end time. Required format: HH:MM" })
-    @ValidateIf((o) => {
+    @ValidateIf((o: CreateClassRoutineDto) => {
+        if (!o.startTime || !o.endTime) throw new BadRequestException('Start time and end time are required');
+        
         const startTime = parse(o.startTime, 'HH:mm', new Date());
         const endTime = parse(o.endTime, 'HH:mm', new Date());
         if (isAfter(startTime, endTime)) throw new BadRequestException('End time must be greater than start time');

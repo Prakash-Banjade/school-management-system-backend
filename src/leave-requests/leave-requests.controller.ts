@@ -25,7 +25,11 @@ export class LeaveRequestsController {
   }
 
   @Get()
-  @CheckAbilities({ subject: Role.USER, action: Action.READ })
+  @CheckAbilities(
+    { subject: Role.SUPER_ADMIN, action: Action.READ },
+    { subject: Role.ADMIN, action: Action.READ },
+    { subject: Role.TEACHER, action: Action.READ },
+  )
   findAll(@Query() queryDto: LeaveRequestQueryDto, @CurrentUser() currentUser: AuthUser) { // only for students leave request
     return this.leaveRequestsService.findAll(queryDto, currentUser);
   }
@@ -34,6 +38,12 @@ export class LeaveRequestsController {
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   getEmployeeLeaveRequests(@Query() queryDto: LeaveRequestQueryDto) { // only for teachers and staffs
     return this.leaveRequestsService.getEmployeeLeaveRequests(queryDto);
+  }
+
+  @Get('me')
+  @CheckAbilities({ subject: Role.USER, action: Action.READ })
+  getMyLeaveRequests() {
+    return this.leaveRequestsService.getMyLeaveRequests();
   }
 
   @Get(':id')

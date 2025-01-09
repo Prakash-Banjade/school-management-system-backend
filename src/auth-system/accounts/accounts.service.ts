@@ -137,9 +137,21 @@ export class AccountsService extends BaseRepository {
   }
 
   async revokeDevice(deviceId: string) {
-    const { email, deviceId: currentDeviceId } = this.utilitiesService.getCurrentUser();
+    const { email, deviceId: currentDeviceId, accountId } = this.utilitiesService.getCurrentUser();
 
     if (deviceId === currentDeviceId) throw new BadRequestException('Cannot revoke current device');
+
+    const device = await this.getRepository(LoginDevice).findOne({
+      where: { deviceId, account: { id: accountId } },
+      select: { id: true },
+    });
+
+    if (device) {
+      await this.getRepository(LoginDevice).save({
+        ...device,
+        isTrusted: false,
+      });
+    }
 
     this.refreshTokenService.init({
       deviceId,

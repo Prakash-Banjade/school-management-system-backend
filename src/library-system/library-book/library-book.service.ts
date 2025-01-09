@@ -83,14 +83,18 @@ export class LibraryBookService {
     return existing;
   }
 
-  async update(id: string, updateLibraryBookDto: UpdateLibraryBookDto) {
+  async update(id: string, dto: UpdateLibraryBookDto) {
     const existing = await this.findOne(id);
 
-    if (updateLibraryBookDto.categoryId && (existing.category?.id !== updateLibraryBookDto.categoryId || !existing.category)) {
-      existing.category = await this.bookCategoriesService.findOne(updateLibraryBookDto.categoryId);
+    if (dto.categoryId && (existing.category?.id !== dto.categoryId || !existing.category)) {
+      existing.category = await this.bookCategoriesService.findOne(dto.categoryId);
     }
 
-    Object.assign(existing, updateLibraryBookDto);
+    if (dto.copiesCount !== undefined && dto.copiesCount < existing.issuedCount) {
+      throw new ConflictException(`${existing.issuedCount} copies are already issued. You can't reduce copies count than ${existing.issuedCount}`);
+    }
+
+    Object.assign(existing, dto);
     await this.libraryBookRepo.save(existing);
 
     return { message: 'Library book updated' }

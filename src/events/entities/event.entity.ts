@@ -16,6 +16,12 @@ export class Event extends BaseEntity {
     @Column({ type: 'timestamp' })
     dateTo: Date;
 
+    @Column({ type: 'varchar' })
+    beginTime: string;
+
+    @Column({ type: 'varchar' })
+    endingTime: string;
+
     @Column({ type: 'varchar', default: '' })
     eventLocation: string;
 

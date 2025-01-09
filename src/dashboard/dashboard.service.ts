@@ -80,7 +80,7 @@ export class DashboardService extends BaseRepository {
                 'leaveRequest.leaveFrom as leaveFrom',
                 'leaveRequest.leaveTo as leaveTo',
                 'leaveRequest.title as title',
-                'leaveRequest.createdAt as createdAt',
+                'leaveRequest.requestedOn as requestedOn',
                 'CONCAT(student.firstName, " ", student.lastName) as studentName',
                 'CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, " (", classRoom.name, ")") END as classRoomName',
                 'profileImage.url as profileImageUrl',
@@ -104,7 +104,7 @@ export class DashboardService extends BaseRepository {
                 'leaveRequest.leaveFrom as leaveFrom',
                 'leaveRequest.leaveTo as leaveTo',
                 'leaveRequest.title as title',
-                'leaveRequest.createdAt as createdAt',
+                'leaveRequest.requestedOn as requestedOn',
                 'CONCAT(teacher.firstName, " ", teacher.lastName) as teacherName',
                 'profileImage.url as profileImageUrl',
             ]).getRawMany();
