@@ -4,7 +4,7 @@ import { LeaveRequest } from "../entities/leave-request.entity";
 export const leaveRequestSelectCols: FindOptionsSelect<LeaveRequest> = {
     id: true,
     createdAt: true,
-    updatedAt: true,
+    requestedOn: true,
     status: true,
     title: true,
     description: true,
@@ -33,7 +33,7 @@ export const leaveRequestSelectCols: FindOptionsSelect<LeaveRequest> = {
 export const employeesLeaveRequestSelectCols: FindOptionsSelect<LeaveRequest> = {
     id: true,
     createdAt: true,
-    updatedAt: true,
+    requestedOn: true,
     status: true,
     title: true,
     description: true,

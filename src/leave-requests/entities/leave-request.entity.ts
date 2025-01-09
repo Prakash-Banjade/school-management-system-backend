@@ -20,6 +20,9 @@ export class LeaveRequest extends BaseEntity {
     @Column({ type: "longtext", nullable: false })
     description: string;
 
+    @Column({ type: "timestamp", default: () => 'CURRENT_TIMESTAMP' })
+    requestedOn: Date;
+
     @Column({ type: 'enum', enum: ELeaveRequestStatus, default: ELeaveRequestStatus.PENDING })
     status: ELeaveRequestStatus;
 }

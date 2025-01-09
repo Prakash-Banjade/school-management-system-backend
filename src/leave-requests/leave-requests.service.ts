@@ -133,7 +133,7 @@ export class LeaveRequestsService extends BaseRepository {
         leaveTo: true,
         status: true,
         description: true,
-        createdAt: true,
+        requestedOn: true,
       }
     });
   }
