@@ -1,8 +1,8 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import { IsOptional, IsString } from "class-validator";
-import { ClassWithSectionQueryDto } from "src/common/dto/classWithSectionQuery.dto";
+import { ClassRoomSearchQueryDto } from "src/common/dto/classRoomSearchQueryDto";
 
-export class EnrollmentQueryDto extends ClassWithSectionQueryDto {
+export class EnrollmentQueryDto extends ClassRoomSearchQueryDto {
     @ApiPropertyOptional()
     @IsString()
     @IsOptional()

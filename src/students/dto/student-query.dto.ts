@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { IsBoolean, IsDateString, IsOptional, IsString, IsUUID } from "class-validator";
-import { ClassWithSectionQueryDto } from "src/common/dto/classWithSectionQuery.dto";
+import { ClassRoomSearchQueryDto } from "src/common/dto/classRoomSearchQueryDto";
 import { QueryDto } from "src/common/dto/query.dto";
 
 const studentSortByQuery = {
@@ -13,7 +13,7 @@ const studentSortByQuery = {
     amount: "ledger.amount",
 }
 
-export class StudentQueryDto extends ClassWithSectionQueryDto {
+export class StudentQueryDto extends ClassRoomSearchQueryDto {
     @ApiPropertyOptional({ type: String, description: 'Search by student ID' })
     @IsOptional()
     studentId?: string;
@@ -54,7 +54,7 @@ export class StudentAttendanceQueryDto extends QueryDto {
     date: string;
 }
 
-export class PastStudentsQueryDto extends ClassWithSectionQueryDto {
+export class PastStudentsQueryDto extends ClassRoomSearchQueryDto {
     @ApiPropertyOptional({ type: String, format: 'uuid', description: 'Academic year id' })
     @IsUUID()
     @IsOptional()

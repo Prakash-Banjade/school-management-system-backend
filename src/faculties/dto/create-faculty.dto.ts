@@ -1,5 +1,6 @@
+import { ForbiddenException } from "@nestjs/common";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Min } from "class-validator";
+import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Min, ValidateIf } from "class-validator";
 import { EDegreeLevel } from "src/common/types/global.type";
 
 export class CreateFacultyDto {
@@ -20,5 +21,10 @@ export class CreateFacultyDto {
 
     @ApiProperty({ enum: EDegreeLevel })
     @IsEnum(EDegreeLevel)
+    @ValidateIf((o: CreateFacultyDto) => {
+        if (o.degreeLevel === EDegreeLevel.Basic_School) throw new ForbiddenException('Cannot create faculty under Basic School.')
+
+        return true;
+    })
     degreeLevel: EDegreeLevel;
 }

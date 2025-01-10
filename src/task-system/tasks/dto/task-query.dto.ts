@@ -1,10 +1,10 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { IsBoolean, IsEnum, IsOptional, IsString } from "class-validator";
-import { ClassWithSectionQueryDto } from "src/common/dto/classWithSectionQuery.dto";
+import { ClassRoomSearchQueryDto } from "src/common/dto/classRoomSearchQueryDto";
 import { ETask } from "src/common/types/global.type";
 
-export class TaskQueryDto extends ClassWithSectionQueryDto {
+export class TaskQueryDto extends ClassRoomSearchQueryDto {
 
     @ApiPropertyOptional()
     @IsString()

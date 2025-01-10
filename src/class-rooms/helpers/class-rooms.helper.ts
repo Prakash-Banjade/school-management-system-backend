@@ -26,6 +26,8 @@ export class ClassRoomsHelper extends BaseRepository {
             .andWhere(new Brackets(qb => {
                 queryDto.search && qb.andWhere('LOWER(classRoom.name) LIKE LOWER(:search)', { search: `%${queryDto.search}%` })
                 queryDto.parentClassId && qb.andWhere('classRoom.parentId = :parentClassId', { parentClassId: queryDto.parentClassId })
+                queryDto.degreeLevel && qb.andWhere('faculty.degreeLevel = :degreeLevel', { degreeLevel: queryDto.degreeLevel })
+                queryDto.facultyId && qb.andWhere('faculty.id = :facultyId', { facultyId: queryDto.facultyId })
             }))
             .orderBy("classRoom.createdAt", queryDto.order)
             .offset(queryDto.skipPagination ? undefined : queryDto.skip)
@@ -36,6 +38,7 @@ export class ClassRoomsHelper extends BaseRepository {
             .leftJoin('classRoom.parent', 'parentClass', queryDto.classType === EClassType.SECTION ? '1 = 1' : '1 = 0')
             .leftJoin('childClass.students', 'childClassStudent', 'FIND_IN_SET(:currentAcademicYearId, childClassStudent.academicYearIds) > 0', { currentAcademicYearId })
             .leftJoin('childClass.classTeacher', 'childClassTeacher')
+            .leftJoin('classRoom.faculty', 'faculty')
             .select([
                 "classRoom.id as id",
                 "classRoom.name as name",
@@ -43,6 +46,7 @@ export class ClassRoomsHelper extends BaseRepository {
                 "classRoom.location as location",
                 "classRoom.classType as classType",
                 "classTeacher.id as classTeacherId",
+                "faculty.name as faculty",
                 "CONCAT(classTeacher.firstName, ' ', classTeacher.lastName) as classTeacherName",
                 'parentClass.name as parentClassName',
                 `(SELECT JSON_ARRAYAGG(

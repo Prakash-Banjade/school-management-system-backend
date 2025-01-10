@@ -4,15 +4,17 @@ import { UpdateFacultyDto } from './dto/update-faculty.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Faculty } from './entities/faculty.entity';
 import { Brackets, Repository } from 'typeorm';
-import { FacultiesQueryDto } from './dto/faculties-query.dto';
+import { FacultiesQueryDto, FacultyOptionsQueryDto } from './dto/faculties-query.dto';
 import { paginatedRawData } from 'src/utils/paginatedData';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
+import { UtilitiesService } from 'src/utilities/utilities.service';
 
 @Injectable()
 export class FacultiesService {
   constructor(
     @InjectRepository(Faculty) private readonly facultiesRepo: Repository<Faculty>,
     @InjectRepository(ClassRoom) private readonly classRoomsRepo: Repository<ClassRoom>,
+    private readonly utilitiesService: UtilitiesService,
   ) { }
 
   async create(createFacultyDto: CreateFacultyDto) {
@@ -65,6 +67,48 @@ export class FacultiesService {
     if (!existing) throw new NotFoundException('Faculty not found');
 
     return existing;
+  }
+
+  async getOptions(queryDto: FacultyOptionsQueryDto) {
+    const branchId = this.utilitiesService.getBranchId();
+
+    const includeSection = queryDto.include === 'section';
+    const includeClassRoom = includeSection || queryDto.include === 'classRoom';
+
+    return this.facultiesRepo.createQueryBuilder('faculty')
+      .orderBy('faculty.name', 'ASC')
+      .leftJoin(
+        'faculty.classRooms',
+        'classRooms',
+        includeClassRoom ? "classRooms.branchId = :branchId" : '1 = 0',
+        { branchId }
+      )
+      .leftJoin(
+        'classRooms.children',
+        'children',
+        includeSection ? '1 = 1' : '1 = 0'
+      )
+      .andWhere(new Brackets(qb => {
+        queryDto.degreeLevel && qb.andWhere('faculty.degreeLevel = :degreeLevel', { degreeLevel: queryDto.degreeLevel });
+      }))
+      .select([
+        "faculty.id",
+        "faculty.name",
+        "faculty.degreeLevel",
+        ...(
+          includeClassRoom ? [
+            "classRooms.id",
+            "classRooms.name"
+          ] : []
+        ),
+        ...(
+          includeSection ? [
+            "children.id",
+            "children.name"
+          ] : []
+        )
+      ]).getMany()
+
   }
 
   async update(id: string, updateFacultyDto: UpdateFacultyDto) {

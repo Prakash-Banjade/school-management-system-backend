@@ -1,9 +1,9 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import { IsOptional, IsString } from "class-validator";
-import { ClassWithSectionQueryDto } from "src/common/dto/classWithSectionQuery.dto";
+import { ClassRoomSearchQueryDto } from "src/common/dto/classRoomSearchQueryDto";
 import { EDayOfWeek, ERoutineType } from "src/common/types/global.type";
 
-export class ClassRoutineQueryDto extends ClassWithSectionQueryDto {
+export class ClassRoutineQueryDto extends ClassRoomSearchQueryDto {
     @ApiPropertyOptional({ enum: EDayOfWeek })
     @IsString()
     @IsOptional()

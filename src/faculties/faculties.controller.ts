@@ -3,7 +3,7 @@ import { FacultiesService } from './faculties.service';
 import { CreateFacultyDto } from './dto/create-faculty.dto';
 import { UpdateFacultyDto } from './dto/update-faculty.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { FacultiesQueryDto } from './dto/faculties-query.dto';
+import { FacultiesQueryDto, FacultyOptionsQueryDto } from './dto/faculties-query.dto';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, Role } from 'src/common/types/global.type';
 
@@ -23,6 +23,15 @@ export class FacultiesController {
   @CheckAbilities({ subject: Role.SUPER_ADMIN, action: Action.READ })
   findAll(@Query() queryDto: FacultiesQueryDto) {
     return this.facultiesService.findAll(queryDto);
+  }
+
+  @Get('options')
+  @CheckAbilities(
+    { subject: Role.SUPER_ADMIN, action: Action.READ },
+    { subject: Role.ADMIN, action: Action.READ },
+  )
+  getOptions(@Query() queryDto: FacultyOptionsQueryDto) {
+    return this.facultiesService.getOptions(queryDto);
   }
 
   @Get(':id')

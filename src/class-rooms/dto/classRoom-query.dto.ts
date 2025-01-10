@@ -14,6 +14,16 @@ export class ClassRoomQueryDto extends QueryDto {
     @IsString()
     @IsOptional()
     classType?: string = EClassType.PRIMARY; // default to primary class
+
+    @ApiProperty()
+    @IsString()
+    @IsOptional()
+    degreeLevel?: string;
+
+    @ApiProperty()
+    @IsString()
+    @IsOptional()
+    facultyId?: string;
 }
 
 export class ClassRoomOptionsQueryDto extends QueryDto {

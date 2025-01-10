@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Length, Min, ValidateIf } from "class-validator";
-import { EClassType } from "src/common/types/global.type";
+import { EClassType, EDegreeLevel } from "src/common/types/global.type";
 
 export class CreateClassRoomDto {
     @ApiProperty({ type: String, example: 'Class 10', description: 'Name of the class room' })
@@ -36,7 +36,7 @@ export class CreateClassRoomDto {
     @ApiProperty({ type: Number, example: 1000, description: 'Monthly fee of the class room' })
     @IsNumber()
     @Min(0)
-    @ValidateIf((o: CreateClassRoomDto) => o.classType === EClassType.PRIMARY)
+    @ValidateIf((o: CreateClassRoomDto) => o.classType === EClassType.PRIMARY && [EDegreeLevel.Basic_School, EDegreeLevel.Plus_Two].includes(o.degreeLevel))
     monthlyFee: number;
 
     @ApiPropertyOptional({ type: String, example: 'Room No. 34, Block 1, Floor 1', description: 'Location of the class room' })
@@ -48,4 +48,8 @@ export class CreateClassRoomDto {
     @IsUUID()
     @IsOptional()
     classTeacherId?: string;
+
+    @ApiProperty()
+    @IsEnum(EDegreeLevel)
+    degreeLevel: EDegreeLevel;
 }
