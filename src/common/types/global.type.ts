@@ -49,6 +49,13 @@ export enum AuthProvider {
     CREDENTIALS = 'credentials',
 }
 
+export enum EDegreeLevel {
+    SEE = 'see',
+    SLC = 'slc',
+    Bachelor = 'bachelor',
+    Master = 'master'
+}
+
 export enum EClassType {
     PRIMARY = 'primary', // to denote the direct parent class
     SECTION = 'section',

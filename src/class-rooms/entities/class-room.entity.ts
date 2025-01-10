@@ -13,6 +13,7 @@ import { LessonPlan } from "src/lesson-plans/entities/lesson-plan.entity";
 import { Task } from "src/task-system/tasks/entities/task.entity";
 import { Teacher } from "src/teachers/entities/teacher.entity";
 import { BeforeInsert, BeforeUpdate, Column, Entity, ManyToMany, ManyToOne, OneToMany, Tree, TreeChildren, TreeParent } from "typeorm";
+import { Faculty } from "src/faculties/entities/faculty.entity";
 
 @Entity()
 @Tree("closure-table", {
@@ -41,6 +42,9 @@ export class ClassRoom extends BaseEntity {
 
     @TreeParent({ onDelete: "CASCADE" })
     parent: ClassRoom;
+
+    @ManyToOne(() => Faculty, (faculty) => faculty.classRooms, { onDelete: 'RESTRICT' })
+    faculty: Faculty
 
     @Column({ type: "enum", enum: EClassType, default: EClassType.PRIMARY })
     classType: EClassType
