@@ -66,33 +66,19 @@ export class AuthHelper extends BaseRepository {
             .update(encryptedVerificationToken)
             .digest('hex');
 
-        // check for existing verification pending
-        const existingVerificationRequest = await this.otpVerificationPendingRepo.findOneBy({
+        // delete existing if any
+        await this.otpVerificationPendingRepo.delete({ email: account.email, type });
+
+        const otpVerificationPending = this.otpVerificationPendingRepo.create({
             email: account.email,
+            otp: String(otp),
+            hashedVerificationToken,
             type,
-            deviceId,
+            deviceId
         });
-
-        if (existingVerificationRequest) { // update the existing one
-            Object.assign(existingVerificationRequest, {
-                otp: String(otp),  // opt is saved as hash in db, logic is implemented in email-verification-pending.entity.ts
-                hashedVerificationToken,
-                deviceId
-            })
-
-            await this.otpVerificationPendingRepo.save(existingVerificationRequest);
-        } else { // create new one
-            const otpVerificationPending = this.otpVerificationPendingRepo.create({
-                email: account.email,
-                otp: String(otp),
-                hashedVerificationToken,
-                type,
-                deviceId
-            });
-            await this.otpVerificationPendingRepo.save(otpVerificationPending);
-        }
-
+        await this.otpVerificationPendingRepo.save(otpVerificationPending);
         return { otp, encryptedVerificationToken };
+
     }
 
     async sendEmailConfirmation(account: Account) {
