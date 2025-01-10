@@ -50,8 +50,9 @@ export enum AuthProvider {
 }
 
 export enum EDegreeLevel {
-    SEE = 'see',
-    SLC = 'slc',
+    Basic_School = 'basic_school',
+    Plus_Two = 'plus_two',
+    Diploma = 'diploma',
     Bachelor = 'bachelor',
     Master = 'master'
 }
@@ -59,8 +60,6 @@ export enum EDegreeLevel {
 export enum EClassType {
     PRIMARY = 'primary', // to denote the direct parent class
     SECTION = 'section',
-    SEMESTER = 'semester',
-    YEAR = 'year',
 }
 
 export enum ESubjectType {

@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateFacultyDto } from './dto/create-faculty.dto';
 import { UpdateFacultyDto } from './dto/update-faculty.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -6,18 +6,23 @@ import { Faculty } from './entities/faculty.entity';
 import { Brackets, Repository } from 'typeorm';
 import { FacultiesQueryDto } from './dto/faculties-query.dto';
 import { paginatedRawData } from 'src/utils/paginatedData';
+import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 
 @Injectable()
 export class FacultiesService {
   constructor(
     @InjectRepository(Faculty) private readonly facultiesRepo: Repository<Faculty>,
+    @InjectRepository(ClassRoom) private readonly classRoomsRepo: Repository<ClassRoom>,
   ) { }
 
   async create(createFacultyDto: CreateFacultyDto) {
     const existingWithSameName = await this.facultiesRepo.findOne({ where: { name: createFacultyDto.name }, select: { id: true } });
     if (existingWithSameName) throw new ConflictException('Faculty with same name already exists');
 
-    const newFaculty = this.facultiesRepo.create(createFacultyDto);
+    const newFaculty = this.facultiesRepo.create({
+      ...createFacultyDto,
+      description: createFacultyDto.description || ''
+    });
 
     await this.facultiesRepo.save(newFaculty);
 
@@ -76,6 +81,13 @@ export class FacultiesService {
   }
 
   async remove(id: string) {
+    const existingClassroom = await this.classRoomsRepo.findOne({
+      where: { faculty: { id } },
+      select: { id: true }
+    });
+
+    if (existingClassroom) throw new ForbiddenException("Cannot delete faculty because it has class rooms. Please delete the class rooms first.");
+
     await this.facultiesRepo.delete({ id });
 
     return { message: 'Faculty deleted' }

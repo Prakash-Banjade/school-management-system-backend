@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Length, Min } from "class-validator";
+import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Length, Min, ValidateIf } from "class-validator";
 import { EClassType } from "src/common/types/global.type";
 
 export class CreateClassRoomDto {
@@ -14,30 +14,35 @@ export class CreateClassRoomDto {
     @Length(0, 500, { message: 'Description must be less than 500 characters' })
     description?: string
 
+    @ApiProperty()
+    @IsUUID()
+    facultyId: string;
+
+    @ApiProperty({ type: String, example: 'Primary', description: 'Type of the class room' })
+    @IsEnum(EClassType)
+    classType: EClassType
+
     @ApiPropertyOptional({ type: String, format: 'uuid', example: 'Parent Class ID', description: 'ID of the parent class' })
     @IsUUID()
-    @IsOptional()
+    @ValidateIf((o: CreateClassRoomDto) => o.classType === EClassType.SECTION)
     parentClassId?: string
 
     @ApiProperty({ type: Number, example: 1000, description: 'Monthly tution fee of the class room' })
     @IsNumber()
     @Min(0)
+    @ValidateIf((o: CreateClassRoomDto) => o.classType === EClassType.PRIMARY)
     admissionFee: number;
 
     @ApiProperty({ type: Number, example: 1000, description: 'Monthly fee of the class room' })
     @IsNumber()
     @Min(0)
+    @ValidateIf((o: CreateClassRoomDto) => o.classType === EClassType.PRIMARY)
     monthlyFee: number;
 
     @ApiPropertyOptional({ type: String, example: 'Room No. 34, Block 1, Floor 1', description: 'Location of the class room' })
     @IsString()
     @IsOptional()
     location?: string
-
-    @ApiPropertyOptional({ type: String, example: 'Primary', description: 'Type of the class room' })
-    @IsEnum(EClassType)
-    @IsOptional()
-    classType?: EClassType
 
     @ApiPropertyOptional({ type: String, format: 'uuid', example: 'Teacher ID', description: 'ID of the teacher' })
     @IsUUID()

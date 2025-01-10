@@ -12,6 +12,7 @@ import { FeeStructuresService } from 'src/finance-system/fee-management/fee-stru
 import { Teacher } from 'src/teachers/entities/teacher.entity';
 import { UtilitiesService } from 'src/utilities/utilities.service';
 import { BranchesService } from 'src/branches/branches.service';
+import { Faculty } from 'src/faculties/entities/faculty.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class ClassRoomsService extends BaseRepository {
@@ -22,39 +23,36 @@ export class ClassRoomsService extends BaseRepository {
     private readonly branchesService: BranchesService,
   ) { super(dataSource, req) }
 
-  async create(createClassRoomDto: CreateClassRoomDto) {
-    const existingWithSameName = await this.getRepository(ClassRoom).findOne({
-      where: {
-        name: createClassRoomDto.name,
-        classType: EClassType.PRIMARY,
-        branch: { id: this.utilitiesService.getBranchId() }
-      },
-      select: { id: true }
-    });
-    if (existingWithSameName) throw new ConflictException('Class room with same name already exists');
+  async create(dto: CreateClassRoomDto) {
+    await this.checkIfExisting(dto);
+    // evaluate faculty
+    const faculty = await this.getRepository(Faculty).findOne({ where: { id: dto.facultyId }, select: { id: true } });
+    if (!faculty) throw new NotFoundException('Faculty not found');
 
     // evaluate parent class
-    const parentClass = createClassRoomDto.parentClassId
+    const parentClass = dto.parentClassId
       ? await this.getRepository(ClassRoom).findOne({
-        where: { id: createClassRoomDto.parentClassId, branch: { id: this.utilitiesService.getBranchId() } },
+        where: { id: dto.parentClassId, branch: { id: this.utilitiesService.getBranchId() } },
         relations: { branch: true },
         select: { id: true, branch: { id: true } }
-      })
-      : null;
+      }) : null;
 
     // evaluate teacher
-    const classTeacher = createClassRoomDto.classTeacherId
-      ? await this.getRepository(Teacher).findOne({ where: { id: createClassRoomDto.classTeacherId }, select: { id: true } })
-      : null;
+    const classTeacher = dto.classTeacherId
+      ? await this.getRepository(Teacher).findOne({
+        where: { id: dto.classTeacherId, account: { branch: { id: this.utilitiesService.getBranchId() } } },
+        select: { id: true }
+      }) : null;
 
     // add mandatory charge heads structure for the class
     const feeStructures = await this.feeStructuresService.createMandatoryFeeStructures({
-      admissionFee: createClassRoomDto.admissionFee,
-      monthlyFee: createClassRoomDto.monthlyFee,
+      admissionFee: dto.admissionFee,
+      monthlyFee: dto.monthlyFee,
     });
 
     const newClassRoom = this.getRepository(ClassRoom).create({
-      ...createClassRoomDto,
+      ...dto,
+      faculty,
       parent: parentClass,
       classTeacher,
       feeStructures,
@@ -91,10 +89,7 @@ export class ClassRoomsService extends BaseRepository {
     const existing = await this.findOne(id);
 
     // check if the class room with the given name already exists
-    if (updateClassRoomDto.name && updateClassRoomDto.name !== existing.name) {
-      const existingWithName = await this.getRepository(ClassRoom).findOne({ where: { name: updateClassRoomDto.name }, select: { id: true } });
-      if (existingWithName) throw new ConflictException('Class room with same name already exists');
-    }
+    if (updateClassRoomDto.name && updateClassRoomDto.name !== existing.name) await this.checkIfExisting(updateClassRoomDto);
 
     if (updateClassRoomDto.classTeacherId && (updateClassRoomDto.classTeacherId !== existing.classTeacher?.id || !updateClassRoomDto.classTeacherId)) {
       const newClassTeacher = await this.getRepository(Teacher).findOne({ where: { id: updateClassRoomDto.classTeacherId }, select: { id: true } });
@@ -112,20 +107,15 @@ export class ClassRoomsService extends BaseRepository {
     }
   }
 
-  async createFeeStructures() {
-    const classRooms = await this.getRepository(ClassRoom).find({
-      where: { classType: EClassType.PRIMARY },
-      select: { id: true, admissionFee: true, monthlyFee: true }
+  private async checkIfExisting(dto: UpdateClassRoomDto) {
+    const existingWithSameName = await this.getRepository(ClassRoom).findOne({
+      where: {
+        name: dto.name,
+        classType: dto.classType,
+        branch: { id: this.utilitiesService.getBranchId() }
+      },
+      select: { id: true }
     });
-
-    await Promise.all(classRooms.map(async classRoom => {
-      const feeStructures = await this.feeStructuresService.createMandatoryFeeStructures({
-        admissionFee: classRoom.admissionFee,
-        monthlyFee: classRoom.monthlyFee,
-      });
-
-      classRoom.feeStructures = feeStructures;
-      await this.getRepository(ClassRoom).save(classRoom);
-    }))
+    if (existingWithSameName) throw new ConflictException('Class room with same name already exists');
   }
 }
