@@ -9,6 +9,7 @@ import { BaseEntity } from "src/common/entities/base.entity";
 import { ESubjectType } from "src/common/types/global.type";
 import { OptionalSubject } from "src/optional-subject/entities/optional-subject.entity";
 import { LessonPlan } from "../../lesson-plans/entities/lesson-plan.entity";
+import { OnlineClass } from "src/online-classes/entities/online-class.entity";
 
 @Entity()
 export class Subject extends BaseEntity {
@@ -66,4 +67,7 @@ export class Subject extends BaseEntity {
 
     @OneToMany(() => LessonPlan, lessonPlan => lessonPlan.subject)
     lessonPlans: LessonPlan[]
+
+    @OneToMany(() => OnlineClass, onlineClass => onlineClass.subject)
+    onlineClasses: OnlineClass[]
 }

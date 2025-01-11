@@ -45,6 +45,7 @@ import { UtilitiesModule } from './utilities/utilities.module';
 import { EnvModule } from './env/env.module';
 import { LessonPlansModule } from './lesson-plans/lesson-plans.module';
 import { FacultiesModule } from './faculties/faculties.module';
+import { OnlineClassesModule } from './online-classes/online-classes.module';
 
 @Module({
   imports: [
@@ -116,6 +117,7 @@ import { FacultiesModule } from './faculties/faculties.module';
     BranchesModule,
     UtilitiesModule,
     LessonPlansModule,
+    OnlineClassesModule,
   ],
   controllers: [AppController],
   providers: [
