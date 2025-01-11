@@ -59,4 +59,7 @@ export const envSchema = Joi.object({
         .required(), // Ensure it is a number
     MAIL_USERNAME: Joi.string().email().required(), // Must be a valid email
     MAIL_PASSWORD: Joi.string().required(),
+
+    STREAM_VIDEO_API_SECRET: Joi.string().required(),
+    STREAM_VIDEO_API_KEY: Joi.string().required(),
 });

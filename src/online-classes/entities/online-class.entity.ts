@@ -5,10 +5,10 @@ import { Teacher } from "src/teachers/entities/teacher.entity";
 import { Column, Entity, ManyToOne } from "typeorm";
 
 export enum EOnlineClassStatus {
-    Scheduled = 'Scheduled',
-    Live = 'Live',
-    Completed = 'Completed',
-    Cancelled = 'Cancelled'
+    Scheduled = 'scheduled',
+    Live = 'live',
+    Completed = 'completed',
+    Cancelled = 'cancelled'
 }
 
 @Entity()
@@ -32,7 +32,7 @@ export class OnlineClass extends BaseEntity {
     status: EOnlineClassStatus;
 
     @Column({ type: 'datetime', nullable: true })
-    scheduledAt: string;
+    scheduleDate: string;
 
     @Column({ type: 'varchar' })
     joinLink: string;

@@ -19,6 +19,8 @@ import { UtilitiesService } from 'src/utilities/utilities.service';
 import { RefreshTokenService } from '../auth/helpers/refresh-tokens.service';
 import { LoginDevice } from './entities/login-devices.entity';
 import { WebAuthnCredential } from '../webAuthn/entities/webAuthnCredential.entity';
+import { StreamClient } from '@stream-io/node-sdk';
+import { EnvService } from 'src/env/env.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AccountsService extends BaseRepository {
@@ -28,6 +30,7 @@ export class AccountsService extends BaseRepository {
     private readonly branchesService: BranchesService,
     private readonly utilitiesService: UtilitiesService,
     private readonly refreshTokenService: RefreshTokenService,
+    private readonly envService: EnvService,
   ) {
     super(dataSource, req);
   }
@@ -196,5 +199,26 @@ export class AccountsService extends BaseRepository {
     await this.getRepository(Account).save(account);
 
     return;
+  }
+
+  async getStreamToken() {
+    const { accountId } = this.utilitiesService.getCurrentUser();
+
+    const streamClient = new StreamClient(this.envService.STREAM_VIDEO_API_KEY, this.envService.STREAM_VIDEO_API_SECRET);
+
+    const expirationTime = Math.floor(Date.now() / 1000) + 60 * 60; // 1 hour
+
+    const issuedAt = Math.floor(Date.now() / 1000) - 60; // subtract 1 minute
+
+    const token = streamClient.generateUserToken({
+      user_id: accountId,
+      exp: expirationTime,
+      iat: issuedAt,
+      validity_in_seconds: 60 * 60,
+    });
+
+    console.log(token);
+
+    return token;
   }
 }

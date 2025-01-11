@@ -10,6 +10,9 @@ import { BaseRepository } from "src/common/repository/base-repository";
 import { FastifyRequest } from "fastify";
 import { REQUEST } from "@nestjs/core";
 import { UtilitiesService } from "src/utilities/utilities.service";
+import { QueryDto } from "src/common/dto/query.dto";
+import { Teacher } from "src/teachers/entities/teacher.entity";
+import { Subject } from "src/subjects/entities/subject.entity";
 
 @Injectable()
 export class ClassRoomsHelper extends BaseRepository {
@@ -20,6 +23,7 @@ export class ClassRoomsHelper extends BaseRepository {
 
     async findAll(queryDto: ClassRoomQueryDto) {
         const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
+        const { accountId, role } = this.utilitiesService.getCurrentUser();
 
         const queryBuilder = this.getRepository(ClassRoom).createQueryBuilder('classRoom')
             .where('classRoom.classType = :classType', { classType: queryDto.classType })
@@ -128,5 +132,31 @@ export class ClassRoomsHelper extends BaseRepository {
                 `COUNT(DISTINCT CASE WHEN student.gender = '${Gender.MALE}' THEN student.id END) + COUNT(DISTINCT CASE WHEN childClassStudent.gender = '${Gender.MALE}' THEN childClassStudent.id END) AS totalMaleStudentsCount`,
                 `COUNT(DISTINCT CASE WHEN student.gender = '${Gender.FEMALE}' THEN student.id END) + COUNT(DISTINCT CASE WHEN childClassStudent.gender = '${Gender.FEMALE}' THEN childClassStudent.id END) AS totalFemaleStudentsCount`
             ]).getRawOne();
+    }
+
+    // used in teacher panel
+    async getMyAssignedClasses(queryDto: QueryDto) {
+        const { accountId } = this.utilitiesService.getCurrentUser();
+
+        const queryBuilder = this.getRepository(ClassRoom).createQueryBuilder('classRoom')
+            .limit(queryDto.take)
+            .offset(queryDto.skip)
+            .orderBy("classRoom.createdAt", queryDto.order)
+            .leftJoin('classRoom.classRoutines', 'classRoutine')
+            .leftJoin('classRoutine.teacher', 'teacher')
+            .leftJoin('classRoutine.subject', 'subject')
+            .leftJoin('classRoom.parent', 'parent')
+            .where('teacher.accountId = :accountId', { accountId })
+            .andWhere(new Brackets(qb => {
+                queryDto.search && qb.andWhere("LOWER(classRoom.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+            }))
+            .select([
+                'classRoom.id as id',
+                'CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, \' - \', classRoom.name) END as name',
+                'subject.id as subjectId',
+                'subject.subjectName as subjectName',
+            ]);
+
+        return paginatedRawData(queryDto, queryBuilder);
     }
 }
