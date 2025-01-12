@@ -33,7 +33,4 @@ export class OnlineClass extends BaseEntity {
 
     @Column({ type: 'datetime', nullable: true })
     scheduleDate: string;
-
-    @Column({ type: 'varchar' })
-    joinLink: string;
 }

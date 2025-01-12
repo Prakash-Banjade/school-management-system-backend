@@ -217,8 +217,6 @@ export class AccountsService extends BaseRepository {
       validity_in_seconds: 60 * 60,
     });
 
-    console.log(token);
-
     return token;
   }
 }

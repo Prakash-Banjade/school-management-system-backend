@@ -1,6 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateOnlineClassDto } from './dto/create-online-class.dto';
-import { UpdateOnlineClassDto } from './dto/update-online-class.dto';
+import { UpdateOnlineClassDto, UpdateOnlineClassStatusDto } from './dto/update-online-class.dto';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { Brackets, DataSource } from 'typeorm';
 import { REQUEST } from '@nestjs/core';
@@ -12,7 +12,9 @@ import { Subject } from 'src/subjects/entities/subject.entity';
 import { EOnlineClassStatus, OnlineClass } from './entities/online-class.entity';
 import { OnlineClassQueryDto } from './dto/online-class-query.dto';
 import { paginatedRawData } from 'src/utils/paginatedData';
-import { EClassType } from 'src/common/types/global.type';
+import { EClassType, Role } from 'src/common/types/global.type';
+import { Student } from 'src/students/entities/student.entity';
+import { isStudent } from 'src/utils/utils';
 
 @Injectable()
 export class OnlineClassesService extends BaseRepository {
@@ -46,17 +48,38 @@ export class OnlineClassesService extends BaseRepository {
       classRoom,
       subject,
       status: !!dto.scheduleDate ? EOnlineClassStatus.Scheduled : EOnlineClassStatus.Live,
-      joinLink: 'this is join link',
     });
 
-    await this.getRepository(OnlineClass).save(newOnlineClass);
+    const savedOnlineClass = await this.getRepository(OnlineClass).save(newOnlineClass);
+
+    const students = await this.getStudents(classRoom.id);
 
     return {
       message: !dto.scheduleDate ? 'Online class created' : 'Online class is scheduled successfully',
+      id: savedOnlineClass.id, // used in frontend to setup callId
+      students,
     };
+  };
+
+  async getStudents(classRoomId: string) {
+    const academicYearId = await this.utilitiesService.getAcademicYearId();
+    const branchId = this.utilitiesService.getBranchId();
+
+    const queryBuilder = this.getRepository(Student).createQueryBuilder('student')
+      .innerJoin('student.enrollments', 'enrollments', "enrollments.academicYearId = :academicYearId", { academicYearId })
+      .leftJoin('student.account', 'account')
+      .where('enrollments.classRoomId = :classRoomId', { classRoomId })
+      .andWhere('account.branchId = :branchId', { branchId })
+      .select([
+        'account.id as id',
+        // 'account.email as email',
+      ]);
+
+    return await queryBuilder.getRawMany();
   }
 
   findAll(queryDto: OnlineClassQueryDto) {
+    const currentUser = this.utilitiesService.getCurrentUser();
     const queryBuilder = this.getRepository(OnlineClass).createQueryBuilder('onlineClass');
 
     queryBuilder
@@ -68,16 +91,25 @@ export class OnlineClassesService extends BaseRepository {
       .leftJoin('classRoom.parent', 'parent')
       .leftJoin('onlineClass.subject', 'subject')
       .where(new Brackets(qb => {
-        queryDto.teacherId && qb.andWhere('teacher.id = :teacherId', { teacherId: queryDto.teacherId });
-        queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
         queryDto.subjectId && qb.andWhere('subject.id = :subjectId', { subjectId: queryDto.subjectId });
+
+        if (isStudent(currentUser)) {
+          qb.andWhere('classRoom.id = :classRoomId', { classRoomId: currentUser.classRoomId });
+        } else {
+          queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
+        }
+
+        if (currentUser.role === Role.TEACHER) {
+          qb.andWhere('teacher.accountId = :accountId', { accountId: currentUser.accountId });
+        } else {
+          queryDto.teacherId && qb.andWhere('teacher.id = :teacherId', { teacherId: queryDto.teacherId });
+        }
       }))
       .select([
         'onlineClass.id as id',
         'onlineClass.title as title',
         'onlineClass.status as status',
         'onlineClass.scheduleDate as scheduleDate',
-        'onlineClass.joinLink as joinLink',
         'CONCAT(teacher.firstName, " ", teacher.lastName) as teacherName',
         'subject.subjectName as subjectName',
         'CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, " - ", classRoom.name) END as classRoomName',
@@ -87,10 +119,22 @@ export class OnlineClassesService extends BaseRepository {
   }
 
   async findOne(id: string) {
+    const currentUser = this.utilitiesService.getCurrentUser();
+
     const existing = await this.getRepository(OnlineClass).findOne({
-      where: { id },
-      relations: { teacher: true, classRoom: true, subject: true },
+      where: {
+        id,
+        classRoom: isStudent(currentUser) ? { id: currentUser.classRoomId } : undefined,
+        teacher: currentUser.role === Role.TEACHER ? { account: { id: currentUser.accountId } } : undefined
+      },
+      relations: { teacher: true, classRoom: { parent: true }, subject: true },
       select: {
+        id: true,
+        title: true,
+        description: true,
+        createdAt: true,
+        status: true,
+        scheduleDate: true,
         teacher: {
           id: true,
           firstName: true,
@@ -99,10 +143,15 @@ export class OnlineClassesService extends BaseRepository {
         classRoom: {
           id: true,
           name: true,
+          parent: {
+            id: true,
+            name: true
+          }
         },
         subject: {
           id: true,
           subjectName: true,
+          subjectCode: true,
         },
       }
     });
@@ -128,6 +177,24 @@ export class OnlineClassesService extends BaseRepository {
     await this.getRepository(OnlineClass).update({ id }, dto);
 
     return { message: 'Online class updated' };
+  }
+
+  async updateStatus(id: string, dto: UpdateOnlineClassStatusDto) {
+    const { accountId } = this.utilitiesService.getCurrentUser();
+
+    const existing = await this.getRepository(OnlineClass).findOne({
+      where: {
+        id,
+        teacher: { account: { id: accountId } }
+      },
+      select: { id: true }
+    });
+
+    if (!existing) throw new NotFoundException('Online class not found');
+
+    await this.getRepository(OnlineClass).update({ id }, dto);
+
+    return { message: 'Online class status updated' };
   }
 
   async remove(id: string) {
