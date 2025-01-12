@@ -37,7 +37,10 @@ export class ClassRoomsController {
   }
 
   @Get('options')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @CheckAbilities(
+    { subject: Role.ADMIN, action: Action.READ },
+    { subject: Role.TEACHER, action: Action.READ },
+  )
   findAllOptions(@Query() queryDto: ClassRoomOptionsQueryDto) {
     return this.classRoomsHelper.getClassRoomsOptions(queryDto);
   }

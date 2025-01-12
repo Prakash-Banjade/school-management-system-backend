@@ -15,12 +15,15 @@ import { paginatedRawData } from 'src/utils/paginatedData';
 import { EClassType, Role } from 'src/common/types/global.type';
 import { Student } from 'src/students/entities/student.entity';
 import { isStudent } from 'src/utils/utils';
+import { StreamClientProvider } from 'src/auth-system/stream-client/stream-client-provider';
+import { UserRequest } from '@stream-io/node-sdk';
 
 @Injectable()
 export class OnlineClassesService extends BaseRepository {
   constructor(
     dataSource: DataSource, @Inject(REQUEST) private req: FastifyRequest,
     private readonly utilitiesService: UtilitiesService,
+    private readonly streamClientProvider: StreamClientProvider,
   ) { super(dataSource, req) }
 
   async create(dto: CreateOnlineClassDto) {
@@ -54,25 +57,42 @@ export class OnlineClassesService extends BaseRepository {
 
     const students = await this.getStudents(classRoom.id);
 
+    await this.insertStudentsToStream(students); // need to insert users to stream inorder to reference them in call
+
     return {
       message: !dto.scheduleDate ? 'Online class created' : 'Online class is scheduled successfully',
       id: savedOnlineClass.id, // used in frontend to setup callId
-      students,
+      students: students.map(s => s.id),
     };
   };
 
-  async getStudents(classRoomId: string) {
+  async insertStudentsToStream(students: { id: string, fullName: string, profileImageUrl: string }[]) {
+    const client = this.streamClientProvider.getClient();
+
+    const users: UserRequest[] = students.map(s => ({
+      id: s.id,
+      user_id: s.id,
+      name: s.fullName,
+      profileImage: s.profileImageUrl,
+    }))
+
+    await client.upsertUsers(users);
+  }
+
+  async getStudents(classRoomId: string): Promise<{ id: string, fullName: string, profileImageUrl: string }[]> {
     const academicYearId = await this.utilitiesService.getAcademicYearId();
     const branchId = this.utilitiesService.getBranchId();
 
     const queryBuilder = this.getRepository(Student).createQueryBuilder('student')
       .innerJoin('student.enrollments', 'enrollments', "enrollments.academicYearId = :academicYearId", { academicYearId })
       .leftJoin('student.account', 'account')
+      .leftJoin('account.profileImage', 'profileImage')
       .where('enrollments.classRoomId = :classRoomId', { classRoomId })
       .andWhere('account.branchId = :branchId', { branchId })
       .select([
         'account.id as id',
-        // 'account.email as email',
+        'CONCAT(account.firstName, " ", account.lastName) as fullName',
+        'profileImage.url as profileImageUrl',
       ]);
 
     return await queryBuilder.getRawMany();
@@ -96,7 +116,8 @@ export class OnlineClassesService extends BaseRepository {
         if (isStudent(currentUser)) {
           qb.andWhere('classRoom.id = :classRoomId', { classRoomId: currentUser.classRoomId });
         } else {
-          queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
+          queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId OR parent.id = :classRoomId', { classRoomId: queryDto.classRoomId });
+          queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId });
         }
 
         if (currentUser.role === Role.TEACHER) {

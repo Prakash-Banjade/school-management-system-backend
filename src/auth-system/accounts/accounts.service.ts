@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
-import { DataSource, IsNull, Not } from 'typeorm';
+import { DataSource, Not } from 'typeorm';
 import { Account } from './entities/account.entity';
 import { Teacher } from 'src/teachers/entities/teacher.entity';
 import { REQUEST } from '@nestjs/core';
@@ -19,8 +19,8 @@ import { UtilitiesService } from 'src/utilities/utilities.service';
 import { RefreshTokenService } from '../auth/helpers/refresh-tokens.service';
 import { LoginDevice } from './entities/login-devices.entity';
 import { WebAuthnCredential } from '../webAuthn/entities/webAuthnCredential.entity';
-import { StreamClient } from '@stream-io/node-sdk';
 import { EnvService } from 'src/env/env.service';
+import { StreamClientProvider } from '../stream-client/stream-client-provider';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AccountsService extends BaseRepository {
@@ -31,6 +31,7 @@ export class AccountsService extends BaseRepository {
     private readonly utilitiesService: UtilitiesService,
     private readonly refreshTokenService: RefreshTokenService,
     private readonly envService: EnvService,
+    private readonly streamClientProvider: StreamClientProvider,
   ) {
     super(dataSource, req);
   }
@@ -204,7 +205,7 @@ export class AccountsService extends BaseRepository {
   async getStreamToken() {
     const { accountId } = this.utilitiesService.getCurrentUser();
 
-    const streamClient = new StreamClient(this.envService.STREAM_VIDEO_API_KEY, this.envService.STREAM_VIDEO_API_SECRET);
+    const streamClient = this.streamClientProvider.getClient();
 
     const expirationTime = Math.floor(Date.now() / 1000) + 60 * 60; // 1 hour
 

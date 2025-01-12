@@ -1,12 +1,10 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import { IsOptional, IsString, IsUUID } from "class-validator";
+import { ClassRoomOptionsQueryDto } from "src/class-rooms/dto/classRoom-query.dto";
+import { ClassRoomSearchQueryDto } from "src/common/dto/classRoomSearchQueryDto";
 import { QueryDto } from "src/common/dto/query.dto";
 
-export class OnlineClassQueryDto extends QueryDto {
-    @ApiPropertyOptional()
-    @IsUUID()
-    @IsOptional()
-    classRoomId?: string
+export class OnlineClassQueryDto extends ClassRoomSearchQueryDto {
 
     @ApiPropertyOptional()
     @IsUUID()

@@ -1,7 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { ClassRoom } from "../entities/class-room.entity";
 import { Brackets, DataSource } from "typeorm";
-import { EClassType, Gender } from "src/common/types/global.type";
+import { EClassType, Gender, Role } from "src/common/types/global.type";
 import { applySelectColumns } from "src/utils/apply-select-cols";
 import { classRoomOptionsSelectCols } from "./class-room-select-cols.config";
 import { paginatedRawData } from "src/utils/paginatedData";
@@ -11,8 +11,6 @@ import { FastifyRequest } from "fastify";
 import { REQUEST } from "@nestjs/core";
 import { UtilitiesService } from "src/utilities/utilities.service";
 import { QueryDto } from "src/common/dto/query.dto";
-import { Teacher } from "src/teachers/entities/teacher.entity";
-import { Subject } from "src/subjects/entities/subject.entity";
 
 @Injectable()
 export class ClassRoomsHelper extends BaseRepository {
@@ -23,7 +21,6 @@ export class ClassRoomsHelper extends BaseRepository {
 
     async findAll(queryDto: ClassRoomQueryDto) {
         const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
-        const { accountId, role } = this.utilitiesService.getCurrentUser();
 
         const queryBuilder = this.getRepository(ClassRoom).createQueryBuilder('classRoom')
             .where('classRoom.classType = :classType', { classType: queryDto.classType })
@@ -79,6 +76,8 @@ export class ClassRoomsHelper extends BaseRepository {
     }
 
     async getClassRoomsOptions(queryDto: ClassRoomOptionsQueryDto) {
+        const { accountId, role } = this.utilitiesService.getCurrentUser();
+
         const queryBuilder = this.getRepository(ClassRoom).createQueryBuilder('classRoom');
 
         queryBuilder
@@ -90,6 +89,15 @@ export class ClassRoomsHelper extends BaseRepository {
             .andWhere(new Brackets(qb => {
                 queryDto.search && qb.andWhere("LOWER(classRoom.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
             }))
+
+        if (role === Role.TEACHER) {
+            queryBuilder
+                .leftJoin('classRoom.classRoutines', 'classRoutine')
+                .leftJoin('children.classRoutines', 'childrenClassRoutine')
+                .leftJoin('classRoutine.teacher', 'teacher')
+                .leftJoin('childrenClassRoutine.teacher', 'childrenRoutineTeacher')
+                .andWhere('teacher.accountId = :accountId OR childrenRoutineTeacher.accountId = :accountId', { accountId });
+        }
 
         applySelectColumns(
             queryBuilder,
