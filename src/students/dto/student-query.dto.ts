@@ -55,12 +55,7 @@ export class StudentAttendanceQueryDto extends QueryDto {
 }
 
 export class PastStudentsQueryDto extends ClassRoomSearchQueryDto {
-    @ApiPropertyOptional({ type: String, format: 'uuid', description: 'Academic year id' })
+    @ApiProperty({ type: String, format: 'uuid', description: 'Academic year id' })
     @IsUUID()
-    @IsOptional()
-    academicYearId?: string;
-
-    @ApiPropertyOptional({ type: String, description: 'Search by student ID' })
-    @IsOptional()
-    studentId: string;
+    academicYearId: string;
 }
