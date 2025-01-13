@@ -183,7 +183,7 @@ export class StudentsHelper extends BaseRepository {
                     }));
                 }
 
-                queryDto.classRoomId && qb.andWhere('parent.id = :classRoomId OR classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
+                queryDto.classRoomId && !queryDto.sectionId && qb.andWhere('parent.id = :classRoomId OR classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
                 queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId });
             }))
             .select([
@@ -193,7 +193,9 @@ export class StudentsHelper extends BaseRepository {
                 "student.studentId AS studentId",
                 "CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, ' - ', classRoom.name) END AS classRoomName",
                 "latestEnrollment.id AS enrollmentId",
-                "latestEnrollment.academicYearId as enrollmentAcademicYearId"
+                "latestEnrollment.academicYearId as enrollmentAcademicYearId",
+                "classRoom.id AS classRoomId",
+                "parent.id AS parentId",
             ]);
 
         this.utilitiesService.applyBranchFilter(queryBuilder);
