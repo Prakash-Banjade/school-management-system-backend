@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateOnlineClassDto } from './dto/create-online-class.dto';
 import { UpdateOnlineClassDto, UpdateOnlineClassStatusDto } from './dto/update-online-class.dto';
 import { BaseRepository } from 'src/common/repository/base-repository';
@@ -208,8 +208,12 @@ export class OnlineClassesService extends BaseRepository {
         id,
         teacher: { account: { id: accountId } }
       },
-      select: { id: true }
+      select: { id: true, status: true }
     });
+
+    if (existing.status === EOnlineClassStatus.Cancelled || existing.status === EOnlineClassStatus.Completed) throw new ForbiddenException('Cannot change the status now');
+    if (existing.status === EOnlineClassStatus.Live && dto.status === EOnlineClassStatus.Scheduled) throw new ForbiddenException('Now allowed to change status');
+    if (existing.status === EOnlineClassStatus.Live && dto.status === EOnlineClassStatus.Cancelled) throw new BadRequestException("Cannot cancel the live class. Please end the class first.");
 
     if (!existing) throw new NotFoundException('Online class not found');
 
