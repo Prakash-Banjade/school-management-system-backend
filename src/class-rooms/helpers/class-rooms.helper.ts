@@ -159,6 +159,7 @@ export class ClassRoomsHelper extends BaseRepository {
                 queryDto.search && qb.andWhere("LOWER(classRoom.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
             }))
             .select([
+                'DISTINCT CONCAT(classRoom.id, "-", subject.id) AS uniqueKey', // ensure unique combination, bcz same class & same subject can occur but different day
                 'classRoom.id as id',
                 'CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, \' - \', classRoom.name) END as name',
                 'subject.id as subjectId',
