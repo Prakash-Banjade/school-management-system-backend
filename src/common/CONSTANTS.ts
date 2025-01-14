@@ -33,7 +33,9 @@ export const CHARGE_HEADS = {
     monthlyFee: "Monthly Fee",
     transportationFee: "Transportation Fee",
     libraryFine: "Library Fine",
-}
+};
+
+export const SCHOOL_LEVEL_FACULTY_NAME = "School Level" as const;
 
 // CACHE KEYS
 export const enum CACHE_KEYS {

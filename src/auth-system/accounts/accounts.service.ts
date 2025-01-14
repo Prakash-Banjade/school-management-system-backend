@@ -18,6 +18,7 @@ import { BranchesService } from 'src/branches/branches.service';
 import { UtilitiesService } from 'src/utilities/utilities.service';
 import { RefreshTokenService } from '../auth/helpers/refresh-tokens.service';
 import { LoginDevice } from './entities/login-devices.entity';
+import { WebAuthnCredential } from '../webAuthn/entities/webAuthnCredential.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AccountsService extends BaseRepository {
@@ -158,6 +159,9 @@ export class AccountsService extends BaseRepository {
       email: email
     });
     await this.refreshTokenService.remove();
+
+    // remove credentials
+    await this.getRepository(WebAuthnCredential).delete({ account: { id: accountId } });
 
     return { message: 'Device signed out' };
   }

@@ -108,7 +108,6 @@ export class StudentsService extends BaseRepository {
   }
 
   async findOne(id: string) {
-    console.log(id)
     const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
 
     const querybuilder = this.getRepository<Student>(Student).createQueryBuilder('student')

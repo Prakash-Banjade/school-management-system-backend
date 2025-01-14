@@ -1,13 +1,13 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { IsOptional, IsString } from "class-validator";
-import { ClassWithSectionQueryDto } from "src/common/dto/classWithSectionQuery.dto";
+import { ClassRoomSearchQueryDto } from "src/common/dto/classRoomSearchQueryDto";
 
 const feeStructureSortByQuery = {
     amount: 'feeStructure.amount',
 }
 
-export class FeeStructureQueryDto extends ClassWithSectionQueryDto {
+export class FeeStructureQueryDto extends ClassRoomSearchQueryDto {
     @ApiPropertyOptional()
     @IsOptional()
     @IsString()

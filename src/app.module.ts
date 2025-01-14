@@ -7,13 +7,12 @@ import { AuthSystemModule } from './auth-system/auth-system.module';
 import { FileManagementModule } from './file-management/file-management.module';
 import { MemoryStoredFile, NestjsFormDataModule } from 'nestjs-form-data';
 import { MailModule } from './mail/mail.module';
-import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuthGuard } from './common/guards/auth.guard';
 import { DormitorySystemModule } from './dormitory-system/dormitory-system.module';
 import { FinanceSystemModule } from './finance-system/finance-system.module';
 import { AcademicYearsModule } from './academic-years/academic-years.module';
-import { AddressesModule } from './addresses/addresses.module';
 import { AttendancesModule } from './attendances/attendances.module';
 import { ClassRoomsModule } from './class-rooms/class-rooms.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
@@ -45,6 +44,7 @@ import { BranchesModule } from './branches/branches.module';
 import { UtilitiesModule } from './utilities/utilities.module';
 import { EnvModule } from './env/env.module';
 import { LessonPlansModule } from './lesson-plans/lesson-plans.module';
+import { FacultiesModule } from './faculties/faculties.module';
 
 @Module({
   imports: [
@@ -93,8 +93,8 @@ import { LessonPlansModule } from './lesson-plans/lesson-plans.module';
     DormitorySystemModule,
     FinanceSystemModule,
     AcademicYearsModule,
-    AddressesModule,
     AttendancesModule,
+    FacultiesModule,
     ClassRoomsModule,
     ClassRoutinesModule,
     EnrollmentsModule,

@@ -1,0 +1,139 @@
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { CreateFacultyDto } from './dto/create-faculty.dto';
+import { UpdateFacultyDto } from './dto/update-faculty.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Faculty } from './entities/faculty.entity';
+import { Brackets, Repository } from 'typeorm';
+import { FacultiesQueryDto, FacultyOptionsQueryDto } from './dto/faculties-query.dto';
+import { paginatedRawData } from 'src/utils/paginatedData';
+import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
+import { UtilitiesService } from 'src/utilities/utilities.service';
+
+@Injectable()
+export class FacultiesService {
+  constructor(
+    @InjectRepository(Faculty) private readonly facultiesRepo: Repository<Faculty>,
+    @InjectRepository(ClassRoom) private readonly classRoomsRepo: Repository<ClassRoom>,
+    private readonly utilitiesService: UtilitiesService,
+  ) { }
+
+  async create(createFacultyDto: CreateFacultyDto) {
+    const existingWithSameName = await this.facultiesRepo.findOne({ where: { name: createFacultyDto.name }, select: { id: true } });
+    if (existingWithSameName) throw new ConflictException('Faculty with same name already exists');
+
+    const newFaculty = this.facultiesRepo.create({
+      ...createFacultyDto,
+      description: createFacultyDto.description || ''
+    });
+
+    await this.facultiesRepo.save(newFaculty);
+
+    return { message: 'Faculty added' }
+  }
+
+  findAll(queryDto: FacultiesQueryDto) {
+    const queryBuilder = this.facultiesRepo.createQueryBuilder('faculty');
+
+    queryBuilder
+      .limit(queryDto.take)
+      .offset(queryDto.skip)
+      .orderBy('faculty.createdAt', queryDto.order)
+      .where(new Brackets(qb => {
+        queryDto.search && qb.andWhere("LOWER(faculty.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+        queryDto.degreeLevels?.length && qb.andWhere('faculty.degreeLevel IN (:degreeLevels)', { degreeLevels: queryDto.degreeLevels });
+      }))
+      .select([
+        'faculty.id as id',
+        'faculty.name as name',
+        'faculty.degreeLevel as degreeLevel',
+        'faculty.duration as duration'
+      ]);
+
+    return paginatedRawData(queryDto, queryBuilder);
+  }
+
+  async findOne(id: string) {
+    const existing = await this.facultiesRepo.findOne({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        degreeLevel: true,
+        duration: true,
+        description: true
+      }
+    });
+
+    if (!existing) throw new NotFoundException('Faculty not found');
+
+    return existing;
+  }
+
+  async getOptions(queryDto: FacultyOptionsQueryDto) {
+    const branchId = this.utilitiesService.getBranchId();
+
+    const includeSection = queryDto.include === 'section';
+    const includeClassRoom = includeSection || queryDto.include === 'classRoom';
+
+    return this.facultiesRepo.createQueryBuilder('faculty')
+      .orderBy('faculty.name', 'ASC')
+      .leftJoin(
+        'faculty.classRooms',
+        'classRooms',
+        includeClassRoom ? "classRooms.branchId = :branchId" : '1 = 0',
+        { branchId }
+      )
+      .leftJoin(
+        'classRooms.children',
+        'children',
+        includeSection ? '1 = 1' : '1 = 0'
+      )
+      .andWhere(new Brackets(qb => {
+        queryDto.degreeLevel && qb.andWhere('faculty.degreeLevel = :degreeLevel', { degreeLevel: queryDto.degreeLevel });
+      }))
+      .select([
+        "faculty.id",
+        "faculty.name",
+        "faculty.degreeLevel",
+        ...(
+          includeClassRoom ? [
+            "classRooms.id",
+            "classRooms.name"
+          ] : []
+        ),
+        ...(
+          includeSection ? [
+            "children.id",
+            "children.name"
+          ] : []
+        )
+      ]).getMany()
+
+  }
+
+  async update(id: string, updateFacultyDto: UpdateFacultyDto) {
+    const existing = await this.findOne(id)
+
+    if (updateFacultyDto.name && updateFacultyDto.name !== existing.name) {
+      const existingWithSameName = await this.facultiesRepo.findOne({ where: { name: updateFacultyDto.name }, select: { id: true } });
+      if (existingWithSameName) throw new ConflictException('Faculty with same name already exists');
+    }
+
+    await this.facultiesRepo.update({ id }, updateFacultyDto);
+
+    return { message: 'Faculty updated' }
+  }
+
+  async remove(id: string) {
+    const existingClassroom = await this.classRoomsRepo.findOne({
+      where: { faculty: { id } },
+      select: { id: true }
+    });
+
+    if (existingClassroom) throw new ForbiddenException("Cannot delete faculty because it has class rooms. Please delete the class rooms first.");
+
+    await this.facultiesRepo.delete({ id });
+
+    return { message: 'Faculty deleted' }
+  }
+}
