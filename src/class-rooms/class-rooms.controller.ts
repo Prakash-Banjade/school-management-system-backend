@@ -29,12 +29,6 @@ export class ClassRoomsController {
     return this.classRoomsService.create(createClassRoomDto);
   }
 
-  // @Post('create-fee-structures')
-  // @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
-  // createFeeStructures() {
-  //   return this.classRoomsService.createFeeStructures();
-  // }
-
   @Get()
   @ApiPaginatedResponse(CreateClassRoomDto)
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
@@ -43,7 +37,10 @@ export class ClassRoomsController {
   }
 
   @Get('options')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @CheckAbilities(
+    { subject: Role.ADMIN, action: Action.READ },
+    { subject: Role.TEACHER, action: Action.READ },
+  )
   findAllOptions(@Query() queryDto: ClassRoomOptionsQueryDto) {
     return this.classRoomsHelper.getClassRoomsOptions(queryDto);
   }
@@ -59,6 +56,12 @@ export class ClassRoomsController {
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   getAttendanceStatistics(@Param('id') id: string, @Query() queryDto: AttendanceStatisticsQueryDto) {
     return this.classRoomsStatistics.getAttendanceStatistics(id, queryDto);
+  }
+
+  @Get('assigned')
+  @CheckAbilities({ subject: Role.TEACHER, action: Action.READ })
+  getMyAssignedClasses(@Query() queryDto: ClassRoomQueryDto) {
+    return this.classRoomsHelper.getMyAssignedClasses(queryDto);
   }
 
   @Get(':id')

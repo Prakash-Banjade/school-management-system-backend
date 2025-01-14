@@ -1,7 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { ClassRoom } from "../entities/class-room.entity";
 import { Brackets, DataSource } from "typeorm";
-import { EClassType, Gender } from "src/common/types/global.type";
+import { EClassType, Gender, Role } from "src/common/types/global.type";
 import { applySelectColumns } from "src/utils/apply-select-cols";
 import { classRoomOptionsSelectCols } from "./class-room-select-cols.config";
 import { paginatedRawData } from "src/utils/paginatedData";
@@ -10,6 +10,7 @@ import { BaseRepository } from "src/common/repository/base-repository";
 import { FastifyRequest } from "fastify";
 import { REQUEST } from "@nestjs/core";
 import { UtilitiesService } from "src/utilities/utilities.service";
+import { QueryDto } from "src/common/dto/query.dto";
 
 @Injectable()
 export class ClassRoomsHelper extends BaseRepository {
@@ -75,6 +76,8 @@ export class ClassRoomsHelper extends BaseRepository {
     }
 
     async getClassRoomsOptions(queryDto: ClassRoomOptionsQueryDto) {
+        const { accountId, role } = this.utilitiesService.getCurrentUser();
+
         const queryBuilder = this.getRepository(ClassRoom).createQueryBuilder('classRoom');
 
         queryBuilder
@@ -86,6 +89,15 @@ export class ClassRoomsHelper extends BaseRepository {
             .andWhere(new Brackets(qb => {
                 queryDto.search && qb.andWhere("LOWER(classRoom.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
             }))
+
+        if (role === Role.TEACHER) {
+            queryBuilder
+                .leftJoin('classRoom.classRoutines', 'classRoutine')
+                .leftJoin('children.classRoutines', 'childrenClassRoutine')
+                .leftJoin('classRoutine.teacher', 'teacher')
+                .leftJoin('childrenClassRoutine.teacher', 'childrenRoutineTeacher')
+                .andWhere('teacher.accountId = :accountId OR childrenRoutineTeacher.accountId = :accountId', { accountId });
+        }
 
         applySelectColumns(
             queryBuilder,
@@ -128,5 +140,32 @@ export class ClassRoomsHelper extends BaseRepository {
                 `COUNT(DISTINCT CASE WHEN student.gender = '${Gender.MALE}' THEN student.id END) + COUNT(DISTINCT CASE WHEN childClassStudent.gender = '${Gender.MALE}' THEN childClassStudent.id END) AS totalMaleStudentsCount`,
                 `COUNT(DISTINCT CASE WHEN student.gender = '${Gender.FEMALE}' THEN student.id END) + COUNT(DISTINCT CASE WHEN childClassStudent.gender = '${Gender.FEMALE}' THEN childClassStudent.id END) AS totalFemaleStudentsCount`
             ]).getRawOne();
+    }
+
+    // used in teacher panel
+    async getMyAssignedClasses(queryDto: QueryDto) {
+        const { accountId } = this.utilitiesService.getCurrentUser();
+
+        const queryBuilder = this.getRepository(ClassRoom).createQueryBuilder('classRoom')
+            .limit(queryDto.take)
+            .offset(queryDto.skip)
+            .orderBy("classRoom.createdAt", queryDto.order)
+            .leftJoin('classRoom.classRoutines', 'classRoutine')
+            .leftJoin('classRoutine.teacher', 'teacher')
+            .leftJoin('classRoutine.subject', 'subject')
+            .leftJoin('classRoom.parent', 'parent')
+            .where('teacher.accountId = :accountId', { accountId })
+            .andWhere(new Brackets(qb => {
+                queryDto.search && qb.andWhere("LOWER(classRoom.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+            }))
+            .select([
+                'DISTINCT CONCAT(classRoom.id, "-", subject.id) AS uniqueKey', // ensure unique combination, bcz same class & same subject can occur but different day
+                'classRoom.id as id',
+                'CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, \' - \', classRoom.name) END as name',
+                'subject.id as subjectId',
+                'subject.subjectName as subjectName',
+            ]);
+
+        return paginatedRawData(queryDto, queryBuilder);
     }
 }

@@ -35,4 +35,13 @@ export class AccountsController {
     toggle2Fa(@Body('toggle', ParseBoolPipe) enable2Fa: boolean) {
         return this.accountsService.toggle2Fa(enable2Fa);
     }
+
+    @Get('get-stream-token')
+    @CheckAbilities(
+        { subject: Role.TEACHER, action: Action.READ },
+        { subject: Role.STUDENT, action: Action.READ }
+    )
+    getStreamToken() {
+        return this.accountsService.getStreamToken();
+    }
 }

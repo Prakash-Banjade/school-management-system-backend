@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
-import { DataSource, IsNull, Not } from 'typeorm';
+import { DataSource, Not } from 'typeorm';
 import { Account } from './entities/account.entity';
 import { Teacher } from 'src/teachers/entities/teacher.entity';
 import { REQUEST } from '@nestjs/core';
@@ -19,6 +19,8 @@ import { UtilitiesService } from 'src/utilities/utilities.service';
 import { RefreshTokenService } from '../auth/helpers/refresh-tokens.service';
 import { LoginDevice } from './entities/login-devices.entity';
 import { WebAuthnCredential } from '../webAuthn/entities/webAuthnCredential.entity';
+import { EnvService } from 'src/env/env.service';
+import { StreamClientProvider } from '../stream-client/stream-client-provider';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AccountsService extends BaseRepository {
@@ -28,6 +30,8 @@ export class AccountsService extends BaseRepository {
     private readonly branchesService: BranchesService,
     private readonly utilitiesService: UtilitiesService,
     private readonly refreshTokenService: RefreshTokenService,
+    private readonly envService: EnvService,
+    private readonly streamClientProvider: StreamClientProvider,
   ) {
     super(dataSource, req);
   }
@@ -196,5 +200,24 @@ export class AccountsService extends BaseRepository {
     await this.getRepository(Account).save(account);
 
     return;
+  }
+
+  async getStreamToken() {
+    const { accountId } = this.utilitiesService.getCurrentUser();
+
+    const streamClient = this.streamClientProvider.getClient();
+
+    const expirationTime = Math.floor(Date.now() / 1000) + 60 * 60; // 1 hour
+
+    const issuedAt = Math.floor(Date.now() / 1000) - 60; // subtract 1 minute
+
+    const token = streamClient.generateUserToken({
+      user_id: accountId,
+      exp: expirationTime,
+      iat: issuedAt,
+      validity_in_seconds: 60 * 60,
+    });
+
+    return token;
   }
 }

@@ -174,22 +174,17 @@ export class StudentsHelper extends BaseRepository {
                 'latestEnrollment',
                 'latestEnrollment.studentId = student.id AND latestEnrollment.rowNumber = 1' // Filter to only include the latest enrollment
             )
+            .where('latestEnrollment.academicYearId = :academicYearId', { academicYearId: queryDto.academicYearId }) // ensure academic year match
             .andWhere(new Brackets(qb => {
                 if (queryDto.search) {
                     qb.andWhere(new Brackets(subQb => {
                         subQb.orWhere("LOWER(CONCAT(student.firstName, ' ', student.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
-                            .orWhere("LOWER(student.email) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
                             .orWhere("TRIM(student.studentId) = TRIM(:exactSearch)", { exactSearch: queryDto.search });
                     }));
                 }
 
-                queryDto.studentId && qb.andWhere('student.studentId = :studentId', { studentId: queryDto.studentId });
-
-                queryDto.classRoomId && qb.andWhere('parent.id = :classRoomId OR classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
+                queryDto.classRoomId && !queryDto.sectionId && qb.andWhere('parent.id = :classRoomId OR classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
                 queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId });
-
-                // Add filter for academicYearId
-                queryDto.academicYearId && qb.andWhere('latestEnrollment.academicYearId = :academicYearId', { academicYearId: queryDto.academicYearId });
             }))
             .select([
                 "student.id AS id",
@@ -198,13 +193,16 @@ export class StudentsHelper extends BaseRepository {
                 "student.studentId AS studentId",
                 "CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, ' - ', classRoom.name) END AS classRoomName",
                 "latestEnrollment.id AS enrollmentId",
+                "latestEnrollment.academicYearId as enrollmentAcademicYearId",
+                "classRoom.id AS classRoomId",
+                "parent.id AS parentId",
             ]);
 
         this.utilitiesService.applyBranchFilter(queryBuilder);
 
         return paginatedRawData(queryDto, queryBuilder);
     }
-    
+
     async getFeeStudent(studentId: string) {
         const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
         const isPk = isUUID(studentId); // this is done to check if the studentId is a uuid, pk has indexing

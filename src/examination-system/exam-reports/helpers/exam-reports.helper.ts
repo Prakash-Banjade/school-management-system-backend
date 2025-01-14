@@ -7,6 +7,7 @@ import { ExamReport } from "../entities/exam-report.entity";
 import { ExamReportBySubjectQueryDto } from "../dto/exam-report-query.dto";
 import { PageMetaDto } from "src/common/dto/pageMeta.dto";
 import { UtilitiesService } from "src/utilities/utilities.service";
+import { ExamSubject } from "src/examination-system/exam-subjects/entities/exam-subject.entity";
 
 @Injectable()
 export class ExamReportsHelper extends BaseRepository {
@@ -17,7 +18,7 @@ export class ExamReportsHelper extends BaseRepository {
 
     async getExamReportBySubject(queryDto: ExamReportBySubjectQueryDto) {
         const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
-        const { classRoomId, examTypeId, examSubjectId } = queryDto;
+        const { classRoomId, examSubjectId } = queryDto;
 
         const queryBuilder = this.getRepository(ExamReport).createQueryBuilder('examReport')
             .leftJoin('examReport.student', 'student')
@@ -27,12 +28,9 @@ export class ExamReportsHelper extends BaseRepository {
             .innerJoin('student.enrollments', 'enrollments', "enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
             .leftJoin('enrollments.classRoom', 'classRoom')
             .leftJoin('classRoom.parent', 'parent')
-            .where('exam.academicYearId = :academicYearId', { academicYearId: currentAcademicYearId })
             .andWhere('examReport.examSubjectId = :examSubjectId', { examSubjectId })
-            .andWhere('exam.classRoomId = :classRoomId', { classRoomId })
-            .andWhere('exam.examTypeId = :examTypeId', { examTypeId })
 
-        const count = await queryBuilder.clone()
+    const count = await queryBuilder.clone()
             .andWhere('CASE WHEN parent.id IS NULL THEN classRoom.id = :classRoomId ELSE parent.id = :classRoomId END', { classRoomId }) // ensure the student is also in the same classRoom
             .select([
                 'COUNT(DISTINCT CASE WHEN examReport.theoryOM >= examSubject.theoryPM AND examReport.practicalOM >= examSubject.practicalPM THEN examReport.id ELSE NULL END) as totalPassed',
@@ -43,7 +41,9 @@ export class ExamReportsHelper extends BaseRepository {
                 'COUNT(DISTINCT CASE WHEN examReport.practicalOM < examSubject.practicalPM THEN examReport.id END) as practicalFailed',
             ]).getRawOne();
 
-        const examSubject = await queryBuilder.clone()
+        const examSubject = await this.getRepository(ExamSubject).createQueryBuilder('examSubject')
+            .leftJoin('examSubject.subject', 'subject')
+            .where('examSubject.id = :examSubjectId', { examSubjectId })
             .select([
                 'examSubject.theoryFM as theoryFM',
                 'examSubject.theoryPM as theoryPM',

@@ -45,6 +45,8 @@ import { UtilitiesModule } from './utilities/utilities.module';
 import { EnvModule } from './env/env.module';
 import { LessonPlansModule } from './lesson-plans/lesson-plans.module';
 import { FacultiesModule } from './faculties/faculties.module';
+import { OnlineClassesModule } from './online-classes/online-classes.module';
+import { StreamClientModule } from './auth-system/stream-client/stream-client.module';
 
 @Module({
   imports: [
@@ -90,6 +92,7 @@ import { FacultiesModule } from './faculties/faculties.module';
     FileManagementModule,
     MailModule,
     CaslModule,
+    StreamClientModule,
     DormitorySystemModule,
     FinanceSystemModule,
     AcademicYearsModule,
@@ -116,6 +119,7 @@ import { FacultiesModule } from './faculties/faculties.module';
     BranchesModule,
     UtilitiesModule,
     LessonPlansModule,
+    OnlineClassesModule,
   ],
   controllers: [AppController],
   providers: [

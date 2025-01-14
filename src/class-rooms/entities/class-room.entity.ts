@@ -14,6 +14,7 @@ import { Task } from "src/task-system/tasks/entities/task.entity";
 import { Teacher } from "src/teachers/entities/teacher.entity";
 import { BeforeInsert, BeforeUpdate, Column, Entity, ManyToMany, ManyToOne, OneToMany, Tree, TreeChildren, TreeParent } from "typeorm";
 import { Faculty } from "src/faculties/entities/faculty.entity";
+import { OnlineClass } from "src/online-classes/entities/online-class.entity";
 
 @Entity()
 @Tree("closure-table", {
@@ -92,4 +93,7 @@ export class ClassRoom extends BaseEntity {
 
     @OneToMany(() => FeeStructure, feeStructure => feeStructure.classRoom, { cascade: true })
     feeStructures: FeeStructure[];
+
+    @OneToMany(() => OnlineClass, onlineClass => onlineClass.classRoom)
+    onlineClasses: OnlineClass[];
 }

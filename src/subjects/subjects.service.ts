@@ -110,6 +110,21 @@ export class SubjectsService extends BaseRepository {
     return querybuilder.getMany();
   }
 
+  // this is just for mock if need
+  async getMyAssignedSubjects() {
+    const accountId = ''
+
+    const assignedSubjects = await this.getRepository(Subject).find({
+      where: { teachers: { account: { id: accountId } } },
+      relations: { classRoom: { parent: true } },
+      select: {
+        id: true,
+        subjectName: true,
+        classRoom: { id: true, name: true, parent: { id: true, name: true } }
+      }
+    });
+  }
+
   async findOne(id: string) {
     const existing = await this.getRepository(Subject).findOne({
       where: {

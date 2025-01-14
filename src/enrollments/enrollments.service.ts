@@ -2,7 +2,6 @@ import { ConflictException, Inject, Injectable, NotFoundException, Scope } from 
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
 import { Enrollment } from './entities/enrollment.entity';
 import { Brackets, DataSource } from 'typeorm';
-import { ClassRoomsService } from 'src/class-rooms/class-rooms.service';
 import { AcademicYear } from 'src/academic-years/entities/academic-year.entity';
 import { EnrollmentQueryDto } from './dto/enrollment-query.dto';
 import { Student } from 'src/students/entities/student.entity';
@@ -38,42 +37,41 @@ export class EnrollmentsService extends BaseRepository {
     await this.checkIfEnrollmentExists(latestAcademicYear, createEnrollmentDto.studentsWithRollNo.map(student => student.studentId),);
 
     // fetching students along with their latest enrollment and ledger amount
-    const students = await this.getRepository<Student>(Student).createQueryBuilder('student')
+    const students = await this.getRepository<Student>(Student)
+      .createQueryBuilder('student')
       .leftJoin(
-        subQuery => {
-          return subQuery
-            .select('enrollment.studentId', 'studentId')
-            .addSelect('enrollment.id', 'enrollmentId')
+        (qb) =>
+          qb
+            .select('enrollment.id', 'id')
+            .addSelect('enrollment.studentId', 'studentId')
+            .addSelect('MAX(enrollment.createdAt)', 'maxCreatedAt')
+            .addSelect('ledger.amount', 'amount') // Include the ledger amount
             .from(Enrollment, 'enrollment')
-            .where(qb => {
-              const subQueryMaxDate = qb
-                .subQuery()
-                .select('MAX(innerEnrollment.enrollmentDate)')
-                .from(Enrollment, 'innerEnrollment')
-                .where('innerEnrollment.studentId = enrollment.studentId')
-                .getQuery();
-              return `enrollment.enrollmentDate = ${subQueryMaxDate}`;
-            });
-        },
+            .leftJoin('enrollment.ledger', 'ledger') // Join with ledger
+            .groupBy('enrollment.studentId'),
         'latestEnrollment',
         'latestEnrollment.studentId = student.id'
       )
-      .leftJoin('student.account', 'account')
       .leftJoinAndMapOne(
-        'student.ledger',
-        StudentLedger,
-        'ledger',
-        'ledger.enrollmentId = latestEnrollment.enrollmentId'
+        'student.latestEnrollment',
+        Enrollment,
+        'enrollment',
+        'enrollment.id = latestEnrollment.id'
+      )
+      .leftJoin('student.account', 'account')
+      .whereInIds(createEnrollmentDto.studentsWithRollNo.map(student => student.studentId)) // Filter by student IDs
+      .andWhere(
+        new Brackets((qb) => {
+          if (branchId) {
+            qb.andWhere('account.branchId = :branchId', { branchId });
+          }
+        })
       )
       .select([
-        'student.id as id',
-        'student.academicYearIds as academicYearIds',
-        'ledger.amount as ledgerAmount',
+        'student.id AS id',
+        'student.academicYearIds AS academicYearIds',
+        'latestEnrollment.amount AS ledgerAmount',
       ])
-      .whereInIds(createEnrollmentDto.studentsWithRollNo.map(student => student.studentId))
-      .where(new Brackets(qb => {
-        branchId && qb.andWhere('account.branchId = :branchId', { branchId });
-      }))
       .getRawMany();
 
     if (students.length !== createEnrollmentDto.studentsWithRollNo?.length) throw new NotFoundException('Student not found');
