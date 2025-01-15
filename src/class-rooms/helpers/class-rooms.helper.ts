@@ -149,7 +149,7 @@ export class ClassRoomsHelper extends BaseRepository {
         const queryBuilder = this.getRepository(ClassRoom).createQueryBuilder('classRoom')
             .limit(queryDto.take)
             .offset(queryDto.skip)
-            .orderBy("classRoom.createdAt", queryDto.order)
+            .orderBy("classRoutine.createdAt", queryDto.order)
             .leftJoin('classRoom.classRoutines', 'classRoutine')
             .leftJoin('classRoutine.teacher', 'teacher')
             .leftJoin('classRoutine.subject', 'subject')
@@ -164,6 +164,7 @@ export class ClassRoomsHelper extends BaseRepository {
                 'CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, \' - \', classRoom.name) END as name',
                 'subject.id as subjectId',
                 'subject.subjectName as subjectName',
+                'classRoutine.createdAt as createdAt'
             ]);
 
         return paginatedRawData(queryDto, queryBuilder);

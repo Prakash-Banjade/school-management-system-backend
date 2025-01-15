@@ -17,6 +17,7 @@ import { Student } from 'src/students/entities/student.entity';
 import { isStudent } from 'src/utils/utils';
 import { StreamClientProvider } from 'src/auth-system/stream-client/stream-client-provider';
 import { UserRequest } from '@stream-io/node-sdk';
+import { isBefore } from 'date-fns';
 
 @Injectable()
 export class OnlineClassesService extends BaseRepository {
@@ -103,8 +104,8 @@ export class OnlineClassesService extends BaseRepository {
     const queryBuilder = this.getRepository(OnlineClass).createQueryBuilder('onlineClass');
 
     queryBuilder
-      .limit(queryDto.take)
-      .offset(queryDto.skip)
+      .limit(queryDto.skipPagination ? undefined : queryDto.take)
+      .offset(queryDto.skipPagination ? undefined : queryDto.skip)
       .orderBy('onlineClass.createdAt', queryDto.order)
       .leftJoin('onlineClass.teacher', 'teacher')
       .leftJoin('onlineClass.classRoom', 'classRoom')
@@ -112,6 +113,7 @@ export class OnlineClassesService extends BaseRepository {
       .leftJoin('onlineClass.subject', 'subject')
       .where(new Brackets(qb => {
         queryDto.subjectId && qb.andWhere('subject.id = :subjectId', { subjectId: queryDto.subjectId });
+        queryDto.status?.length && qb.andWhere('onlineClass.status IN (:...status)', { status: queryDto.status });
 
         if (isStudent(currentUser)) {
           qb.andWhere('classRoom.id = :classRoomId', { classRoomId: currentUser.classRoomId });
@@ -190,12 +192,17 @@ export class OnlineClassesService extends BaseRepository {
         id,
         teacher: { account: { id: accountId } }
       },
-      select: { id: true }
+      select: { id: true, status: true, scheduleDate: true }
     });
 
     if (!existing) throw new NotFoundException('Online class not found');
 
-    await this.getRepository(OnlineClass).update({ id }, dto);
+    if (existing.status === EOnlineClassStatus.Completed) throw new ForbiddenException('Cannot update now');
+
+    await this.getRepository(OnlineClass).update({ id }, {
+      ...dto,
+      scheduleDate: (EOnlineClassStatus.Scheduled && dto.scheduleDate) ? dto.scheduleDate : existing.scheduleDate
+    });
 
     return { message: 'Online class updated' };
   }
@@ -211,9 +218,12 @@ export class OnlineClassesService extends BaseRepository {
       select: { id: true, status: true }
     });
 
-    if (existing.status === EOnlineClassStatus.Cancelled || existing.status === EOnlineClassStatus.Completed) throw new ForbiddenException('Cannot change the status now');
+    if (existing.status === EOnlineClassStatus.Completed) throw new ForbiddenException('Cannot change the status now');
     if (existing.status === EOnlineClassStatus.Live && dto.status === EOnlineClassStatus.Scheduled) throw new ForbiddenException('Now allowed to change status');
-    if (existing.status === EOnlineClassStatus.Live && dto.status === EOnlineClassStatus.Cancelled) throw new BadRequestException("Cannot cancel the live class. Please end the class first.");
+
+    if (dto.status === EOnlineClassStatus.Live && existing.scheduleDate && !isBefore(existing.scheduleDate, new Date())) { // trying to schedule a live class before scheduleDate
+      throw new BadRequestException('Schedule date must be in the future');
+    }
 
     if (!existing) throw new NotFoundException('Online class not found');
 
@@ -225,10 +235,18 @@ export class OnlineClassesService extends BaseRepository {
   async remove(id: string) {
     const { accountId } = this.utilitiesService.getCurrentUser();
 
-    await this.getRepository(OnlineClass).delete({
-      id,
-      teacher: { account: { id: accountId } }
+    const existing = await this.getRepository(OnlineClass).findOne({
+      where: {
+        id,
+        teacher: { account: { id: accountId } }
+      },
+      select: { id: true, status: true }
     });
+
+    if (!existing) throw new NotFoundException('Online class not found');
+    if (existing.status === EOnlineClassStatus.Completed) throw new ForbiddenException('Cannot delete now');
+
+    await this.getRepository(OnlineClass).remove(existing);
 
     return { message: 'Online class deleted' };
   }

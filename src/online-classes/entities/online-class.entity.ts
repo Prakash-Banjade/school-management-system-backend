@@ -7,8 +7,7 @@ import { Column, Entity, ManyToOne } from "typeorm";
 export enum EOnlineClassStatus {
     Scheduled = 'scheduled',
     Live = 'live',
-    Completed = 'completed',
-    Cancelled = 'cancelled'
+    Completed = 'completed'
 }
 
 @Entity()
