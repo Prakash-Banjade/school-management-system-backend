@@ -33,8 +33,8 @@ export class ClassRoomsService extends BaseRepository {
     const parentClass = dto.parentClassId
       ? await this.getRepository(ClassRoom).findOne({
         where: { id: dto.parentClassId, branch: { id: this.utilitiesService.getBranchId() } },
-        relations: { branch: true },
-        select: { id: true, branch: { id: true } }
+        relations: { branch: true, faculty: true },
+        select: { id: true, branch: { id: true }, faculty: { id: true } }
       }) : null;
 
     // evaluate teacher
@@ -52,7 +52,7 @@ export class ClassRoomsService extends BaseRepository {
 
     const newClassRoom = this.getRepository(ClassRoom).create({
       ...dto,
-      faculty,
+      faculty: parentClass.faculty ?? faculty,
       parent: parentClass,
       classTeacher,
       feeStructures,

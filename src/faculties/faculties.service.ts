@@ -8,6 +8,7 @@ import { FacultiesQueryDto, FacultyOptionsQueryDto } from './dto/faculties-query
 import { paginatedRawData } from 'src/utils/paginatedData';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { UtilitiesService } from 'src/utilities/utilities.service';
+import { EClassType } from 'src/common/types/global.type';
 
 @Injectable()
 export class FacultiesService {
@@ -72,12 +73,12 @@ export class FacultiesService {
     const includeClassRoom = includeSection || queryDto.include === 'classRoom';
 
     return this.facultiesRepo.createQueryBuilder('faculty')
-      .orderBy('faculty.createdAt', 'DESC')
+      .orderBy('faculty.name', 'ASC')
       .leftJoin(
         'faculty.classRooms',
         'classRooms',
-        includeClassRoom ? "classRooms.branchId = :branchId" : '1 = 0',
-        { branchId }
+        includeClassRoom ? !!branchId ? "classRooms.branchId = :branchId" : 'classRooms.classType = :classType' : '1 = 0',
+        { branchId, classType: EClassType.PRIMARY }
       )
       .leftJoin(
         'classRooms.children',
@@ -87,7 +88,6 @@ export class FacultiesService {
       .select([
         "faculty.id",
         "faculty.name",
-        "faculty.degreeLevel",
         ...(
           includeClassRoom ? [
             "classRooms.id",

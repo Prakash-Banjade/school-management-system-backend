@@ -83,6 +83,7 @@ export class SubjectsService extends BaseRepository {
 
         if (isAdmin(currentUser)) { // admin access
           queryDto.classRoomId && qb.andWhere("classRoom.id = :classRoomId", { classRoomId: queryDto.classRoomId })
+          queryDto.facultyId && qb.andWhere('classRoom.facultyId = :facultyId', { facultyId: queryDto.facultyId })
         } else if (isStudent(currentUser)) { // student access
           qb.andWhere('classRoom.id = :classRoomId', { classRoomId: currentUser.classRoomId })
         }

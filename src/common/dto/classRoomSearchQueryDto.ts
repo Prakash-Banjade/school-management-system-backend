@@ -6,11 +6,6 @@ export class ClassRoomSearchQueryDto extends QueryDto {
     @ApiPropertyOptional({ type: String, description: 'Search by classRoom' })
     @IsString()
     @IsOptional()
-    degreeLevel?: string;
-
-    @ApiPropertyOptional({ type: String, description: 'Search by classRoom' })
-    @IsString()
-    @IsOptional()
     facultyId?: string;
 
     @ApiPropertyOptional({ type: String, description: 'Search by classRoom' })

@@ -114,6 +114,7 @@ export class OnlineClassesService extends BaseRepository {
       .where(new Brackets(qb => {
         queryDto.subjectId && qb.andWhere('subject.id = :subjectId', { subjectId: queryDto.subjectId });
         queryDto.status?.length && qb.andWhere('onlineClass.status IN (:...status)', { status: queryDto.status });
+        queryDto.search && qb.andWhere("LOWER(onlineClass.title) LIKE LOWER(:search)", { search: `%${queryDto.search}%` });
 
         if (isStudent(currentUser)) {
           qb.andWhere('classRoom.id = :classRoomId', { classRoomId: currentUser.classRoomId });

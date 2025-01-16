@@ -26,9 +26,8 @@ export class ClassRoomsHelper extends BaseRepository {
             .where('classRoom.classType = :classType', { classType: queryDto.classType })
             .andWhere(new Brackets(qb => {
                 queryDto.search && qb.andWhere('LOWER(classRoom.name) LIKE LOWER(:search)', { search: `%${queryDto.search}%` })
-                queryDto.parentClassId && qb.andWhere('classRoom.parentId = :parentClassId', { parentClassId: queryDto.parentClassId })
-                queryDto.degreeLevel && qb.andWhere('faculty.degreeLevel = :degreeLevel', { degreeLevel: queryDto.degreeLevel })
                 queryDto.facultyId && qb.andWhere('faculty.id = :facultyId', { facultyId: queryDto.facultyId })
+                queryDto.parentClassId && qb.andWhere('classRoom.parentId = :parentClassId', { parentClassId: queryDto.parentClassId })
             }))
             .orderBy("classRoom.createdAt", queryDto.order)
             .offset(queryDto.skipPagination ? undefined : queryDto.skip)
