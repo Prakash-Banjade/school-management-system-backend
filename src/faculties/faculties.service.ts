@@ -3,7 +3,7 @@ import { CreateFacultyDto } from './dto/create-faculty.dto';
 import { UpdateFacultyDto } from './dto/update-faculty.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Faculty } from './entities/faculty.entity';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, ILike, Repository } from 'typeorm';
 import { FacultiesQueryDto, FacultyOptionsQueryDto } from './dto/faculties-query.dto';
 import { paginatedRawData } from 'src/utils/paginatedData';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
@@ -18,7 +18,7 @@ export class FacultiesService {
   ) { }
 
   async create(createFacultyDto: CreateFacultyDto) {
-    const existingWithSameName = await this.facultiesRepo.findOne({ where: { name: createFacultyDto.name }, select: { id: true } });
+    const existingWithSameName = await this.facultiesRepo.findOne({ where: { name: ILike(createFacultyDto.name) }, select: { id: true } });
     if (existingWithSameName) throw new ConflictException('Faculty with same name already exists');
 
     const newFaculty = this.facultiesRepo.create({
@@ -40,13 +40,11 @@ export class FacultiesService {
       .orderBy('faculty.createdAt', queryDto.order)
       .where(new Brackets(qb => {
         queryDto.search && qb.andWhere("LOWER(faculty.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
-        queryDto.degreeLevels?.length && qb.andWhere('faculty.degreeLevel IN (:degreeLevels)', { degreeLevels: queryDto.degreeLevels });
       }))
       .select([
         'faculty.id as id',
         'faculty.name as name',
-        'faculty.degreeLevel as degreeLevel',
-        'faculty.duration as duration'
+        'faculty.description as description'
       ]);
 
     return paginatedRawData(queryDto, queryBuilder);
@@ -58,8 +56,6 @@ export class FacultiesService {
       select: {
         id: true,
         name: true,
-        degreeLevel: true,
-        duration: true,
         description: true
       }
     });
@@ -76,7 +72,7 @@ export class FacultiesService {
     const includeClassRoom = includeSection || queryDto.include === 'classRoom';
 
     return this.facultiesRepo.createQueryBuilder('faculty')
-      .orderBy('faculty.name', 'ASC')
+      .orderBy('faculty.createdAt', 'DESC')
       .leftJoin(
         'faculty.classRooms',
         'classRooms',
@@ -88,9 +84,6 @@ export class FacultiesService {
         'children',
         includeSection ? '1 = 1' : '1 = 0'
       )
-      .andWhere(new Brackets(qb => {
-        queryDto.degreeLevel && qb.andWhere('faculty.degreeLevel = :degreeLevel', { degreeLevel: queryDto.degreeLevel });
-      }))
       .select([
         "faculty.id",
         "faculty.name",
@@ -115,7 +108,7 @@ export class FacultiesService {
     const existing = await this.findOne(id)
 
     if (updateFacultyDto.name && updateFacultyDto.name !== existing.name) {
-      const existingWithSameName = await this.facultiesRepo.findOne({ where: { name: updateFacultyDto.name }, select: { id: true } });
+      const existingWithSameName = await this.facultiesRepo.findOne({ where: { name: ILike(updateFacultyDto.name) }, select: { id: true } });
       if (existingWithSameName) throw new ConflictException('Faculty with same name already exists');
     }
 

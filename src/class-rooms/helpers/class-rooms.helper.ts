@@ -149,22 +149,23 @@ export class ClassRoomsHelper extends BaseRepository {
         const queryBuilder = this.getRepository(ClassRoom).createQueryBuilder('classRoom')
             .limit(queryDto.take)
             .offset(queryDto.skip)
-            .orderBy("classRoutine.createdAt", queryDto.order)
+            .orderBy('classRoutine.createdAt', queryDto.order)
             .leftJoin('classRoom.classRoutines', 'classRoutine')
             .leftJoin('classRoutine.teacher', 'teacher')
             .leftJoin('classRoutine.subject', 'subject')
             .leftJoin('classRoom.parent', 'parent')
             .where('teacher.accountId = :accountId', { accountId })
-            .andWhere(new Brackets(qb => {
-                queryDto.search && qb.andWhere("LOWER(classRoom.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+            .andWhere(new Brackets((qb) => {
+                if (queryDto.search) {
+                    qb.andWhere('LOWER(classRoom.name) LIKE LOWER(:search)', { search: `%${queryDto.search}%` });
+                }
             }))
+            .groupBy('classRoom.id, subject.id') // Group by unique key combination
             .select([
-                'DISTINCT CONCAT(classRoom.id, "-", subject.id) AS uniqueKey', // ensure unique combination, bcz same class & same subject can occur but different day
                 'classRoom.id as id',
                 'CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, \' - \', classRoom.name) END as name',
                 'subject.id as subjectId',
                 'subject.subjectName as subjectName',
-                'classRoutine.createdAt as createdAt'
             ]);
 
         return paginatedRawData(queryDto, queryBuilder);

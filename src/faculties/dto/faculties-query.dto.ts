@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { IsOptional, IsString } from "class-validator";
 import { QueryDto } from "src/common/dto/query.dto";
@@ -12,11 +12,6 @@ export class FacultiesQueryDto extends QueryDto {
 }
 
 export class FacultyOptionsQueryDto {
-    @ApiPropertyOptional()
-    @IsString()
-    @IsOptional()
-    degreeLevel?: string;
-
     @ApiPropertyOptional()
     @IsString()
     @IsOptional()

@@ -1,30 +1,28 @@
-import { ForbiddenException } from "@nestjs/common";
+import { BadRequestException, ConflictException } from "@nestjs/common";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Min, ValidateIf } from "class-validator";
-import { EDegreeLevel } from "src/common/types/global.type";
+import { Transform } from "class-transformer";
+import { IsNotEmpty, IsOptional, IsString, Length } from "class-validator";
+import { SCHOOL_LEVEL_FACULTY_NAME } from "src/common/CONSTANTS";
 
 export class CreateFacultyDto {
     @ApiProperty()
     @IsString()
     @IsNotEmpty()
+    @Transform(({ value }) => {
+        if (typeof value !== 'string') throw new BadRequestException('Name must be a string');
+
+        if (value.toLowerCase() === SCHOOL_LEVEL_FACULTY_NAME.toLowerCase()) throw new ConflictException('School level faculty already exists');
+
+        return value.trim();
+    })
     name: string;
 
     @ApiPropertyOptional()
     @IsString()
     @IsOptional()
-    description?: string;
-
-    @ApiProperty()
-    @IsInt()
-    @Min(1, { message: 'Duration must be greater than 0' })
-    duration: number; // month
-
-    @ApiProperty({ enum: EDegreeLevel })
-    @IsEnum(EDegreeLevel)
-    @ValidateIf((o: CreateFacultyDto) => {
-        if (o.degreeLevel === EDegreeLevel.Basic_School) throw new ForbiddenException('Cannot create faculty under Basic School.')
-
-        return true;
+    @Length(0, 500, { message: 'Description must be less than 500 characters' })
+    @Transform(({ value }) => {
+        return value ? value.trim() : value;
     })
-    degreeLevel: EDegreeLevel;
+    description?: string;
 }
