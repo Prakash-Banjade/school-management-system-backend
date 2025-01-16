@@ -3,7 +3,7 @@ import { CreateOnlineClassDto } from './create-online-class.dto';
 import { IsEnum } from 'class-validator';
 import { EOnlineClassStatus } from '../entities/online-class.entity';
 
-export class UpdateOnlineClassDto extends PartialType(OmitType(CreateOnlineClassDto, ['classRoomId', 'subjectId'] as const)) { }
+export class UpdateOnlineClassDto extends PartialType(OmitType(CreateOnlineClassDto, ['classRoomId', 'subjectId', 'scheduleDate'] as const)) { }
 
 export class UpdateOnlineClassStatusDto {
     @ApiProperty()

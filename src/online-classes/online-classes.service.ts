@@ -133,6 +133,7 @@ export class OnlineClassesService extends BaseRepository {
         'onlineClass.title as title',
         'onlineClass.status as status',
         'onlineClass.scheduleDate as scheduleDate',
+        'onlineClass.description as description',
         'CONCAT(teacher.firstName, " ", teacher.lastName) as teacherName',
         'subject.subjectName as subjectName',
         'CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, " - ", classRoom.name) END as classRoomName',
@@ -201,7 +202,6 @@ export class OnlineClassesService extends BaseRepository {
 
     await this.getRepository(OnlineClass).update({ id }, {
       ...dto,
-      scheduleDate: (EOnlineClassStatus.Scheduled && dto.scheduleDate) ? dto.scheduleDate : existing.scheduleDate
     });
 
     return { message: 'Online class updated' };

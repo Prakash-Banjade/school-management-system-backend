@@ -19,7 +19,6 @@ import { UtilitiesService } from 'src/utilities/utilities.service';
 import { RefreshTokenService } from '../auth/helpers/refresh-tokens.service';
 import { LoginDevice } from './entities/login-devices.entity';
 import { WebAuthnCredential } from '../webAuthn/entities/webAuthnCredential.entity';
-import { EnvService } from 'src/env/env.service';
 import { StreamClientProvider } from '../stream-client/stream-client-provider';
 
 @Injectable({ scope: Scope.REQUEST })
@@ -30,7 +29,6 @@ export class AccountsService extends BaseRepository {
     private readonly branchesService: BranchesService,
     private readonly utilitiesService: UtilitiesService,
     private readonly refreshTokenService: RefreshTokenService,
-    private readonly envService: EnvService,
     private readonly streamClientProvider: StreamClientProvider,
   ) {
     super(dataSource, req);
