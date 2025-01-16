@@ -6,8 +6,6 @@ services:
     buildCommand: npm install && npm run build
     startCommand: npm run start
     healthCheckPath: /health
-    regions:
-      - oregon
     disk:
       name: backend-data
       mountPath: /var/data
