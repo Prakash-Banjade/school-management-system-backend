@@ -15,6 +15,7 @@
   "license": "MIT",
   "scripts": {
     "build": "nest build",
+    "vercel-build": "nest build --output public",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "dev": "nest start --watch",
