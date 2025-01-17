@@ -131,7 +131,8 @@ export class TasksService extends BaseRepository {
         setBy: true,
         attachments: true,
         classRooms: {
-          parent: true
+          parent: true,
+          faculty: true
         }
       },
       select: selectTaskCols,

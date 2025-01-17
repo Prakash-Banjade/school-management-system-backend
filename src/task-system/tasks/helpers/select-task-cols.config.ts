@@ -30,11 +30,15 @@ export const selectTaskCols: FindOptionsSelect<Task> = {
         parent: {
             id: true,
             name: true,
-        }
+        },
+        faculty: {
+            id: true,
+            name: true,
+        },
     }
 }
 
-export const selectTaskCols_student = { 
+export const selectTaskCols_student = {
     ...selectTaskCols,
     submissions: {
         id: true,

@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { ArrayMaxSize, ArrayMinSize, IsArray, IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, ValidateIf } from "class-validator";
+import { Transform } from "class-transformer";
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Length, Max, ValidateIf } from "class-validator";
 import { IsFutureDate } from "src/common/decorators/isFutureDate.decorator";
 import { IsUuidOrUrl } from "src/common/decorators/isUrlOrUUid.decorator";
 import { ETask } from "src/common/types/global.type";
@@ -8,11 +9,15 @@ export class CreateTaskDto {
     @ApiProperty({ type: String, description: 'Task title' })
     @IsString()
     @IsNotEmpty()
+    @Transform(({ value }) => value?.trim())
+    @Length(1, 100, { message: 'Title must be less than 100 characters' })
     title: string;
 
     @ApiProperty({ type: String, description: 'Task description' })
     @IsString()
     @IsNotEmpty()
+    @Length(0, 500, { message: 'Description must be less than 500 characters' })
+    @Transform(({ value }) => value?.trim())
     description: string;
 
     @ApiProperty({ type: String, format: 'date-time', description: 'Submission task date' })
