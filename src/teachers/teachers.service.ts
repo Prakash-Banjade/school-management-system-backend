@@ -1,7 +1,7 @@
 import { BadRequestException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { CreateTeacherDto } from './dto/create-teacher.dto';
 import { UpdateTeacherDto } from './dto/update-teacher.dto';
-import { Brackets, DataSource, Not } from 'typeorm';
+import { Brackets, DataSource, In, Not } from 'typeorm';
 import { REQUEST } from '@nestjs/core';
 import { Teacher } from './entities/teacher.entity';
 import { TeacherQueryDto } from './dto/teacher-query.dto';
@@ -14,6 +14,7 @@ import { applySelectColumns } from 'src/utils/apply-select-cols';
 import paginatedData from 'src/utils/paginatedData';
 import { SalaryStructure } from 'src/finance-system/salary-management/salary-structures/entities/salary-structure.entity';
 import { UtilitiesService } from 'src/utilities/utilities.service';
+import { Faculty } from 'src/faculties/entities/faculty.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class TeachersService extends BaseRepository {
@@ -22,9 +23,7 @@ export class TeachersService extends BaseRepository {
     private readonly imageService: ImagesService,
     private readonly accountsService: AccountsService,
     private readonly utilitiesService: UtilitiesService,
-  ) {
-    super(dataSource, req);
-  }
+  ) { super(dataSource, req) }
 
   async create(createTeacherDto: CreateTeacherDto) {
     // check if teacher already exists
@@ -34,9 +33,15 @@ export class TeachersService extends BaseRepository {
       ? await this.imageService.findOne(createTeacherDto.profileImageId)
       : null;
 
+    const faculties = createTeacherDto.facultyIds?.length ? await this.getRepository(Faculty).find({
+      where: { id: In(createTeacherDto.facultyIds) },
+      select: { id: true }
+    }) : [];
+
     const teacher = this.getRepository(Teacher).create({
       ...createTeacherDto,
       profileImage,
+      faculties,
       salaryStructure: this.getRepository(SalaryStructure).create({
         basicSalary: createTeacherDto.basicSalary,
         allowances: createTeacherDto.allowances ?? [],
@@ -60,6 +65,7 @@ export class TeachersService extends BaseRepository {
       .take(queryDto.take)
       .leftJoin("teacher.profileImage", "profileImage")
       .leftJoin('teacher.account', 'account')
+      .leftJoin('teacher.faculties', 'faculties')
       .andWhere(new Brackets(qb => {
         queryDto.search && qb.andWhere(new Brackets(qb => {
           qb.orWhere("LOWER(CONCAT(teacher.firstName, ' ', teacher.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
@@ -82,6 +88,7 @@ export class TeachersService extends BaseRepository {
         account: { branch: { id: this.utilitiesService.getBranchId() } }
       },
       relations: {
+        faculties: true,
         profileImage: true,
         account: true,
       },
@@ -93,6 +100,10 @@ export class TeachersService extends BaseRepository {
         },
         account: {
           id: true,
+        },
+        faculties: {
+          id: true,
+          name: true,
         }
       }
     });
@@ -114,6 +125,11 @@ export class TeachersService extends BaseRepository {
       existingTeacher.profileImage = updateTeacherDto.profileImageId ? await this.imageService.findOne(updateTeacherDto.profileImageId) : null; // setting new profile image
     }
 
+    const faculties = updateTeacherDto.facultyIds?.length ? await this.getRepository(Faculty).find({
+      where: { id: In(updateTeacherDto.facultyIds) },
+      select: { id: true }
+    }) : [];
+
     // update email if provided
     if (updateTeacherDto.email && existingTeacher.email !== updateTeacherDto.email) {
       await this.accountsService.updateEmail(existingTeacher.account?.id, updateTeacherDto.email);
@@ -121,6 +137,7 @@ export class TeachersService extends BaseRepository {
 
     Object.assign(existingTeacher, {
       ...updateTeacherDto,
+      faculties,
     });
     await this.getRepository(Teacher).save(existingTeacher);
 

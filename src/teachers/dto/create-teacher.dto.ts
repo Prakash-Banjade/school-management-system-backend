@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { IsArray, IsDateString, IsEmail, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, Matches, Min, ValidateNested } from "class-validator";
+import { IsArray, IsDateString, IsEmail, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Matches, Min, ValidateNested } from "class-validator";
 import { NAME_REGEX, NAME_WITH_SPACE_REGEX, PHONE_NUMBER_REGEX } from "src/common/CONSTANTS";
 import { IsNotFutureDate } from "src/common/decorators/isNotFutureDate.decorator";
 import { IsUuidOrUrl } from "src/common/decorators/isUrlOrUUid.decorator";
@@ -58,6 +58,12 @@ export class CreateEmployeeDto {
     @ValidateNested({ each: true })
     @Type(() => AllowanceDto)
     allowances?: AllowanceDto[];
+
+    @ApiProperty({ type: [String], description: 'Faculties of the teacher' })
+    @IsString({ each: true })
+    @IsNotEmpty({ each: true })
+    @IsUUID('all', { each: true })
+    facultyIds: string[];
 
     @ApiPropertyOptional({ type: String, description: 'Profile image id/url of the teacher' })
     @IsUuidOrUrl()

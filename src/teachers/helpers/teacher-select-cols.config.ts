@@ -18,5 +18,9 @@ export const teachersColumnsConfig: FindOptionsSelect<Teacher> = {
     },
     account: {
         id: true,
+    },
+    faculties: {
+        id: true,
+        name: true,
     }
 }

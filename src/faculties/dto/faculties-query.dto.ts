@@ -11,9 +11,14 @@ export class FacultiesQueryDto extends QueryDto {
     degreeLevels?: string[];
 }
 
-export class FacultyOptionsQueryDto {
+export class FacultyOptionsQueryDto extends QueryDto {
     @ApiPropertyOptional()
     @IsString()
     @IsOptional()
     include?: 'classRoom' | 'section';
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @Transform(({ value }) => value === 'true')
+    keyValue: boolean;
 }

@@ -72,6 +72,8 @@ export class FacultiesService {
     const includeSection = queryDto.include === 'section';
     const includeClassRoom = includeSection || queryDto.include === 'classRoom';
 
+    if (queryDto.keyValue) return this.getOptionsByKeyValue(queryDto);
+
     return this.facultiesRepo.createQueryBuilder('faculty')
       .orderBy('faculty.name', 'ASC')
       .leftJoin(
@@ -105,7 +107,20 @@ export class FacultiesService {
           ] : []
         )
       ]).getMany()
+  }
 
+  async getOptionsByKeyValue(queryDto: FacultyOptionsQueryDto) {
+    return this.facultiesRepo.createQueryBuilder('faculty')
+      .orderBy('faculty.name', 'ASC')
+      .offset(queryDto.skip)
+      .limit(queryDto.take)
+      .where(new Brackets(qb => {
+        queryDto.search && qb.andWhere("LOWER(faculty.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+      }))
+      .select([
+        "faculty.name as label",
+        "faculty.id as value"
+      ]).getRawMany();
   }
 
   async update(id: string, updateFacultyDto: UpdateFacultyDto) {
