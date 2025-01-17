@@ -87,6 +87,7 @@ export class ClassRoomsHelper extends BaseRepository {
             .where('classRoom.classType = :classType', { classType: EClassType.PRIMARY })
             .andWhere(new Brackets(qb => {
                 queryDto.search && qb.andWhere("LOWER(classRoom.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+                queryDto.facultyId && qb.andWhere("classRoom.facultyId = :facultyId", { facultyId: queryDto.facultyId })
             }))
 
         if (role === Role.TEACHER) {

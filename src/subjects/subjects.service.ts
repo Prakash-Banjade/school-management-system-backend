@@ -2,7 +2,7 @@ import { ConflictException, Inject, Injectable, NotFoundException, Scope } from 
 import { CreateSubjectDto } from './dto/create-subject.dto';
 import { UpdateSubjectDto } from './dto/update-subject.dto';
 import { Subject } from './entities/subject.entity';
-import { Brackets, DataSource, In } from 'typeorm';
+import { Brackets, DataSource, ILike, In } from 'typeorm';
 import { SubjectOptionsQueryDto, SubjectQueryDto } from './dto/subject-query.dto';
 import paginatedData from 'src/utils/paginatedData';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
@@ -27,7 +27,7 @@ export class SubjectsService extends BaseRepository {
   async create(createSubjectDto: CreateSubjectDto) {
     const founcSubjectWithSameCode = await this.getRepository(Subject).findOne({
       where: {
-        subjectCode: createSubjectDto.subjectCode,
+        subjectCode: ILike(`${createSubjectDto.subjectCode}`),
         classRoom: { branch: { id: this.utilitiesService.getBranchId() } }
       },
       select: { id: true }
@@ -71,6 +71,7 @@ export class SubjectsService extends BaseRepository {
       .take(queryDto.skipPagination ? undefined : queryDto.take)
       .orderBy(queryDto.sortBy, queryDto.order)
       .leftJoin('subject.classRoom', 'classRoom')
+      .leftJoin('classRoom.faculty', 'faculty')
       .leftJoin('subject.teachers', 'teachers')
       .leftJoin('teachers.account', 'account')
       .andWhere(new Brackets(qb => {
@@ -148,8 +149,11 @@ export class SubjectsService extends BaseRepository {
     const existing = await this.findOne(id);
 
     // check if subject code is already taken
-    if (updateSubjectDto.subjectCode && updateSubjectDto.subjectCode !== existing.subjectCode) {
-      const founcSubjectWithSameCode = await this.getRepository(Subject).findOneBy({ subjectCode: updateSubjectDto.subjectCode });
+    if (updateSubjectDto.subjectCode && updateSubjectDto.subjectCode?.toLowerCase() !== existing.subjectCode?.toLowerCase()) {
+      const founcSubjectWithSameCode = await this.getRepository(Subject).findOne({
+        where: { subjectCode: ILike(`${updateSubjectDto.subjectCode}`), classRoom: { branch: { id: this.utilitiesService.getBranchId() } } },
+        select: { id: true }
+      });
       if (founcSubjectWithSameCode) throw new ConflictException('Subject with same code already exists');
     }
 

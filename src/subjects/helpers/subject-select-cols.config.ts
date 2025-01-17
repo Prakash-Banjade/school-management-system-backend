@@ -18,6 +18,10 @@ export const subjectSelectCols: FindOptionsSelect<Subject> = {
     classRoom: {
         id: true,
         name: true,
+        faculty: {
+            id: true,
+            name: true
+        }
     },
     teachers: {
         id: true,

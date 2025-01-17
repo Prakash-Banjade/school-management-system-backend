@@ -47,7 +47,7 @@ export class Subject extends BaseEntity {
     @JoinTable()
     teachers: Teacher[];
 
-    @ManyToOne(() => ClassRoom, classRoom => classRoom.subjects, { nullable: false })
+    @ManyToOne(() => ClassRoom, classRoom => classRoom.subjects, { nullable: false, onDelete: 'CASCADE' })
     classRoom: ClassRoom;
 
     @OneToOne(() => OptionalSubject, (optionalSubject) => optionalSubject.subject, { cascade: true })

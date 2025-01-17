@@ -17,7 +17,7 @@ export class BranchesService extends BaseRepository {
 
   async create(createBranchDto: CreateBranchDto) {
     const existingWithSameName = await this.getRepository(Branch).findOne({
-      where: { name: ILike(createBranchDto.name) },
+      where: { name: ILike(`${createBranchDto.name}`) },
       select: { id: true }
     });
     if (existingWithSameName) throw new ConflictException('Branch name already exists');

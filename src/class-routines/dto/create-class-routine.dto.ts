@@ -1,5 +1,5 @@
 import { BadRequestException } from "@nestjs/common";
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsEnum, IsMilitaryTime, IsNotEmpty, IsOptional, IsUUID, ValidateIf } from "class-validator";
 import { differenceInMinutes, isAfter, parse } from "date-fns";
 import { EDayOfWeek, ERoutineType } from "src/common/types/global.type";
@@ -45,7 +45,7 @@ export class CreateClassRoutineDto {
     @ValidateIf((o) => o.type === ERoutineType.CLASS)
     subjectId?: string;
 
-    @ApiProperty({ format: 'uuid' })
+    @ApiPropertyOptional({ format: 'uuid' })
     @IsUUID()
     @IsOptional()
     teacherId?: string;

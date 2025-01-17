@@ -19,7 +19,7 @@ export class FacultiesService {
   ) { }
 
   async create(createFacultyDto: CreateFacultyDto) {
-    const existingWithSameName = await this.facultiesRepo.findOne({ where: { name: ILike(createFacultyDto.name) }, select: { id: true } });
+    const existingWithSameName = await this.facultiesRepo.findOne({ where: { name: ILike(`${createFacultyDto.name}`) }, select: { id: true } });
     if (existingWithSameName) throw new ConflictException('Faculty with same name already exists');
 
     const newFaculty = this.facultiesRepo.create({
@@ -77,7 +77,11 @@ export class FacultiesService {
       .leftJoin(
         'faculty.classRooms',
         'classRooms',
-        includeClassRoom ? !!branchId ? "classRooms.branchId = :branchId" : 'classRooms.classType = :classType' : '1 = 0',
+        includeClassRoom
+          ? !!branchId
+            ? "classRooms.branchId = :branchId AND classRooms.classType = :classType"
+            : 'classRooms.classType = :classType'
+          : '1 = 0',
         { branchId, classType: EClassType.PRIMARY }
       )
       .leftJoin(
@@ -107,8 +111,8 @@ export class FacultiesService {
   async update(id: string, updateFacultyDto: UpdateFacultyDto) {
     const existing = await this.findOne(id)
 
-    if (updateFacultyDto.name && updateFacultyDto.name !== existing.name) {
-      const existingWithSameName = await this.facultiesRepo.findOne({ where: { name: ILike(updateFacultyDto.name) }, select: { id: true } });
+    if (updateFacultyDto.name && updateFacultyDto.name?.toLowerCase() !== existing.name?.toLocaleLowerCase()) {
+      const existingWithSameName = await this.facultiesRepo.findOne({ where: { name: ILike(`${updateFacultyDto.name}`) }, select: { id: true } });
       if (existingWithSameName) throw new ConflictException('Faculty with same name already exists');
     }
 

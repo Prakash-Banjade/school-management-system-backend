@@ -32,4 +32,9 @@ export class ClassRoomOptionsQueryDto extends QueryDto {
     @IsBoolean()
     @Transform(({ value }) => value === 'true')
     onlyPrimaryClass?: boolean = false;
+
+    @ApiPropertyOptional()
+    @IsString()
+    @IsOptional()
+    facultyId?: string;
 }

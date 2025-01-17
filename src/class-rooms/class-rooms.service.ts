@@ -52,7 +52,7 @@ export class ClassRoomsService extends BaseRepository {
 
     const newClassRoom = this.getRepository(ClassRoom).create({
       ...dto,
-      faculty: parentClass.faculty ?? faculty,
+      faculty: parentClass?.faculty ?? faculty,
       parent: parentClass,
       classTeacher,
       feeStructures,
@@ -107,12 +107,13 @@ export class ClassRoomsService extends BaseRepository {
     }
   }
 
-  private async checkIfExisting(dto: UpdateClassRoomDto) {
+  private async checkIfExisting(dto: Partial<{ name: string, classType: EClassType, facultyId: string }>) {
     const existingWithSameName = await this.getRepository(ClassRoom).findOne({
       where: {
         name: dto.name,
         classType: dto.classType,
-        branch: { id: this.utilitiesService.getBranchId() }
+        branch: { id: this.utilitiesService.getBranchId() },
+        faculty: { id: dto.facultyId }
       },
       select: { id: true }
     });

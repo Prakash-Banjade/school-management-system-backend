@@ -5,7 +5,7 @@ import { ClassRoomSearchQueryDto } from "src/common/dto/classRoomSearchQueryDto"
 import { QueryDto } from "src/common/dto/query.dto";
 
 const subjectSortByQuery = {
-    name: 'subject.subjectName',
+    subjectName: 'subject.subjectName',
 }
 
 export class SubjectQueryDto extends ClassRoomSearchQueryDto {

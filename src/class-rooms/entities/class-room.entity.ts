@@ -29,12 +29,6 @@ export class ClassRoom extends BaseEntity {
     @Column({ type: "longtext", nullable: true })
     description: string;
 
-    @Column({ type: "real", default: 0 })
-    admissionFee: number; // TODO: remove this column in production
-
-    @Column({ type: "real", default: 0 })
-    monthlyFee: number; // TODO: remove this column in production
-
     @Column({ type: 'varchar', default: '' })
     location: string
 
@@ -44,7 +38,7 @@ export class ClassRoom extends BaseEntity {
     @TreeParent({ onDelete: "CASCADE" })
     parent: ClassRoom;
 
-    @ManyToOne(() => Faculty, (faculty) => faculty.classRooms, { onDelete: 'RESTRICT' })
+    @ManyToOne(() => Faculty, (faculty) => faculty.classRooms, { onDelete: 'RESTRICT', nullable: false })
     faculty: Faculty
 
     @Column({ type: "enum", enum: EClassType, default: EClassType.PRIMARY })

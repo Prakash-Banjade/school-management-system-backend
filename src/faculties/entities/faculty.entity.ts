@@ -1,6 +1,7 @@
 import { ClassRoom } from "src/class-rooms/entities/class-room.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
-import { Column, Entity, OneToMany } from "typeorm";
+import { Teacher } from "src/teachers/entities/teacher.entity";
+import { Column, Entity, ManyToMany, OneToMany } from "typeorm";
 
 @Entity()
 export class Faculty extends BaseEntity {
@@ -12,5 +13,8 @@ export class Faculty extends BaseEntity {
     description: string;
 
     @OneToMany(() => ClassRoom, classRoom => classRoom.faculty)
-    classRooms: ClassRoom[]
+    classRooms: ClassRoom[];
+
+    @ManyToMany(() => Teacher, teacher => teacher.faculties)
+    teachers: Teacher[];
 }

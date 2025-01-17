@@ -14,9 +14,10 @@ export class CreateClassRoomDto {
     @Length(0, 500, { message: 'Description must be less than 500 characters' })
     description?: string
 
-    @ApiProperty()
+    @ApiPropertyOptional({ type: String, format: 'uuid', example: 'Faculty ID', description: 'ID of the faculty' })
     @IsUUID()
-    facultyId: string;
+    @ValidateIf((o: CreateClassRoomDto) => o.classType === EClassType.PRIMARY)
+    facultyId?: string;
 
     @ApiProperty({ type: String, example: 'Primary', description: 'Type of the class room' })
     @IsEnum(EClassType)

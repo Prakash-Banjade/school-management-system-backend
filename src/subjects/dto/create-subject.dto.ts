@@ -1,6 +1,7 @@
 import { BadRequestException } from "@nestjs/common";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsArray, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Min, ValidateIf } from "class-validator";
+import { Transform } from "class-transformer";
+import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Length, Min, ValidateIf } from "class-validator";
 import { ESubjectType } from "src/common/types/global.type";
 
 export class SubjectMarksDto {
@@ -37,16 +38,20 @@ export class CreateSubjectDto extends SubjectMarksDto {
     @ApiProperty({ type: String, description: 'Subject name' })
     @IsString()
     @IsNotEmpty()
+    @Transform(({ value }) => value?.trim())
     subjectName: string;
 
     @ApiProperty({ type: String, description: 'Subject code' })
     @IsString()
     @IsNotEmpty()
+    @Transform(({ value }) => value?.trim())
     subjectCode: string;
 
     @ApiProperty({ type: String, description: 'Subject description' })
     @IsString()
     @IsNotEmpty()
+    @Length(0, 500, { message: 'Description must be less than 500 characters' })
+    @Transform(({ value }) => value?.trim())
     content: string;
 
     @ApiProperty({ type: 'enum', enum: ESubjectType, description: 'Subject type' })

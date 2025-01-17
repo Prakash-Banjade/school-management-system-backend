@@ -51,6 +51,7 @@ export class TeachersHelper extends BaseRepository {
             .limit(queryDto.take)
             .offset(queryDto.skip)
             .leftJoin("teacher.account", "account")
+            .leftJoin("teacher.faculties", "faculties")
             .leftJoin(
                 "teacher.assignedSubjects",
                 "assignedSubjects",
@@ -65,6 +66,8 @@ export class TeachersHelper extends BaseRepository {
                 }
 
                 queryDto.assignedSubjectId && qb.andWhere('assignedSubjects.id IS NOT NULL');
+
+                queryDto.facultyId && qb.andWhere('faculties.id = :facultyId', { facultyId: queryDto.facultyId });
             }))
             .select([
                 "teacher.id as value",

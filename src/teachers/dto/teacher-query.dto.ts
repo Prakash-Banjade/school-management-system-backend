@@ -14,4 +14,9 @@ export class TeacherOptionsQueryDto extends QueryDto {
     @IsString()
     @IsOptional()
     assignedSubjectId?: string;
+
+    @ApiPropertyOptional()
+    @IsString()
+    @IsOptional()
+    facultyId?: string;
 }
