@@ -5,6 +5,7 @@ import {
     ValidatorConstraint,
     ValidatorConstraintInterface,
 } from 'class-validator';
+import { isFuture } from 'date-fns';
 
 
 @ValidatorConstraint({ async: false })
@@ -13,9 +14,7 @@ class IsFutureDateConstraint implements ValidatorConstraintInterface {
         const dateObj = new Date(date);
         if (isNaN(dateObj.getTime())) return false;
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Set time to the start of the day
-        return dateObj >= today;
+        return isFuture(dateObj);
     }
 
     defaultMessage(args: ValidationArguments) {

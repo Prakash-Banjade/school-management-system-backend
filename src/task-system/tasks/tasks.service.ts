@@ -73,9 +73,11 @@ export class TasksService extends BaseRepository {
       .leftJoin('task.subject', 'subject')
       .leftJoin('task.classRooms', 'classRoom')
       .leftJoin('classRoom.parent', 'parent')
+      .leftJoin('classRoom.faculty', 'faculty')
       .andWhere(new Brackets(qb => {
         queryDto.search && qb.andWhere("LOWER(task.title) LIKE LOWER(:search)", { search: `%${queryDto.search}%` });
 
+        queryDto.facultyId && qb.andWhere('faculty.id = :facultyId', { facultyId: queryDto.facultyId });
         queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId OR parent.id = :classRoomId', { classRoomId: queryDto.classRoomId }); // check in both section and class
         queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId }); // section is the class room
 
@@ -93,6 +95,7 @@ export class TasksService extends BaseRepository {
         "JSON_ARRAYAGG(JSON_OBJECT('id', classRoom.id, 'name', classRoom.name)) as classRooms", // Aggregate classrooms as JSON
         "MAX(parent.id) as parentClassId",  // Aggregate non-grouped fields with MAX
         "MAX(parent.name) as parentClassName",
+        "MAX(faculty.name) as faculty",
       ])
       .groupBy("task.id");
 

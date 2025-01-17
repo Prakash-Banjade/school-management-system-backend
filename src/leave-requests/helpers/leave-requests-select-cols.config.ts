@@ -24,6 +24,10 @@ export const leaveRequestSelectCols: FindOptionsSelect<LeaveRequest> = {
                 parent: {
                     id: true,
                     name: true,
+                },
+                faculty: {
+                    id: true,
+                    name: true
                 }
             }
         },

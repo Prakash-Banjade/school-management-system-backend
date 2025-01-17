@@ -61,6 +61,7 @@ export class LeaveRequestsService extends BaseRepository {
       .leftJoin('account.student', 'student')
       .leftJoin('student.classRoom', 'classRoom')
       .leftJoin('classRoom.parent', 'parent')
+      .leftJoin('classRoom.faculty', 'faculty')
       .andWhere(new Brackets(qb => {
         if (isAdmin(currentUser)) { // admin access
           queryDto.classRoomId && qb.andWhere(new Brackets(qb => {
@@ -69,6 +70,7 @@ export class LeaveRequestsService extends BaseRepository {
           }));
 
           queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId });
+          queryDto.facultyId && qb.andWhere('faculty.id = :facultyId', { facultyId: queryDto.facultyId });
           queryDto.status?.length && qb.andWhere('leaveRequest.status IN (:...status)', { status: Array.isArray(queryDto.status) ? queryDto.status : [queryDto.status] });
 
           qb.andWhere('account.role = :role', { role: Role.STUDENT }); // only for students

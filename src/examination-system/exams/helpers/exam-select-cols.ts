@@ -28,7 +28,7 @@ export const singleExamSelectCols: FindOptionsSelect<Exam> = {
     classRoom: {
         id: true,
         name: true,
-        parent: {
+        faculty: {
             id: true,
             name: true,
         }

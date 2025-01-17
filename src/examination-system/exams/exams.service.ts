@@ -117,9 +117,11 @@ export class ExamsService extends BaseRepository {
       .limit(queryDto.take)
       .leftJoin('exam.examType', 'examType')
       .leftJoin('exam.classRoom', 'classRoom')
+      .leftJoin('classRoom.faculty', 'faculty')
       .where("exam.academicYearId = :academicYearId", { academicYearId: await this.utilitiesService.getAcademicYearId() })
       .andWhere(new Brackets(qb => {
         queryDto.examTypes?.length && qb.andWhere('examType.name IN (:...examTypes)', { examTypes: queryDto.examTypes });
+        queryDto.facultyId && qb.andWhere('faculty.id = :facultyId', { facultyId: queryDto.facultyId });
         queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
       }))
       .select([
@@ -129,6 +131,7 @@ export class ExamsService extends BaseRepository {
         'examType.name as examType',
         'classRoom.id as classRoomId', // required in frontend in exam columns
         'classRoom.name as classRoom',
+        'faculty.name as faculty',
       ])
 
     this.utilitiesService.applyBranchFilter(queryBuilder, 'classRoom.branchId = :branchId');
@@ -146,7 +149,7 @@ export class ExamsService extends BaseRepository {
       .andWhere('exam.academicYearId = :academicYearId', { academicYearId: await this.utilitiesService.getAcademicYearId() })
       .leftJoin('exam.examType', 'examType')
       .leftJoin('exam.classRoom', 'classRoom')
-      .leftJoin('classRoom.parent', 'parent')
+      .leftJoin('classRoom.faculty', 'faculty')
       .leftJoin('exam.examSubjects', 'examSubjects', examSubjectJoinCondition)
       .leftJoin('examSubjects.subject', 'subject')
 

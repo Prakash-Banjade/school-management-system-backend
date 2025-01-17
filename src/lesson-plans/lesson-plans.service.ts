@@ -82,9 +82,9 @@ export class LessonPlansService extends BaseRepository {
 
         queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId OR parent.id = :classRoomId', { classRoomId: sectionId ?? classRoomId }); // check in both section and class
 
-        queryDto.subjectId && qb.andWhere('subject.id = :subjectId', { subjectId: queryDto.subjectId });
-
         queryDto.status?.length && qb.andWhere('lessonPlan.status IN (:...status)', { status: queryDto.status });
+
+        queryDto.subjectId && qb.andWhere('subject.id = :subjectId', { subjectId: queryDto.subjectId });
       }))
       .select([
         "lessonPlan.id as id",

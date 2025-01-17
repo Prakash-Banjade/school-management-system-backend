@@ -20,6 +20,10 @@ export const enrollmentSelectColumns: FindOptionsSelect<Enrollment> = {
         parent: {
             id: true,
             name: true,
+        },
+        faculty: {
+            id: true,
+            name: true
         }
     },
     academicYear: {

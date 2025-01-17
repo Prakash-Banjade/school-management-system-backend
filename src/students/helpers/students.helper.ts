@@ -37,6 +37,7 @@ export class StudentsHelper extends BaseRepository {
             .leftJoin('enrollments.ledger', 'ledger', queryDto.includeLedgerAmount ? '1 = 1' : '1 = 0')
             .leftJoin('enrollments.classRoom', 'classRoom')
             .leftJoin('classRoom.parent', 'parent')
+            .leftJoin('classRoom.faculty', 'faculty')
             .leftJoin('student.profileImage', 'profileImage', queryDto.onlyBasicInfo ? '1 = 0' : '1 = 1') // only basic info will not have profile image
             .leftJoin('student.account', 'account')
             .andWhere(new Brackets(qb => {
@@ -49,6 +50,7 @@ export class StudentsHelper extends BaseRepository {
                 }
                 queryDto.studentId && qb.andWhere('student.studentId = :studentId', { studentId: queryDto.studentId });
 
+                queryDto.facultyId && qb.andWhere('faculty.id = :facultyId', { facultyId: queryDto.facultyId });
                 queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId }); // the sectionId send by the frontend is the class room id
                 // if class room id, check in both section and class room
                 queryDto.classRoomId && qb.andWhere('parent.id = :classRoomId OR classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
@@ -92,6 +94,7 @@ export class StudentsHelper extends BaseRepository {
                 "routeStop.id as routeStopId",
                 "routeStop.name as routeStop",
                 "account.id as accountId",
+                "faculty.name as faculty",
             ]
     }
 
