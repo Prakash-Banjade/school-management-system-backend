@@ -1,8 +1,6 @@
-import { BadRequestException } from "@nestjs/common";
 import { ApiProperty, ApiPropertyOptional, OmitType } from "@nestjs/swagger";
-import { Transform, Type } from "class-transformer";
-import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsDateString, IsDefined, IsEmail, IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Length, Matches, Max, MaxLength, Min, ValidateIf, ValidateNested } from "class-validator";
-import { subYears } from "date-fns";
+import { Type } from "class-transformer";
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsDateString, IsDefined, IsEmail, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Length, Matches, MaxLength, Min, ValidateIf, ValidateNested } from "class-validator";
 import { NAME_REGEX, NAME_WITH_SPACE_REGEX, PHONE_NUMBER_REGEX } from "src/common/CONSTANTS";
 import { IsDateOfBirth } from "src/common/decorators/validators/isDateOfBrith.decorator";
 import { IsNotFutureDate } from "src/common/decorators/validators/isNotFutureDate.decorator";
@@ -36,12 +34,12 @@ export class CreateStudentDto {
     @IsOptional()
     admissionDate?: string;
 
-    @ApiPropertyOptional({ format: 'uuid' })
+    @ApiPropertyOptional({ format: 'uuid', description: 'Dormitory room ID of the student' })
     @IsUUID()
     @IsOptional()
     dormitoryRoomId?: string;
 
-    @ApiPropertyOptional({ format: 'uuid' })
+    @ApiPropertyOptional({ format: 'uuid', description: 'Route stop ID of the student' })
     @IsUUID()
     @IsOptional()
     routeStopId?: string;
@@ -72,7 +70,7 @@ export class CreateStudentDto {
     @IsEnum(Gender)
     gender: Gender
 
-    @ApiPropertyOptional({ type: 'string', format: 'date-time', description: 'Date of birth of the student' })
+    @ApiProperty({ type: 'string', format: 'date-time', description: 'Date of birth of the student' })
     @IsDateString()
     @IsDateOfBirth(2, 80, { message: 'Date of birth must result in an age between 2 and 80 years.' })
     dob: string;

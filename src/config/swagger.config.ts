@@ -6,6 +6,9 @@ export function setupSwagger(app: INestApplication): void {
         .setTitle('School Management System API')
         .setDescription('School Management System API description')
         .setVersion('1.0')
+        .addTag('Authentication')
+        .addTag('Students')
+        .addServer(process.env.BACKEND_URL)
         .addBearerAuth(
             {
                 type: 'http',
@@ -19,7 +22,7 @@ export function setupSwagger(app: INestApplication): void {
         .build();
 
     const document = SwaggerModule.createDocument(app, config, {
-        
+
     });
 
     SwaggerModule.setup('docs', app, document, {
@@ -35,6 +38,6 @@ export function setupSwagger(app: INestApplication): void {
             'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.17.14/swagger-ui-standalone-preset.min.css',
             'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.17.14/swagger-ui.css',
         ],
-        
+
     });
 }

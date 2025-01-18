@@ -5,12 +5,7 @@ import { File } from './entities/file.entity';
 import { In, Repository } from 'typeorm';
 import path from 'path';
 import fs from 'fs';
-import { fileSelectColumns } from './entities/file-select-cols.config';
-import { UpdateFileDto } from './dto/update-files.dto';
 import { getFileMetadata } from 'src/utils/getFileMetadata';
-import { QueryDto } from 'src/common/dto/query.dto';
-import { applySelectColumns } from 'src/utils/apply-select-cols';
-import paginatedData from 'src/utils/paginatedData';
 import { FastifyReply } from 'fastify';
 import { EFileMimeType } from 'src/common/types/global.type';
 import { EnvService } from 'src/env/env.service';
@@ -42,19 +37,6 @@ export class FilesService {
     }
   }
 
-  async findAll(queryDto: QueryDto) {
-    const queryBuilder = this.filesRepository.createQueryBuilder('file');
-
-    queryBuilder
-      .orderBy('file.createdAt', 'DESC')
-      .skip(queryDto.skip)
-      .take(queryDto.take)
-
-    applySelectColumns(queryBuilder, fileSelectColumns, 'file');
-
-    return paginatedData(queryDto, queryBuilder);
-  }
-
   async findAllByIds(ids: string[], mimeType?: EFileMimeType) {
     return await this.filesRepository.find({
       where: [
@@ -63,18 +45,6 @@ export class FilesService {
       ],
       select: { id: true }
     })
-  }
-
-  async findOne(id: string) {
-    const existingFile = await this.filesRepository.findOne({
-      where: [
-        { id },
-        { url: id }
-      ],
-    });
-    if (!existingFile) throw new NotFoundException('File not found');
-
-    return existingFile
   }
 
   async serveFile(filename: string, @Res() res: FastifyReply) {

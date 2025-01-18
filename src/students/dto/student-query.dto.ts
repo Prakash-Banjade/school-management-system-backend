@@ -32,7 +32,7 @@ export class StudentQueryDto extends ClassRoomSearchQueryDto {
     })
     sortBy?: string;
 
-    @ApiPropertyOptional()
+    @ApiPropertyOptional({ type: "boolean", description: 'Include ledger amount flag', default: false })
     @IsOptional()
     @IsBoolean()
     @Transform(({ value }) => value === 'true')

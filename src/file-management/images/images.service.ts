@@ -2,17 +2,13 @@ import { Injectable, NotFoundException, Res } from '@nestjs/common';
 import { CreateImageDto } from './dto/create-image.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Image } from './entities/image.entity';
-import { Brackets, In, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import path from 'path';
 import fs from 'fs';
 import sharp from 'sharp';
 import { ImageQueryDto } from './dto/image-query.dto';
-import { AuthUser, Role } from 'src/common/types/global.type';
+import { AuthUser } from 'src/common/types/global.type';
 import { getImageMetadata } from 'src/utils/getImageMetadata';
-import { QueryDto } from 'src/common/dto/query.dto';
-import { applySelectColumns } from 'src/utils/apply-select-cols';
-import { imageSelectColumns } from './helpers/image-select-cols';
-import paginatedData from 'src/utils/paginatedData';
 import { FastifyReply } from 'fastify';
 import { isBackendUrl } from 'src/common/decorators/validators/isUrlOrUUid.decorator';
 import { Account } from 'src/auth-system/accounts/entities/account.entity';
@@ -47,32 +43,6 @@ export class ImagesService {
       files: images.map(image => ({ id: image.id, url: image.url, originalName: image.originalName })),
       count: createImageDto.images.length,
     }
-  }
-
-  async findAll(queryDto: QueryDto, currentUser: AuthUser) {
-    const queryBuilder = this.imagesRepository.createQueryBuilder('image');
-
-    queryBuilder
-      .orderBy('image.createdAt', 'DESC')
-      .skip(queryDto.skipPagination ? undefined : queryDto.skip)
-      .take(queryDto.skipPagination ? undefined : queryDto.take)
-      .leftJoin('image.uploadedBy', 'uploadedBy')
-      .where(new Brackets(qb => {
-        currentUser.role !== Role.ADMIN && qb.where({ uploadedBy: { id: currentUser.accountId } })
-      }))
-
-    applySelectColumns(queryBuilder, imageSelectColumns, 'image');
-
-    return paginatedData(queryDto, queryBuilder);
-  }
-
-  async findAllByIds(ids: string[]) {
-    return await this.imagesRepository.find({
-      where: [
-        { id: In(ids) },
-        { url: In(ids) }
-      ]
-    })
   }
 
   async findOne(id: string) {
@@ -136,13 +106,5 @@ export class ImagesService {
     await this.imagesRepository.remove(newImage);
 
     return existing.id;
-  }
-
-  async remove(id: string) {
-    const existing = await this.findOne(id);
-    await this.imagesRepository.remove(existing);
-    return {
-      message: 'Image deleted successfully'
-    }
   }
 }
