@@ -24,7 +24,7 @@ export class CreateEmployeeDto {
     })
     lastName?: string;
 
-    @ApiProperty({ type: 'enum', enum: Gender, example: Gender.MALE, description: 'Gender of the teacher' })
+    @ApiProperty({ type: 'string', enum: Gender, example: Gender.MALE, description: 'Gender of the teacher' })
     @IsEnum(Gender)
     @IsNotEmpty()
     gender!: Gender;
@@ -80,12 +80,12 @@ export class CreateEmployeeDto {
     @IsOptional()
     shortDescription?: string;
 
-    @ApiProperty({ type: 'enum', enum: EMaritalStatus, example: EMaritalStatus.MARRIED, description: 'Marital status of the teacher' })
+    @ApiProperty({ type: 'string', enum: EMaritalStatus, example: EMaritalStatus.MARRIED, description: 'Marital status of the teacher' })
     @IsEnum(EMaritalStatus)
     @IsNotEmpty()
     maritalStatus!: EMaritalStatus;
 
-    @ApiProperty({ type: 'enum', enum: EBloodGroup, example: EBloodGroup.B_POSITIVE, description: 'Blood group of the teacher' })
+    @ApiProperty({ type: 'string', enum: EBloodGroup, example: EBloodGroup.B_POSITIVE, description: 'Blood group of the teacher' })
     @IsEnum(EBloodGroup)
     @IsNotEmpty()
     bloodGroup!: EBloodGroup;

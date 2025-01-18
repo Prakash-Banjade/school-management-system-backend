@@ -23,7 +23,7 @@ export class StudentQueryDto extends ClassRoomSearchQueryDto {
     @IsOptional()
     rollNo?: string;
 
-    @ApiPropertyOptional({ type: 'enum', description: 'Sort By Key' })
+    @ApiPropertyOptional({ type: 'string', description: 'Sort By Key' })
     @IsOptional()
     @IsString()
     @Transform(({ value }) => {

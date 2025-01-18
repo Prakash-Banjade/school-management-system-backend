@@ -10,7 +10,7 @@ export class AttendanceQueryDto extends QueryDto {
     @IsOptional()
     date?: string;
 
-    @ApiPropertyOptional({ type: 'enum', enum: EAttendanceStatus, description: 'Status of the attendance' })
+    @ApiPropertyOptional({ type: 'string', enum: EAttendanceStatus, description: 'Status of the attendance' })
     @IsEnum(EAttendanceStatus)
     @IsOptional()
     status?: EAttendanceStatus;

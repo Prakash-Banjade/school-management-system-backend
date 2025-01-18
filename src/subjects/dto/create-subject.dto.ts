@@ -54,15 +54,15 @@ export class CreateSubjectDto extends SubjectMarksDto {
     @Transform(({ value }) => value?.trim())
     content: string;
 
-    @ApiProperty({ type: 'enum', enum: ESubjectType, description: 'Subject type' })
+    @ApiProperty({ type: 'string', enum: ESubjectType, description: 'Subject type' })
     @IsEnum(ESubjectType)
     type: ESubjectType;
 
-    @ApiProperty({ type: 'enum', format: 'emum', description: 'Class room id' })
+    @ApiProperty({ type: 'string', format: 'emum', description: 'Class room id' })
     @IsUUID()
     classRoomId: string;
 
-    @ApiPropertyOptional({ type: 'enum', format: 'emum', description: 'Teacher id' })
+    @ApiPropertyOptional({ type: 'string', format: 'emum', description: 'Teacher id' })
     @IsUUID('all', { each: true })
     @IsOptional()
     teacherIds?: string[];

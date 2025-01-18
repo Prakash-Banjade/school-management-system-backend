@@ -6,7 +6,7 @@ import { IsEnum, IsNotEmpty } from 'class-validator';
 export class UpdateLeaveRequestDto extends PartialType(CreateLeaveRequestDto) { }
 
 export class UpdateLeaveRequestStatusDto {
-    @ApiProperty({ type: 'enum', enum: ELeaveRequestStatus, description: 'Leave request status' })
+    @ApiProperty({ type: 'string', enum: ELeaveRequestStatus, description: 'Leave request status' })
     @IsEnum(ELeaveRequestStatus)
     @IsNotEmpty()
     status: ELeaveRequestStatus;

@@ -8,7 +8,7 @@ export class CreateAttendanceDto {
     @IsNotEmpty()
     accountId: string;
 
-    @ApiProperty({ type: 'enum', enum: EAttendanceStatus })
+    @ApiProperty({ type: 'string', enum: EAttendanceStatus })
     @IsNotEmpty()
     @IsEnum(EAttendanceStatus)
     status: EAttendanceStatus

@@ -16,7 +16,7 @@ export class CreateSubjectChapterDto {
     @MaxLength(1000, { message: 'Chapter content should not exceed 1000 characters' })
     content: string;
 
-    @ApiPropertyOptional({ type: 'enum', enum: ESubjectChapterPriority, description: 'Chapter priority', default: ESubjectChapterPriority.MEDIUM })
+    @ApiPropertyOptional({ type: 'string', enum: ESubjectChapterPriority, description: 'Chapter priority', default: ESubjectChapterPriority.MEDIUM })
     @IsEnum(ESubjectChapterPriority)
     @IsOptional()
     priority: ESubjectChapterPriority

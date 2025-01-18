@@ -16,7 +16,7 @@ export class CreateGuardianDto {
     @IsNotEmpty()
     lastName: string;
 
-    @ApiProperty({ type: 'enum', enum: EGuardianRelation, description: 'Guardian relation' })
+    @ApiProperty({ type: 'string', enum: EGuardianRelation, description: 'Guardian relation' })
     @IsEnum(EGuardianRelation)
     @IsNotEmpty()
     relation: EGuardianRelation;

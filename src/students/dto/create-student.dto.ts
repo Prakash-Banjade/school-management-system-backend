@@ -65,7 +65,7 @@ export class CreateStudentDto {
     })
     lastName: string;
 
-    @ApiPropertyOptional({ type: 'enum', enum: Gender, description: 'Gender number of the student' })
+    @ApiPropertyOptional({ type: 'string', enum: Gender, description: 'Gender number of the student' })
     @IsEnum(Gender)
     gender: Gender
 
@@ -75,7 +75,7 @@ export class CreateStudentDto {
     @IsNotFutureDate({ message: 'Date of birth cannot be in the future' })
     dob: string;
 
-    @ApiProperty({ type: 'enum', enum: EReligion, description: 'Religioin of the student' })
+    @ApiProperty({ type: 'string', enum: EReligion, description: 'Religioin of the student' })
     @IsEnum(EReligion)
     religion?: EReligion;
 
@@ -125,7 +125,7 @@ export class CreateStudentDto {
     |--------------------------------------------------
     */
 
-    @ApiPropertyOptional({ type: 'enum', enum: EBloodGroup, description: 'Blood group of the student' })
+    @ApiPropertyOptional({ type: 'string', enum: EBloodGroup, description: 'Blood group of the student' })
     @IsEnum(EBloodGroup)
     @IsOptional()
     bloodGroup?: EBloodGroup;

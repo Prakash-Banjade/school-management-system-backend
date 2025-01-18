@@ -1,6 +1,6 @@
 import { CACHE_MANAGER } from "@nestjs/cache-manager";
 import { Inject, Injectable, Scope } from "@nestjs/common";
-import { Cache } from "cache-manager";
+import { CacheManagerStore } from "cache-manager";
 import { EnvService } from "src/env/env.service";
 import { UtilitiesService } from "src/utilities/utilities.service";
 
@@ -15,7 +15,7 @@ export class RefreshTokenService {
     deviceId: string;
 
     constructor(
-        @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+        @Inject(CACHE_MANAGER) private readonly cacheManager: CacheManagerStore,
         private readonly envService: EnvService,
         private readonly utilitiesService: UtilitiesService
     ) { }
@@ -51,17 +51,19 @@ export class RefreshTokenService {
     }
 
     async removeAll() {
-        const keys = await this.cacheManager.store.keys(`user:${this.email}:*`);
+        const keys = await this.cacheManager.keys();
 
-        await Promise.all(keys.map(async (key) => await this.cacheManager.del(key)));
+        const filteredKeys = keys.filter((key) => key.startsWith(`user:${this.email}:`));
+
+        await this.cacheManager.mdel(...filteredKeys);
     }
 
     async getAll() {
-        const keys = await this.cacheManager.store.keys(`user:${this.email}:*`);
+        const keys = await this.cacheManager.keys();
 
         if (!keys?.length) return [];
-        
-        const tokens = await this.cacheManager.store.mget(...keys);
+
+        const tokens = await this.cacheManager.mget(...keys.filter((key) => key.startsWith(`user:${this.email}:`)));
 
         return tokens.map((token: string | null) => token ? JSON.parse(token) as TRefreshToken : null);
     }

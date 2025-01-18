@@ -20,7 +20,7 @@ export class UpdateUserDto {
     @IsOptional()
     phone?: string
 
-    @ApiPropertyOptional({ type: 'enum', enum: Gender, enumName: 'Gender' })
+    @ApiPropertyOptional({ type: 'string', enum: Gender, enumName: 'Gender' })
     @IsEnum(Gender)
     @IsOptional()
     gender?: Gender

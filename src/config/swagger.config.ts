@@ -18,9 +18,12 @@ export function setupSwagger(app: INestApplication): void {
         )
         .build();
 
-    const document = SwaggerModule.createDocument(app, config);
+    const document = SwaggerModule.createDocument(app, config, {
+        
+    });
 
     SwaggerModule.setup('docs', app, document, {
+        jsonDocumentUrl: 'docs/json',
         customSiteTitle: 'School Management System API',
         customfavIcon: 'https://avatars.githubusercontent.com/u/6936373?s=200&v=4',
         customJs: [
@@ -32,5 +35,6 @@ export function setupSwagger(app: INestApplication): void {
             'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.17.14/swagger-ui-standalone-preset.min.css',
             'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.17.14/swagger-ui.css',
         ],
+        
     });
 }

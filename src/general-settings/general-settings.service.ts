@@ -6,7 +6,7 @@ import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
 import { GeneralSettingQueryDto } from './dto/general-setting-query.dto';
 import { GeneralSetting } from './entities/general-setting.entity';
-import { Cache } from 'cache-manager';
+import { CacheManagerStore } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { CACHE_KEYS } from 'src/common/cache-keys';
 
@@ -14,7 +14,7 @@ import { CACHE_KEYS } from 'src/common/cache-keys';
 export class GeneralSettingsService extends BaseRepository {
   constructor(
     dataSource: DataSource, @Inject(REQUEST) private req: FastifyRequest,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    @Inject(CACHE_MANAGER) private cacheManager: CacheManagerStore,
   ) { super(dataSource, req) }
 
   async set(dto: GeneralSettingDto) {
@@ -71,10 +71,10 @@ export class GeneralSettingsService extends BaseRepository {
   }
 
   private async removeCache() {
-    const keys = await this.cacheManager.store.keys(`${CACHE_KEYS.GEN_SET}:*`)
+    const keys = await this.cacheManager.keys();
 
-    for (const key of keys) {
-      await this.cacheManager.del(key);
-    }
+    const filteredKeys = keys?.filter((key) => key.startsWith(CACHE_KEYS.GEN_SET));
+
+    await this.cacheManager.mdel(...filteredKeys);
   }
 }

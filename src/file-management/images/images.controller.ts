@@ -12,7 +12,7 @@ import { Public } from 'src/common/decorators/setPublicRoute.decorator';
 import { FastifyReply } from 'fastify';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 
-@ApiTags('Upload Images')
+// @ApiTags('Upload Images')
 @Controller('upload/images')
 export class ImagesController {
   constructor(private readonly imagesService: ImagesService) { }
