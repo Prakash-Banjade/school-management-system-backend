@@ -1,7 +1,7 @@
 import { ApiProperty, OmitType, PartialType } from '@nestjs/swagger';
 import { CreateBookTransactionDto } from './create-book-transaction.dto';
 import { ArrayMinSize, IsArray, IsDateString, IsUUID } from 'class-validator';
-import { IsFutureDate } from 'src/common/decorators/isFutureDate.decorator';
+import { IsFutureDate } from 'src/common/decorators/validators/isFutureDate.decorator';
 
 export class UpdateBookTransactionDto extends PartialType(OmitType(CreateBookTransactionDto, ['studentId'])) { }
 

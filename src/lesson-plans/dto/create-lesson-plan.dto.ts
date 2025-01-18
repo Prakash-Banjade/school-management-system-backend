@@ -1,8 +1,8 @@
 import { BadRequestException } from "@nestjs/common";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { ArrayMaxSize, ArrayMinSize, IsArray, IsDateString, IsNotEmpty, IsOptional, IsString, IsUUID, ValidateIf } from "class-validator";
-import { IsFutureDate } from "src/common/decorators/isFutureDate.decorator";
-import { IsUuidOrUrl } from "src/common/decorators/isUrlOrUUid.decorator";
+import { IsFutureDate } from "src/common/decorators/validators/isFutureDate.decorator";
+import { IsUuidOrUrl } from "src/common/decorators/validators/isUrlOrUUid.decorator";
 
 export class CreateLessonPlanDto {
     @ApiProperty()

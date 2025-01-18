@@ -1,8 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsBoolean, IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID, Matches } from "class-validator";
 import { PHONE_NUMBER_REGEX } from "src/common/CONSTANTS";
-import { IsOptionalEmail } from "src/common/decorators/isOptionalEmail.decorator";
-import { IsUuidOrUrl } from "src/common/decorators/isUrlOrUUid.decorator";
+import { IsOptionalEmail } from "src/common/decorators/validators/isOptionalEmail.decorator";
+import { IsUuidOrUrl } from "src/common/decorators/validators/isUrlOrUUid.decorator";
 import { EGuardianRelation } from "src/common/types/global.type";
 
 export class CreateGuardianDto {

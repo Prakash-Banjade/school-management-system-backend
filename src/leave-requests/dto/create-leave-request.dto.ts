@@ -3,7 +3,7 @@ import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { IsDateString, IsNotEmpty, IsOptional, IsString, Length, ValidateIf } from "class-validator";
 import { differenceInDays, isBefore, startOfDay } from "date-fns";
-import { IsFutureDate } from "src/common/decorators/isFutureDate.decorator";
+import { IsFutureDate } from "src/common/decorators/validators/isFutureDate.decorator";
 
 export class CreateLeaveRequestDto {
     @ApiProperty({ type: String, format: 'date-time', example: '2022-10-18T00:00:00.000Z', description: 'Leave from date' })

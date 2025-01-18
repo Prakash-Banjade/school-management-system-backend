@@ -1,9 +1,12 @@
+import { BadRequestException } from "@nestjs/common";
 import { ApiProperty, ApiPropertyOptional, OmitType } from "@nestjs/swagger";
-import { Type } from "class-transformer";
+import { Transform, Type } from "class-transformer";
 import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsDateString, IsDefined, IsEmail, IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Length, Matches, Max, MaxLength, Min, ValidateIf, ValidateNested } from "class-validator";
+import { subYears } from "date-fns";
 import { NAME_REGEX, NAME_WITH_SPACE_REGEX, PHONE_NUMBER_REGEX } from "src/common/CONSTANTS";
-import { IsNotFutureDate } from "src/common/decorators/isNotFutureDate.decorator";
-import { IsUuidOrUrl } from "src/common/decorators/isUrlOrUUid.decorator";
+import { IsDateOfBirth } from "src/common/decorators/validators/isDateOfBrith.decorator";
+import { IsNotFutureDate } from "src/common/decorators/validators/isNotFutureDate.decorator";
+import { IsUuidOrUrl } from "src/common/decorators/validators/isUrlOrUUid.decorator";
 import { EBloodGroup, EReligion, Gender } from "src/common/types/global.type";
 import { CreateGuardianDto } from "src/guardians/dto/create-guardian.dto";
 
@@ -69,10 +72,9 @@ export class CreateStudentDto {
     @IsEnum(Gender)
     gender: Gender
 
-    @ApiPropertyOptional({ type: String, format: 'date-time', description: 'Date of birth of the student' })
+    @ApiPropertyOptional({ type: 'string', format: 'date-time', description: 'Date of birth of the student' })
     @IsDateString()
-    @IsNotEmpty()
-    @IsNotFutureDate({ message: 'Date of birth cannot be in the future' })
+    @IsDateOfBirth(2, 80, { message: 'Date of birth must result in an age between 2 and 80 years.' })
     dob: string;
 
     @ApiProperty({ type: 'string', enum: EReligion, description: 'Religioin of the student' })

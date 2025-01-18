@@ -1,9 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { IsArray, IsDateString, IsEmail, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Matches, Min, ValidateNested } from "class-validator";
+import { ArrayMinSize, IsArray, IsDateString, IsEmail, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Matches, Min, ValidateNested } from "class-validator";
 import { NAME_REGEX, NAME_WITH_SPACE_REGEX, PHONE_NUMBER_REGEX } from "src/common/CONSTANTS";
-import { IsNotFutureDate } from "src/common/decorators/isNotFutureDate.decorator";
-import { IsUuidOrUrl } from "src/common/decorators/isUrlOrUUid.decorator";
+import { IsDateOfBirth } from "src/common/decorators/validators/isDateOfBrith.decorator";
+import { IsNotFutureDate } from "src/common/decorators/validators/isNotFutureDate.decorator";
+import { IsUuidOrUrl } from "src/common/decorators/validators/isUrlOrUUid.decorator";
 import { EBloodGroup, EMaritalStatus, Gender } from "src/common/types/global.type";
 import { AllowanceDto } from "src/finance-system/salary-management/salary-structures/dto/create-salary-structure.dto";
 
@@ -43,7 +44,7 @@ export class CreateEmployeeDto {
     @ApiProperty({ type: Date, format: 'date-time', example: '2024-07-19T11:02:05.462Z', description: 'Date of birth of the teacher' })
     @IsDateString()
     @IsNotEmpty()
-    @IsNotFutureDate({ message: 'Date of birth cannot be in the future' })
+    @IsDateOfBirth(18, 80, { message: 'Date of birth must result in an age between 18 and 80 years.' })
     dob!: string;
 
     @ApiProperty({ type: Number, example: 10000, description: 'Baisc salary of the teacher' })
@@ -59,10 +60,9 @@ export class CreateEmployeeDto {
     @Type(() => AllowanceDto)
     allowances?: AllowanceDto[];
 
-    @ApiProperty({ type: [String], description: 'Faculties of the teacher' })
-    @IsString({ each: true })
-    @IsNotEmpty({ each: true })
+    @ApiProperty({ type: [String], description: 'Departments of the teacher' })
     @IsUUID('all', { each: true })
+    @ArrayMinSize(1, { message: 'Please choose at least one department.' })
     facultyIds: string[];
 
     @ApiPropertyOptional({ type: String, description: 'Profile image id/url of the teacher' })

@@ -14,7 +14,7 @@ import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { imageSelectColumns } from './helpers/image-select-cols';
 import paginatedData from 'src/utils/paginatedData';
 import { FastifyReply } from 'fastify';
-import { isBackendUrl } from 'src/common/decorators/isUrlOrUUid.decorator';
+import { isBackendUrl } from 'src/common/decorators/validators/isUrlOrUUid.decorator';
 import { Account } from 'src/auth-system/accounts/entities/account.entity';
 
 @Injectable()
