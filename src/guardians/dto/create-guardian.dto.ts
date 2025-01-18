@@ -6,12 +6,12 @@ import { IsUuidOrUrl } from "src/common/decorators/validators/isUrlOrUUid.decora
 import { EGuardianRelation } from "src/common/types/global.type";
 
 export class CreateGuardianDto {
-    @ApiProperty({ type: String, description: 'Guardian first name' })
+    @ApiProperty({ type: "string", description: 'Guardian first name' })
     @IsString()
     @IsNotEmpty()
     firstName: string;
 
-    @ApiProperty({ type: String, description: 'Guardian last name' })
+    @ApiProperty({ type: "string", description: 'Guardian last name' })
     @IsString()
     @IsNotEmpty()
     lastName: string;
@@ -21,33 +21,33 @@ export class CreateGuardianDto {
     @IsNotEmpty()
     relation: EGuardianRelation;
 
-    @ApiProperty({ type: String, description: 'Guardian phone number' })
+    @ApiProperty({ type: "string", description: 'Guardian phone number' })
     @IsString()
     @IsNotEmpty()
     @Matches(PHONE_NUMBER_REGEX)
     phone: string;
 
-    @ApiPropertyOptional({ type: String, description: 'Guardian email' })
+    @ApiPropertyOptional({ type: "string", description: 'Guardian email' })
     @IsOptionalEmail()
     @IsOptional()
     email?: string;
 
-    @ApiPropertyOptional({ type: String, description: 'Guardian address' })
+    @ApiPropertyOptional({ type: "string", description: 'Guardian address' })
     @IsString()
     @IsNotEmpty()
     address: string;
 
-    @ApiProperty({ type: String, description: 'Guardian occupation' })
+    @ApiProperty({ type: "string", description: 'Guardian occupation' })
     @IsString()
     @IsNotEmpty()
     occupation: string;
 
-    @ApiPropertyOptional({ type: String, description: 'Guardian image id/url' })
+    @ApiPropertyOptional({ type: "string", description: 'Guardian image id/url' })
     @IsUuidOrUrl()
     @IsOptional()
     profileImageId: string;
 
-    @ApiProperty({ type: String, format: 'uuid', description: 'Student id' })
+    @ApiProperty({ type: "string", format: 'uuid', description: 'Student id' })
     @IsUUID()
     @IsNotEmpty()
     studentId: string;

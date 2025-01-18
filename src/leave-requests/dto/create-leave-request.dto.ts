@@ -6,7 +6,7 @@ import { differenceInDays, isBefore, startOfDay } from "date-fns";
 import { IsFutureDate } from "src/common/decorators/validators/isFutureDate.decorator";
 
 export class CreateLeaveRequestDto {
-    @ApiProperty({ type: String, format: 'date-time', example: '2022-10-18T00:00:00.000Z', description: 'Leave from date' })
+    @ApiProperty({ type: "string", format: 'date-time', example: '2022-10-18T00:00:00.000Z', description: 'Leave from date' })
     @IsDateString()
     @IsFutureDate({ message: 'Leave from date cannot be in the past' })
     @Transform(({ value }) => {
@@ -18,7 +18,7 @@ export class CreateLeaveRequestDto {
     })
     leaveFrom: string;
 
-    @ApiProperty({ type: String, format: 'date-time', example: '2022-10-18T00:00:00.000Z', description: 'Leave to date' })
+    @ApiProperty({ type: "string", format: 'date-time', example: '2022-10-18T00:00:00.000Z', description: 'Leave to date' })
     @IsDateString()
     @IsNotEmpty()
     @ValidateIf(o => {
@@ -27,12 +27,12 @@ export class CreateLeaveRequestDto {
     })
     leaveTo: string;
 
-    @ApiProperty({ type: String, description: 'Leave title' })
+    @ApiProperty({ type: "string", description: 'Leave title' })
     @IsString()
     @IsNotEmpty()
     title: string;
 
-    @ApiPropertyOptional({ type: String, description: 'Leave description' })
+    @ApiPropertyOptional({ type: "string", description: 'Leave description' })
     @IsString()
     @Length(0, 500, { message: 'Description must be less than 500 characters' })
     @IsNotEmpty()

@@ -35,19 +35,19 @@ export class SubjectMarksDto {
 }
 
 export class CreateSubjectDto extends SubjectMarksDto {
-    @ApiProperty({ type: String, description: 'Subject name' })
+    @ApiProperty({ type: "string", description: 'Subject name' })
     @IsString()
     @IsNotEmpty()
     @Transform(({ value }) => value?.trim())
     subjectName: string;
 
-    @ApiProperty({ type: String, description: 'Subject code' })
+    @ApiProperty({ type: "string", description: 'Subject code' })
     @IsString()
     @IsNotEmpty()
     @Transform(({ value }) => value?.trim())
     subjectCode: string;
 
-    @ApiProperty({ type: String, description: 'Subject description' })
+    @ApiProperty({ type: "string", description: 'Subject description' })
     @IsString()
     @IsNotEmpty()
     @Length(0, 500, { message: 'Description must be less than 500 characters' })

@@ -2,12 +2,12 @@ import { ApiProperty } from "@nestjs/swagger";
 import { IsNotEmpty, IsString } from "class-validator";
 
 export class CreateNoticeDto {
-    @ApiProperty({ type: String, description: 'Title' })
+    @ApiProperty({ type: "string", description: 'Title' })
     @IsString()
     @IsNotEmpty()
     title: string;
 
-    @ApiProperty({ type: String, description: 'Description' })
+    @ApiProperty({ type: "string", description: 'Description' })
     @IsString()
     @IsNotEmpty()
     description: string;

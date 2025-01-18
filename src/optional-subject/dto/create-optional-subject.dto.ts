@@ -3,7 +3,7 @@ import { Type } from "class-transformer";
 import { ArrayMinSize, IsArray, IsBoolean, IsUUID, ValidateNested } from "class-validator";
 
 export class StudentIdWithCheckStatus {
-    @ApiProperty({ type: String, format: "uuid" })
+    @ApiProperty({ type: "string", format: "uuid" })
     @IsUUID()
     id: string;
 
@@ -13,7 +13,7 @@ export class StudentIdWithCheckStatus {
 }
 
 class OptionalSubjectSelection {
-    @ApiProperty({ type: String, format: "uuid" })
+    @ApiProperty({ type: "string", format: "uuid" })
     @IsUUID()
     optionalSubjectId: string;
 

@@ -8,17 +8,17 @@ import { EAttendanceStatus } from "src/common/types/global.type";
 const UpdateStatusEnum = [...Object.values(EAttendanceStatus), null];
 
 class UpdateAttendanceDto {
-    @ApiPropertyOptional({ type: String, format: 'uuid' })
+    @ApiPropertyOptional({ type: "string", format: 'uuid' })
     @IsUUID()
     @IsOptional()
     id?: string;
 
-    @ApiPropertyOptional({ type: String, format: 'uuid' })
+    @ApiPropertyOptional({ type: "string", format: 'uuid' })
     @IsUUID()
     @ValidateIf((o) => !o.id)
     accountId?: string;
 
-    @ApiPropertyOptional({ type: String, format: 'date-time' })
+    @ApiPropertyOptional({ type: "string", format: 'date-time' })
     @IsDateString()
     @IsOptional()
     date?: string;
@@ -28,12 +28,12 @@ class UpdateAttendanceDto {
     @IsOptional()
     status?: EAttendanceStatus | null;
 
-    @ApiPropertyOptional({ type: String, format: 'date-time' })
+    @ApiPropertyOptional({ type: "string", format: 'date-time' })
     @IsOptional()
     @IsMilitaryTime({ message: 'Invalid in time. Time must be in format HH:MM' })
     inTime?: string | null;
 
-    @ApiPropertyOptional({ type: String, format: 'date-time' })
+    @ApiPropertyOptional({ type: "string", format: 'date-time' })
     @IsOptional()
     @IsMilitaryTime({ message: 'Invalid out time. Time must be in format HH:MM' })
     @ValidateIf((o: UpdateAttendanceDto) => {

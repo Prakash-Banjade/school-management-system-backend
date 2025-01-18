@@ -36,11 +36,11 @@ export class CreateLessonPlanDto {
     @IsOptional()
     attachmentIds?: string[];
 
-    @ApiProperty({ type: String, format: 'uuid', description: 'Subject id' })
+    @ApiProperty({ type: "string", format: 'uuid', description: 'Subject id' })
     @IsUUID()
     subjectId: string;
 
-    @ApiProperty({ type: String, format: 'uuid', description: 'ClassRoom ids' })
+    @ApiProperty({ type: "string", format: 'uuid', description: 'ClassRoom ids' })
     @IsUUID(4, { each: true })
     @IsArray()
     @ArrayMinSize(1)

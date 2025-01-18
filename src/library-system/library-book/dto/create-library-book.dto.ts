@@ -2,17 +2,17 @@ import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Length, Max, Min } from "class-validator";
 
 export class CreateLibraryBookDto {
-    @ApiProperty({ type: String, description: 'Book code' })
+    @ApiProperty({ type: "string", description: 'Book code' })
     @IsString()
     @IsNotEmpty()
     bookCode: string;
 
-    @ApiProperty({ type: String, description: 'Book name' })
+    @ApiProperty({ type: "string", description: 'Book name' })
     @IsString()
     @IsNotEmpty()
     bookName: string;
 
-    @ApiProperty({ type: String, description: 'Publisher name' })
+    @ApiProperty({ type: "string", description: 'Publisher name' })
     @IsString()
     @IsOptional()
     publisherName: string;

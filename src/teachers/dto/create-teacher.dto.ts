@@ -9,7 +9,7 @@ import { EBloodGroup, EMaritalStatus, Gender } from "src/common/types/global.typ
 import { AllowanceDto } from "src/finance-system/salary-management/salary-structures/dto/create-salary-structure.dto";
 
 export class CreateEmployeeDto {
-    @ApiProperty({ type: String, example: 'John', description: 'First name of the teacher' })
+    @ApiProperty({ type: "string", example: 'John', description: 'First name of the teacher' })
     @IsString()
     @IsNotEmpty()
     @Matches(NAME_REGEX, {
@@ -17,7 +17,7 @@ export class CreateEmployeeDto {
     })
     firstName!: string;
 
-    @ApiPropertyOptional({ type: String, example: 'Doe', description: 'Last name of the teacher' })
+    @ApiPropertyOptional({ type: "string", example: 'Doe', description: 'Last name of the teacher' })
     @IsString()
     @IsNotEmpty()
     @Matches(NAME_WITH_SPACE_REGEX, {
@@ -30,12 +30,12 @@ export class CreateEmployeeDto {
     @IsNotEmpty()
     gender!: Gender;
 
-    @ApiProperty({ type: String, example: 'johnDoe@example.com', description: 'Email of the teacher' })
+    @ApiProperty({ type: "string", example: 'johnDoe@example.com', description: 'Email of the teacher' })
     @IsEmail()
     @IsNotEmpty()
     email!: string;
 
-    @ApiProperty({ type: String, example: '1234567890', description: 'Phone number of the teacher' })
+    @ApiProperty({ type: "string", example: '1234567890', description: 'Phone number of the teacher' })
     @IsString()
     @IsNotEmpty()
     @Matches(PHONE_NUMBER_REGEX)
@@ -65,17 +65,17 @@ export class CreateEmployeeDto {
     @ArrayMinSize(1, { message: 'Please choose at least one department.' })
     facultyIds: string[];
 
-    @ApiPropertyOptional({ type: String, description: 'Profile image id/url of the teacher' })
+    @ApiPropertyOptional({ type: "string", description: 'Profile image id/url of the teacher' })
     @IsUuidOrUrl()
     @IsOptional()
     profileImageId!: string;
 
-    @ApiProperty({ type: String, example: 'BCA', description: 'Qualification of the teacher' })
+    @ApiProperty({ type: "string", example: 'BCA', description: 'Qualification of the teacher' })
     @IsString()
     @IsNotEmpty()
     qualification: string;
 
-    @ApiPropertyOptional({ type: String, example: 'Short description of the teacher', description: 'Short description of the teacher' })
+    @ApiPropertyOptional({ type: "string", example: 'Short description of the teacher', description: 'Short description of the teacher' })
     @IsString()
     @IsOptional()
     shortDescription?: string;
@@ -96,17 +96,17 @@ export class CreateEmployeeDto {
     @IsNotEmpty()
     joinedDate!: string;
 
-    @ApiProperty({ type: String, example: 'Swish Bank', description: 'Bank name of the teacher' })
+    @ApiProperty({ type: "string", example: 'Swish Bank', description: 'Bank name of the teacher' })
     @IsString()
     @IsNotEmpty()
     bankName!: string;
 
-    @ApiProperty({ type: String, example: 'John Doe', description: 'Bank account name of the teacher' })
+    @ApiProperty({ type: "string", example: 'John Doe', description: 'Bank account name of the teacher' })
     @IsString()
     @IsNotEmpty()
     accountName!: string;
 
-    @ApiProperty({ type: String, example: '1234567890', description: 'Bank account number of the teacher' })
+    @ApiProperty({ type: "string", example: '1234567890', description: 'Bank account number of the teacher' })
     @IsString()
     @IsNotEmpty()
     accountNumber!: string;

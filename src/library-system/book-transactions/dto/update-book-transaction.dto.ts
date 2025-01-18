@@ -7,7 +7,7 @@ export class UpdateBookTransactionDto extends PartialType(OmitType(CreateBookTra
 
 export class ReturnBookTransactionDto {
 
-    @ApiProperty({ type: String, isArray: true })
+    @ApiProperty({ type: "string", isArray: true })
     @IsUUID('4', { each: true })
     @IsArray()
     @ArrayMinSize(1)
@@ -15,7 +15,7 @@ export class ReturnBookTransactionDto {
 }
 
 export class RenewBookTransactionDto {
-    @ApiProperty({ type: String, isArray: true })
+    @ApiProperty({ type: "string", isArray: true })
     @IsUUID('4', { each: true })
     @IsArray()
     @ArrayMinSize(1)

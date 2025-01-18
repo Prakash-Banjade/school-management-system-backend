@@ -3,7 +3,7 @@ import { IsDateString, IsEnum, IsNotEmpty, IsOptional, IsUUID } from "class-vali
 import { EAttendanceStatus } from "src/common/types/global.type";
 
 export class CreateAttendanceDto {
-    @ApiProperty({ type: String, format: 'uuid' })
+    @ApiProperty({ type: "string", format: 'uuid' })
     @IsUUID()
     @IsNotEmpty()
     accountId: string;
@@ -13,18 +13,18 @@ export class CreateAttendanceDto {
     @IsEnum(EAttendanceStatus)
     status: EAttendanceStatus
 
-    @ApiPropertyOptional({ type: String, format: 'date-time' })
+    @ApiPropertyOptional({ type: "string", format: 'date-time' })
     @IsNotEmpty()
     @IsDateString()
     date: string;
 
-    @ApiPropertyOptional({ type: String, format: 'date-time' })
+    @ApiPropertyOptional({ type: "string", format: 'date-time' })
     @IsNotEmpty()
     @IsOptional()
     @IsDateString()
     inTime?: string;
 
-    @ApiPropertyOptional({ type: String, format: 'date-time' })
+    @ApiPropertyOptional({ type: "string", format: 'date-time' })
     @IsNotEmpty()
     @IsOptional()
     @IsDateString()
@@ -32,17 +32,17 @@ export class CreateAttendanceDto {
 }
 
 export class CreateLeaveAttendanceEvent {
-    @ApiProperty({ type: String, format: 'uuid' })
+    @ApiProperty({ type: "string", format: 'uuid' })
     @IsUUID()
     @IsNotEmpty()
     accountId: string;
 
-    @ApiPropertyOptional({ type: String, format: 'date-time' })
+    @ApiPropertyOptional({ type: "string", format: 'date-time' })
     @IsNotEmpty()
     @IsDateString()
     dateFrom: string;
 
-    @ApiPropertyOptional({ type: String, format: 'date-time' })
+    @ApiPropertyOptional({ type: "string", format: 'date-time' })
     @IsNotEmpty()
     @IsDateString()
     dateTo: string;

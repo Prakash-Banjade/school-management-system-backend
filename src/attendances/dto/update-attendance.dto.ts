@@ -9,7 +9,7 @@ export class UpdateAttendanceDto {
     @IsEnum(EAttendanceStatus)
     status?: EAttendanceStatus
 
-    @ApiPropertyOptional({ type: String, format: 'date-time' })
+    @ApiPropertyOptional({ type: "string", format: 'date-time' })
     @IsOptional()
     @IsDateString()
     @IsNotEmpty()

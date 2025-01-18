@@ -5,12 +5,12 @@ import { QueryDto } from "src/common/dto/query.dto";
 import { ESubjectChapterPriority } from "src/common/types/global.type";
 
 export class CreateSubjectChapterDto {
-    @ApiProperty({ type: String, description: 'Chapter title' })
+    @ApiProperty({ type: "string", description: 'Chapter title' })
     @IsString()
     @IsNotEmpty()
     title: string;
 
-    @ApiProperty({ type: String, description: 'Chapter content' })
+    @ApiProperty({ type: "string", description: 'Chapter content' })
     @IsString()
     @IsNotEmpty()
     @MaxLength(1000, { message: 'Chapter content should not exceed 1000 characters' })
@@ -21,7 +21,7 @@ export class CreateSubjectChapterDto {
     @IsOptional()
     priority: ESubjectChapterPriority
 
-    @ApiProperty({ type: String, format: 'uuid', description: 'Subject id' })
+    @ApiProperty({ type: "string", format: 'uuid', description: 'Subject id' })
     @IsNotEmpty()
     @IsUUID()
     subjectId: string;
@@ -30,14 +30,14 @@ export class CreateSubjectChapterDto {
 export class UpdateSubjectChapterDto extends PartialType(OmitType(CreateSubjectChapterDto, ['subjectId'])) { }
 
 export class SubjectChapterQueryDto extends QueryDto {
-    @ApiPropertyOptional({ type: String, description: 'Subject id' })
+    @ApiPropertyOptional({ type: "string", description: 'Subject id' })
     @IsOptional()
     @IsUUID()
     subjectId: string;
 }
 
 class UpdatedChapterNo {
-    @ApiProperty({ type: String, format: 'uuid', description: 'Chapter id' })
+    @ApiProperty({ type: "string", format: 'uuid', description: 'Chapter id' })
     @IsUUID()
     id: string;
 

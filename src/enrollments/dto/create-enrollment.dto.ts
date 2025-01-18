@@ -4,7 +4,7 @@ import { ArrayMinSize, IsArray, IsDateString, IsInt, IsNotEmpty, IsNumber, IsUUI
 import { IsNotFutureDate } from "src/common/decorators/validators/isNotFutureDate.decorator";
 
 class StudentWithRollNo {
-    @ApiProperty({ type: String, format: 'uuid' })
+    @ApiProperty({ type: "string", format: 'uuid' })
     @IsUUID()
     studentId: string;
 

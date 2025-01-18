@@ -14,11 +14,11 @@ const studentSortByQuery = {
 }
 
 export class StudentQueryDto extends ClassRoomSearchQueryDto {
-    @ApiPropertyOptional({ type: String, description: 'Search by student ID' })
+    @ApiPropertyOptional({ type: "string", description: 'Search by student ID' })
     @IsOptional()
     studentId?: string;
 
-    @ApiPropertyOptional({ type: String, description: 'Search by roll no', example: '44' })
+    @ApiPropertyOptional({ type: "string", description: 'Search by roll no', example: '44' })
     @IsString()
     @IsOptional()
     rollNo?: string;
@@ -40,22 +40,22 @@ export class StudentQueryDto extends ClassRoomSearchQueryDto {
 }
 
 export class StudentAttendanceQueryDto extends QueryDto {
-    @ApiProperty({ type: String, format: 'uuid', description: 'Class room id' })
+    @ApiProperty({ type: "string", format: 'uuid', description: 'Class room id' })
     @IsUUID()
     classRoomId: string;
 
-    @ApiProperty({ type: String, format: 'uuid', description: 'Section id' })
+    @ApiProperty({ type: "string", format: 'uuid', description: 'Section id' })
     @IsUUID()
     @IsOptional()
     sectionId?: string;
 
-    @ApiProperty({ type: String, format: 'date', description: 'Date' })
+    @ApiProperty({ type: "string", format: 'date', description: 'Date' })
     @IsDateString()
     date: string;
 }
 
 export class PastStudentsQueryDto extends ClassRoomSearchQueryDto {
-    @ApiProperty({ type: String, format: 'uuid', description: 'Academic year id' })
+    @ApiProperty({ type: "string", format: 'uuid', description: 'Academic year id' })
     @IsUUID()
     academicYearId: string;
 }

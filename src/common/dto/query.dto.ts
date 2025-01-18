@@ -10,12 +10,12 @@ export enum Deleted {
 }
 
 export class QueryDto extends PageOptionsDto {
-    @ApiPropertyOptional({ type: String, enum: Deleted, description: "Option for deleted records", default: Deleted.NONE })
+    @ApiPropertyOptional({ type: "string", enum: Deleted, description: "Option for deleted records", default: Deleted.NONE })
     @IsEnum(Deleted, { message: "Invalid deleted option" })
     @IsOptional()
     deleted: Deleted = Deleted.NONE
 
-    @ApiPropertyOptional({ type: String, description: "Search query", default: "" })
+    @ApiPropertyOptional({ type: "string", description: "Search query", default: "" })
     @IsOptional()
     search?: string
 
@@ -31,12 +31,12 @@ export class QueryDto extends PageOptionsDto {
     @Transform(({ value }) => value === 'true')
     onlyBasicInfo?: boolean = false;
 
-    @ApiPropertyOptional({ type: String, format: 'uuid', description: 'Academic year id' })
+    @ApiPropertyOptional({ type: "string", format: 'uuid', description: 'Academic year id' })
     @IsUUID()
     @IsOptional()
     academicYearId?: string;
 
-    @ApiPropertyOptional({ type: String, format: 'uuid', description: 'Branch id' })
+    @ApiPropertyOptional({ type: "string", format: 'uuid', description: 'Branch id' })
     @IsUUID()
     @IsOptional()
     branchId?: string;
