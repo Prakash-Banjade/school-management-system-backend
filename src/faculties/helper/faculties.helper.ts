@@ -56,6 +56,12 @@ export class FacultiesHelper {
     }
 
 
+    /**
+    |--------------------------------------------------
+    | TODO: IMPLEMENT A DEFAULT SECTION WITH SAME CLASS NAME WHEN CLASS ROOM IS ADDED AT FIRST, SO THAT NO NO CLASSROOM WITH NO CHILDREN
+    |--------------------------------------------------
+    */
+
     private async getClassRoomIds() {
         const { accountId } = this.utilitiesService.getCurrentUser();
 
@@ -69,6 +75,7 @@ export class FacultiesHelper {
                 'classRoom.id',
                 'parent.id',
             ])
+            .distinct(true);
 
         return classRoutines.getMany();
     }
