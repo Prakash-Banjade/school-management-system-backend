@@ -68,6 +68,7 @@ export class FacultiesService {
 
   async getOptions(queryDto: FacultyOptionsQueryDto) {
     const branchId = this.utilitiesService.getBranchId();
+    const { role, accountId } = this.utilitiesService.getCurrentUser();
 
     const includeSection = queryDto.include === 'section';
     const includeClassRoom = includeSection || queryDto.include === 'classRoom';
@@ -108,6 +109,7 @@ export class FacultiesService {
         )
       ]).getMany()
   }
+
 
   async getOptionsByKeyValue(queryDto: FacultyOptionsQueryDto) {
     return this.facultiesRepo.createQueryBuilder('faculty')

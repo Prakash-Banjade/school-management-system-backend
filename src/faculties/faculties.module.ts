@@ -4,6 +4,7 @@ import { FacultiesController } from './faculties.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Faculty } from './entities/faculty.entity';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
+import { FacultiesHelper } from './helper/faculties.helper';
 
 @Module({
   imports: [
@@ -13,6 +14,9 @@ import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
     ])
   ],
   controllers: [FacultiesController],
-  providers: [FacultiesService],
+  providers: [
+    FacultiesService,
+    FacultiesHelper,
+  ],
 })
 export class FacultiesModule { }

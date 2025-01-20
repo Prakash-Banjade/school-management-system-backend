@@ -5,13 +5,18 @@ import { UpdateFacultyDto } from './dto/update-faculty.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { FacultiesQueryDto, FacultyOptionsQueryDto } from './dto/faculties-query.dto';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action, Role } from 'src/common/types/global.type';
+import { Action, AuthUser, Role } from 'src/common/types/global.type';
+import { CurrentUser } from 'src/common/decorators/user.decorator';
+import { FacultiesHelper } from './helper/faculties.helper';
 
 @ApiBearerAuth()
 @ApiTags('Faculties')
 @Controller('faculties')
 export class FacultiesController {
-  constructor(private readonly facultiesService: FacultiesService) { }
+  constructor(
+    private readonly facultiesService: FacultiesService,
+    private readonly facultiesHelper: FacultiesHelper,
+  ) { }
 
   @Post()
   @CheckAbilities({ subject: Role.SUPER_ADMIN, action: Action.CREATE })
@@ -29,9 +34,12 @@ export class FacultiesController {
   @CheckAbilities(
     { subject: Role.SUPER_ADMIN, action: Action.READ },
     { subject: Role.ADMIN, action: Action.READ },
+    { subject: Role.TEACHER, action: Action.READ },
   )
-  getOptions(@Query() queryDto: FacultyOptionsQueryDto) {
-    return this.facultiesService.getOptions(queryDto);
+  getOptions(@Query() queryDto: FacultyOptionsQueryDto, @CurrentUser() currentUser: AuthUser) {
+    return currentUser.role === Role.TEACHER
+      ? this.facultiesHelper.getOptionsForTeacher(queryDto)
+      : this.facultiesService.getOptions(queryDto);
   }
 
   @Get(':id')
