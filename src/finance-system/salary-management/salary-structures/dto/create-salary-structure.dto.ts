@@ -8,7 +8,7 @@ export class AllowanceDto implements IAllowance {
     @Min(0)
     amount!: number;
 
-    @ApiProperty({ type: String, example: 'Allowance title', description: 'Title of the allowance' })
+    @ApiProperty({ type: "string", example: 'Allowance title', description: 'Title of the allowance' })
     @IsString()
     @IsNotEmpty()
     title!: string;

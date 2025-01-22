@@ -3,13 +3,13 @@ import { IsDateString, IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
 import { EAttendanceStatus } from 'src/common/types/global.type';
 
 export class UpdateAttendanceDto {
-    @ApiPropertyOptional({ type: 'enum', enum: EAttendanceStatus })
+    @ApiPropertyOptional({ type: 'string', enum: EAttendanceStatus })
     @IsNotEmpty()
     @IsOptional()
     @IsEnum(EAttendanceStatus)
     status?: EAttendanceStatus
 
-    @ApiPropertyOptional({ type: String, format: 'date-time' })
+    @ApiPropertyOptional({ type: "string", format: 'date-time' })
     @IsOptional()
     @IsDateString()
     @IsNotEmpty()

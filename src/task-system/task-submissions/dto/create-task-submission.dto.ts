@@ -1,6 +1,6 @@
 import { IsArray, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsUuidOrUrl } from 'src/common/decorators/isUrlOrUUid.decorator';
+import { IsUuidOrUrl } from 'src/common/decorators/validators/isUrlOrUUid.decorator';
 
 export class CreateTaskSubmissionDto {
     @ApiProperty({ format: 'uuid', example: '00000000-0000-0000-0000-000000000000', description: 'ID of the task' })

@@ -1,36 +1,37 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Res } from '@nestjs/common';
-import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Param, Res } from '@nestjs/common';
+import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { FormDataRequest } from 'nestjs-form-data';
 import { CreateFileDto } from './dto/create-files.dto';
 import { FilesService } from './files.service';
-import { UpdateFileDto } from './dto/update-files.dto';
-import { QueryDto } from 'src/common/dto/query.dto';
 import { FastifyReply } from 'fastify';
 import { Public } from 'src/common/decorators/setPublicRoute.decorator';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, Role } from 'src/common/types/global.type';
+import { SkipThrottle } from '@nestjs/throttler';
 
-@ApiBearerAuth()
-@ApiTags('Upload Files')
+@ApiTags('Files')
 @Controller('upload/files')
 export class FilesController {
   constructor(private readonly filesService: FilesService) { }
 
-  @Post()
+  @ApiOperation({ description: 'Upload Files. Multiple files can be uploaded', summary: 'Upload File' })
+  @ApiResponse({ status: 201, description: 'Files uploaded successfully' })
+  @ApiResponse({ status: 400, description: 'Bad Request. Something is wrong with payload.' })
   @FormDataRequest({ limits: { fileSize: 5 * 1024 * 1024, files: 10 } })
   @ApiConsumes('multipart/formdata')
-  @CheckAbilities({ action: Action.CREATE, subject: Role.USER })  
+  @CheckAbilities({ action: Action.CREATE, subject: Role.USER })
+  @ApiBearerAuth()
+  @Post()
   upload(@Body() createFileDto: CreateFileDto) {
     return this.filesService.upload(createFileDto);
   }
 
-  @Get()
-  findAll(@Query() queryDto: QueryDto) {
-    return this.filesService.findAll(queryDto);
-  }
-
+  @ApiOperation({ description: 'Get file by slug', summary: 'Get File' })
+  @ApiResponse({ status: 200, description: 'File fetched successfully' })
+  @ApiResponse({ status: 404, description: 'File not found' })
+  @SkipThrottle()
+  @Public()
   @Get('get-file/:slug')
-  @Public() // TODO: this should not be public
   getFile(@Param("slug") slug: string, @Res() res: FastifyReply) {
     return this.filesService.serveFile(slug, res);
   }

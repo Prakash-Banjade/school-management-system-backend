@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsDateString, IsNotEmpty, IsString, IsUUID } from "class-validator";
-import { IsFutureDate } from "src/common/decorators/isFutureDate.decorator";
+import { IsFutureDate } from "src/common/decorators/validators/isFutureDate.decorator";
 
 export class CreateBookTransactionDto {
     @ApiProperty({ format: 'uuid' })

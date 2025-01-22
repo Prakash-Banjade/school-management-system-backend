@@ -1,13 +1,13 @@
 import { ApiProperty, OmitType, PartialType } from '@nestjs/swagger';
 import { CreateBookTransactionDto } from './create-book-transaction.dto';
 import { ArrayMinSize, IsArray, IsDateString, IsUUID } from 'class-validator';
-import { IsFutureDate } from 'src/common/decorators/isFutureDate.decorator';
+import { IsFutureDate } from 'src/common/decorators/validators/isFutureDate.decorator';
 
 export class UpdateBookTransactionDto extends PartialType(OmitType(CreateBookTransactionDto, ['studentId'])) { }
 
 export class ReturnBookTransactionDto {
 
-    @ApiProperty({ type: String, isArray: true })
+    @ApiProperty({ type: "string", isArray: true })
     @IsUUID('4', { each: true })
     @IsArray()
     @ArrayMinSize(1)
@@ -15,7 +15,7 @@ export class ReturnBookTransactionDto {
 }
 
 export class RenewBookTransactionDto {
-    @ApiProperty({ type: String, isArray: true })
+    @ApiProperty({ type: "string", isArray: true })
     @IsUUID('4', { each: true })
     @IsArray()
     @ArrayMinSize(1)

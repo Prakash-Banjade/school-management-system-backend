@@ -4,7 +4,7 @@ import { IsNotEmpty, IsOptional, IsUUID } from 'class-validator';
 
 // NO NEED TO UPDATE THE STUDENT
 export class UpdateGuardianDto extends PartialType(OmitType(CreateGuardianDto, ['studentId'])) {
-    @ApiPropertyOptional({ type: String, format: 'uuid', description: 'Guardian id' })
+    @ApiPropertyOptional({ type: "string", format: 'uuid', description: 'Guardian id' })
     @IsNotEmpty()
     @IsUUID()
     @IsOptional()

@@ -1,9 +1,10 @@
 import { ApiProperty, ApiPropertyOptional, OmitType } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsDateString, IsDefined, IsEmail, IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Length, Matches, Max, MaxLength, Min, ValidateIf, ValidateNested } from "class-validator";
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsDateString, IsDefined, IsEmail, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Length, Matches, MaxLength, Min, ValidateIf, ValidateNested } from "class-validator";
 import { NAME_REGEX, NAME_WITH_SPACE_REGEX, PHONE_NUMBER_REGEX } from "src/common/CONSTANTS";
-import { IsNotFutureDate } from "src/common/decorators/isNotFutureDate.decorator";
-import { IsUuidOrUrl } from "src/common/decorators/isUrlOrUUid.decorator";
+import { IsDateOfBirth } from "src/common/decorators/validators/isDateOfBrith.decorator";
+import { IsNotFutureDate } from "src/common/decorators/validators/isNotFutureDate.decorator";
+import { IsUuidOrUrl } from "src/common/decorators/validators/isUrlOrUUid.decorator";
 import { EBloodGroup, EReligion, Gender } from "src/common/types/global.type";
 import { CreateGuardianDto } from "src/guardians/dto/create-guardian.dto";
 
@@ -16,7 +17,7 @@ export class CreateStudentDto {
     |--------------------------------------------------
     */
 
-    @ApiProperty({ type: String, description: 'Class room ID of the student' })
+    @ApiProperty({ type: "string", description: 'Class room ID of the student' })
     @IsUUID()
     @IsNotEmpty()
     classRoomId: string;
@@ -33,12 +34,12 @@ export class CreateStudentDto {
     @IsOptional()
     admissionDate?: string;
 
-    @ApiPropertyOptional({ format: 'uuid' })
+    @ApiPropertyOptional({ format: 'uuid', description: 'Dormitory room ID of the student' })
     @IsUUID()
     @IsOptional()
     dormitoryRoomId?: string;
 
-    @ApiPropertyOptional({ format: 'uuid' })
+    @ApiPropertyOptional({ format: 'uuid', description: 'Route stop ID of the student' })
     @IsUUID()
     @IsOptional()
     routeStopId?: string;
@@ -49,7 +50,7 @@ export class CreateStudentDto {
     |--------------------------------------------------
     */
 
-    @ApiProperty({ type: String, description: 'Student first name' })
+    @ApiProperty({ type: "string", description: 'Student first name' })
     @IsString()
     @IsNotEmpty()
     @Matches(NAME_REGEX, {
@@ -57,7 +58,7 @@ export class CreateStudentDto {
     })
     firstName: string;
 
-    @ApiProperty({ type: String, description: 'Student last name' })
+    @ApiProperty({ type: "string", description: 'Student last name' })
     @IsString()
     @IsNotEmpty()
     @Matches(NAME_WITH_SPACE_REGEX, {
@@ -65,26 +66,25 @@ export class CreateStudentDto {
     })
     lastName: string;
 
-    @ApiPropertyOptional({ type: 'enum', enum: Gender, description: 'Gender number of the student' })
+    @ApiPropertyOptional({ type: 'string', enum: Gender, description: 'Gender number of the student' })
     @IsEnum(Gender)
     gender: Gender
 
-    @ApiPropertyOptional({ type: String, format: 'date-time', description: 'Date of birth of the student' })
+    @ApiProperty({ type: 'string', format: 'date-time', description: 'Date of birth of the student' })
     @IsDateString()
-    @IsNotEmpty()
-    @IsNotFutureDate({ message: 'Date of birth cannot be in the future' })
+    @IsDateOfBirth(2, 80, { message: 'Date of birth must result in an age between 2 and 80 years.' })
     dob: string;
 
-    @ApiProperty({ type: 'enum', enum: EReligion, description: 'Religioin of the student' })
+    @ApiProperty({ type: 'string', enum: EReligion, description: 'Religioin of the student' })
     @IsEnum(EReligion)
     religion?: EReligion;
 
-    @ApiPropertyOptional({ type: String, description: 'Caste of the student' })
+    @ApiPropertyOptional({ type: "string", description: 'Caste of the student' })
     @IsString()
     @IsOptional()
     caste?: string;
 
-    @ApiPropertyOptional({ type: String, description: 'Image ID/URL' })
+    @ApiPropertyOptional({ type: "string", description: 'Image ID/URL' })
     @IsUuidOrUrl()
     @IsOptional()
     profileImageId?: string;
@@ -108,12 +108,12 @@ export class CreateStudentDto {
     |--------------------------------------------------
     */
 
-    @ApiProperty({ type: String, description: 'Email of the student' })
+    @ApiProperty({ type: "string", description: 'Email of the student' })
     @IsEmail()
     @IsNotEmpty()
     email: string;
 
-    @ApiProperty({ type: String, description: 'Phone number of the student' })
+    @ApiProperty({ type: "string", description: 'Phone number of the student' })
     @IsString()
     @IsNotEmpty()
     @Matches(PHONE_NUMBER_REGEX)
@@ -125,7 +125,7 @@ export class CreateStudentDto {
     |--------------------------------------------------
     */
 
-    @ApiPropertyOptional({ type: 'enum', enum: EBloodGroup, description: 'Blood group of the student' })
+    @ApiPropertyOptional({ type: 'string', enum: EBloodGroup, description: 'Blood group of the student' })
     @IsEnum(EBloodGroup)
     @IsOptional()
     bloodGroup?: EBloodGroup;
@@ -136,13 +136,13 @@ export class CreateStudentDto {
     |--------------------------------------------------
     */
 
-    @ApiProperty({ type: String, description: 'Current address of the student' })
+    @ApiProperty({ type: "string", description: 'Current address of the student' })
     @IsString()
     @IsNotEmpty()
     @Length(1, 80)
     currentAddress: string;
 
-    @ApiProperty({ type: String, description: 'Permanent address of the student' })
+    @ApiProperty({ type: "string", description: 'Permanent address of the student' })
     @IsString()
     @IsNotEmpty()
     @Length(1, 80)
@@ -154,17 +154,17 @@ export class CreateStudentDto {
     |--------------------------------------------------
     */
 
-    @ApiPropertyOptional({ type: String, description: 'National ID card number of the student' })
+    @ApiPropertyOptional({ type: "string", description: 'National ID card number of the student' })
     @IsString()
     @IsOptional()
     nationalIdCardNo: string;
 
-    @ApiPropertyOptional({ type: String, description: 'Birth certificate number of the student' })
+    @ApiPropertyOptional({ type: "string", description: 'Birth certificate number of the student' })
     @IsString()
     @IsOptional()
     birthCertificateNumber: string;
 
-    @ApiPropertyOptional({ type: String, description: 'Additional notes of the student' })
+    @ApiPropertyOptional({ type: "string", description: 'Additional notes of the student' })
     @IsString()
     @IsOptional()
     @MaxLength(1000)
@@ -182,7 +182,7 @@ export class CreateStudentDto {
     |--------------------------------------------------
     */
 
-    @ApiPropertyOptional({ type: String, description: 'Bank name of the student' })
+    @ApiPropertyOptional({ type: "string", description: 'Bank name of the student' })
     @IsString()
     @IsNotEmpty()
     @ValidateIf(o => {
@@ -190,7 +190,7 @@ export class CreateStudentDto {
     })
     bankName: string;
 
-    @ApiPropertyOptional({ type: String, description: 'Bank account number of the student' })
+    @ApiPropertyOptional({ type: "string", description: 'Bank account number of the student' })
     @IsString()
     @IsNotEmpty()
     @ValidateIf(o => {
@@ -198,7 +198,7 @@ export class CreateStudentDto {
     })
     bankAccountNumber: string;
 
-    @ApiPropertyOptional({ type: String, description: 'IFSC code of the student' })
+    @ApiPropertyOptional({ type: "string", description: 'IFSC code of the student' })
     @IsString()
     @IsNotEmpty()
     @ValidateIf(o => {
@@ -212,13 +212,13 @@ export class CreateStudentDto {
     |--------------------------------------------------
     */
 
-    @ApiPropertyOptional({ type: String, description: 'Name of the previous school' })
+    @ApiPropertyOptional({ type: "string", description: 'Name of the previous school' })
     @IsString()
     @IsOptional()
     @Length(1, 80)
     previousSchoolName?: string
 
-    @ApiPropertyOptional({ type: String, description: 'Details of the previous school' })
+    @ApiPropertyOptional({ type: "string", description: 'Details of the previous school' })
     @IsString()
     @IsOptional()
     @MaxLength(1000)

@@ -1,26 +1,26 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { ArrayMaxSize, ArrayMinSize, IsArray, IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Length, Max, ValidateIf } from "class-validator";
-import { IsFutureDate } from "src/common/decorators/isFutureDate.decorator";
-import { IsUuidOrUrl } from "src/common/decorators/isUrlOrUUid.decorator";
+import { IsFutureDate } from "src/common/decorators/validators/isFutureDate.decorator";
+import { IsUuidOrUrl } from "src/common/decorators/validators/isUrlOrUUid.decorator";
 import { ETask } from "src/common/types/global.type";
 
 export class CreateTaskDto {
-    @ApiProperty({ type: String, description: 'Task title' })
+    @ApiProperty({ type: "string", description: 'Task title' })
     @IsString()
     @IsNotEmpty()
     @Transform(({ value }) => value?.trim())
     @Length(1, 100, { message: 'Title must be less than 100 characters' })
     title: string;
 
-    @ApiProperty({ type: String, description: 'Task description' })
+    @ApiProperty({ type: "string", description: 'Task description' })
     @IsString()
     @IsNotEmpty()
     @Length(0, 500, { message: 'Description must be less than 500 characters' })
     @Transform(({ value }) => value?.trim())
     description: string;
 
-    @ApiProperty({ type: String, format: 'date-time', description: 'Submission task date' })
+    @ApiProperty({ type: "string", format: 'date-time', description: 'Submission task date' })
     @IsDateString()
     @IsFutureDate()
     @ValidateIf(o => o.taskType === ETask.ASSIGNMENT)
@@ -31,7 +31,7 @@ export class CreateTaskDto {
     @IsOptional()
     marks?: number;
 
-    @ApiProperty({ type: String, description: 'Task type' })
+    @ApiProperty({ type: "string", description: 'Task type' })
     @IsEnum(ETask)
     taskType: ETask;
 
@@ -41,12 +41,12 @@ export class CreateTaskDto {
     @ArrayMaxSize(5, { message: 'Maximum 5 attachments allowed' })
     attachmentIds?: string[];
 
-    @ApiProperty({ type: String, format: 'uuid', description: 'Subject id' })
+    @ApiProperty({ type: "string", format: 'uuid', description: 'Subject id' })
     @IsUUID()
     @IsNotEmpty()
     subjectId: string;
 
-    @ApiProperty({ type: String, format: 'uuid', description: 'ClassRoom ids' })
+    @ApiProperty({ type: "string", format: 'uuid', description: 'ClassRoom ids' })
     @IsUUID(4, { each: true })
     @IsArray()
     @ArrayMinSize(1)

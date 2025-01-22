@@ -149,7 +149,6 @@ export class ClassRoomsHelper extends BaseRepository {
         const queryBuilder = this.getRepository(ClassRoom).createQueryBuilder('classRoom')
             .limit(queryDto.take)
             .offset(queryDto.skip)
-            .orderBy('classRoutine.createdAt', queryDto.order)
             .leftJoin('classRoom.classRoutines', 'classRoutine')
             .leftJoin('classRoutine.teacher', 'teacher')
             .leftJoin('classRoutine.subject', 'subject')

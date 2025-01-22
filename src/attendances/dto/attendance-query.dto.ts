@@ -5,17 +5,17 @@ import { QueryDto } from "src/common/dto/query.dto";
 import { EAttendanceStatus } from "src/common/types/global.type";
 
 export class AttendanceQueryDto extends QueryDto {
-    @ApiPropertyOptional({ type: String, format: 'date-time', description: 'Date of the attendance' })
+    @ApiPropertyOptional({ type: "string", format: 'date-time', description: 'Date of the attendance' })
     @IsDateString()
     @IsOptional()
     date?: string;
 
-    @ApiPropertyOptional({ type: 'enum', enum: EAttendanceStatus, description: 'Status of the attendance' })
+    @ApiPropertyOptional({ type: 'string', enum: EAttendanceStatus, description: 'Status of the attendance' })
     @IsEnum(EAttendanceStatus)
     @IsOptional()
     status?: EAttendanceStatus;
 
-    @ApiPropertyOptional({ type: String, format: 'uuid', description: 'Account id' })
+    @ApiPropertyOptional({ type: "string", format: 'uuid', description: 'Account id' })
     @IsUUID()
     @IsOptional()
     accountId?: string;

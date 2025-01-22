@@ -8,7 +8,7 @@ export class CreateUserDto {
     @IsNotEmpty()
     email: string;
 
-    @ApiProperty({ type: String, description: 'Student first name' })
+    @ApiProperty({ type: "string", description: 'Student first name' })
     @IsString()
     @IsNotEmpty()
     @Matches(NAME_REGEX, {
@@ -16,7 +16,7 @@ export class CreateUserDto {
     })
     firstName: string;
 
-    @ApiProperty({ type: String, description: 'Student last name' })
+    @ApiProperty({ type: "string", description: 'Student last name' })
     @IsString()
     @IsNotEmpty()
     @Matches(NAME_WITH_SPACE_REGEX, {

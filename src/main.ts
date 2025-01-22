@@ -60,7 +60,7 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   // swagger docs setup
-  setupSwagger(app);
+  configService.get('NODE_ENV') !== 'production' && setupSwagger(app);
 
   await app.listen(configService.get('PORT'), '0.0.0.0', (err, address) => {
     if (err) {

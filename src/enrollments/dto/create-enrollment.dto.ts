@@ -1,10 +1,10 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import { ArrayMinSize, IsArray, IsDateString, IsInt, IsNotEmpty, IsNumber, IsUUID, Min, ValidateNested } from "class-validator";
-import { IsNotFutureDate } from "src/common/decorators/isNotFutureDate.decorator";
+import { IsNotFutureDate } from "src/common/decorators/validators/isNotFutureDate.decorator";
 
 class StudentWithRollNo {
-    @ApiProperty({ type: String, format: 'uuid' })
+    @ApiProperty({ type: "string", format: 'uuid' })
     @IsUUID()
     studentId: string;
 

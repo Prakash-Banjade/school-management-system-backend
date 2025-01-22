@@ -75,16 +75,21 @@ export class LessonPlansService extends BaseRepository {
       .take(queryDto.take)
       .leftJoin('lessonPlan.subject', 'subject')
       .leftJoin('lessonPlan.classRooms', 'classRoom')
+      .leftJoin('classRoom.faculty', 'faculty')
       .leftJoin('classRoom.parent', 'parent')
       .leftJoin('lessonPlan.createdBy', 'createdBy')
       .andWhere(new Brackets(qb => {
         queryDto.search && qb.andWhere("LOWER(lessonPlan.title) LIKE LOWER(:search)", { search: `%${queryDto.search}%` });
 
+        queryDto.facultyId && qb.andWhere('faculty.id = :facultyId', { facultyId: queryDto.facultyId });
+
         queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId OR parent.id = :classRoomId', { classRoomId: sectionId ?? classRoomId }); // check in both section and class
+        queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId }); // section is the class room
 
         queryDto.status?.length && qb.andWhere('lessonPlan.status IN (:...status)', { status: queryDto.status });
-
-        queryDto.subjectId && qb.andWhere('subject.id = :subjectId', { subjectId: queryDto.subjectId });
+      }))
+      .andWhere(new Brackets(qb => {
+        queryDto.subjectId && qb.andWhere('subject.id = :subjectId', { subjectId: queryDto.subjectId }); // needs to put separate in another andWhere clause
       }))
       .select([
         "lessonPlan.id as id",
@@ -95,6 +100,7 @@ export class LessonPlansService extends BaseRepository {
         "subject.subjectName as subjectName",
         "JSON_ARRAYAGG(classRoom.name) as classRooms", // Aggregate classrooms as JSON
         "MAX(parent.name) as parentClassName",
+        "MAX(faculty.name) as facultyName",
         "CONCAT(createdBy.firstName, ' ', createdBy.lastName) as createdByName",
         "lessonPlan.status as status",
       ])
@@ -117,6 +123,7 @@ export class LessonPlansService extends BaseRepository {
         attachments: true,
         classRooms: {
           parent: true,
+          faculty: true
         }
       },
       select: lessonPlanSelectCols,

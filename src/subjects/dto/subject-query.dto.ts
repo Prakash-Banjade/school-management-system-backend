@@ -9,7 +9,7 @@ const subjectSortByQuery = {
 }
 
 export class SubjectQueryDto extends ClassRoomSearchQueryDto {
-    @ApiPropertyOptional({ type: String, format: 'uuid' })
+    @ApiPropertyOptional({ type: "string", format: 'uuid' })
     @IsUUID()
     @IsOptional()
     classRoomId?: string;
@@ -35,7 +35,7 @@ export class SubjectQueryDto extends ClassRoomSearchQueryDto {
 
 export class SubjectOptionsQueryDto extends QueryDto {
 
-    @ApiPropertyOptional({ type: String, format: 'uuid' })
+    @ApiPropertyOptional({ type: "string", format: 'uuid' })
     @IsUUID()
     classRoomId: string;
 }

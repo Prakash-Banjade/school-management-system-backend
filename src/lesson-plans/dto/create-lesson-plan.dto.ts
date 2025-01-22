@@ -1,13 +1,19 @@
 import { BadRequestException } from "@nestjs/common";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { ArrayMaxSize, ArrayMinSize, IsArray, IsDateString, IsNotEmpty, IsOptional, IsString, IsUUID, ValidateIf } from "class-validator";
-import { IsFutureDate } from "src/common/decorators/isFutureDate.decorator";
-import { IsUuidOrUrl } from "src/common/decorators/isUrlOrUUid.decorator";
+import { Transform } from "class-transformer";
+import { ArrayMaxSize, ArrayMinSize, IsArray, isDateString, IsDateString, IsNotEmpty, IsOptional, IsString, IsUUID, Length, ValidateIf } from "class-validator";
+import { isFuture, isToday } from "date-fns";
+import { IsFutureDate } from "src/common/decorators/validators/isFutureDate.decorator";
+import { IsUuidOrUrl } from "src/common/decorators/validators/isUrlOrUUid.decorator";
 
 export class CreateLessonPlanDto {
     @ApiProperty()
-    @IsDateString()
-    @IsFutureDate()
+    @Transform(({ value }) => {
+        if (!isDateString(value)) throw new BadRequestException('Start date must be a valid date');
+        if (!isToday(value) && !isFuture(value)) throw new BadRequestException('Start date must be in the future');
+
+        return value;
+    })
     startDate: string;
 
     @ApiProperty()
@@ -23,11 +29,15 @@ export class CreateLessonPlanDto {
     @ApiProperty()
     @IsString()
     @IsNotEmpty()
+    @Transform(({ value }) => value?.trim())
+    @Length(1, 100, { message: 'Title must be less than 100 characters' })
     title: string;
 
     @ApiProperty()
     @IsString()
     @IsNotEmpty()
+    @Length(0, 500, { message: 'Description must be less than 500 characters' })
+    @Transform(({ value }) => value?.trim())
     description: string;
 
     @ApiPropertyOptional({ type: [String], format: 'uuid', isArray: true, description: 'Attachment ids or urls' })
@@ -36,11 +46,11 @@ export class CreateLessonPlanDto {
     @IsOptional()
     attachmentIds?: string[];
 
-    @ApiProperty({ type: String, format: 'uuid', description: 'Subject id' })
+    @ApiProperty({ type: "string", format: 'uuid', description: 'Subject id' })
     @IsUUID()
     subjectId: string;
 
-    @ApiProperty({ type: String, format: 'uuid', description: 'ClassRoom ids' })
+    @ApiProperty({ type: "string", format: 'uuid', description: 'ClassRoom ids' })
     @IsUUID(4, { each: true })
     @IsArray()
     @ArrayMinSize(1)

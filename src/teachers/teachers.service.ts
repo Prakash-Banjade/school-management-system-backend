@@ -69,10 +69,9 @@ export class TeachersService extends BaseRepository {
       .andWhere(new Brackets(qb => {
         queryDto.search && qb.andWhere(new Brackets(qb => {
           qb.orWhere("LOWER(CONCAT(teacher.firstName, ' ', teacher.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
-          qb.orWhere("LOWER(teacher.email) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+            .orWhere("teacher.teacherId = :exactSearch", { exactSearch: queryDto.search })
         }))
-
-        queryDto.teacherId && qb.andWhere('teacher.teacherId = :teacherId', { teacherId: queryDto.teacherId });
+        queryDto.departmentIds?.length && qb.andWhere('faculties.id IN (:...departmentIds)', { departmentIds: queryDto.departmentIds })
       }));
 
     applySelectColumns(queryBuilder, teachersColumnsConfig, 'teacher');

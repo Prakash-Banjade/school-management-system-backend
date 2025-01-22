@@ -1,8 +1,13 @@
 import { CACHE_MANAGER } from "@nestjs/cache-manager";
 import { Inject, Injectable, Scope } from "@nestjs/common";
+import { REQUEST } from "@nestjs/core";
 import { Cache } from "cache-manager";
+import { FastifyRequest } from "fastify";
+import { LoginDevice } from "src/auth-system/accounts/entities/login-devices.entity";
+import { BaseRepository } from "src/common/repository/base-repository";
 import { EnvService } from "src/env/env.service";
 import { UtilitiesService } from "src/utilities/utilities.service";
+import { DataSource } from "typeorm";
 
 export interface TRefreshToken {
     deviceId: string,
@@ -10,15 +15,16 @@ export interface TRefreshToken {
 }
 
 @Injectable({ scope: Scope.REQUEST })
-export class RefreshTokenService {
+export class RefreshTokenService extends BaseRepository {
     email: string;
     deviceId: string;
 
     constructor(
+        dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
         @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
         private readonly envService: EnvService,
         private readonly utilitiesService: UtilitiesService
-    ) { }
+    ) { super(dataSource, req); }
 
     init({ email, deviceId }: { email?: string, deviceId?: string }) {
         this.email = email ?? this.utilitiesService.getCurrentUser()?.email;
@@ -51,18 +57,20 @@ export class RefreshTokenService {
     }
 
     async removeAll() {
-        const keys = await this.cacheManager.store.keys(`user:${this.email}:*`);
+        const devices = await this.getRepository(LoginDevice).find({ where: { account: { email: this.email } }, select: { deviceId: true } });
 
-        await Promise.all(keys.map(async (key) => await this.cacheManager.del(key)));
+        const keys = devices.map(d => `user:${this.email}:${d.deviceId}`);
+
+        await this.cacheManager.mdel(keys);
     }
 
     async getAll() {
-        const keys = await this.cacheManager.store.keys(`user:${this.email}:*`);
+        const devices = await this.getRepository(LoginDevice).find({ where: { account: { email: this.email } }, select: { deviceId: true } });
 
-        if (!keys?.length) return [];
-        
-        const tokens = await this.cacheManager.store.mget(...keys);
+        const keys = devices.map(d => `user:${this.email}:${d.deviceId}`);
 
-        return tokens.map((token: string | null) => token ? JSON.parse(token) as TRefreshToken : null);
+        const tokens = (await this.cacheManager.mget(keys)).filter(Boolean) as string[];
+
+        return tokens.map((token: string) => JSON.parse(token) as TRefreshToken);
     }
 }

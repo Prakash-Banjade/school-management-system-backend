@@ -16,7 +16,7 @@ export class BookTransactionsQueryDto extends QueryDto {
     @IsString()
     status: EBookTransactionStatus.Issued | EBookTransactionStatus.Returned | EBookTransactionStatus.Overdue | 'paid' | 'unpaid';
 
-    @ApiPropertyOptional({ type: String, enum: EBookTransactionPeriod })
+    @ApiPropertyOptional({ type: "string", enum: EBookTransactionPeriod })
     @IsOptional()
     @IsEnum(EBookTransactionPeriod)
     period?: EBookTransactionPeriod;

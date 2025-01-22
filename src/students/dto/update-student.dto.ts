@@ -15,11 +15,11 @@ export class UpdateStudentDto extends PartialType(OmitType(CreateStudentDto, ['c
 }
 
 export class UpdateStudentClassDto {
-    @ApiProperty()
+    @ApiProperty({ type: 'string', format: 'uuid', description: "Class room id" })
     @IsUUID()
     classRoomId: string;
 
-    @ApiProperty({ type: [String], format: 'uuid', isArray: true })
+    @ApiProperty({ type: [String], format: 'uuid', isArray: true, description: "Student ids" })
     @IsUUID('4', { each: true })
     @ArrayMinSize(1, { message: "At least one student is required" })
     studentIds: string;

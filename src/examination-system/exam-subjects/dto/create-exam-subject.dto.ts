@@ -3,7 +3,7 @@ import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { IsDateString, IsInt, IsMilitaryTime, IsNotEmpty, IsOptional, IsString, IsUUID, Min } from "class-validator";
 import { differenceInDays } from "date-fns";
-import { IsFutureDate } from "src/common/decorators/isFutureDate.decorator";
+import { IsFutureDate } from "src/common/decorators/validators/isFutureDate.decorator";
 import { SubjectMarksDto } from "src/subjects/dto/create-subject.dto";
 
 export class CreateExamSubjectDto extends SubjectMarksDto {

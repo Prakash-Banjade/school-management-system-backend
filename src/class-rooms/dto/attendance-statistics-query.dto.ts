@@ -9,7 +9,7 @@ export enum ClassRoomAttendancePeriod {
 }
 
 export class AttendanceStatisticsQueryDto {
-    @ApiProperty({ type: String, enum: ClassRoomAttendancePeriod, description: 'Period' })
+    @ApiProperty({ type: "string", enum: ClassRoomAttendancePeriod, description: 'Period' })
     @IsEnum(ClassRoomAttendancePeriod)
     period: string;
 }
