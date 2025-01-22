@@ -30,7 +30,7 @@ import { CaslModule } from './auth-system/casl/casl.module';
 import { LeaveRequestsModule } from './leave-requests/leave-requests.module';
 import { LibrarySystemModule } from './library-system/library-system.module';
 import { TaskSystemModule } from './task-system/task-system.module';
-import { CacheModule } from '@nestjs/cache-manager';
+import { CacheModule, CacheStore } from '@nestjs/cache-manager';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { OptionalSubjectModule } from './optional-subject/optional-subject.module';
@@ -46,7 +46,7 @@ import { LessonPlansModule } from './lesson-plans/lesson-plans.module';
 import { FacultiesModule } from './faculties/faculties.module';
 import { OnlineClassesModule } from './online-classes/online-classes.module';
 import { StreamClientModule } from './auth-system/stream-client/stream-client.module';
-import KeyvRedis from '@keyv/redis';
+import { redisStore } from 'cache-manager-redis-yet';
 
 @Module({
   imports: [
@@ -70,10 +70,14 @@ import KeyvRedis from '@keyv/redis';
       imports: [ConfigModule],
       isGlobal: true,
       useFactory: async (configService: ConfigService) => {
+        const store = await redisStore({
+          url: configService.get<string>('REDIS_URL'),
+        });
+
         return {
-          stores: [
-            new KeyvRedis(configService.get<string>('REDIS_URL')),
-          ],
+          store: store as unknown as CacheStore,
+          ttl: 1 * 60000, // 1 minute (milliseconds)
+          max: 1000,
         };
       },
       inject: [ConfigService],
