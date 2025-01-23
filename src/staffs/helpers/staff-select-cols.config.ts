@@ -19,5 +19,9 @@ export const staffsColumnsConfig: FindOptionsSelect<Staff> = {
     },
     account: {
         id: true,
+    },
+    faculties: {
+        id: true,
+        name: true,
     }
 }

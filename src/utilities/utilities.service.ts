@@ -5,7 +5,6 @@ import { Cache } from 'cache-manager';
 import { FastifyRequest } from 'fastify';
 import { CACHE_KEYS, CookieKey } from 'src/common/CONSTANTS';
 import { AuthUser } from 'src/common/types/global.type';
-import { generateDeviceId } from 'src/utils/utils';
 import { SelectQueryBuilder } from 'typeorm';
 
 @Injectable({ scope: Scope.REQUEST })

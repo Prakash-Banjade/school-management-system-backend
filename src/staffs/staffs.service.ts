@@ -2,7 +2,7 @@ import { BadRequestException, Inject, Injectable, NotFoundException, Scope } fro
 import { CreateStaffDto } from './dto/create-staff.dto';
 import { UpdateStaffDto } from './dto/update-staff.dto';
 import { Staff } from './entities/staff.entity';
-import { Brackets, DataSource, Not } from 'typeorm';
+import { Brackets, DataSource, In, Not } from 'typeorm';
 import { REQUEST } from '@nestjs/core';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { ImagesService } from 'src/file-management/images/images.service';
@@ -14,6 +14,7 @@ import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { staffsColumnsConfig } from './helpers/staff-select-cols.config';
 import { SalaryStructure } from 'src/finance-system/salary-management/salary-structures/entities/salary-structure.entity';
 import { UtilitiesService } from 'src/utilities/utilities.service';
+import { Faculty } from 'src/faculties/entities/faculty.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class StaffsService extends BaseRepository {
@@ -34,13 +35,19 @@ export class StaffsService extends BaseRepository {
       ? await this.imageService.findOne(createStaffDto.profileImageId)
       : null;
 
+    const faculties = createStaffDto.facultyIds?.length ? await this.getRepository(Faculty).find({
+      where: { id: In(createStaffDto.facultyIds) },
+      select: { id: true }
+    }) : [];
+
     const staff = this.getRepository(Staff).create({
       ...createStaffDto,
       profileImage,
       salaryStructure: this.getRepository(SalaryStructure).create({
         basicSalary: createStaffDto.basicSalary,
         allowances: createStaffDto.allowances ?? [],
-      })
+      }),
+      faculties
     });
     const savedStaff = await this.getRepository(Staff).save(staff);
 
@@ -59,14 +66,15 @@ export class StaffsService extends BaseRepository {
       .take(queryDto.take)
       .leftJoin("staff.profileImage", "profileImage")
       .leftJoin('staff.account', 'account')
+      .leftJoin('staff.faculties', 'faculties')
       .andWhere(new Brackets(qb => {
         queryDto.search && qb.andWhere(new Brackets(qb => {
           qb.orWhere("LOWER(CONCAT(staff.firstName, ' ', staff.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
-          qb.orWhere("LOWER(staff.email) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+            .orWhere("staff.staffId = :exactSearch", { exactSearch: queryDto.search })
         }))
 
-        queryDto.staffId && qb.andWhere('staff.staffId = :staffId', { staffId: queryDto.staffId });
         queryDto.type?.length && qb.andWhere('staff.type IN (:...type)', { type: queryDto.type });
+        queryDto.departmentIds?.length && qb.andWhere('faculties.id IN (:...departmentIds)', { departmentIds: queryDto.departmentIds })
       }))
 
     applySelectColumns(queryBuilder, staffsColumnsConfig, 'staff');
@@ -101,6 +109,7 @@ export class StaffsService extends BaseRepository {
       relations: {
         profileImage: true,
         account: true,
+        faculties: true,
       },
       select: {
         profileImage: {
@@ -108,7 +117,11 @@ export class StaffsService extends BaseRepository {
           url: true,
           originalName: true,
         },
-        account: { id: true }
+        account: { id: true },
+        faculties: {
+          id: true,
+          name: true,
+        }
       }
     });
     if (!existingStaff) throw new NotFoundException('Staff not found');
@@ -127,12 +140,17 @@ export class StaffsService extends BaseRepository {
       existingStaff.profileImage = updateStaffDto.profileImageId ? await this.imageService.findOne(updateStaffDto.profileImageId) : null; // setting new profile image
     }
 
+    const faculties = updateStaffDto.facultyIds?.length ? await this.getRepository(Faculty).find({
+      where: { id: In(updateStaffDto.facultyIds) },
+      select: { id: true }
+    }) : [];
+
     // update email if provided
     if (updateStaffDto.email && existingStaff.email !== updateStaffDto.email) {
       await this.accountsService.updateEmail(existingStaff.account?.id, updateStaffDto.email);
     }
 
-    Object.assign(existingStaff, { ...updateStaffDto });
+    Object.assign(existingStaff, { ...updateStaffDto, faculties });
 
     await this.getRepository(Staff).save(existingStaff);
 

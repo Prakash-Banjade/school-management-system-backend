@@ -1,13 +1,14 @@
 import { Account } from "src/auth-system/accounts/entities/account.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { EBloodGroup, EMaritalStatus, EStaff, Gender } from "src/common/types/global.type";
+import { Faculty } from "src/faculties/entities/faculty.entity";
 import { Image } from "src/file-management/images/entities/image.entity";
 import { EmployeeLedger } from "src/finance-system/salary-management/employee-ledgers/entities/employee-ledger.entity";
 import { Payroll } from "src/finance-system/salary-management/payrolls/entities/payroll.entity";
 import { SalaryStructure } from "src/finance-system/salary-management/salary-structures/entities/salary-structure.entity";
 import { Vehicle } from "src/transportation-system/vehicles/entities/vehicle.entity";
 import { generateTeacherId } from "src/utils/generate-teacher-id";
-import { BeforeInsert, Column, Entity, JoinColumn, OneToMany, OneToOne } from "typeorm";
+import { BeforeInsert, Column, Entity, JoinColumn, JoinTable, ManyToMany, OneToMany, OneToOne } from "typeorm";
 
 @Entity()
 export class Staff extends BaseEntity {
@@ -46,6 +47,10 @@ export class Staff extends BaseEntity {
 
     @Column({ type: 'enum', enum: EStaff })
     type: EStaff;
+
+    @ManyToMany(() => Faculty, faculty => faculty.staffs)
+    @JoinTable()
+    faculties: Faculty[]; // this will define the department of the staff
 
     @Column({ type: 'longtext', nullable: true })
     shortDescription?: string;

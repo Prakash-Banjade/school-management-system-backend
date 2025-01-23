@@ -1,25 +1,25 @@
 import { BadRequestException } from "@nestjs/common";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
-import { ArrayMaxSize, ArrayMinSize, IsArray, isDateString, IsDateString, IsNotEmpty, IsOptional, IsString, IsUUID, Length, ValidateIf } from "class-validator";
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsDateString, isDateString, IsNotEmpty, IsOptional, IsString, IsUUID, Length, ValidateIf } from "class-validator";
 import { isFuture, isToday } from "date-fns";
 import { IsFutureDate } from "src/common/decorators/validators/isFutureDate.decorator";
 import { IsUuidOrUrl } from "src/common/decorators/validators/isUrlOrUUid.decorator";
 
 export class CreateLessonPlanDto {
     @ApiProperty()
-    @Transform(({ value }) => {
-        if (!isDateString(value)) throw new BadRequestException('Start date must be a valid date');
-        if (!isToday(value) && !isFuture(value)) throw new BadRequestException('Start date must be in the future');
+    @IsDateString()
+    @ValidateIf((o: CreateLessonPlanDto) => {
+        if (!isDateString(o.startDate)) throw new BadRequestException('Start date must be a valid date');
+        if (!isToday(o.startDate) && !isFuture(o.startDate)) throw new BadRequestException('Start date must be in the future');
 
-        return value;
+        return true;
     })
     startDate: string;
 
     @ApiProperty()
-    @IsDateString()
-    @IsFutureDate()
-    @ValidateIf(o => {
+    @IsFutureDate({ message: 'End date must be in the future' })
+    @ValidateIf((o: CreateLessonPlanDto) => {
         if (o.endDate && isNaN(Date.parse(o.endDate))) throw new BadRequestException('End date must be a valid date');
         if (new Date(o.startDate) > new Date(o.endDate)) throw new BadRequestException('End date must be greater than start date');
         return true;
