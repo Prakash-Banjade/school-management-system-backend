@@ -10,6 +10,7 @@ import { Staff } from 'src/staffs/entities/staff.entity';
 import { LeaveRequest } from 'src/leave-requests/entities/leave-request.entity';
 import { EClassType, ELeaveRequestStatus, Role } from 'src/common/types/global.type';
 import { UtilitiesService } from 'src/utilities/utilities.service';
+import { Account } from 'src/auth-system/accounts/entities/account.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class DashboardService extends BaseRepository {
@@ -96,6 +97,7 @@ export class DashboardService extends BaseRepository {
             .leftJoin('teacher.profileImage', 'profileImage')
             .where('account.role = :role', { role: Role.TEACHER })
             .andWhere('leaveRequest.status = :status', { status: ELeaveRequestStatus.PENDING })
+        this.utilitiesService.applyBranchFilter(teachersLeaveRequestsQueryBuilder);
 
         const teachersLeaveRequests = await teachersLeaveRequestsQueryBuilder.clone()
             .limit(3)
@@ -122,6 +124,38 @@ export class DashboardService extends BaseRepository {
             },
         }
 
+    }
+
+    async todayBirthdays() {
+        const querybuilder = this.getRepository(Account).createQueryBuilder('account')
+            .leftJoin('account.student', 'student')
+            .leftJoin('account.teacher', 'teacher')
+            .leftJoin('account.staff', 'staff')
+            .leftJoin('account.profileImage', 'profileImage')
+            .where(new Brackets(qb => {
+                qb.orWhere('MONTH(student.dob) = MONTH(CURRENT_DATE()) AND DAY(student.dob) = DAY(CURRENT_DATE())')
+                    .orWhere('MONTH(teacher.dob) = MONTH(CURRENT_DATE()) AND DAY(teacher.dob) = DAY(CURRENT_DATE())')
+                    .orWhere('MONTH(staff.dob) = MONTH(CURRENT_DATE()) AND DAY(staff.dob) = DAY(CURRENT_DATE())');
+            }))
+            .select([
+                'account.id as id',
+                'CONCAT(account.firstName, " ", account.lastName) as name',
+                'account.role as role',
+                'student.id as studentId',
+                'teacher.id as teacherId',
+                'staff.id as staffId',
+                'profileImage.url as profileImageUrl',
+            ])
+            .limit(3)
+        this.utilitiesService.applyBranchFilter(querybuilder);
+
+        const birthdayMembers = await querybuilder.getRawMany();
+        const totalCount = await querybuilder.getCount();
+
+        return {
+            totalCount,
+            data: birthdayMembers,
+        }
     }
 }
 

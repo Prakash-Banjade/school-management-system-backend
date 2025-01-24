@@ -138,6 +138,7 @@ export class StaffsService extends BaseRepository {
       await this.imageService.update(existingStaff.profileImage.id, updateStaffDto.profileImageId);
     } else if (updateStaffDto.profileImageId !== undefined) { // this will execute only when teacher has no profile image before
       existingStaff.profileImage = updateStaffDto.profileImageId ? await this.imageService.findOne(updateStaffDto.profileImageId) : null; // setting new profile image
+      await this.accountsService.updateProfileImage(existingStaff.account?.id, existingStaff.profileImage);
     }
 
     const faculties = updateStaffDto.facultyIds?.length ? await this.getRepository(Faculty).find({

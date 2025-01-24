@@ -15,6 +15,7 @@ import paginatedData from 'src/utils/paginatedData';
 import { SalaryStructure } from 'src/finance-system/salary-management/salary-structures/entities/salary-structure.entity';
 import { UtilitiesService } from 'src/utilities/utilities.service';
 import { Faculty } from 'src/faculties/entities/faculty.entity';
+import { Account } from 'src/auth-system/accounts/entities/account.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class TeachersService extends BaseRepository {
@@ -122,6 +123,7 @@ export class TeachersService extends BaseRepository {
       await this.imageService.update(existingTeacher.profileImage.id, updateTeacherDto.profileImageId);
     } else if (updateTeacherDto.profileImageId !== undefined) { // this will execute only when teacher has no profile image before
       existingTeacher.profileImage = updateTeacherDto.profileImageId ? await this.imageService.findOne(updateTeacherDto.profileImageId) : null; // setting new profile image
+      await this.accountsService.updateProfileImage(existingTeacher.account?.id, existingTeacher.profileImage);
     }
 
     const faculties = updateTeacherDto.facultyIds?.length ? await this.getRepository(Faculty).find({
