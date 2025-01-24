@@ -22,6 +22,7 @@ import { StudentLedger } from 'src/finance-system/fee-management/student-ledgers
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { AcademicYearsService } from 'src/academic-years/academic-years.service';
 import { UtilitiesService } from 'src/utilities/utilities.service';
+import { Account } from 'src/auth-system/accounts/entities/account.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class StudentsService extends BaseRepository {
@@ -183,6 +184,7 @@ export class StudentsService extends BaseRepository {
       await this.imageService.update(existing.profileImage.id, updateStudentDto.profileImageId);
     } else if (updateStudentDto.profileImageId !== undefined) { // this will execute only when student has no profile image before
       existing.profileImage = updateStudentDto.profileImageId ? await this.imageService.findOne(updateStudentDto.profileImageId) : null;
+      await this.accountsService.updateProfileImage(existing.account?.id, existing.profileImage);
     }
 
     // evaluate document attachments

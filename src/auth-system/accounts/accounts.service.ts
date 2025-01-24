@@ -20,6 +20,7 @@ import { RefreshTokenService } from '../auth/helpers/refresh-tokens.service';
 import { LoginDevice } from './entities/login-devices.entity';
 import { WebAuthnCredential } from '../webAuthn/entities/webAuthnCredential.entity';
 import { StreamClientProvider } from '../stream-client/stream-client-provider';
+import { Image } from 'src/file-management/images/entities/image.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AccountsService extends BaseRepository {
@@ -62,6 +63,7 @@ export class AccountsService extends BaseRepository {
       lastName: entity.lastName,
       role: key,
       [key]: entity,
+      profileImage: entity.profileImage ?? null,
       password,
       prevPasswords: [bcrypt.hashSync(password, PASSWORD_SALT_COUNT)],
       branch: await this.branchesService.getBranch(branchId),
@@ -118,6 +120,17 @@ export class AccountsService extends BaseRepository {
     if (accountWithEmail) throw new ConflictException('This email is already taken');
 
     await this.getRepository(Account).update({ id: accountId }, { email: newEmail });
+  }
+
+  async updateProfileImage(accountId: string, profileImage: Image | null) {
+    const account = await this.getRepository(Account).findOne({
+      where: { id: accountId },
+      select: { id: true, verifiedAt: true }
+    });
+
+    account.profileImage = profileImage;
+
+    await this.getRepository(Account).save(account);
   }
 
   async getDevices() {

@@ -95,7 +95,8 @@ export class ImagesService {
       return;
     }
 
-    const newImage = await this.findOne(newImageId);
+    const newImage = await this.imagesRepository.findOneBy({ id: newImageId });
+    if (!newImage) throw new NotFoundException('Image not found');
 
     // update image name
     const { id, createdAt, ...dataToMerge } = newImage;
