@@ -13,7 +13,7 @@ import { OptionalSubject } from "src/optional-subject/entities/optional-subject.
 import { TaskSubmission } from "src/task-system/task-submissions/entities/task-submission.entity";
 import { RouteStop } from "src/transportation-system/route-stops/entities/route-stop.entity";
 import { generateTeacherId } from "src/utils/generate-teacher-id";
-import { BeforeInsert, Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, OneToOne } from "typeorm";
+import { BeforeInsert, Column, Entity, Index, JoinColumn, ManyToMany, ManyToOne, OneToMany, OneToOne } from "typeorm";
 
 @Entity()
 export class Student extends BaseEntity {
@@ -59,7 +59,8 @@ export class Student extends BaseEntity {
     |--------------------------------------------------
     */
 
-    @Column({ type: 'int' })
+    @Index({ unique: true })
+    @Column({ type: 'int', unique: true })
     studentId: number;
 
     @BeforeInsert()

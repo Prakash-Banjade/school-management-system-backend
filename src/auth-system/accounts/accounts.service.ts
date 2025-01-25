@@ -116,6 +116,7 @@ export class AccountsService extends BaseRepository {
         email: newEmail,
         id: Not(accountId)
       },
+      select: { id: true }
     });
     if (accountWithEmail) throw new ConflictException('This email is already taken');
 

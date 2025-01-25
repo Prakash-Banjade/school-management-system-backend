@@ -12,11 +12,12 @@ import { OnlineClass } from "src/online-classes/entities/online-class.entity";
 import { Subject } from "src/subjects/entities/subject.entity";
 import { TaskEvaluation } from "src/task-system/task-evaluations/entities/task-evaluation.entity";
 import { generateTeacherId } from "src/utils/generate-teacher-id";
-import { BeforeInsert, Column, Entity, JoinColumn, JoinTable, ManyToMany, OneToMany, OneToOne } from "typeorm";
+import { BeforeInsert, Column, Entity, Index, JoinColumn, JoinTable, ManyToMany, OneToMany, OneToOne } from "typeorm";
 
 @Entity()
 export class Teacher extends BaseEntity {
-    @Column({ type: 'int' })
+    @Index({ unique: true })
+    @Column({ type: 'int', unique: true })
     teacherId: number;
 
     @BeforeInsert()

@@ -1,4 +1,4 @@
-import { BeforeInsert, BeforeUpdate, Column, Entity, ManyToOne, OneToMany, OneToOne } from "typeorm";
+import { BeforeInsert, BeforeUpdate, Column, Entity, Index, ManyToOne, OneToMany, OneToOne } from "typeorm";
 import * as bcrypt from 'bcrypt';
 import { BadRequestException } from "@nestjs/common";
 import { BaseEntity } from "src/common/entities/base.entity";
@@ -27,6 +27,7 @@ export class Account extends BaseEntity {
     @Column({ type: 'varchar', default: '' })
     lastName?: string;
 
+    @Index({ unique: true })
     @Column({ type: 'varchar', unique: true })
     email!: string;
 
