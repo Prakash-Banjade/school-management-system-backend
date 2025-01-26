@@ -15,7 +15,6 @@ import paginatedData from 'src/utils/paginatedData';
 import { SalaryStructure } from 'src/finance-system/salary-management/salary-structures/entities/salary-structure.entity';
 import { UtilitiesService } from 'src/utilities/utilities.service';
 import { Faculty } from 'src/faculties/entities/faculty.entity';
-import { Account } from 'src/auth-system/accounts/entities/account.entity';
 import { UpdateAccountDto } from 'src/auth-system/accounts/dto/update-account.dto';
 
 @Injectable({ scope: Scope.REQUEST })
@@ -69,7 +68,7 @@ export class TeachersService extends BaseRepository {
       .leftJoin('teacher.faculties', 'faculties')
       .andWhere(new Brackets(qb => {
         queryDto.search && qb.andWhere(new Brackets(qb => {
-          qb.orWhere("LOWER(CONCAT(teacher.firstName, ' ', teacher.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+          qb.orWhere("account.lowerCasedFullName LIKE LOWER(:search)", { search: `${queryDto.search}%` })
             .orWhere("teacher.teacherId = :exactSearch", { exactSearch: queryDto.search })
         }))
         queryDto.departmentIds?.length && qb.andWhere('faculties.id IN (:...departmentIds)', { departmentIds: queryDto.departmentIds })

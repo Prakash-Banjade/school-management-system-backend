@@ -99,10 +99,7 @@ export class LeaveRequestsService extends BaseRepository {
       .where("account.role != :role", { role: Role.STUDENT })
       .andWhere(new Brackets(qb => {
         queryDto.status?.length && qb.andWhere('leaveRequest.status IN (:...status)', { status: queryDto.status });
-        queryDto.search && qb.andWhere(new Brackets(qb => {
-          qb.orWhere("LOWER(CONCAT(teacher.firstName, ' ', teacher.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
-          qb.orWhere("LOWER(CONCAT(staff.firstName, ' ', staff.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
-        }))
+        queryDto.search && qb.orWhere("account.lowerCasedFullName LIKE LOWER(:search)", { search: `${queryDto.search}%` });
 
         if (!!queryDto.employeeTypes?.length && !queryDto.employeeTypes.includes(Role.TEACHER)) {
           queryDto.employeeTypes?.length && qb.andWhere('staff.type IN (:...employeeTypes)', { employeeTypes: queryDto.employeeTypes });

@@ -36,7 +36,7 @@ export class TeachersStudentViewService extends BaseRepository {
             .where('classRoom.id = :primaryClassRoomId', { primaryClassRoomId })
             .andWhere(new Brackets(qb => {
                 queryDto.search && qb.andWhere(new Brackets(qb => {
-                    qb.orWhere("LOWER(CONCAT(teacher.firstName, ' ', teacher.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+                    qb.orWhere("account.lowerCasedFullName LIKE LOWER(:search)", { search: `${queryDto.search}%` })
                     qb.orWhere("LOWER(teacher.email) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
                 }))
 

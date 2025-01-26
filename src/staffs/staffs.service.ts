@@ -69,7 +69,7 @@ export class StaffsService extends BaseRepository {
       .leftJoin('staff.faculties', 'faculties')
       .andWhere(new Brackets(qb => {
         queryDto.search && qb.andWhere(new Brackets(qb => {
-          qb.orWhere("LOWER(CONCAT(staff.firstName, ' ', staff.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+          qb.orWhere("account.lowerCasedFullName LIKE LOWER(:search)", { search: `${queryDto.search}%` })
             .orWhere("staff.staffId = :exactSearch", { exactSearch: queryDto.search })
         }))
 

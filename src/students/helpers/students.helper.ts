@@ -43,8 +43,7 @@ export class StudentsHelper extends BaseRepository {
             .andWhere(new Brackets(qb => {
                 if (queryDto.search) {
                     qb.andWhere(new Brackets(subQb => {
-                        subQb.orWhere("LOWER(CONCAT(student.firstName, ' ', student.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
-                            .orWhere("LOWER(student.email) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+                        subQb.orWhere("account.lowerCasedFullName LIKE LOWER(:search)", { search: `${queryDto.search}%` })
                             .orWhere("TRIM(student.studentId) = TRIM(:exactSearch)", { exactSearch: queryDto.search })
                     }))
                 }
@@ -181,7 +180,7 @@ export class StudentsHelper extends BaseRepository {
             .andWhere(new Brackets(qb => {
                 if (queryDto.search) {
                     qb.andWhere(new Brackets(subQb => {
-                        subQb.orWhere("LOWER(CONCAT(student.firstName, ' ', student.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+                        subQb.orWhere("account.lowerCasedFullName LIKE LOWER(:search)", { search: `${queryDto.search}%` })
                             .orWhere("TRIM(student.studentId) = TRIM(:exactSearch)", { exactSearch: queryDto.search });
                     }));
                 }

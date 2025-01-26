@@ -60,9 +60,7 @@ export class TeachersHelper extends BaseRepository {
             )
             .andWhere(new Brackets(qb => {
                 if (!!queryDto.search) {
-                    qb.where("LOWER(CONCAT(teacher.firstName, ' ', teacher.lastName)) LIKE LOWER(:search)", {
-                        search: `%${queryDto.search}%`
-                    });
+                    qb.where("account.lowerCasedFullName LIKE LOWER(:search)", { search: `${queryDto.search}%` });
                 }
 
                 queryDto.assignedSubjectId && qb.andWhere('assignedSubjects.id IS NOT NULL');

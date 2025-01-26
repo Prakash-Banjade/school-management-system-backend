@@ -22,6 +22,7 @@ export class ExamReportsHelper extends BaseRepository {
 
         const queryBuilder = this.getRepository(ExamReport).createQueryBuilder('examReport')
             .leftJoin('examReport.student', 'student')
+            .leftJoin('student.account', 'account')
             .leftJoin('examReport.examSubject', 'examSubject')
             .leftJoin('examSubject.subject', 'subject')
             .leftJoin('examSubject.exam', 'exam')
@@ -30,7 +31,7 @@ export class ExamReportsHelper extends BaseRepository {
             .leftJoin('classRoom.parent', 'parent')
             .andWhere('examReport.examSubjectId = :examSubjectId', { examSubjectId })
 
-    const count = await queryBuilder.clone()
+        const count = await queryBuilder.clone()
             .andWhere('CASE WHEN parent.id IS NULL THEN classRoom.id = :classRoomId ELSE parent.id = :classRoomId END', { classRoomId }) // ensure the student is also in the same classRoom
             .select([
                 'COUNT(DISTINCT CASE WHEN examReport.theoryOM >= examSubject.theoryPM AND examReport.practicalOM >= examSubject.practicalPM THEN examReport.id ELSE NULL END) as totalPassed',
@@ -57,7 +58,7 @@ export class ExamReportsHelper extends BaseRepository {
             .offset(queryDto.skip)
             .limit(queryDto.take)
             .andWhere(new Brackets(qb => {
-                queryDto.search && qb.andWhere("LOWER(CONCAT(student.firstName, ' ', student.lastName)) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+                queryDto.search && qb.andWhere("account.lowerCasedFullName LIKE LOWER(:search)", { search: `${queryDto.search}%` })
                 if (queryDto.sectionId && queryDto.sectionId !== 'all') {
                     qb.andWhere('CASE WHEN parent.id IS NULL THEN 0 ELSE classRoom.id = :sectionId END', { sectionId: queryDto.sectionId }) // if sectionId is provided look in the class room the student is if it's a section
                 } else {
