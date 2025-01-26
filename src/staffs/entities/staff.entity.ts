@@ -43,9 +43,6 @@ export class Staff extends BaseEntity {
     @JoinColumn()
     account: Account;
 
-    @OneToOne(() => Image, image => image.staff_profileImage, { nullable: true })
-    profileImage?: Image
-
     @Column({ type: 'enum', enum: EStaff })
     type: EStaff;
 

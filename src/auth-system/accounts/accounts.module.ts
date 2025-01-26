@@ -7,6 +7,7 @@ import { AccountsController } from './accounts.controller';
 import { AccountsCronJob } from './accounts.cron';
 import { LoginDevice } from './entities/login-devices.entity';
 import { StreamClientModule } from '../stream-client/stream-client.module';
+import { ImagesModule } from 'src/file-management/images/images.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { StreamClientModule } from '../stream-client/stream-client.module';
     ]),
     AuthModule,
     StreamClientModule,
+    ImagesModule,
   ],
   controllers: [AccountsController],
   providers: [AccountsService, AccountsCronJob],

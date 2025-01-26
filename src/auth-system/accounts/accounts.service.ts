@@ -18,9 +18,10 @@ import { BranchesService } from 'src/branches/branches.service';
 import { UtilitiesService } from 'src/utilities/utilities.service';
 import { RefreshTokenService } from '../auth/helpers/refresh-tokens.service';
 import { LoginDevice } from './entities/login-devices.entity';
-import { WebAuthnCredential } from '../webAuthn/entities/webAuthnCredential.entity';
 import { StreamClientProvider } from '../stream-client/stream-client-provider';
 import { Image } from 'src/file-management/images/entities/image.entity';
+import { ImagesService } from 'src/file-management/images/images.service';
+import { UpdateAccountDto } from './dto/update-account.dto';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AccountsService extends BaseRepository {
@@ -31,13 +32,14 @@ export class AccountsService extends BaseRepository {
     private readonly utilitiesService: UtilitiesService,
     private readonly refreshTokenService: RefreshTokenService,
     private readonly streamClientProvider: StreamClientProvider,
+    private readonly imagesService: ImagesService
   ) {
     super(dataSource, req);
   }
 
   // TODO: Actually the best approach would be to not create account directly, instead create EmailVerificationPending record, once verified then create account
   // But in this app, if account is not created at first, then we student, teacher can't be created
-  async createAccount(entity: Teacher | Student | Staff) {
+  async createAccount(entity: Teacher | Student | Staff, profileImage?: Image) {
     const branchId = this.utilitiesService.getBranchId();
 
     // check for existing
@@ -63,7 +65,7 @@ export class AccountsService extends BaseRepository {
       lastName: entity.lastName,
       role: key,
       [key]: entity,
-      profileImage: entity.profileImage ?? null,
+      profileImage: profileImage ?? null,
       password,
       prevPasswords: [bcrypt.hashSync(password, PASSWORD_SALT_COUNT)],
       branch: await this.branchesService.getBranch(branchId),
@@ -123,15 +125,22 @@ export class AccountsService extends BaseRepository {
     await this.getRepository(Account).update({ id: accountId }, { email: newEmail });
   }
 
-  async updateProfileImage(accountId: string, profileImage: Image | null) {
+  async update(id: string, dto: UpdateAccountDto) {
     const account = await this.getRepository(Account).findOne({
-      where: { id: accountId },
-      select: { id: true, verifiedAt: true }
+      where: { id },
+      relations: { profileImage: true },
+      select: { id: true, verifiedAt: true, profileImage: { id: true } }
     });
 
-    account.profileImage = profileImage;
+    if (!account) throw new NotFoundException('No associated account found');
 
-    await this.getRepository(Account).save(account);
+    if (account.profileImage?.id && dto.profileImageId !== undefined) {
+      await this.imagesService.update(account.profileImage.id, dto.profileImageId);
+    } else if (dto.profileImageId !== undefined) {
+      account.profileImage = dto.profileImageId ? await this.imagesService.findOne(dto.profileImageId) : null;
+    }
+
+    await this.getRepository(Account).save(Object.assign(account, dto));
   }
 
   async getDevices() {

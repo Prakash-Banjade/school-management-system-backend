@@ -25,17 +25,19 @@ export const dormitoryRoomSelectCols: FindOptionsSelect<DormitoryRoom> = {
         lastName: true,
         email: true,
         phone: true,
-        profileImage: {
-            id: true,
-            url: true,
-        },
         classRoom: {
             id: true,
             name: true,
             parent: {
-                id: true, 
+                id: true,
                 name: true,
             }
+        },
+        account: {
+            profileImage: {
+                id: true,
+                url: true,
+            },
         }
     }
 }

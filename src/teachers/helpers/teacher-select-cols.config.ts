@@ -12,12 +12,12 @@ export const teachersColumnsConfig: FindOptionsSelect<Teacher> = {
     gender: true,
     joinedDate: true,
     createdAt: true,
-    profileImage: {
-        id: true,
-        url: true
-    },
     account: {
         id: true,
+        profileImage: {
+            id: true,
+            url: true
+        },
     },
     faculties: {
         id: true,

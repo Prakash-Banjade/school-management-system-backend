@@ -39,28 +39,15 @@ export class Image extends BaseEntity {
     @ManyToOne(() => Account, account => account.images, { onDelete: 'CASCADE' })
     uploadedBy!: Account
 
-    // relations
+    /**
+    |--------------------------------------------------
+    | RELATIONS
+    |--------------------------------------------------
+    */
+
     @OneToOne(() => Account, account => account.profileImage, { onDelete: 'CASCADE', nullable: true })
     @JoinColumn()
     account_profileImage: Account;
-
-    // student
-    @OneToOne(() => Student, student => student.profileImage, { onDelete: 'CASCADE', nullable: true })
-    @JoinColumn()
-    student_profileImage: Student;
-
-    @ManyToOne(() => Student, (student) => student.documentAttachments, { onDelete: 'CASCADE', nullable: true })
-    student_documentAttachments: Student;
-
-    // teacher
-    @OneToOne(() => Teacher, teacher => teacher.profileImage, { onDelete: 'CASCADE', nullable: true })
-    @JoinColumn()
-    teacher_profileImage: Teacher;
-
-    // staff
-    @OneToOne(() => Staff, staff => staff.profileImage, { onDelete: 'CASCADE', nullable: true })
-    @JoinColumn()
-    staff_profileImage: Staff;
 
     // guardian
     @OneToOne(() => Guardian, guardian => guardian.profileImage, { onDelete: 'CASCADE', nullable: true })

@@ -84,9 +84,11 @@ export class PayrollsHelper extends BaseRepository {
     async getEmployee(employeeId: string) { // employeeId is not pk, is teacherId or staffId
         const salaryStructure = await this.getRepository(SalaryStructure).createQueryBuilder('salaryStructure')
             .leftJoin('salaryStructure.teacher', 'teacher')
-            .leftJoin('teacher.profileImage', 'teacherProfileImage')
+            .leftJoin('teacher.account', 'teacherAccount')
+            .leftJoin('teacherAccount.profileImage', 'teacherProfileImage')
             .leftJoin('salaryStructure.staff', 'staff')
-            .leftJoin('staff.profileImage', 'staffProfileImage')
+            .leftJoin('staff.account', 'staffAccount')
+            .leftJoin('staffAccount.profileImage', 'staffProfileImage')
             .leftJoin(
                 qb => {
                     return qb

@@ -51,9 +51,6 @@ export class Teacher extends BaseEntity {
     @Column({ type: 'datetime' })
     dob: string;
 
-    @OneToOne(() => Image, image => image.teacher_profileImage, { nullable: true })
-    profileImage: Image;
-
     @OneToMany(() => ClassRoom, (classRoom) => classRoom.classTeacher)
     assignedClassRooms: ClassRoom[];
 

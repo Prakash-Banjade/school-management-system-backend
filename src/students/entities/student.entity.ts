@@ -90,9 +90,6 @@ export class Student extends BaseEntity {
     @Column({ type: 'varchar', default: '' })
     caste?: string;
 
-    @OneToOne(() => Image, image => image.student_profileImage, { nullable: true })
-    profileImage: Image;
-
     @Column({ type: 'boolean', default: false })
     isPhysicallyChallenged: boolean;
 

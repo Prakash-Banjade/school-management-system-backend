@@ -69,7 +69,7 @@ export class DashboardService extends BaseRepository {
             .innerJoin('student.enrollments', 'enrollments', 'enrollments.academicYearId = :academicYearId', { academicYearId: currentAcademicYearId })
             .leftJoin('enrollments.classRoom', 'classRoom')
             .leftJoin('classRoom.parent', 'parent')
-            .leftJoin('student.profileImage', 'profileImage')
+            .leftJoin('account.profileImage', 'profileImage')
             .where('account.role = :role', { role: Role.STUDENT })
             .andWhere('leaveRequest.status = :status', { status: ELeaveRequestStatus.PENDING })
         this.utilitiesService.applyBranchFilter(studentsLeaveRequestsQueryBuilder);
@@ -94,7 +94,7 @@ export class DashboardService extends BaseRepository {
             .limit(3)
             .leftJoin('leaveRequest.account', 'account')
             .leftJoin('account.teacher', 'teacher')
-            .leftJoin('teacher.profileImage', 'profileImage')
+            .leftJoin('account.profileImage', 'profileImage')
             .where('account.role = :role', { role: Role.TEACHER })
             .andWhere('leaveRequest.status = :status', { status: ELeaveRequestStatus.PENDING })
         this.utilitiesService.applyBranchFilter(teachersLeaveRequestsQueryBuilder);

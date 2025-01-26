@@ -15,6 +15,7 @@ import { staffsColumnsConfig } from './helpers/staff-select-cols.config';
 import { SalaryStructure } from 'src/finance-system/salary-management/salary-structures/entities/salary-structure.entity';
 import { UtilitiesService } from 'src/utilities/utilities.service';
 import { Faculty } from 'src/faculties/entities/faculty.entity';
+import { UpdateAccountDto } from 'src/auth-system/accounts/dto/update-account.dto';
 
 @Injectable({ scope: Scope.REQUEST })
 export class StaffsService extends BaseRepository {
@@ -42,7 +43,6 @@ export class StaffsService extends BaseRepository {
 
     const staff = this.getRepository(Staff).create({
       ...createStaffDto,
-      profileImage,
       salaryStructure: this.getRepository(SalaryStructure).create({
         basicSalary: createStaffDto.basicSalary,
         allowances: createStaffDto.allowances ?? [],
@@ -52,7 +52,7 @@ export class StaffsService extends BaseRepository {
     const savedStaff = await this.getRepository(Staff).save(staff);
 
     // create account
-    await this.accountsService.createAccount(savedStaff);
+    await this.accountsService.createAccount(savedStaff, profileImage);
 
     return { message: 'Staff created' }
   }
@@ -64,8 +64,8 @@ export class StaffsService extends BaseRepository {
       .orderBy("staff.createdAt", queryDto.order)
       .skip(queryDto.skip)
       .take(queryDto.take)
-      .leftJoin("staff.profileImage", "profileImage")
       .leftJoin('staff.account', 'account')
+      .leftJoin("account.profileImage", "profileImage")
       .leftJoin('staff.faculties', 'faculties')
       .andWhere(new Brackets(qb => {
         queryDto.search && qb.andWhere(new Brackets(qb => {
@@ -107,17 +107,17 @@ export class StaffsService extends BaseRepository {
         account: { branch: { id: this.utilitiesService.getBranchId() } }
       },
       relations: {
-        profileImage: true,
-        account: true,
+        account: { profileImage: true },
         faculties: true,
       },
       select: {
-        profileImage: {
+        account: {
           id: true,
-          url: true,
-          originalName: true,
+          profileImage: {
+            id: true,
+            url: true,
+          },
         },
-        account: { id: true },
         faculties: {
           id: true,
           name: true,
@@ -133,23 +133,13 @@ export class StaffsService extends BaseRepository {
     const existingStaff = await this.findOne(id);
     await this.checkIfStaffExists(updateStaffDto, existingStaff);
 
-    // evaluate profile image
-    if (existingStaff.profileImage?.id && updateStaffDto.profileImageId !== undefined) {
-      await this.imageService.update(existingStaff.profileImage.id, updateStaffDto.profileImageId);
-    } else if (updateStaffDto.profileImageId !== undefined) { // this will execute only when teacher has no profile image before
-      existingStaff.profileImage = updateStaffDto.profileImageId ? await this.imageService.findOne(updateStaffDto.profileImageId) : null; // setting new profile image
-      await this.accountsService.updateProfileImage(existingStaff.account?.id, existingStaff.profileImage);
-    }
-
     const faculties = updateStaffDto.facultyIds?.length ? await this.getRepository(Faculty).find({
       where: { id: In(updateStaffDto.facultyIds) },
       select: { id: true }
     }) : [];
 
-    // update email if provided
-    if (updateStaffDto.email && existingStaff.email !== updateStaffDto.email) {
-      await this.accountsService.updateEmail(existingStaff.account?.id, updateStaffDto.email);
-    }
+    // update account related details
+    await this.accountsService.update(existingStaff.account?.id, updateStaffDto as UpdateAccountDto)
 
     Object.assign(existingStaff, { ...updateStaffDto, faculties });
 

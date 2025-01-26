@@ -23,6 +23,7 @@ import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { AcademicYearsService } from 'src/academic-years/academic-years.service';
 import { UtilitiesService } from 'src/utilities/utilities.service';
 import { Account } from 'src/auth-system/accounts/entities/account.entity';
+import { UpdateAccountDto } from 'src/auth-system/accounts/dto/update-account.dto';
 
 @Injectable({ scope: Scope.REQUEST })
 export class StudentsService extends BaseRepository {
@@ -91,7 +92,6 @@ export class StudentsService extends BaseRepository {
 
     const newStudent = this.getRepository<Student>(Student).create({
       ...createStudentDto,
-      profileImage,
       classRoom,
       documentAttachments,
       dormitoryRoom,
@@ -103,7 +103,7 @@ export class StudentsService extends BaseRepository {
     const savedStudent = await this.getRepository<Student>(Student).save(newStudent);
 
     // CREATE ACCOUNT
-    await this.accountsService.createAccount(savedStudent);
+    await this.accountsService.createAccount(savedStudent, profileImage);
 
     return { message: 'Student created' }
   }
@@ -113,7 +113,7 @@ export class StudentsService extends BaseRepository {
 
     const querybuilder = this.getRepository<Student>(Student).createQueryBuilder('student')
       .leftJoin('student.account', 'account')
-      .leftJoin('student.profileImage', 'profileImage')
+      .leftJoin('account.profileImage', 'profileImage')
       .innerJoin('student.enrollments', 'enrollments', "enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
       .leftJoin('enrollments.classRoom', 'classRoom')
       .leftJoin('classRoom.parent', 'parent')
@@ -147,9 +147,9 @@ export class StudentsService extends BaseRepository {
       .innerJoin("student.enrollments", "enrollments", "enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
       .leftJoin('enrollments.classRoom', 'classRoom')
       .leftJoin("classRoom.parent", "parent")
-      .leftJoin("student.profileImage", "profileImage")
       .leftJoin("student.bookTransactions", "bookTransactions")
       .leftJoin("student.account", "account")
+      .leftJoin("account.profileImage", "profileImage")
       .where("student.studentId = :studentId", { studentId })
       .select([
         "student.id AS id",
@@ -179,14 +179,6 @@ export class StudentsService extends BaseRepository {
     // check if credentials are already taken
     await this.studentsHelper.checkIfStudentExists(updateStudentDto, existing);
 
-    // evaluate profile image, since one-to-one relation, we need to remove the existing one first
-    if (existing.profileImage?.id && updateStudentDto.profileImageId !== undefined) {
-      await this.imageService.update(existing.profileImage.id, updateStudentDto.profileImageId);
-    } else if (updateStudentDto.profileImageId !== undefined) { // this will execute only when student has no profile image before
-      existing.profileImage = updateStudentDto.profileImageId ? await this.imageService.findOne(updateStudentDto.profileImageId) : null;
-      await this.accountsService.updateProfileImage(existing.account?.id, existing.profileImage);
-    }
-
     // evaluate document attachments
     const documentAttachments = updateStudentDto.documentAttachmentIds
       ? await this.filesService.findAllByIds(updateStudentDto.documentAttachmentIds)
@@ -194,26 +186,20 @@ export class StudentsService extends BaseRepository {
 
     // evaluate dormitory room
     if (updateStudentDto.dormitoryRoomId && (updateStudentDto.dormitoryRoomId !== existing.dormitoryRoom?.id || !existing.dormitoryRoom)) {
-      // set new dormitory room
       existing.dormitoryRoom = await this.dormitoryRoomsService.findOneWithAvailableBed(updateStudentDto.dormitoryRoomId);
     } else if (updateStudentDto.dormitoryRoomId === null) {
-      // unsetting dormitory room
       existing.dormitoryRoom = null;
     }
 
     // evaluate routeStop
     if (updateStudentDto.routeStopId && (updateStudentDto.routeStopId !== existing.routeStop?.id || !existing.routeStop)) {
-      // set new dormitory room
       existing.routeStop = await this.routeStopsService.findOneWithAvailableSeats(updateStudentDto.routeStopId);
     } else if (updateStudentDto.routeStopId === null) {
-      // unsetting dormitory room
       existing.routeStop = null;
     }
 
-    // update email if provided
-    if (updateStudentDto.email && existing.email !== updateStudentDto.email) {
-      await this.accountsService.updateEmail(existing.account?.id, updateStudentDto.email);
-    }
+    // update account related details
+    await this.accountsService.update(existing.account?.id, new UpdateAccountDto(updateStudentDto));
 
     Object.assign(existing, {
       ...updateStudentDto,

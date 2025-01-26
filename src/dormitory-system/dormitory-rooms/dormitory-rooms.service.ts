@@ -59,9 +59,10 @@ export class DormitoryRoomsService {
       .leftJoin("dormitoryRoom.roomType", "roomType")
       .leftJoin("dormitoryRoom.dormitory", "dormitory")
       .leftJoin("dormitoryRoom.students", "students")
+      .leftJoin("students.account", "account")
       .leftJoin("students.classRoom", "classRoom")
       .leftJoin("classRoom.parent", "parent")
-      .leftJoin("students.profileImage", "profileImage")
+      .leftJoin("account.profileImage", "profileImage")
 
     applySelectColumns(querybuilder, dormitoryRoomSelectCols, 'dormitoryRoom')
     this.utilitiesService.applyBranchFilter(querybuilder, 'dormitoryRoom.branchId = :branchId');

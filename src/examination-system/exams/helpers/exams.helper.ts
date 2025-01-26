@@ -57,7 +57,8 @@ export class ExamsHelper extends BaseRepository {
             .innerJoin('student.enrollments', 'enrollment', "enrollment.academicYearId = :academicYearId", { academicYearId: await this.utilitiesService.getAcademicYearId() })
             .leftJoin('enrollment.classRoom', 'classRoom')
             .leftJoin('classRoom.parent', 'parent')
-            .leftJoin('student.profileImage', 'profileImage')
+            .leftJoin('student.account', 'account')
+            .leftJoin('account.profileImage', 'profileImage')
             .leftJoin('student.optionalSubjects', 'optionalSubjects')
             .select([
                 'student.id as id',

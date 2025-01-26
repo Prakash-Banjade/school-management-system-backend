@@ -38,8 +38,8 @@ export class StudentsHelper extends BaseRepository {
             .leftJoin('enrollments.classRoom', 'classRoom')
             .leftJoin('classRoom.parent', 'parent')
             .leftJoin('classRoom.faculty', 'faculty')
-            .leftJoin('student.profileImage', 'profileImage', queryDto.onlyBasicInfo ? '1 = 0' : '1 = 1') // only basic info will not have profile image
             .leftJoin('student.account', 'account')
+            .leftJoin('account.profileImage', 'profileImage', queryDto.onlyBasicInfo ? '1 = 0' : '1 = 1') // only basic info will not have profile image
             .andWhere(new Brackets(qb => {
                 if (queryDto.search) {
                     qb.andWhere(new Brackets(subQb => {
@@ -214,10 +214,10 @@ export class StudentsHelper extends BaseRepository {
             .innerJoin("student.enrollments", "enrollments", "enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
             .leftJoin('enrollments.classRoom', 'classRoom')
             .leftJoin("classRoom.parent", "parent")
-            .leftJoin("student.profileImage", "profileImage")
             .leftJoin("student.routeStop", "routeStop")
             .leftJoin("enrollments.ledger", "ledger")
             .leftJoin("student.account", "account")
+            .leftJoin("account.profileImage", "profileImage")
             .where(isPk ? "student.id = :studentId" : "student.studentId = :studentId", { studentId })
             .select([
                 "student.id AS id",

@@ -43,10 +43,6 @@ export const singleStudentColumnsConfig: FindOptionsSelect<Student> = {
         url: true,
         originalName: true,
     },
-    profileImage: {
-        id: true,
-        url: true
-    },
     guardians: {
         id: true,
         firstName: true,
@@ -76,5 +72,9 @@ export const singleStudentColumnsConfig: FindOptionsSelect<Student> = {
     },
     account: {
         id: true,
+        profileImage: {
+            id: true,
+            url: true
+        },
     }
 }
