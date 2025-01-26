@@ -40,13 +40,13 @@ export class StudentsHelper extends BaseRepository {
             .leftJoin('classRoom.faculty', 'faculty')
             .leftJoin('student.account', 'account')
             .leftJoin('account.profileImage', 'profileImage', queryDto.onlyBasicInfo ? '1 = 0' : '1 = 1') // only basic info will not have profile image
-            .andWhere(new Brackets(qb => {
+            .where(new Brackets(qb => {
                 if (queryDto.search) {
-                    qb.andWhere(new Brackets(subQb => {
-                        subQb.orWhere("account.lowerCasedFullName LIKE LOWER(:search)", { search: `${queryDto.search}%` })
-                            .orWhere("TRIM(student.studentId) = TRIM(:exactSearch)", { exactSearch: queryDto.search })
-                    }))
+                    qb.orWhere("account.lowerCasedFullName LIKE LOWER(:search)", { search: `${queryDto.search}%` })
+                        .orWhere("student.studentId = :exactSearch", { exactSearch: queryDto.search })
                 }
+            }))
+            .andWhere(new Brackets(qb => {
                 queryDto.studentId && qb.andWhere('student.studentId = :studentId', { studentId: queryDto.studentId });
 
                 queryDto.facultyId && qb.andWhere('faculty.id = :facultyId', { facultyId: queryDto.facultyId });
@@ -181,10 +181,10 @@ export class StudentsHelper extends BaseRepository {
                 if (queryDto.search) {
                     qb.andWhere(new Brackets(subQb => {
                         subQb.orWhere("account.lowerCasedFullName LIKE LOWER(:search)", { search: `${queryDto.search}%` })
-                            .orWhere("TRIM(student.studentId) = TRIM(:exactSearch)", { exactSearch: queryDto.search });
+                            .orWhere("student.studentId = :exactSearch", { exactSearch: queryDto.search });
                     }));
                 }
-
+                queryDto.facultyId && qb.andWhere('classRoom.facultyId = :facultyId', { facultyId: queryDto.facultyId });
                 queryDto.classRoomId && !queryDto.sectionId && qb.andWhere('parent.id = :classRoomId OR classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
                 queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId });
             }))
