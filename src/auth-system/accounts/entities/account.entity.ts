@@ -16,6 +16,7 @@ import { LessonPlan } from "src/lesson-plans/entities/lesson-plan.entity";
 import { Branch } from "src/branches/entities/branch.entity";
 import { WebAuthnCredential } from "src/auth-system/webAuthn/entities/webAuthnCredential.entity";
 import { LoginDevice } from "./login-devices.entity";
+import { getLowerCasedFullName } from "src/utils/utils";
 
 export type TLoginDevice = { deviceId: string; ua: string; firstLogin: Date; lastLogin: Date };
 
@@ -26,6 +27,14 @@ export class Account extends BaseEntity {
 
     @Column({ type: 'varchar', default: '' })
     lastName?: string;
+
+    @Index()
+    @Column({ type: 'varchar' })
+    lowerCasedFullName: string;
+
+    setLowerCasedFullName() {
+        this.lowerCasedFullName = getLowerCasedFullName(this.firstName, this.lastName);
+    }
 
     @Index({ unique: true })
     @Column({ type: 'varchar', unique: true })

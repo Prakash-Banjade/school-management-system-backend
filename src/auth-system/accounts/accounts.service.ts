@@ -71,6 +71,8 @@ export class AccountsService extends BaseRepository {
       branch: await this.branchesService.getBranch(branchId),
     });
 
+    account.setLowerCasedFullName();
+
     await this.getRepository(Account).save(account);
 
     // send account confirmation mail to the user
@@ -111,25 +113,11 @@ export class AccountsService extends BaseRepository {
     } as Account);
   }
 
-  async updateEmail(accountId: string, newEmail: string) {
-    // check if email is taken
-    const accountWithEmail = await this.getRepository(Account).findOne({
-      where: {
-        email: newEmail,
-        id: Not(accountId)
-      },
-      select: { id: true }
-    });
-    if (accountWithEmail) throw new ConflictException('This email is already taken');
-
-    await this.getRepository(Account).update({ id: accountId }, { email: newEmail });
-  }
-
   async update(id: string, dto: UpdateAccountDto) {
     const account = await this.getRepository(Account).findOne({
       where: { id },
       relations: { profileImage: true },
-      select: { id: true, verifiedAt: true, profileImage: { id: true } }
+      select: { id: true, firstName: true, lastName: true, verifiedAt: true, profileImage: { id: true } }
     });
 
     if (!account) throw new NotFoundException('No associated account found');
@@ -139,6 +127,8 @@ export class AccountsService extends BaseRepository {
     } else if (dto.profileImageId !== undefined) {
       account.profileImage = dto.profileImageId ? await this.imagesService.findOne(dto.profileImageId) : null;
     }
+
+    account.setLowerCasedFullName();
 
     await this.getRepository(Account).save(Object.assign(account, dto));
   }
