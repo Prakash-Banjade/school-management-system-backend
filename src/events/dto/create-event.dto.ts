@@ -23,12 +23,12 @@ export class CreateEventDto {
     @IsNotEmpty()
     @IsMilitaryTime({ message: "Invalid end time. Required format: HH:MM" })
     @ValidateIf((o: CreateEventDto) => {
-        if (!o.beginTime || !o.endingTime) throw new BadRequestException('Start time and end time are required');
-
-        const startTime = parse(o.beginTime, 'HH:mm', new Date());
-        const endTime = parse(o.endingTime, 'HH:mm', new Date());
-        if (isAfter(startTime, endTime)) throw new BadRequestException('End time must be greater than start time');
-        if (differenceInMinutes(endTime, startTime) < 10) throw new BadRequestException('At least 10 minutes difference is required');
+        if (o.beginTime && o.endingTime) {
+            const startTime = parse(o.beginTime, 'HH:mm', new Date());
+            const endTime = parse(o.endingTime, 'HH:mm', new Date());
+            if (isAfter(startTime, endTime)) throw new BadRequestException('End time must be greater than start time');
+            if (differenceInMinutes(endTime, startTime) < 10) throw new BadRequestException('At least 10 minutes difference is required');
+        }
 
         return true;
     })

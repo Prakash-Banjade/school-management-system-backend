@@ -176,8 +176,8 @@ export class AccountsService extends BaseRepository {
     });
     await this.refreshTokenService.remove();
 
-    // remove credentials
-    await this.getRepository(WebAuthnCredential).delete({ account: { id: accountId } });
+    // // remove credentials
+    // await this.getRepository(WebAuthnCredential).delete({ account: { id: accountId } });
 
     return { message: 'Device signed out' };
   }

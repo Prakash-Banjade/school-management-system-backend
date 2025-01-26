@@ -54,6 +54,13 @@ export class Auth2faHelper extends BaseRepository {
         }
     }
 
+    // async validate2faToken(encryptedToken: string) {
+    //     const { payload, error } = await this.authHelper.verifyEncryptedHashTokenPair(encryptedToken, this.envService.TWOFACTOR_VERIFICATION_SECRET);
+    //     if (error || !payload) throw new UnauthorizedException('Invalid token');
+
+    //     return { message: "VALID TOKEN" };
+    // }
+
     async verify2faOtp(otpVerificationDto: OtpVerificationDto, req: FastifyRequest, reply: FastifyReply) {
         const deviceId = generateDeviceId(req.headers['user-agent'], req.ip);
 
