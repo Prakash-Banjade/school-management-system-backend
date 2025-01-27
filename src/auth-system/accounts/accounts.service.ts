@@ -22,6 +22,7 @@ import { StreamClientProvider } from '../stream-client/stream-client-provider';
 import { Image } from 'src/file-management/images/entities/image.entity';
 import { ImagesService } from 'src/file-management/images/images.service';
 import { UpdateAccountDto } from './dto/update-account.dto';
+import { WebAuthnCredential } from '../webAuthn/entities/webAuthnCredential.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AccountsService extends BaseRepository {
@@ -175,8 +176,8 @@ export class AccountsService extends BaseRepository {
     });
     await this.refreshTokenService.remove();
 
-    // // remove credentials
-    // await this.getRepository(WebAuthnCredential).delete({ account: { id: accountId } });
+    // remove credentials
+    await this.getRepository(WebAuthnCredential).delete({ account: { id: accountId } });
 
     return { message: 'Device signed out' };
   }

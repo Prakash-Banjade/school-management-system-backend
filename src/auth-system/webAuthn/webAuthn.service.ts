@@ -222,7 +222,12 @@ export class WebAuthnService extends BaseRepository {
         await this.getRepository(WebAuthnCredential).save(credential);
 
         // NOW IT IS CONFIRMED THE USER IS A VALID ONE
-        return this.authService.proceedLogin(account, req, reply);
+        return this.authService.proceedLogin({
+            account,
+            reply,
+            req,
+            method: 'passkey'
+        });
     }
 
     async verifySudoPasskey(authenticationResponse: any, reply: FastifyReply) {
@@ -381,7 +386,7 @@ export class WebAuthnService extends BaseRepository {
         }
 
         // NOW IT IS CONFIRMED THE USER IS A VALID ONE and no need to check device
-        return this.authService.proceedLogin(account, req, reply, false);
+        return this.authService.proceedLogin({ account, req, reply, checkDevice: false, method: 'passkey' });
     }
 
     async findAll() {

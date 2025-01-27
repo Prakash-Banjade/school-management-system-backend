@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, ForbiddenException, HttpStatus, Inject, Injectable, InternalServerErrorException, NotFoundException, Scope, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, HttpStatus, Inject, Injectable, InternalServerErrorException, NotFoundException, Scope, UnauthorizedException } from '@nestjs/common';
 import { DataSource, IsNull, Not } from 'typeorm';
 import { PasswordChangeRequest } from './entities/password-change-request.entity';
 import { BaseRepository } from 'src/common/repository/base-repository';
@@ -7,7 +7,6 @@ import { FastifyReply, FastifyRequest } from 'fastify';
 import { Account } from '../accounts/entities/account.entity';
 import { AuthUser } from 'src/common/types/global.type';
 import { AuthMessage, MAX_PREV_PASSWORDS, PASSWORD_SALT_COUNT, Tokens } from 'src/common/CONSTANTS';
-import { RegisterDto } from './dto/register.dto';
 import { SignInDto } from './dto/signIn.dto';
 import { AuthHelper } from './helpers/auth.helper';
 import { JwtService } from '../jwt/jwt.service';
@@ -53,12 +52,16 @@ export class AuthService extends BaseRepository {
 
     const foundAccount = data;
 
-    return this.proceedLogin(foundAccount, req, reply);
+    return this.proceedLogin({ account: foundAccount, req, reply });
   }
 
-  async proceedLogin(account: Account, req: FastifyRequest, reply: FastifyReply, checkDevice: boolean = true) {
+  async proceedLogin({
+    account, req, reply, checkDevice = true, method = 'password'
+  }: {
+    account: Account, req: FastifyRequest, reply: FastifyReply, checkDevice?: boolean, method?: 'password' | 'passkey'
+  }) {
     if (checkDevice) {
-      const message = await this.handleDevice(account, req); // refreshtoken instance initialized here
+      const message = await this.handleDevice(account, req, method); // refreshtoken instance initialized here
       if (message && 'message' in message) return message; // this can be first time login message
     }
 
@@ -88,7 +91,7 @@ export class AuthService extends BaseRepository {
       })
   }
 
-  async handleDevice(account: Account, req: FastifyRequest) {
+  async handleDevice(account: Account, req: FastifyRequest, method: 'password' | 'passkey' = 'password') {
     const userAgent = req.headers['user-agent'];
     const ipAddress = req.ip;
     const deviceId = generateDeviceId(userAgent, ipAddress);
@@ -104,7 +107,7 @@ export class AuthService extends BaseRepository {
     });
 
     if (!loginDevice) {
-      if (!!account.twoFaEnabledAt) {  // 2fa is enabled, so require 2fa verification else add the device to db
+      if (!!account.twoFaEnabledAt && method === 'password') {  // 2fa is enabled, so require 2fa verification else add the device to db
         const webAuthn = await this.getRepository(WebAuthnCredential).findOne({
           where: { account: { id: account.id } },
           select: { id: true }
@@ -116,7 +119,6 @@ export class AuthService extends BaseRepository {
         })
       }
 
-      // if 2fa is not enabled, create a new device and save in db directly
       await this.getRepository(LoginDevice).save({
         account,
         deviceId,
