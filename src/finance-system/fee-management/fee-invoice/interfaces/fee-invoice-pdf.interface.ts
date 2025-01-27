@@ -18,5 +18,6 @@ export interface FeeInvoicePdf {
     }[],
     grandTotal: string,
     amountInWords: string,
-    currency: string
+    currency: string,
+    previousDue: string;
 }

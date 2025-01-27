@@ -12,7 +12,7 @@ import { ChargeHead, EChargeHeadPeriod } from '../charge-heads/entities/charge-h
 import { StudentLedger } from '../student-ledgers/entities/student-ledger.entity';
 import { ELedgerItemType, LedgerItem } from '../student-ledgers/entities/ledger-item.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { FeeInvoiceCreatedEvent } from './fee-invoice.mailer';
+import { EFeeInvoiceEvent, FeeInvoiceCreatedEvent } from './fee-invoice.mailer';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 
 @Injectable({ scope: Scope.REQUEST })
@@ -69,8 +69,6 @@ export class FeeInvoiceService extends BaseRepository {
 
         let grandTotal = 0;
         const invoiceItems = await Promise.all(dto.invoiceItems.map(async item => {
-            grandTotal += this.calculateAmountAfterDiscount(item.amount, item.discount);
-
             const chargeHead = await this.getRepository(ChargeHead).createQueryBuilder('chargeHead')
                 .leftJoin('chargeHead.feeStructures', 'feeStructures', 'feeStructures.classRoomId = :classRoomId', {
                     classRoomId: enrollment.classRoom?.parent?.id ?? enrollment.classRoom?.id
@@ -85,7 +83,8 @@ export class FeeInvoiceService extends BaseRepository {
 
             if (!chargeHead) throw new NotFoundException('Charge head not found');
 
-            const amount = chargeHead.feeStructures[0]?.amount ?? item.amount; // ensuring the amount is as per fee structure
+            const amount = item.amount ?? chargeHead.feeStructures[0]?.amount; // ensuring the amount is as per fee structure
+            grandTotal += this.calculateAmountAfterDiscount(amount, item.discount);
 
             if (chargeHead.period === EChargeHeadPeriod.One_Time) { // storing one time charge head id in enrollment
                 enrollment.oneTimeChargeIds.push(chargeHead.id);
@@ -124,7 +123,7 @@ export class FeeInvoiceService extends BaseRepository {
         await this.getRepository(Enrollment).update({ id: enrollment.id }, { oneTimeChargeIds: enrollment.oneTimeChargeIds });
 
         // emit event to send mails and sms notifications
-        this.eventEmitter.emit('feeInvoice.created', new FeeInvoiceCreatedEvent({ feeInvoice, studentId: student.id }));
+        this.eventEmitter.emit(EFeeInvoiceEvent.Created, new FeeInvoiceCreatedEvent({ feeInvoice, studentId: student.id }));
 
         return {
             message: 'Invoice created',

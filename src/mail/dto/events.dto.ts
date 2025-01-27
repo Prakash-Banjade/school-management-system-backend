@@ -40,7 +40,7 @@ export class FeeInvoiceCreatedEventDto {
     invoiceMonth: string;
     invoiceYear: string;
     currency: string;
-    totalAmount: number;
+    totalAmount: string;
     schoolName: string;
 
     attachments?: Mail.Attachment[];

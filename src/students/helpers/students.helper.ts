@@ -74,6 +74,7 @@ export class StudentsHelper extends BaseRepository {
             "student.studentId as studentId",
             "classRoom.id as classRoomId",
             "CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, ' - ', classRoom.name) END AS classRoomName",
+            "faculty.name as faculty",
         ];
 
         return onlyBasicInfo

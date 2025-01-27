@@ -17,6 +17,10 @@ import { GeneralSettingsService } from "src/general-settings/general-settings.se
 import { format } from "date-fns";
 export const toWords = new ToWords();
 
+export const enum EFeeInvoiceEvent {
+    Created = 'feeInvoice.created'
+}
+
 export class FeeInvoiceCreatedEvent {
     feeInvoice: FeeInvoice;
     studentId: string;
@@ -36,7 +40,7 @@ export class FeeInvoiceMailer extends BaseRepository {
         private readonly generalSettingsService: GeneralSettingsService
     ) { super(dataSource, req); }
 
-    @OnEvent('feeInvoice.created')
+    @OnEvent(EFeeInvoiceEvent.Created)
     async onFeeInvoiceCreated({ feeInvoice, studentId }: FeeInvoiceCreatedEvent) {
         const generalSettings = await this.generalSettingsService.get({ settings: ['currency'] })
 
@@ -66,6 +70,8 @@ export class FeeInvoiceMailer extends BaseRepository {
         for (const guardian of student.guardians) {
             if (!guardian?.email) continue;
 
+            const previousDue = feeInvoice.ledgerItem?.ledgerAmount - feeInvoice.totalAmount;
+
             const pdfHtml = await this.pdfAttachmentService.renderTemplate<FeeInvoicePdf>('fee-system/fee-invoice-created-pdf', {
                 charges: feeInvoice.items.map(item => ({
                     amount: item.amount?.toLocaleString(),
@@ -73,7 +79,8 @@ export class FeeInvoiceMailer extends BaseRepository {
                     name: item?.chargeHead?.name,
                     total: (item.amount - (item.amount * item.discount / 100)).toLocaleString(),
                 })),
-                className: student.classRoom?.parent?.name ?? student.classRoom?.name,
+                className: student.classRoom?.parent?.name
+                    ? `${student.classRoom?.parent?.name} - ${student.classRoom?.name}` : student.classRoom?.name,
                 dueDate: format(feeInvoice.dueDate, 'yyyy-MM-dd'),
                 invoiceDate: format(feeInvoice.invoiceDate, 'yyyy-MM-dd'),
                 invoiceNumber: feeInvoice.invoiceNo,
@@ -83,10 +90,11 @@ export class FeeInvoiceMailer extends BaseRepository {
                 schoolPhone: thisSchool.phone,
                 studentId: student.studentId?.toString(),
                 studentName: student.firstName + ' ' + student.lastName,
-                grandTotal: feeInvoice.totalAmount?.toLocaleString(),
+                grandTotal: feeInvoice.ledgerItem?.ledgerAmount?.toLocaleString(),
                 amountInWords: toWords.convert(feeInvoice.totalAmount, { currency: true, ignoreZeroCurrency: true }),
                 schoolName: thisSchool.name,
                 currency: generalSettings.currency,
+                previousDue: previousDue ? previousDue?.toLocaleString() : undefined,
             })
             const buffer = await this.pdfAttachmentService.generatePdf(pdfHtml);
 
@@ -96,7 +104,7 @@ export class FeeInvoiceMailer extends BaseRepository {
                 invoiceYear: new Date().getFullYear()?.toString(),
                 parentName: guardian.firstName + ' ' + guardian.lastName,
                 parentMail: guardian.email,
-                totalAmount: feeInvoice.totalAmount,
+                totalAmount: feeInvoice.ledgerItem?.ledgerAmount?.toLocaleString(),
                 studentName: student.firstName + ' ' + student.lastName,
                 schoolName: thisSchool.name,
                 subject: `fee-invoice-${feeMonth.slice(0, 3)?.toLowerCase()}`,
