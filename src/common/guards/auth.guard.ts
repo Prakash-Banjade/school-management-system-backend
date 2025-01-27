@@ -2,7 +2,7 @@ import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from
 import { Reflector } from "@nestjs/core";
 import { JwtService } from "@nestjs/jwt";
 import { IS_PUBLIC_KEY } from "../decorators/setPublicRoute.decorator";
-import { FastifyReply, FastifyRequest } from "fastify";
+import { FastifyRequest } from "fastify";
 import { Tokens } from "../CONSTANTS";
 import { EnvService } from "src/env/env.service";
 
@@ -22,7 +22,6 @@ export class AuthGuard implements CanActivate {
         if (isPublic) return true;
 
         const request = context.switchToHttp().getRequest<FastifyRequest>();
-        const reply = context.switchToHttp().getResponse<FastifyReply>();
         const access_token = this.extractTokenFromHeader(request);
         const refresh_token = this.extractRefreshTokenFromRequest(request);
 
@@ -38,7 +37,6 @@ export class AuthGuard implements CanActivate {
 
             request['user'] = payload;
         } catch {
-            reply.clearCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME)
             throw new UnauthorizedException();
         }
         return true;
