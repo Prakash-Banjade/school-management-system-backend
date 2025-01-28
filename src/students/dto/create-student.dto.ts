@@ -53,6 +53,7 @@ export class CreateStudentDto {
     @ApiProperty({ type: "string", description: 'Student first name' })
     @IsString()
     @IsNotEmpty()
+    @Length(0, 20, { message: 'First name must be less than 20 characters' })
     @Matches(NAME_REGEX, {
         message: 'Name can have only alphabets'
     })
@@ -61,6 +62,7 @@ export class CreateStudentDto {
     @ApiProperty({ type: "string", description: 'Student last name' })
     @IsString()
     @IsNotEmpty()
+    @Length(0, 50, { message: 'Last name must be less than 50 characters' })
     @Matches(NAME_WITH_SPACE_REGEX, {
         message: 'Seems like invalid last name'
     })
@@ -82,6 +84,7 @@ export class CreateStudentDto {
     @ApiPropertyOptional({ type: "string", description: 'Caste of the student' })
     @IsString()
     @IsOptional()
+    @Length(0, 20, { message: 'Caste must be less than 20 characters' })
     caste?: string;
 
     @ApiPropertyOptional({ type: "string", description: 'Image ID/URL' })
@@ -164,12 +167,6 @@ export class CreateStudentDto {
     @IsOptional()
     birthCertificateNumber: string;
 
-    @ApiPropertyOptional({ type: "string", description: 'Additional notes of the student' })
-    @IsString()
-    @IsOptional()
-    @MaxLength(1000)
-    additionalNotes: string;
-
     @ApiPropertyOptional({ type: [String], description: 'Document attachment gallery id/url' })
     @IsString({ each: true })
     @IsOptional()
@@ -186,25 +183,25 @@ export class CreateStudentDto {
     @IsString()
     @IsNotEmpty()
     @ValidateIf(o => {
-        return Boolean(o.bankAccountNumber) || Boolean(o.ifscCode)
+        return Boolean(o.bankAccountNumber) || Boolean(o.bankAccountName)
     })
     bankName: string;
+
+    @ApiPropertyOptional({ type: "string", description: 'Bank account name' })
+    @IsString()
+    @IsNotEmpty()
+    @ValidateIf(o => {
+        return Boolean(o.bankName) || Boolean(o.bankAccountNumber)
+    })
+    bankAccountName: string;
 
     @ApiPropertyOptional({ type: "string", description: 'Bank account number of the student' })
     @IsString()
     @IsNotEmpty()
     @ValidateIf(o => {
-        return Boolean(o.bankName) || Boolean(o.ifscCode)
+        return Boolean(o.bankName) || Boolean(o.bankAccountName)
     })
     bankAccountNumber: string;
-
-    @ApiPropertyOptional({ type: "string", description: 'IFSC code of the student' })
-    @IsString()
-    @IsNotEmpty()
-    @ValidateIf(o => {
-        return Boolean(o.bankAccountNumber) || Boolean(o.bankName)
-    })
-    ifscCode: string;
 
     /**
     |--------------------------------------------------
@@ -221,6 +218,6 @@ export class CreateStudentDto {
     @ApiPropertyOptional({ type: "string", description: 'Details of the previous school' })
     @IsString()
     @IsOptional()
-    @MaxLength(1000)
-    previousSchoolDetails: string
+    @MaxLength(500, { message: 'Maximum 500 characters allowed' })
+    previousSchoolDetails?: string
 }

@@ -147,9 +147,6 @@ export class Student extends BaseEntity {
     @Column({ type: 'varchar', default: '' })
     birthCertificateNumber: string;
 
-    @Column({ type: 'longtext', nullable: true })
-    additionalNotes: string;
-
     @OneToMany(() => File, (documentAttachments) => documentAttachments.student_documentAttachments)
     documentAttachments: File[];
 
@@ -162,11 +159,11 @@ export class Student extends BaseEntity {
     @Column({ type: 'varchar', default: '' })
     bankName: string;
 
-    @Column({ type: 'varchar', default: '' })
-    bankAccountNumber: string;
+    @Column({ type: 'varchar' })
+    bankAccountName: string
 
     @Column({ type: 'varchar', default: '' })
-    ifscCode: string;
+    bankAccountNumber: string;
 
 
     /**
