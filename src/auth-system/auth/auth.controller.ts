@@ -6,19 +6,14 @@ import { SignInDto } from './dto/signIn.dto';
 import { Public } from 'src/common/decorators/setPublicRoute.decorator';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 import { RefreshTokenGuard } from 'src/common/guards/refresh-token.guard';
-import { ChangePasswordDto } from './dto/changePassword.dto';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
 import { Action, AuthUser, Role } from 'src/common/types/global.type';
-import { EmailOnlyDto } from './dto/email-only.dto';
-import { ResetPasswordDto } from './dto/resetPassword.dto';
-import { UpdateEmailDto } from './dto/update-email.dto';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
-import { VerifyTokenDto } from './dto/verify-token.dto';
 import { AuthHelper } from './helpers/auth.helper';
-import { OtpVerificationDto } from './dto/otp-verification.dto';
 import { Auth2faHelper } from './helpers/auth-2fa.helper';
 import { TransformInstanceToInstance } from 'class-transformer';
 import { Throttle } from '@nestjs/throttler';
+import { ChangePasswordDto, EmailOnlyDto, OtpVerificationDto, ResendTwofaOtpDto, ResetPasswordDto, UpdateEmailDto, VerifySudoDto, VerifyTokenDto } from './dto/auth.dtos';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -151,8 +146,8 @@ export class AuthController {
     @CheckAbilities({ subject: Role.USER, action: Action.READ })
     @ApiBearerAuth()
     @Post('verify-sudo')
-    verifySudoPassword(@Body('sudo_password') password: string, @Res({ passthrough: true }) res: FastifyReply) {
-        return this.authHelper.verifySudoPassword(password, res);
+    verifySudoPassword(@Body() { sudo_password }: VerifySudoDto, @Res({ passthrough: true }) res: FastifyReply) {
+        return this.authHelper.verifySudoPassword(sudo_password, res);
     }
 
     @ApiOperation({ summary: 'Send two-factor authentication OTP' })
@@ -184,7 +179,7 @@ export class AuthController {
     @Throttle({ default: { limit: 1, ttl: 60000 } }) // 1 request per minute
     @Public()
     @Post('resend-two-fa-otp')
-    resend2faOtp(@Body("verificationToken") verificationToken: string, @Req() req: FastifyRequest) {
+    resend2faOtp(@Body() { verificationToken }: ResendTwofaOtpDto, @Req() req: FastifyRequest) {
         return this.auth2faHelper.resend2faOtp(verificationToken, req);
     }
 }
