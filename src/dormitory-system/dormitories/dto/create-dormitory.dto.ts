@@ -3,27 +3,27 @@ import { IsEnum, IsNotEmpty, IsOptional, IsString } from "class-validator";
 import { EDormitoryType } from "src/common/types/global.type";
 
 export class CreateDormitoryDto {
-    @ApiProperty()
+    @ApiProperty({ type: String, description: 'Dormitory name' })
     @IsString()
     @IsNotEmpty()
     name: string;
 
-    @ApiProperty({ enum: EDormitoryType })
+    @ApiProperty({ enum: EDormitoryType, description: 'Dormitory type' })
     @IsEnum(EDormitoryType)
     @IsNotEmpty()
     type: EDormitoryType;
 
-    @ApiPropertyOptional()
+    @ApiPropertyOptional({ type: String, description: 'Dormitory address' })
     @IsString()
     @IsOptional()
     address: string;
 
-    @ApiPropertyOptional()
+    @ApiPropertyOptional({ type: String, description: 'Dormitory intake' })
     @IsString()
     @IsOptional()
     intake: string;
 
-    @ApiPropertyOptional()
+    @ApiPropertyOptional({ type: String, description: 'Dormitory description' })
     @IsString()
     @IsOptional()
     description: string;

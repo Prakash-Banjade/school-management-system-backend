@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import { PageOptionsDto } from "./pageOptions.dto";
-import { IsBoolean, IsEnum, IsOptional, IsString, IsUUID } from "class-validator";
+import { IsBoolean, IsEnum, IsOptional, IsUUID } from "class-validator";
 import { Transform } from "class-transformer";
 
 export enum Deleted {

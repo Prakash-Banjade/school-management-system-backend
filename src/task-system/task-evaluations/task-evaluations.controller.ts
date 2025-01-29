@@ -2,10 +2,13 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { TaskEvaluationsService } from './task-evaluations.service';
 import { CreateTaskEvaluationDto } from './dto/create-task-evaluation.dto';
 import { UpdateTaskEvaluationDto } from './dto/update-task-evaluation.dto';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
+@ApiBearerAuth()
+@ApiTags("Task evaluations")
 @Controller('task-evaluations')
 export class TaskEvaluationsController {
-  constructor(private readonly taskEvaluationsService: TaskEvaluationsService) {}
+  constructor(private readonly taskEvaluationsService: TaskEvaluationsService) { }
 
   @Post()
   create(@Body() createTaskEvaluationDto: CreateTaskEvaluationDto) {

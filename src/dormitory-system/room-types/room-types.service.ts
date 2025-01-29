@@ -3,7 +3,7 @@ import { CreateRoomTypeDto } from './dto/create-room-type.dto';
 import { UpdateRoomTypeDto } from './dto/update-room-type.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RoomType } from './entities/room-type.entity';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, ILike, Repository } from 'typeorm';
 import { QueryDto } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
 
@@ -15,7 +15,7 @@ export class RoomTypesService {
 
   async create(createRoomTypeDto: CreateRoomTypeDto) {
     const existingWitSameName = await this.roomTypeRepo.findOne({
-      where: { name: createRoomTypeDto.name },
+      where: { name: ILike(createRoomTypeDto.name) },
     })
     if (existingWitSameName) throw new ConflictException('Room type with same name already exists')
 
@@ -60,7 +60,7 @@ export class RoomTypesService {
 
     // check if name is taken
     if (updateRoomTypeDto.name && updateRoomTypeDto.name !== existing.name) {
-      const existingWithName = await this.roomTypeRepo.findOneBy({ name: updateRoomTypeDto.name });
+      const existingWithName = await this.roomTypeRepo.findOne({ where: { name: ILike(updateRoomTypeDto.name) }, select: { id: true } });
       if (existingWithName) throw new ConflictException('Room type with same name already exists');
     }
 
@@ -78,16 +78,8 @@ export class RoomTypesService {
   }
 
   async remove(id: string) {
-    const existing = await this.findOne(id);
-    const removedRoomType = await this.roomTypeRepo.remove(existing);
+    await this.roomTypeRepo.delete({ id });
 
-    return {
-      message: 'Room type removed',
-      roomType: {
-        id: removedRoomType.id,
-        name: removedRoomType.name,
-      }
-    }
-
+    return { message: 'Room type removed' }
   }
 }

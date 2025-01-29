@@ -7,7 +7,7 @@ export class UpdateBookTransactionDto extends PartialType(OmitType(CreateBookTra
 
 export class ReturnBookTransactionDto {
 
-    @ApiProperty({ type: "string", isArray: true })
+    @ApiProperty({ type: "string", isArray: true, description: 'Book Transaction ids' })
     @IsUUID('4', { each: true })
     @IsArray()
     @ArrayMinSize(1)
@@ -15,13 +15,13 @@ export class ReturnBookTransactionDto {
 }
 
 export class RenewBookTransactionDto {
-    @ApiProperty({ type: "string", isArray: true })
+    @ApiProperty({ type: "string", isArray: true, description: 'Book Transaction ids' })
     @IsUUID('4', { each: true })
     @IsArray()
     @ArrayMinSize(1)
     transactionIds: string[];
 
-    @ApiProperty({ type: String })    
+    @ApiProperty({ type: String, description: 'Due date' })
     @IsDateString()
     @IsFutureDate({ message: 'The due date must be in the future.' })
     dueDate: string;

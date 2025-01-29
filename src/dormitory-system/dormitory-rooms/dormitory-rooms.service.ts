@@ -26,12 +26,7 @@ export class DormitoryRoomsService {
   ) { }
 
   async create(createDormitoryRoomDto: CreateDormitoryRoomDto) {
-    const existingDormitoryRoom = await this.dormitoryRoomRepo.findOne({
-      where: {
-        roomNumber: createDormitoryRoomDto.roomNumber
-      }
-    })
-
+    const existingDormitoryRoom = await this.dormitoryRoomRepo.findOne({ where: { roomNumber: createDormitoryRoomDto.roomNumber }, select: { id: true } })
     if (existingDormitoryRoom) throw new ConflictException('Room number already exists')
 
     const dormitory = await this.dormitoriesService.findOne(createDormitoryRoomDto.dormitoryId)
