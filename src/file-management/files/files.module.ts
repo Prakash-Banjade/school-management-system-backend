@@ -3,6 +3,7 @@ import { FilesService } from './files.service';
 import { FilesController } from './files.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { File } from './entities/file.entity';
+import { FilesCron } from './files.cron';
 
 Global()
 @Module({
@@ -12,7 +13,7 @@ Global()
     ]),
   ],
   controllers: [FilesController],
-  providers: [FilesService],
+  providers: [FilesService, FilesCron],
   exports: [FilesService],
 })
 export class FilesModule { }

@@ -30,7 +30,7 @@ export class LessonPlan extends BaseEntity {
     @ManyToOne(() => Account, account => account.createdLessonPlans, { onDelete: 'SET NULL' })
     createdBy: Account;
 
-    @OneToMany(() => File, file => file.lessonPlan_attachments)
+    @OneToMany(() => File, file => file.lessonPlan_attachment)
     attachments: File[];
 
     @Column({ type: 'enum', enum: ELessonPlanStatus, default: ELessonPlanStatus.Not_Started })
