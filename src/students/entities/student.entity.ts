@@ -158,7 +158,7 @@ export class Student extends BaseEntity {
     @Column({ type: 'varchar', default: '' })
     bankName: string;
 
-    @Column({ type: 'varchar' })
+    @Column({ type: 'varchar', default: '' })
     bankAccountName: string
 
     @Column({ type: 'varchar', default: '' })
