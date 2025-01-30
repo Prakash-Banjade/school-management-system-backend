@@ -3,11 +3,12 @@ import { ClassRoom } from "src/class-rooms/entities/class-room.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { StudentLedger } from "src/finance-system/fee-management/student-ledgers/entities/student-ledger.entity";
 import { Student } from "src/students/entities/student.entity";
-import { Column, Entity, ManyToOne, OneToOne } from "typeorm";
+import { Column, Entity, ManyToOne, OneToOne, Unique } from "typeorm";
 
 @Entity()
+@Unique(["student", "classRoom", "academicYear"])
 export class Enrollment extends BaseEntity {
-    @Column({ type: 'varchar', length: 255 })
+    @Column({ type: 'varchar', length: 255, unique: true })
     registrationNumber: string;
 
     @ManyToOne(() => Student, (student) => student.enrollments, { onDelete: 'CASCADE' })
