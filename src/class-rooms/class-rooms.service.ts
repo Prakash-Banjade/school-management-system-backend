@@ -1,7 +1,7 @@
 import { ConflictException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { CreateClassRoomDto } from './dto/create-class-room.dto';
 import { UpdateClassRoomDto } from './dto/update-class-room.dto';
-import { DataSource } from 'typeorm';
+import { DataSource, ILike } from 'typeorm';
 import { ClassRoom } from './entities/class-room.entity';
 import { REQUEST } from '@nestjs/core';
 import { BaseRepository } from 'src/common/repository/base-repository';
@@ -110,7 +110,7 @@ export class ClassRoomsService extends BaseRepository {
   private async checkIfExisting(dto: Partial<{ name: string, classType: EClassType, facultyId: string }>) {
     const existingWithSameName = await this.getRepository(ClassRoom).findOne({
       where: {
-        name: dto.name,
+        name: ILike(dto.name),
         classType: dto.classType,
         branch: { id: this.utilitiesService.getBranchId() },
         faculty: { id: dto.facultyId }

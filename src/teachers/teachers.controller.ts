@@ -10,7 +10,6 @@ import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { EmployeeAttendanceQueryDto } from './dto/employee-attendance-query.dto';
 import { TeachersHelper } from './helpers/teacher.helper';
-import { QueryDto } from 'src/common/dto/query.dto';
 import { TeachersStudentViewService } from './teachers.student-view.service';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
 import { isStudent } from 'src/utils/utils';

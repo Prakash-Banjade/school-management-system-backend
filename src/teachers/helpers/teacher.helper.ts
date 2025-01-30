@@ -84,6 +84,7 @@ export class TeachersHelper extends BaseRepository {
             .leftJoin('account.profileImage', 'profileImage')
             .leftJoin('teacher.assignedClassRooms', 'assignedClassRooms')
             .leftJoin('assignedClassRooms.parent', 'parent')
+            .leftJoin('assignedClassRooms.faculty', 'faculty')
             .where('teacher.id = :id', { id })
             .select([
                 'teacher.id as id',
@@ -103,7 +104,19 @@ export class TeachersHelper extends BaseRepository {
                 'teacher.shortDescription as shortDescription',
                 'account.id as accountId',
                 'profileImage.url as profileImageUrl',
-                'JSON_ARRAYAGG(CASE WHEN parent.id is NULL THEN assignedClassRooms.name ELSE CONCAT(parent.name, \' - \', assignedClassRooms.name) END) as assignedClassRooms',
+                `
+                    JSON_ARRAYAGG(
+                        JSON_OBJECT(
+                            "classRoomName", 
+                            CASE 
+                                WHEN parent.id IS NULL 
+                                THEN assignedClassRooms.name 
+                                ELSE CONCAT(parent.name, ' - ', assignedClassRooms.name) 
+                            END,
+                            "facultyName", faculty.name
+                        )
+                    ) AS assignedClassRooms
+                `,
             ])
 
         const teacher = await querybuilder.getRawOne();

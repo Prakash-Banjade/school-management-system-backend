@@ -47,6 +47,7 @@ export class ClassRoomsHelper extends BaseRepository {
                 "classRoom.classType as classType",
                 "classTeacher.id as classTeacherId",
                 "faculty.name as faculty",
+                "faculty.id as facultyId",
                 "CONCAT(classTeacher.firstName, ' ', classTeacher.lastName) as classTeacherName",
                 'parentClass.name as parentClassName',
                 `(SELECT JSON_ARRAYAGG(
