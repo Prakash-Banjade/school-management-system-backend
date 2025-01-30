@@ -52,16 +52,19 @@ export class ExamTypesService {
       .orderBy("examType.createdAt", queryDto.order)
       .limit(queryDto.take)
       .offset(queryDto.skip)
+      .leftJoin("examType.exams", "exams")
       .where(new Brackets(qb => {
         queryDto.search && qb.andWhere("LOWER(examType.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+        queryDto.academicYearId && qb.andWhere("exams.academicYearId = :academicYearId", { academicYearId: queryDto.academicYearId })
       }))
       .select([
         "examType.id as value",
         "examType.name as label",
       ])
+      .groupBy("examType.id")
       .getRawMany();
   }
-  
+
   async findOne(id: string) {
     const existing = await this.examTypeRepo.findOne({
       where: { id },
