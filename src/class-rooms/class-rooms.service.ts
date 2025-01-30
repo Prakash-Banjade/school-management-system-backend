@@ -13,6 +13,7 @@ import { Teacher } from 'src/teachers/entities/teacher.entity';
 import { UtilitiesService } from 'src/utilities/utilities.service';
 import { BranchesService } from 'src/branches/branches.service';
 import { Faculty } from 'src/faculties/entities/faculty.entity';
+import { FeeStructure } from 'src/finance-system/fee-management/fee-structures/entities/fee-structure.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class ClassRoomsService extends BaseRepository {
@@ -29,20 +30,62 @@ export class ClassRoomsService extends BaseRepository {
     const faculty = await this.getRepository(Faculty).findOne({ where: { id: dto.facultyId }, select: { id: true } });
     if (!faculty) throw new NotFoundException('Faculty not found');
 
-    // evaluate parent class
-    const parentClass = dto.parentClassId
-      ? await this.getRepository(ClassRoom).findOne({
-        where: { id: dto.parentClassId, branch: { id: this.utilitiesService.getBranchId() } },
-        relations: { branch: true, faculty: true },
-        select: { id: true, branch: { id: true }, faculty: { id: true } }
-      }) : null;
-
     // evaluate teacher
     const classTeacher = dto.classTeacherId
       ? await this.getRepository(Teacher).findOne({
         where: { id: dto.classTeacherId, account: { branch: { id: this.utilitiesService.getBranchId() } } },
         select: { id: true }
       }) : null;
+
+    // evaluate parent class
+    const parentClass = dto.parentClassId
+      ? await this.getRepository(ClassRoom).findOne({
+        where: { id: dto.parentClassId, branch: { id: this.utilitiesService.getBranchId() } },
+        relations: { branch: true, faculty: true, children: true },
+        select: {
+          branch: { id: true },
+          faculty: { id: true },
+          children: { id: true },
+        }
+      }) : null;
+
+    // if section is creating first time, we need to shift everything from parent to that section, which is done below 
+    if (parentClass && parentClass.children.length === 0) {
+      const { id, createdAt, updatedAt, ...rest } = parentClass;
+
+      // get mandatory charge of the parent class
+      const feeStructures = await this.getRepository(FeeStructure).find({
+        where: { classRoom: { id: parentClass.id } },
+        select: { id: true, amount: true }
+      });
+
+      const newClassRoom = this.getRepository(ClassRoom).create({
+        ...rest,
+        classType: EClassType.PRIMARY,
+        parent: null, // this will not have any parents
+        classTeacher: null,
+        feeStructures,
+      });
+
+      const savedClass = await this.getRepository(ClassRoom).save(newClassRoom);
+
+      await this.getRepository(ClassRoom).update(
+        { id: parentClass.id },
+        {
+          name: dto.name,
+          location: dto.location,
+          classType: EClassType.SECTION,
+          parent: savedClass,
+          classTeacher: classTeacher,
+          createdAt: savedClass.createdAt,
+          updatedAt: savedClass.updatedAt,
+        }
+      );
+
+      return {
+        message: savedClass.classType === EClassType.SECTION ? 'Class section created' : 'Class room created',
+      };
+    }
 
     // add mandatory charge heads structure for the class
     const feeStructures = await this.feeStructuresService.createMandatoryFeeStructures({
@@ -64,6 +107,10 @@ export class ClassRoomsService extends BaseRepository {
     return {
       message: savedClass.classType === EClassType.SECTION ? 'Class section created' : 'Class room created',
     };
+  }
+
+  async exchangeParentAndSection({ }: { dto: CreateClassRoomDto, parent: ClassRoom }) {
+
   }
 
   async findOne(id: string) {
