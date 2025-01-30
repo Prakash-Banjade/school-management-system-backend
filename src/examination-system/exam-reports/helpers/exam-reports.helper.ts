@@ -19,7 +19,7 @@ export class ExamReportsHelper extends BaseRepository {
     async getExamReportBySubject(queryDto: ExamReportBySubjectQueryDto) {
         const academicYearId = await this.utilitiesService.getAcademicYearId();
         const { classRoomId, examSubjectId } = queryDto;
-
+        
         const queryBuilder = this.getRepository(ExamReport).createQueryBuilder('examReport')
             .leftJoin('examReport.student', 'student')
             .leftJoin('student.account', 'account')
@@ -29,6 +29,7 @@ export class ExamReportsHelper extends BaseRepository {
             .innerJoin('student.enrollments', 'enrollments', "enrollments.academicYearId = :academicYearId", { academicYearId })
             .leftJoin('enrollments.classRoom', 'classRoom')
             .leftJoin('classRoom.parent', 'parent')
+            // .where('exam.academicYearId = :academicYearId', { academicYearId })
             .andWhere('examReport.examSubjectId = :examSubjectId', { examSubjectId })
 
         const count = await queryBuilder.clone()

@@ -90,8 +90,8 @@ export class ExamsHelper extends BaseRepository {
             .leftJoin("exam.classRoom", "classRoom")
             .leftJoin('exam.examSubjects', 'examSubjects')
             .leftJoin('examSubjects.subject', 'subject')
-            .where("exam.academicYearId = :academicYearId", { academicYearId: await this.utilitiesService.getAcademicYearId() })
-            .andWhere("exam.examTypeId = :examTypeId", { examTypeId: examTypeId })
+            .where("exam.academicYearId = :academicYearId", { academicYearId })
+            .andWhere("exam.examTypeId = :examTypeId", { examTypeId })
             .andWhere("classRoom.id = :classRoomId", { classRoomId: student.parentClassId ?? student.classRoomId })
             .andWhere(new Brackets(qb => {
                 studentOptionalSubjectIds?.length && (
