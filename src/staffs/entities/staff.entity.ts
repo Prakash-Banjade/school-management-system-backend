@@ -2,7 +2,6 @@ import { Account } from "src/auth-system/accounts/entities/account.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { EBloodGroup, EMaritalStatus, EStaff, Gender } from "src/common/types/global.type";
 import { Faculty } from "src/faculties/entities/faculty.entity";
-import { Image } from "src/file-management/images/entities/image.entity";
 import { EmployeeLedger } from "src/finance-system/salary-management/employee-ledgers/entities/employee-ledger.entity";
 import { Payroll } from "src/finance-system/salary-management/payrolls/entities/payroll.entity";
 import { SalaryStructure } from "src/finance-system/salary-management/salary-structures/entities/salary-structure.entity";
@@ -30,7 +29,7 @@ export class Staff extends BaseEntity {
     @Column({ type: 'enum', enum: Gender })
     gender: Gender
 
-    @Column({ type: 'varchar' })
+    @Column({ type: 'varchar', unique: true })
     email: string
 
     @Column({ type: 'varchar' })
