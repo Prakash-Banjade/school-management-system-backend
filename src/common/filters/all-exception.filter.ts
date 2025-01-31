@@ -3,6 +3,7 @@ import { BaseExceptionFilter } from "@nestjs/core";
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { QueryFailedError } from "typeorm";
 import { ValidationError } from 'class-validator'
+import { SentryExceptionCaptured } from "@sentry/nestjs";
 
 type ErrorResponse = {
     statusCode: number,
@@ -15,6 +16,7 @@ type ErrorResponse = {
 @Catch()
 export class AllExceptionsFilter extends BaseExceptionFilter {
 
+    @SentryExceptionCaptured()
     catch(exception: unknown, host: ArgumentsHost) {
         const ctx = host.switchToHttp();
         const response = ctx.getResponse<FastifyReply>()
