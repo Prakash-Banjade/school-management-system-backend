@@ -28,10 +28,14 @@ export class BookTransactionsCron {
             where: { id: Not(IsNull()) },
         }))?.libraryFine ?? 0;
 
+        console.log(overDueTransactions)
+
         for (const transaction of overDueTransactions) {
             const dueDays = differenceInDays(startOfDay(new Date()), startOfDay(transaction.dueDate));
 
             const dueAmount = dueDays * libraryFine;
+
+            console.log(dueDays, dueAmount);
 
             transaction.fine = dueAmount;
         }
