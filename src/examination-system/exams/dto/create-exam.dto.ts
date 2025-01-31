@@ -6,17 +6,17 @@ import { CreateExamSubjectDto } from "src/examination-system/exam-subjects/dto/c
 class ExamSubject extends OmitType(CreateExamSubjectDto, ['examId']) { }
 
 export class CreateExamDto {
-    @ApiProperty({ format: 'uuid' })
+    @ApiProperty({ format: 'uuid', description: 'Exam type Id' })
     @IsUUID()
     @IsNotEmpty()
     examTypeId: string;
 
-    @ApiProperty({ format: 'uuid' })
+    @ApiProperty({ format: 'uuid', description: 'Class room id' })
     @IsUUID()
     @IsNotEmpty()
     classRoomId: string;
 
-    @ApiProperty({ type: ExamSubject, isArray: true })
+    @ApiProperty({ type: ExamSubject, isArray: true, description: 'Exam subjects' })
     @IsArray()
     @ArrayMinSize(1)
     @ValidateNested({ each: true })

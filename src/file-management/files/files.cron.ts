@@ -34,7 +34,6 @@ export class FilesCron {
 
             if (fs.existsSync(filePath)) {
                 fs.unlinkSync(filePath);
-                console.log(filePath)
             }
         });
 

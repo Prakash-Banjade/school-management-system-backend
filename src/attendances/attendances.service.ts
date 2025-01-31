@@ -85,15 +85,9 @@ export class AttendancesService extends BaseRepository {
     updateAttendanceDto.status && (existing.status = status);
     updateAttendanceDto.outTime && (existing.outTime = outTime);
 
-    const savedAttendance = await this.getRepository(Attendance).save(existing);
+    await this.getRepository(Attendance).save(existing);
 
-    return {
-      message: 'Attendance updated successfully',
-      attendance: {
-        id: savedAttendance.id,
-        account: savedAttendance.account.firstName + ' ' + savedAttendance.account.lastName,
-      }
-    }
+    return { message: 'Attendance updated successfully' }
   }
 
   async updateInBatch(updateAttendanceBatchDto: UpdateAttendanceBatchDto) {

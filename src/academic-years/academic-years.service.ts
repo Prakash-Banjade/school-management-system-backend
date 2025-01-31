@@ -175,14 +175,8 @@ export class AcademicYearsService {
 
   async remove(id: string) {
     const existing = await this.findOne(id);
-    const removed = await this.academicYearRepo.remove(existing);
+    await this.academicYearRepo.remove(existing);
 
-    return {
-      message: "Removed successfully",
-      academicYear: {
-        id: removed.id,
-        name: removed.name,
-      }
-    }
+    return { message: "Removed successfully" }
   }
 }

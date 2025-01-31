@@ -8,12 +8,12 @@ const employeesSortBy = {
 }
 
 export class GetEmployeesQueryDto extends QueryDto {
-    @ApiPropertyOptional()
+    @ApiPropertyOptional({ format: 'uuid', description: 'Employee id' })
     @IsString()
     @IsOptional()
     employeeId?: string;
 
-    @ApiPropertyOptional()
+    @ApiPropertyOptional({ type: [String], description: 'Comma separated designations of the employees' })
     @IsOptional()
     @IsString({ each: true })
     @Transform(({ value }) => {
@@ -22,7 +22,7 @@ export class GetEmployeesQueryDto extends QueryDto {
     })
     designations?: string[]
 
-    @ApiPropertyOptional()
+    @ApiPropertyOptional({ type: 'string', enum: Object.keys(employeesSortBy), description: 'Sort By Key' })
     @IsOptional()
     @IsString()
     @Transform(({ value }) => {

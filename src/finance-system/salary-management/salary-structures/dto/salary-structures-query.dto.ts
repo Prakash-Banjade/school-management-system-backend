@@ -10,7 +10,7 @@ const salaryStructureSortByQuery = {
 }
 
 export class SalaryStructuresQueryDto extends QueryDto {
-    @ApiPropertyOptional()
+    @ApiPropertyOptional({ type: 'string', enum: Object.keys(salaryStructureSortByQuery), description: 'Sort By Key' })
     @IsOptional()
     @IsString()
     @Transform(({ value }) => {
@@ -19,7 +19,7 @@ export class SalaryStructuresQueryDto extends QueryDto {
     })
     sortBy?: string = 'salaryStructure.createdAt';
 
-    @ApiPropertyOptional()
+    @ApiPropertyOptional({ type: String, description: "Comma separated designations" })
     @IsOptional()
     @IsString({ each: true })
     @Transform(({ value }) => {

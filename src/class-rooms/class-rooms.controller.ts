@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, UseInterceptors, Query } fro
 import { ClassRoomsService } from './class-rooms.service';
 import { CreateClassRoomDto } from './dto/create-class-room.dto';
 import { UpdateClassRoomDto } from './dto/update-class-room.dto';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { ClassRoomOptionsQueryDto, ClassRoomQueryDto } from './dto/classRoom-query.dto';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 import { ApiPaginatedResponse } from 'src/common/decorators/apiPaginatedResponse.decorator';
@@ -25,6 +25,11 @@ export class ClassRoomsController {
   @Post()
   @UseInterceptors(TransactionInterceptor)
   @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
+  @ApiOperation({ summary: 'Create a new class room' })
+  @ApiResponse({ status: 201, description: 'Class room successfully created.' })
+  @ApiResponse({ status: 400, description: 'Invalid input data.' })
+  @ApiResponse({ status: 404, description: 'Faculty not found.' })
+  @ApiResponse({ status: 409, description: 'Class room with same name already exists' })
   create(@Body() createClassRoomDto: CreateClassRoomDto) {
     return this.classRoomsService.create(createClassRoomDto);
   }
@@ -32,6 +37,8 @@ export class ClassRoomsController {
   @Get()
   @ApiPaginatedResponse(CreateClassRoomDto)
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @ApiOperation({ summary: 'Get a list of class rooms' })
+  @ApiResponse({ status: 200, description: 'List of class rooms retrieved successfully.' })
   findAll(@Query() queryDto: ClassRoomQueryDto) {
     return this.classRoomsHelper.findAll(queryDto);
   }
@@ -41,31 +48,45 @@ export class ClassRoomsController {
     { subject: Role.ADMIN, action: Action.READ },
     { subject: Role.TEACHER, action: Action.READ },
   )
+  @ApiOperation({ summary: 'Get options for class rooms' })
+  @ApiResponse({ status: 200, description: 'Class room options retrieved successfully.' })
   findAllOptions(@Query() queryDto: ClassRoomOptionsQueryDto) {
     return this.classRoomsHelper.getClassRoomsOptions(queryDto);
   }
 
-  // used in single class room page in frontend
   @Get(':id/details')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @ApiOperation({ summary: 'Get details of a specific class room' })
+  @ApiParam({ name: 'id', description: 'The ID of the class room' })
+  @ApiResponse({ status: 200, description: 'Class room details retrieved successfully.' })
   getClassRoomDetails(@Param('id') id: string) {
     return this.classRoomsHelper.getClassRoomDetails(id);
   }
 
   @Get(':id/attendance-statistics')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @ApiOperation({ summary: 'Get attendance statistics for a specific class room' })
+  @ApiParam({ name: 'id', description: 'The ID of the class room' })
+  @ApiResponse({ status: 200, description: 'Attendance statistics retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Class room not found.' })
   getAttendanceStatistics(@Param('id') id: string, @Query() queryDto: AttendanceStatisticsQueryDto) {
     return this.classRoomsStatistics.getAttendanceStatistics(id, queryDto);
   }
 
   @Get('assigned')
   @CheckAbilities({ subject: Role.TEACHER, action: Action.READ })
+  @ApiOperation({ summary: 'Get all classes assigned to the current teacher' })
+  @ApiResponse({ status: 200, description: 'Assigned classes retrieved successfully.' })
   getMyAssignedClasses(@Query() queryDto: ClassRoomQueryDto) {
     return this.classRoomsHelper.getMyAssignedClasses(queryDto);
   }
 
   @Get(':id')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @ApiOperation({ summary: 'Get a specific class room by ID' })
+  @ApiParam({ name: 'id', description: 'The ID of the class room' })
+  @ApiResponse({ status: 200, description: 'Class room retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Class room not found.' })
   findOne(@Param('id') id: string) {
     return this.classRoomsService.findOne(id);
   }
@@ -73,6 +94,11 @@ export class ClassRoomsController {
   @Patch(':id')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
   @UseInterceptors(TransactionInterceptor)
+  @ApiOperation({ summary: 'Update a specific class room by ID' })
+  @ApiParam({ name: 'id', description: 'The ID of the class room to update' })
+  @ApiResponse({ status: 200, description: 'Class room successfully updated.' })
+  @ApiResponse({ status: 404, description: 'Class room not found.' })
+  @ApiResponse({ status: 409, description: 'Class room with same name already exists' })
   update(@Param('id') id: string, @Body() updateClassRoomDto: UpdateClassRoomDto) {
     return this.classRoomsService.update(id, updateClassRoomDto);
   }

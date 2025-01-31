@@ -7,8 +7,6 @@ import { SalaryStructuresQueryDto } from './dto/salary-structures-query.dto';
 import { SalaryStructure } from './entities/salary-structure.entity';
 import { paginatedRawData } from 'src/utils/paginatedData';
 import { UpdateSalaryStructureDto } from './dto/update-salary-structure.dto';
-import { Teacher } from 'src/teachers/entities/teacher.entity';
-import { Staff } from 'src/staffs/entities/staff.entity';
 import { UtilitiesService } from 'src/utilities/utilities.service';
 
 @Injectable()
@@ -103,28 +101,5 @@ export class SalaryStructuresService extends BaseRepository {
         await this.getRepository(SalaryStructure).save(existing);
 
         return { message: 'Updated successfully' }
-    }
-
-    async createSalaryStructureForAllEmployees() { // TODO: remove in production
-        const teachers = await this.getRepository(Teacher).find({
-            select: { id: true }
-        });
-        const staffs = await this.getRepository(Staff).find({
-            select: { id: true }
-        });
-
-        const teacherSalaryStructures = teachers.map(teacher => this.getRepository(SalaryStructure).create({
-            basicSalary: 0,
-            allowances: [],
-            teacher
-        }));
-
-        const staffSalaryStructures = staffs.map(staff => this.getRepository(SalaryStructure).create({
-            basicSalary: 0,
-            allowances: [],
-            staff
-        }));
-
-        await this.getRepository(SalaryStructure).save([...teacherSalaryStructures, ...staffSalaryStructures]);
     }
 }

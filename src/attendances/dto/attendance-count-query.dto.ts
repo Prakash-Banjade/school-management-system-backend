@@ -3,12 +3,12 @@ import { Transform } from "class-transformer";
 import { IsNumber, IsOptional, IsString } from "class-validator";
 
 export class AttendanceCountQueryDto {
-    @ApiPropertyOptional()
+    @ApiPropertyOptional({ format: 'uuid', description: 'Account id' })
     @IsOptional()
     @IsString()
     accountId?: string;
 
-    @ApiPropertyOptional()
+    @ApiPropertyOptional({ type: Number, description: 'Year of the attendance' })
     @IsOptional()
     @IsNumber()
     @Transform(({ value }) => {
@@ -18,7 +18,7 @@ export class AttendanceCountQueryDto {
     })
     year?: number = new Date().getFullYear();
 
-    @ApiPropertyOptional()
+    @ApiPropertyOptional({ type: Number, description: 'Month of the attendance' })
     @IsOptional()
     @IsNumber()
     @Transform(({ value }) => {

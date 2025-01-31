@@ -1,6 +1,6 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Query } from '@nestjs/common';
 import { SalaryStructuresService } from './salary-structures.service';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { UpdateSalaryStructureDto } from './dto/update-salary-structure.dto';
 import { SalaryStructuresQueryDto } from './dto/salary-structures-query.dto';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
@@ -13,19 +13,18 @@ export class SalaryStructuresController {
   constructor(private readonly salaryStructuresService: SalaryStructuresService) { }
 
   @Get()
+  @ApiOperation({ summary: 'Get all salary structures' })
+  @ApiResponse({ status: 200, description: 'Salary structures retrieved successfully' })
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findAll(@Query() query: SalaryStructuresQueryDto) {
     return this.salaryStructuresService.findAll(query);
   }
 
-  // @Post() // TODO: remove in production
-  // @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
-  // createSalaryStructureForAllEmployees() {
-  //   return this.salaryStructuresService.createSalaryStructureForAllEmployees();
-  // }
-
   @Patch(':id')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
+  @ApiOperation({ summary: 'Update a salary structure' })
+  @ApiResponse({ status: 200, description: 'Salary structure updated successfully' })
+  @ApiResponse({ status: 404, description: 'Salary structure not found' })
   update(@Param('id', ParseUUIDPipe) id: string, @Body() updateSalaryStructureDto: UpdateSalaryStructureDto) {
     return this.salaryStructuresService.update(id, updateSalaryStructureDto);
   }

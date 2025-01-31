@@ -3,7 +3,7 @@ import { CreateExamTypeDto } from './dto/create-exam-type.dto';
 import { UpdateExamTypeDto } from './dto/update-exam-type.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ExamType } from './entities/exam-type.entity';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, ILike, Repository } from 'typeorm';
 import { QueryDto } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
 
@@ -15,7 +15,8 @@ export class ExamTypesService {
 
   async create(createExamTypeDto: CreateExamTypeDto) {
     const existingWitSameName = await this.examTypeRepo.findOne({
-      where: { name: createExamTypeDto.name },
+      where: { name: ILike(createExamTypeDto.name) },
+      select: { id: true }
     })
     if (existingWitSameName) throw new ConflictException('Exam type with same name already exists')
 

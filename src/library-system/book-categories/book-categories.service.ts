@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, Not, Repository } from 'typeorm';
+import { Brackets, ILike, Not, Repository } from 'typeorm';
 import { CreateBookCategoryDto } from './dto/create-book-category.dto';
 import { UpdateBookCategoryDto } from './dto/update-book-category.dto';
 import { BookCategory } from './entities/book-category.entity';
@@ -15,13 +15,13 @@ export class BookCategoriesService {
   ) { }
 
   async create(createBookCategoryDto: CreateBookCategoryDto) {
-    const existingCategory = await this.bookCategoryRepository.findOne({ where: { name: createBookCategoryDto.name } });
+    const existingCategory = await this.bookCategoryRepository.findOne({ where: { name: ILike(createBookCategoryDto.name) }, select: { id: true } });
     if (existingCategory) throw new ConflictException('Book category with this name already exists');
 
     const category = this.bookCategoryRepository.create(createBookCategoryDto);
-    const savedCategory = await this.bookCategoryRepository.save(category);
+    await this.bookCategoryRepository.save(category);
 
-    return this.bookCategoryMutationReturn(savedCategory, 'created');
+    return { message: "Created successfully" }
   }
 
   async findAll(queryDto: QueryDto) {
@@ -50,29 +50,18 @@ export class BookCategoriesService {
   async update(id: string, updateBookCategoryDto: UpdateBookCategoryDto) {
     const existingCategory = await this.findOne(id);
 
-    const existingWithSameName = await this.bookCategoryRepository.findOne({ where: { name: updateBookCategoryDto.name, id: Not(existingCategory.id) } });
+    const existingWithSameName = await this.bookCategoryRepository.findOne({ where: { name: ILike(updateBookCategoryDto.name), id: Not(existingCategory.id) }, select: { id: true } });
     if (existingWithSameName) throw new ConflictException('Book category with same name already exists');
 
     Object.assign(existingCategory, updateBookCategoryDto);
-    const savedCategory = await this.bookCategoryRepository.save(existingCategory);
+    await this.bookCategoryRepository.save(existingCategory);
 
-    return this.bookCategoryMutationReturn(savedCategory, 'updated');
+    return { message: "Updated successfully" }
   }
 
   async remove(id: string) {
-    const existingCategory = await this.findOne(id);
-    await this.bookCategoryRepository.remove(existingCategory);
+    await this.bookCategoryRepository.delete({ id });
 
-    return this.bookCategoryMutationReturn(existingCategory, 'deleted');
-  }
-
-  private bookCategoryMutationReturn = (category: BookCategory, type: 'created' | 'updated' | 'deleted') => {
-    return {
-      message: type === 'created' ? 'Book category created successfully' : type === 'deleted' ? 'Book category deleted successfully' : 'Book category updated successfully',
-      category: {
-        id: category.id,
-        name: category.name,
-      }
-    }
+    return { message: 'Book category deleted' };
   }
 }

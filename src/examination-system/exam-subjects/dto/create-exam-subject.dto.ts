@@ -7,7 +7,7 @@ import { IsFutureDate } from "src/common/decorators/validators/isFutureDate.deco
 import { SubjectMarksDto } from "src/subjects/dto/create-subject.dto";
 
 export class CreateExamSubjectDto extends SubjectMarksDto {
-    @ApiProperty({ format: 'date-time' })
+    @ApiProperty({ format: 'date-time', description: 'Exam date' })
     @IsDateString()
     @IsFutureDate({ message: "Exam date must be in the future" })
     @Transform(({ value }) => {
@@ -21,27 +21,27 @@ export class CreateExamSubjectDto extends SubjectMarksDto {
     })
     examDate: string;
 
-    @ApiProperty({ format: 'date-time' })
+    @ApiProperty({ format: 'date-time', description: 'Start time' })
     @IsMilitaryTime({ message: 'Invalid start time. Time must be in format HH:MM' })
     @IsNotEmpty()
     startTime: string;
 
-    @ApiProperty()
+    @ApiProperty({ description: 'Duration in minutes' })
     @IsInt({ message: 'Duration must be a number' })
     @Min(0)
     duration: number;
 
-    @ApiPropertyOptional()
+    @ApiPropertyOptional({ description: 'Venue' })
     @IsString()
     @IsOptional()
     venue?: string;
 
-    @ApiProperty({ format: 'uuid' })
+    @ApiProperty({ format: 'uuid', description: 'Exam id' })
     @IsUUID()
     @IsNotEmpty()
     examId: string;
 
-    @ApiProperty({ format: 'uuid' })
+    @ApiProperty({ format: 'uuid', description: 'Subject id' })
     @IsUUID()
     @IsNotEmpty()
     subjectId: string;
