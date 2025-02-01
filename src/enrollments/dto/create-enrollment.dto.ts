@@ -1,10 +1,10 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { ArrayMinSize, IsArray, IsDateString, IsInt, IsNotEmpty, IsNumber, IsUUID, Min, ValidateNested } from "class-validator";
+import { ArrayMinSize, IsArray, IsDateString, IsInt, IsNotEmpty, IsUUID, Min, ValidateNested } from "class-validator";
 import { IsNotFutureDate } from "src/common/decorators/validators/isNotFutureDate.decorator";
 
 class StudentWithRollNo {
-    @ApiProperty({ type: "string", format: 'uuid' })
+    @ApiProperty({ type: "string", format: 'uuid', description: 'Student id' })
     @IsUUID()
     studentId: string;
 
@@ -23,11 +23,11 @@ export class CreateEnrollmentDto {
     @ArrayMinSize(1, { message: "At least one student is required" })
     studentsWithRollNo: StudentWithRollNo[];
 
-    @ApiProperty({ format: 'uuid' })
+    @ApiProperty({ format: 'uuid', description: 'Class room id' })
     @IsUUID()
     classRoomId: string;
 
-    @ApiProperty({ format: 'date-time', example: '2022-01-01T00:00:00.000Z' })
+    @ApiProperty({ format: 'date-time', example: '2022-01-01T00:00:00.000Z', description: 'Enrollment date' })
     @IsDateString()
     @IsNotFutureDate()
     enrollmentDate: string;

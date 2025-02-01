@@ -3,7 +3,7 @@ import { CreateExamTypeDto } from './dto/create-exam-type.dto';
 import { UpdateExamTypeDto } from './dto/update-exam-type.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ExamType } from './entities/exam-type.entity';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, ILike, Repository } from 'typeorm';
 import { QueryDto } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
 
@@ -15,7 +15,8 @@ export class ExamTypesService {
 
   async create(createExamTypeDto: CreateExamTypeDto) {
     const existingWitSameName = await this.examTypeRepo.findOne({
-      where: { name: createExamTypeDto.name },
+      where: { name: ILike(createExamTypeDto.name) },
+      select: { id: true }
     })
     if (existingWitSameName) throw new ConflictException('Exam type with same name already exists')
 
@@ -52,16 +53,19 @@ export class ExamTypesService {
       .orderBy("examType.createdAt", queryDto.order)
       .limit(queryDto.take)
       .offset(queryDto.skip)
+      .leftJoin("examType.exams", "exams")
       .where(new Brackets(qb => {
         queryDto.search && qb.andWhere("LOWER(examType.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
+        queryDto.academicYearId && qb.andWhere("exams.academicYearId = :academicYearId", { academicYearId: queryDto.academicYearId })
       }))
       .select([
         "examType.id as value",
         "examType.name as label",
       ])
+      .groupBy("examType.id")
       .getRawMany();
   }
-  
+
   async findOne(id: string) {
     const existing = await this.examTypeRepo.findOne({
       where: { id },

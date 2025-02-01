@@ -36,6 +36,7 @@ export class ExamSubjectsService extends BaseRepository {
       .andWhere(new Brackets(qb => {
         queryDto.search && qb.andWhere('LOWER(subject.subjectName) LIKE LOWER(:search)', { search: `%${queryDto.search}%` })
         queryDto.examId && qb.andWhere("exam.id = :examId", { examId: queryDto.examId })
+        queryDto.academicYearId && qb.andWhere("exam.academicYearId = :academicYearId", { academicYearId: queryDto.academicYearId })
         queryDto.onlyPast && qb.andWhere("DATE(exam.examDate) < CURRENT_DATE()")
         queryDto.examTypeId && qb.andWhere('examType.id = :examTypeId', { examTypeId: queryDto.examTypeId })
         queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId OR children.id = :classRoomId', { classRoomId: queryDto.classRoomId }) // this is done because student can be in section and the exam is in primary class, so look in children; this is done when student queries the exam-subjects

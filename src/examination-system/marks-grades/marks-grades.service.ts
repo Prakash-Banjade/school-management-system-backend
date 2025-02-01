@@ -16,7 +16,10 @@ export class MarksGradesService {
   ) { }
 
   async create(createMarksGradeDto: CreateMarksGradeDto) {
-    const existingWithSameNameAndScale = await this.marksGradeRepo.findOneBy({ gradeName: createMarksGradeDto.gradeName, gradeScale: createMarksGradeDto.gradeScale });
+    const existingWithSameNameAndScale = await this.marksGradeRepo.findOne({
+      where: { gradeName: createMarksGradeDto.gradeName, gradeScale: createMarksGradeDto.gradeScale },
+      select: { id: true }
+    });
     if (existingWithSameNameAndScale) throw new ConflictException('Marks grade with same name and scale already exists');
 
     await this.marksGradeRepo.save(createMarksGradeDto);

@@ -43,7 +43,7 @@ export class FeePaymentsService extends BaseRepository {
         if (!feeInvoice || !feeInvoice.ledgerItem?.studentLedger?.id) throw new NotFoundException('Fee invoice not found');
 
         const totalFeesPaid = feeInvoice.feePayments?.reduce((acc, curr) => acc + curr.amount, 0) ?? 0;
-        if (dto.paidAmount > (feeInvoice.ledgerItem?.ledgerAmount - totalFeesPaid)) throw new NotFoundException('Payment amount cannot be greater than the outstanding amount');
+        if (dto.paidAmount > (feeInvoice.ledgerItem?.ledgerAmount - totalFeesPaid)) throw new BadRequestException('Payment amount cannot be greater than the outstanding amount');
 
         // update student ledger
         feeInvoice.ledgerItem.studentLedger.updateAmount(dto.paidAmount * (-1)); // subtracting the payment amount from the student ledger

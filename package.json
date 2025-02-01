@@ -14,7 +14,7 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "build": "nest build",
+    "build": "nest build && npm run sentry:sourcemaps",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "dev": "nest start --watch",
@@ -25,7 +25,8 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org aribt --project school-management-system ./dist && sentry-cli sourcemaps upload --org aribt --project school-management-system ./dist"
   },
   "dependencies": {
     "@casl/ability": "^6.7.1",
@@ -48,6 +49,9 @@
     "@nestjs/swagger": "^7.4.2",
     "@nestjs/throttler": "^6.2.1",
     "@nestjs/typeorm": "^10.0.2",
+    "@sentry/cli": "^2.41.1",
+    "@sentry/nestjs": "^8.52.1",
+    "@sentry/profiling-node": "^8.52.1",
     "@simplewebauthn/server": "^13.0.0",
     "@stream-io/node-sdk": "^0.4.8",
     "bcrypt": "^5.1.1",

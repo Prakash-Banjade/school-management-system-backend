@@ -62,4 +62,6 @@ export const envSchema = Joi.object({
 
     STREAM_VIDEO_API_SECRET: Joi.string().required(),
     STREAM_VIDEO_API_KEY: Joi.string().required(),
+
+    SENTRY_DSN: Joi.string().uri().required(),
 });

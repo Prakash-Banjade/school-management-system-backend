@@ -4,11 +4,12 @@ import { UpdateFacultyDto } from './dto/update-faculty.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Faculty } from './entities/faculty.entity';
 import { Brackets, ILike, Repository } from 'typeorm';
-import { FacultiesQueryDto, FacultyOptionsQueryDto } from './dto/faculties-query.dto';
+import { FacultyOptionsQueryDto } from './dto/faculties-query.dto';
 import { paginatedRawData } from 'src/utils/paginatedData';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { UtilitiesService } from 'src/utilities/utilities.service';
 import { EClassType } from 'src/common/types/global.type';
+import { QueryDto } from 'src/common/dto/query.dto';
 
 @Injectable()
 export class FacultiesService {
@@ -19,7 +20,7 @@ export class FacultiesService {
   ) { }
 
   async create(createFacultyDto: CreateFacultyDto) {
-    const existingWithSameName = await this.facultiesRepo.findOne({ where: { name: ILike(`${createFacultyDto.name}`) }, select: { id: true } });
+    const existingWithSameName = await this.facultiesRepo.findOne({ where: { name: ILike(createFacultyDto.name) }, select: { id: true } });
     if (existingWithSameName) throw new ConflictException('Faculty with same name already exists');
 
     const newFaculty = this.facultiesRepo.create({
@@ -32,7 +33,7 @@ export class FacultiesService {
     return { message: 'Faculty added' }
   }
 
-  findAll(queryDto: FacultiesQueryDto) {
+  findAll(queryDto: QueryDto) {
     const queryBuilder = this.facultiesRepo.createQueryBuilder('faculty');
 
     queryBuilder
@@ -129,7 +130,7 @@ export class FacultiesService {
     const existing = await this.findOne(id)
 
     if (updateFacultyDto.name && updateFacultyDto.name?.toLowerCase() !== existing.name?.toLocaleLowerCase()) {
-      const existingWithSameName = await this.facultiesRepo.findOne({ where: { name: ILike(`${updateFacultyDto.name}`) }, select: { id: true } });
+      const existingWithSameName = await this.facultiesRepo.findOne({ where: { name: ILike(updateFacultyDto.name) }, select: { id: true } });
       if (existingWithSameName) throw new ConflictException('Faculty with same name already exists');
     }
 

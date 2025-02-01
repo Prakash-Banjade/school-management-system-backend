@@ -11,10 +11,7 @@ import { SignInDto } from './dto/signIn.dto';
 import { AuthHelper } from './helpers/auth.helper';
 import { JwtService } from '../jwt/jwt.service';
 import { CookieSerializeOptions } from '@fastify/cookie';
-import { ChangePasswordDto } from './dto/changePassword.dto';
 import * as bcrypt from 'bcrypt';
-import { ResetPasswordDto } from './dto/resetPassword.dto';
-import { UpdateEmailDto } from './dto/update-email.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { MailEvents } from 'src/mail/mail.service';
 import { ResetPasswordMailEventDto, UserCredentialsEventDto } from 'src/mail/dto/events.dto';
@@ -27,7 +24,7 @@ import { generateDeviceId } from 'src/utils/utils';
 import { LoginDevice } from '../accounts/entities/login-devices.entity';
 import { WebAuthnCredential } from '../webAuthn/entities/webAuthnCredential.entity';
 import { EOptVerificationType, OtpVerificationPending } from './entities/otp-verification-pending.entity';
-import { OtpVerificationDto } from './dto/otp-verification.dto';
+import { ChangePasswordDto, OtpVerificationDto, ResetPasswordDto, UpdateEmailDto } from './dto/auth.dtos';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AuthService extends BaseRepository {

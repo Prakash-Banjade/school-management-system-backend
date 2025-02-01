@@ -5,7 +5,7 @@ import { BaseRepository } from 'src/common/repository/base-repository';
 import { UtilitiesService } from 'src/utilities/utilities.service';
 import { DataSource, FindOptionsRelations, FindOptionsSelect, IsNull, Not } from 'typeorm';
 import { Account } from '../accounts/entities/account.entity';
-import { generateAuthenticationOptions, generateRegistrationOptions, verifyAuthenticationResponse, verifyRegistrationResponse } from '@simplewebauthn/server';
+import { generateAuthenticationOptions, generateRegistrationOptions, RegistrationResponseJSON, verifyAuthenticationResponse, verifyRegistrationResponse } from '@simplewebauthn/server';
 import { EnvService } from 'src/env/env.service';
 import { EPasskeyChallengeType, PasskeyChallenge } from './entities/passkey-challenge.entity';
 import { WebAuthnCredential } from './entities/webAuthnCredential.entity';
@@ -62,7 +62,7 @@ export class WebAuthnService extends BaseRepository {
         return { challengePayload };
     }
 
-    async verifyRegisterPasskey(payload: any) {
+    async verifyRegisterPasskey(payload: RegistrationResponseJSON) {
         const account = await this.getAccount({ id: true, email: true, verifiedAt: true });
 
         const passkeyChallenge = await this.getRepository(PasskeyChallenge).findOne({

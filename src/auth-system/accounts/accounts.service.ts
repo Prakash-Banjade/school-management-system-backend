@@ -1,5 +1,5 @@
-import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
-import { DataSource, Not } from 'typeorm';
+import { BadRequestException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
+import { DataSource } from 'typeorm';
 import { Account } from './entities/account.entity';
 import { Teacher } from 'src/teachers/entities/teacher.entity';
 import { REQUEST } from '@nestjs/core';
@@ -104,6 +104,9 @@ export class AccountsService extends BaseRepository {
       prevPasswords: [bcrypt.hashSync(password, PASSWORD_SALT_COUNT)],
       branch,
     });
+
+    account.setLowerCasedFullName();
+    
     await this.getRepository(Account).save(account);
 
     return this.authHelper.sendEmailConfirmation({

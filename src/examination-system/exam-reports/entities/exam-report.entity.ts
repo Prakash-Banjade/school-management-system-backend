@@ -1,9 +1,10 @@
 import { BaseEntity } from "src/common/entities/base.entity";
 import { ExamSubject } from "src/examination-system/exam-subjects/entities/exam-subject.entity";
 import { Student } from "src/students/entities/student.entity";
-import { Column, Entity, ManyToOne } from "typeorm";
+import { Column, Entity, ManyToOne, Unique } from "typeorm";
 
 @Entity()
+@Unique(['examSubject', 'student'])
 export class ExamReport extends BaseEntity {
     @ManyToOne(() => ExamSubject, (examSubject) => examSubject.examReports, { nullable: false, onDelete: 'CASCADE' })
     examSubject: ExamSubject
@@ -12,10 +13,10 @@ export class ExamReport extends BaseEntity {
     student: Student
 
     @Column({ type: 'float', precision: 10, scale: 2 })
-    theoryOM!: number; 
+    theoryOM!: number;
 
     @Column({ type: 'float', precision: 10, scale: 2 })
-    practicalOM!: number; 
+    practicalOM!: number;
 
     @Column({ type: 'float', precision: 10, scale: 2 })
     percentage: number;

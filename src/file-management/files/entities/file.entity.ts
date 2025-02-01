@@ -32,7 +32,7 @@ export class File extends BaseEntity {
     */
 
     @ManyToOne(() => Student, student => student.documentAttachments, { onDelete: 'CASCADE' })
-    student_documentAttachments: Student;
+    student_documentAttachment: Student;
 
     @ManyToOne(() => Task, task => task.attachments, { onDelete: 'CASCADE' })
     task_attachment: Task;
@@ -41,5 +41,5 @@ export class File extends BaseEntity {
     task_submission_attachment: TaskSubmission;
 
     @ManyToOne(() => LessonPlan, lessonPlan => lessonPlan.attachments, { onDelete: 'CASCADE' })
-    lessonPlan_attachments: LessonPlan;
+    lessonPlan_attachment: LessonPlan;
 }

@@ -23,7 +23,7 @@ export class UtilitiesService {
     }
 
     async getAcademicYearId(): Promise<string | undefined> {
-        return this.request?.cookies[CookieKey.ACADEMIC_YEAR_ID] ?? await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+        return this.request.query["academicYearId"] ?? (this.request?.cookies[CookieKey.ACADEMIC_YEAR_ID] ?? await this.cacheManager.get(CACHE_KEYS.CAY_ID));
     }
 
     applyBranchFilter<T>(queryBuilder: SelectQueryBuilder<T>, query?: string): SelectQueryBuilder<T> {

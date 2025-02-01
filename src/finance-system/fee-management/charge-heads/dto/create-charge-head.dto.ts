@@ -3,28 +3,28 @@ import { IsBoolean, IsEnum, IsNotEmpty, IsOptional, IsString, Length } from "cla
 import { EChargeHeadPeriod, EChargeHeadType } from "../entities/charge-head.entity";
 
 export class CreateChargeHeadDto {
-    @ApiProperty()
+    @ApiProperty({ type: String, description: 'Charge head name' })
     @IsString()
     @IsNotEmpty()
     name: string;
 
-    @ApiPropertyOptional()
+    @ApiPropertyOptional({ type: String, description: 'Charge head description' })
     @IsOptional()
     @IsString()
     @Length(0, 200, { message: 'Description must be less than 200 characters' })
     description?: string;
 
-    @ApiPropertyOptional()
+    @ApiPropertyOptional({ type: Boolean, description: 'Is charge head mandatory' })
     @IsBoolean()
     @IsOptional()
     isMandatory?: boolean;
 
-    @ApiPropertyOptional()
+    @ApiPropertyOptional({ type: String, enum: EChargeHeadPeriod, description: 'Charge head period' })
     @IsEnum(EChargeHeadPeriod)
     @IsOptional()
     period?: EChargeHeadPeriod;
 
-    @ApiPropertyOptional()
+    @ApiPropertyOptional({ type: String, enum: EChargeHeadType, description: 'Charge head type' })
     @IsEnum(EChargeHeadType)
     @IsOptional()
     type?: EChargeHeadType;

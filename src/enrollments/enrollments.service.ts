@@ -1,4 +1,4 @@
-import { ConflictException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
 import { Enrollment } from './entities/enrollment.entity';
 import { Brackets, DataSource } from 'typeorm';
@@ -29,7 +29,7 @@ export class EnrollmentsService extends BaseRepository {
 
   async create(createEnrollmentDto: CreateEnrollmentDto) {
     const { isPast, latestAcademicYear } = await this.academicYearService.isPast();
-    if (isPast) throw new ConflictException('Promotion are only allowed from latest academic year');
+    if (isPast) throw new ForbiddenException('Promotion are only allowed from latest academic year');
 
     const branchId = this.utilitiesService.getBranchId();
 

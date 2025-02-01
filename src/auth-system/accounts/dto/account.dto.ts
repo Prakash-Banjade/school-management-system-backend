@@ -1,4 +1,5 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString, Matches } from "class-validator";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString, Matches } from "class-validator";
 import { NAME_REGEX, NAME_WITH_SPACE_REGEX } from "src/common/CONSTANTS";
 import { IsUuidOrUrl } from "src/common/decorators/validators/isUrlOrUUid.decorator";
 
@@ -33,4 +34,10 @@ export class UpdateAccountDto {
         obj.lastName && (this.lastName = obj.lastName)
         obj.profileImageId && (this.profileImageId = obj.profileImageId)
     }
+}
+
+export class Toggle2faDto {
+    @ApiProperty({ type: 'boolean', description: 'Toggle 2FA flag' })
+    @IsBoolean()
+    toggle: boolean;
 }

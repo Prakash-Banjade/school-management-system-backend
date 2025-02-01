@@ -3,32 +3,32 @@ import { IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Matches, Max, Min } 
 import { GRADE_REGEX } from "src/common/CONSTANTS";
 
 export class CreateMarksGradeDto {
-    @ApiProperty()
+    @ApiProperty({ type: 'string', description: 'Grade name' })
     @IsNotEmpty()
     @IsString()
     @Matches(GRADE_REGEX)
     gradeName: string;
 
-    @ApiProperty()
+    @ApiProperty({ type: 'number', description: 'Grade scale' })
     @IsInt()
     @Min(1)
     gradeScale: number;
 
-    @ApiProperty()
+    @ApiProperty({ type: 'number', description: 'Percent from' })
     @IsNotEmpty()
     @IsNumber()
     @Min(0, { message: 'Percent from cannot be less than 0' })
     @Max(99, { message: 'Percent from cannot be greater than 99' })
     percentFrom: number;
 
-    @ApiProperty()
+    @ApiProperty({ type: 'number', description: 'Percent to' })
     @IsNotEmpty()
     @IsNumber()
     @Min(0, { message: 'Percent to cannot be less than 0' })
     @Max(100, { message: 'Percent to cannot be greater than 100' })
     percentTo: number;
 
-    @ApiPropertyOptional()
+    @ApiPropertyOptional({ type: 'string', description: 'Grade Description' })
     @IsOptional()
     @IsString()
     description: string;

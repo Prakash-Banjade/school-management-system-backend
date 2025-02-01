@@ -10,12 +10,12 @@ import { EnvService } from "src/env/env.service";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { MailEvents } from "src/mail/mail.service";
 import { TwoFAMailEventDto } from "src/mail/dto/events.dto";
-import { OtpVerificationDto } from "../dto/otp-verification.dto";
 import { generateDeviceId } from "src/utils/utils";
 import { AuthService } from "../auth.service";
 import { LoginDevice } from "src/auth-system/accounts/entities/login-devices.entity";
 import * as crypto from 'crypto'
 import { RefreshTokenService } from "./refresh-tokens.service";
+import { OtpVerificationDto } from "../dto/auth.dtos";
 
 @Injectable({ scope: Scope.REQUEST })
 export class Auth2faHelper extends BaseRepository {

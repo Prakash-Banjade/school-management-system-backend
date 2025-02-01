@@ -2,12 +2,12 @@ import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 export class CreateExamTypeDto {
-    @ApiProperty()
+    @ApiProperty({ type: String, description: 'Name of the exam type' })
     @IsString()
     @IsNotEmpty()
     name: string;
 
-    @ApiPropertyOptional()
+    @ApiPropertyOptional({ type: String, description: 'Description of the exam type' })
     @IsString()
     @IsOptional()
     description?: string;

@@ -4,22 +4,22 @@ import { CreateSalaryAdjustmentDto } from "../../salary-adjustments/dto/create-s
 import { Type } from "class-transformer";
 
 export class CreatePayrollDto {
-    @ApiProperty()
+    @ApiProperty({ type: 'string', format: 'date-time', description: "Payroll creation date" })
     @IsDateString()
     date: string;
 
-    @ApiPropertyOptional({ type: CreateSalaryAdjustmentDto, isArray: true })
+    @ApiPropertyOptional({ type: [CreateSalaryAdjustmentDto], isArray: true, description: 'Salary adjustments array' })
     @IsArray()
     @ValidateNested({ each: true })
     @Type(() => CreateSalaryAdjustmentDto)
     @IsOptional()
     salaryAdjustments: CreateSalaryAdjustmentDto[] = [];
 
-    @ApiProperty({ format: 'uuid' })
+    @ApiProperty({ format: 'uuid', description: 'Employee id' })
     @IsUUID()
     employeeId: string;
 
-    @ApiPropertyOptional()
+    @ApiPropertyOptional({ type: 'number', description: 'Advance amount if any' })
     @IsOptional()
     @IsNumber()
     @Min(0, { message: 'Advance amount must be greater than or equal to 0' })
@@ -27,13 +27,13 @@ export class CreatePayrollDto {
 }
 
 export class UpdatePayrollDto {
-    @ApiPropertyOptional()
+    @ApiPropertyOptional({ type: 'number', description: 'Advance amount if any' })
     @IsOptional()
     @IsNumber()
     @Min(0, { message: 'Advance amount must be greater than or equal to 0' })
     advance?: number;
 
-    @ApiPropertyOptional({ type: CreateSalaryAdjustmentDto, isArray: true })
+    @ApiPropertyOptional({ type: [CreateSalaryAdjustmentDto], isArray: true, description: 'Salary adjustments array' })
     @IsArray()
     @ValidateNested({ each: true })
     @Type(() => CreateSalaryAdjustmentDto)

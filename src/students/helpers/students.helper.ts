@@ -30,7 +30,6 @@ export class StudentsHelper extends BaseRepository {
         const queryBuilder = this.getRepository(Student).createQueryBuilder('student')
             .offset(queryDto.skipPagination ? undefined : queryDto.skip)
             .limit(queryDto.skipPagination ? undefined : queryDto.take)
-            .addSelect("CONCAT(student.firstName, ' ', student.lastName) AS fullName")
             .orderBy(queryDto.sortBy, queryDto.order)
             .leftJoin('student.routeStop', 'routeStop', queryDto.onlyBasicInfo ? '1 = 0' : '1 = 1') // only basic info will not have route stop
             .innerJoin('student.enrollments', 'enrollments', "enrollments.academicYearId = :academicYearId", { academicYearId: academicYearId })

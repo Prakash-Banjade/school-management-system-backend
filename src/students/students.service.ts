@@ -22,7 +22,6 @@ import { StudentLedger } from 'src/finance-system/fee-management/student-ledgers
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { AcademicYearsService } from 'src/academic-years/academic-years.service';
 import { UtilitiesService } from 'src/utilities/utilities.service';
-import { Account } from 'src/auth-system/accounts/entities/account.entity';
 import { UpdateAccountDto } from 'src/auth-system/accounts/dto/update-account.dto';
 
 @Injectable({ scope: Scope.REQUEST })
@@ -180,9 +179,10 @@ export class StudentsService extends BaseRepository {
     await this.studentsHelper.checkIfStudentExists(updateStudentDto, existing);
 
     // evaluate document attachments
-    const documentAttachments = updateStudentDto.documentAttachmentIds
-      ? await this.filesService.findAllByIds(updateStudentDto.documentAttachmentIds)
-      : existing.documentAttachments;
+    if (updateStudentDto.documentAttachmentIds?.length) {
+      const newDocuments = await this.filesService.findAllByIds(updateStudentDto.documentAttachmentIds);
+      existing.documentAttachments = newDocuments;
+    }
 
     // evaluate dormitory room
     if (updateStudentDto.dormitoryRoomId && (updateStudentDto.dormitoryRoomId !== existing.dormitoryRoom?.id || !existing.dormitoryRoom)) {
@@ -203,7 +203,6 @@ export class StudentsService extends BaseRepository {
 
     Object.assign(existing, {
       ...updateStudentDto,
-      documentAttachments,
     });
 
     await this.getRepository<Student>(Student).save(existing);

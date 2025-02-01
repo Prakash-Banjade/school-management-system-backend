@@ -52,9 +52,11 @@ export class ExamsHelper extends BaseRepository {
     async getExamReportByStudent(studentId: string, examTypeId: string) {
         if (!studentId) throw new BadRequestException('Student id is required'); // studentId is optional because student can request this api without student id
 
+        const academicYearId = await this.utilitiesService.getAcademicYearId();
+
         const student = await this.getRepository(Student).createQueryBuilder('student')
             .where("student.studentId = :studentId OR student.id = :studentId", { studentId }) // the second condition of is due to when student request this api, we check of student.id from the currentUser
-            .innerJoin('student.enrollments', 'enrollment', "enrollment.academicYearId = :academicYearId", { academicYearId: await this.utilitiesService.getAcademicYearId() })
+            .innerJoin('student.enrollments', 'enrollment', "enrollment.academicYearId = :academicYearId", { academicYearId })
             .leftJoin('enrollment.classRoom', 'classRoom')
             .leftJoin('classRoom.parent', 'parent')
             .leftJoin('student.account', 'account')
@@ -88,8 +90,8 @@ export class ExamsHelper extends BaseRepository {
             .leftJoin("exam.classRoom", "classRoom")
             .leftJoin('exam.examSubjects', 'examSubjects')
             .leftJoin('examSubjects.subject', 'subject')
-            .where("exam.academicYearId = :academicYearId", { academicYearId: await this.utilitiesService.getAcademicYearId() })
-            .andWhere("exam.examTypeId = :examTypeId", { examTypeId: examTypeId })
+            .where("exam.academicYearId = :academicYearId", { academicYearId })
+            .andWhere("exam.examTypeId = :examTypeId", { examTypeId })
             .andWhere("classRoom.id = :classRoomId", { classRoomId: student.parentClassId ?? student.classRoomId })
             .andWhere(new Brackets(qb => {
                 studentOptionalSubjectIds?.length && (

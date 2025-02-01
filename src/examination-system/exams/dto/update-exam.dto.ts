@@ -5,14 +5,14 @@ import { Type } from 'class-transformer';
 import { CreateExamSubjectDto } from 'src/examination-system/exam-subjects/dto/create-exam-subject.dto';
 
 class ExamSubject extends OmitType(CreateExamSubjectDto, ['examId']) {
-    @ApiPropertyOptional({ format: 'uuid' })
+    @ApiPropertyOptional({ format: 'uuid', description: 'Exam subject id' })
     @IsUUID()
     @IsOptional()
     id?: string; // id of the examSubject to be updated
 }
 
 export class UpdateExamDto extends PartialType(OmitType(CreateExamDto, ['classRoomId', 'examSubjects'])) {
-    @ApiProperty({ type: ExamSubject, isArray: true })
+    @ApiProperty({ type: ExamSubject, isArray: true, description: 'Exam subjects' })
     @IsArray()
     @ArrayMinSize(1)
     @ValidateNested({ each: true })

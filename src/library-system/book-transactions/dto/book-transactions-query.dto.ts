@@ -11,31 +11,31 @@ export enum EBookTransactionPeriod {
 }
 
 export class BookTransactionsQueryDto extends QueryDto {
-    @ApiPropertyOptional({ type: String })
+    @ApiPropertyOptional({ type: String, enum: [...Object.values(EBookTransactionStatus), 'paid', 'unpaid'], description: "Status of the book transaction", default: EBookTransactionStatus.Issued })
     @IsOptional()
     @IsString()
     status: EBookTransactionStatus.Issued | EBookTransactionStatus.Returned | EBookTransactionStatus.Overdue | 'paid' | 'unpaid';
 
-    @ApiPropertyOptional({ type: "string", enum: EBookTransactionPeriod })
+    @ApiPropertyOptional({ type: "string", enum: EBookTransactionPeriod, description: 'Period of the book transaction' })
     @IsOptional()
     @IsEnum(EBookTransactionPeriod)
     period?: EBookTransactionPeriod;
 
-    @ApiPropertyOptional({ type: String })
+    @ApiPropertyOptional({ type: String, description: 'Paid flag for the book transaction' })
     @IsOptional()
     @IsString()
     paid?: string;
 }
 
 export class BookTransactionByStudentQueryDto extends BookTransactionsQueryDto {
-    @ApiProperty({ type: String })
+    @ApiProperty({ type: String, format: 'uuid', description: 'Student id' })
     @IsString()
     @IsDefined()
     studentId: string;
 }
 
 export class UnpaidTransactionsQueryDto extends QueryDto {
-    @ApiPropertyOptional({ type: String })
+    @ApiPropertyOptional({ type: String, format: 'uuid', description: 'Student id' })
     @IsString()
     @IsOptional()
     studentId?: string;

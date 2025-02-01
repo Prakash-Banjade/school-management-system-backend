@@ -87,8 +87,8 @@ export class ClassRoutinesService extends BaseRepository {
 
     querybuilder
       .orderBy("classRoutine.createdAt", queryDto.order)
-      .skip(queryDto.skip)
-      .take(queryDto.take)
+      .skip(queryDto.skipPagination ? undefined : queryDto.skip)
+      .take(queryDto.skipPagination ? undefined : queryDto.take)
       .leftJoin('classRoutine.classRoom', 'classRoom')
       .leftJoin('classRoom.parent', 'parent')
       .leftJoin('classRoutine.subject', 'subject')

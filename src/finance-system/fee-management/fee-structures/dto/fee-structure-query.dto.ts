@@ -8,7 +8,7 @@ const feeStructureSortByQuery = {
 }
 
 export class FeeStructureQueryDto extends ClassRoomSearchQueryDto {
-    @ApiPropertyOptional()
+    @ApiPropertyOptional({ type: 'string', description: 'Sort By Key', enum: Object.keys(feeStructureSortByQuery) })
     @IsOptional()
     @IsString()
     @Transform(({ value }) => {
@@ -17,7 +17,7 @@ export class FeeStructureQueryDto extends ClassRoomSearchQueryDto {
     })
     sortBy?: string = 'feeStructure.createdAt';
 
-    @ApiPropertyOptional()
+    @ApiPropertyOptional({ type: 'string', description: 'Charge Head Type' })
     @IsOptional()
     @IsString()
     chargeHeadType?: string;

@@ -47,10 +47,12 @@ import { FacultiesModule } from './faculties/faculties.module';
 import { OnlineClassesModule } from './online-classes/online-classes.module';
 import { StreamClientModule } from './auth-system/stream-client/stream-client.module';
 import { redisStore } from 'cache-manager-redis-yet';
+import { SentryModule } from '@sentry/nestjs/setup';
 
 @Module({
   imports: [
     EnvModule,
+    SentryModule.forRoot(),
     NestjsFormDataModule.config({
       storage: MemoryStoredFile,
       isGlobal: true,

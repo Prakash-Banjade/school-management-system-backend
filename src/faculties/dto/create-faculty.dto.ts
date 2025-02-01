@@ -5,7 +5,7 @@ import { IsNotEmpty, IsOptional, IsString, Length } from "class-validator";
 import { SCHOOL_LEVEL_FACULTY_NAME } from "src/common/CONSTANTS";
 
 export class CreateFacultyDto {
-    @ApiProperty()
+    @ApiProperty({ description: 'Name of the faculty', example: 'Computer Science' })
     @IsString()
     @IsNotEmpty()
     @Transform(({ value }) => {
@@ -17,7 +17,7 @@ export class CreateFacultyDto {
     })
     name: string;
 
-    @ApiPropertyOptional()
+    @ApiPropertyOptional({ description: 'Description of the faculty', example: 'Computer Science' })
     @IsString()
     @IsOptional()
     @Length(0, 500, { message: 'Description must be less than 500 characters' })
