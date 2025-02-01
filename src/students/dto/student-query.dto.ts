@@ -5,7 +5,7 @@ import { ClassRoomSearchQueryDto } from "src/common/dto/classRoomSearchQueryDto"
 import { QueryDto } from "src/common/dto/query.dto";
 
 const studentSortByQuery = {
-    name: "fullName",
+    name: "account.lowerCasedFullName",
     rollNo: "student.rollNo",
     studentId: "student.studentId",
     gender: "student.gender",

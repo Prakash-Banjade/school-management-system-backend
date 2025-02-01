@@ -1,5 +1,5 @@
 import { BaseEntity } from 'src/common/entities/base.entity';
-import { Entity, Column } from 'typeorm';
+import { Entity, Column, Index } from 'typeorm';
 
 @Entity()
 export class Event extends BaseEntity {
@@ -10,6 +10,7 @@ export class Event extends BaseEntity {
     @Column({ type: 'longtext', nullable: true })
     description: string;
 
+    @Index()
     @Column({ type: 'timestamp' })
     dateFrom: Date;
 

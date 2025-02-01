@@ -23,7 +23,7 @@ export class EventsService {
 
   async findAll(queryDto: EventsQueryDto) {
     const querybuilder = this.eventRepository.createQueryBuilder('event')
-      .orderBy('event.createdAt', queryDto.order)
+      .orderBy('event.dateFrom', queryDto.order)
       .skip(queryDto.skipPagination ? undefined : queryDto.skip)
       .take(queryDto.skipPagination ? undefined : queryDto.take)
       .where(new Brackets(qb => {
