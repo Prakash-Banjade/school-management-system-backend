@@ -2,8 +2,9 @@ require('dotenv').config();
 import * as Sentry from "@sentry/nestjs"
 import { nodeProfilingIntegration } from "@sentry/profiling-node";
 
-Sentry.init({
+process.env.NODE_ENV === 'production' && Sentry.init({
     dsn: process.env.SENTRY_DSN!,
+    environment: process.env.NODE_ENV,
     integrations: [
         nodeProfilingIntegration(),
     ],
