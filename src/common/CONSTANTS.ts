@@ -24,9 +24,11 @@ export const PASSWORD_SALT_COUNT = 10 as const;
 
 export const GRADE_REGEX = /^[A-F](\+|-|\*)*$/;
 
-export const MAX_BOOK_ISSUE_LIMIT = 5;
+export const MAX_BOOK_ISSUE_LIMIT = 5 as const;
 
-export const WEAK_PERCENTAGE_THRESHOLD = 50;
+export const WEAK_PERCENTAGE_THRESHOLD = 50 as const;
+
+export const MAX_RECENT_DAYS = 7 as const;
 
 export const CHARGE_HEADS = {
     admissionFee: "Admission Fee",

@@ -4,8 +4,12 @@ import { UpdateNoticeDto } from './dto/update-notice.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Notice } from './entities/notice.entity';
 import { Brackets, Repository } from 'typeorm';
-import { QueryDto } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
+import { NoticesQueryDto } from './dto/notices-query.dto';
+import { subDays } from 'date-fns';
+import { MAX_RECENT_DAYS } from 'src/common/CONSTANTS';
+import { PageMetaDto } from 'src/common/dto/pageMeta.dto';
+import { PageDto } from 'src/common/dto/page.dto.';
 
 @Injectable()
 export class NoticesService {
@@ -27,7 +31,7 @@ export class NoticesService {
     }
   }
 
-  async findAll(queryDto: QueryDto) {
+  async findAll(queryDto: NoticesQueryDto) {
     const querybuilder = this.noticeRepo.createQueryBuilder('notice');
 
     querybuilder
@@ -36,6 +40,7 @@ export class NoticesService {
       .skip(queryDto.skip)
       .where(new Brackets(qb => {
         queryDto.search && qb.andWhere('LOWER(notice.title) LIKE LOWER(:search)', { search: `%${queryDto.search}%` })
+        queryDto.recent && qb.andWhere('DATE(notice.createdAt) >= DATE(:recent)', { recent: subDays(new Date(), MAX_RECENT_DAYS) })
       }))
       .select([
         'notice.id',
@@ -44,7 +49,17 @@ export class NoticesService {
         'notice.updatedAt',
       ])
 
-    return paginatedData(queryDto, querybuilder);
+    const itemCount = await querybuilder.getCount();
+    const { entities } = await querybuilder.getRawAndEntities();
+
+    const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto: queryDto });
+
+    return queryDto.recent
+      ? ({
+        ...(new PageDto(entities, pageMetaDto)),
+        maxRecentDays: MAX_RECENT_DAYS, // need to show the max recent days in frontend
+      })
+      : new PageDto(entities, pageMetaDto);
   }
 
   async findOne(id: string) {
@@ -68,7 +83,7 @@ export class NoticesService {
 
     return {
       message: 'Notice updated successfully',
-      id: saved.id,
+      id: saved.id, // used in frontend to navigate
     }
   }
 
