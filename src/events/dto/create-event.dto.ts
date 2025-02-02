@@ -50,7 +50,7 @@ export class CreateEventDto {
     @IsDateString()
     @IsNotEmpty()
     @ValidateIf((o: CreateEventDto) => {
-        if (o.dateFrom && o.dateTo && isBefore(o.dateFrom, o.dateTo)) {
+        if (o.dateFrom && o.dateTo && isBefore(o.dateTo, o.dateFrom)) {
             throw new BadRequestException('End date cannot be before start date');
         }
 
