@@ -50,8 +50,3 @@ export const thisSchool = {
     phone: '9800525463',
     logo: 'https://marketplace.canva.com/EAGLphtN1-E/1/0/1600w/canva-blue-modern-school-logo-bVNORNpm-c8.jpg',
 } as const;
-
-export const enum CookieKey {
-    BRANCH_ID = 'branchId',
-    ACADEMIC_YEAR_ID = 'academicYearId',
-}

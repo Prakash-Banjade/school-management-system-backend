@@ -3,7 +3,8 @@ import { Inject, Injectable, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Cache } from 'cache-manager';
 import { FastifyRequest } from 'fastify';
-import { CACHE_KEYS, CookieKey } from 'src/common/CONSTANTS';
+import { CACHE_KEYS } from 'src/common/CONSTANTS';
+import { CookieKey } from 'src/common/decorators/cookies.decorator';
 import { AuthUser } from 'src/common/types/global.type';
 import { SelectQueryBuilder } from 'typeorm';
 
