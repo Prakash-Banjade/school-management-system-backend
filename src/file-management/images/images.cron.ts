@@ -28,10 +28,12 @@ export class ImagesCron {
 
         // REMOVE FROM DISK STORAGE
         imageFileName.forEach(filename => {
-            const imagePath = path.join(process.cwd(), 'public', filename);
+            if (filename) {
+                const imagePath = path.join(process.cwd(), 'public', filename);
 
-            if (fs.existsSync(imagePath)) {
-                fs.unlinkSync(imagePath);
+                if (fs.existsSync(imagePath)) {
+                    fs.unlinkSync(imagePath);
+                }
             }
         });
 

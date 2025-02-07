@@ -18,8 +18,6 @@ import { WebAuthnCredential } from "src/auth-system/webAuthn/entities/webAuthnCr
 import { LoginDevice } from "./login-devices.entity";
 import { getLowerCasedFullName } from "src/utils/utils";
 
-export type TLoginDevice = { deviceId: string; ua: string; firstLogin: Date; lastLogin: Date };
-
 @Entity()
 export class Account extends BaseEntity {
     @Column({ type: 'varchar' })
