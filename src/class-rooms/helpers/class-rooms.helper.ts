@@ -122,6 +122,7 @@ export class ClassRoomsHelper extends BaseRepository {
         return this.getRepository(ClassRoom).createQueryBuilder('classRoom')
             .where('classRoom.id = :classroomId', { classroomId: id }) // Filter by specific classroom ID
             .leftJoin('classRoom.classTeacher', 'classTeacher')
+            .leftJoin('classRoom.faculty', 'faculty')
             .leftJoin('classRoom.students', 'student', 'FIND_IN_SET(:currentAcademicYearId, student.academicYearIds) > 0', { currentAcademicYearId })
             .leftJoin('classRoom.children', 'childClass')
             .leftJoin('childClass.students', 'childClassStudent', 'FIND_IN_SET(:currentAcademicYearId, childClassStudent.academicYearIds) > 0', { currentAcademicYearId })
@@ -133,6 +134,8 @@ export class ClassRoomsHelper extends BaseRepository {
                 'classRoom.classType as classType',
                 'classRoom.createdAt as createdAt',
                 'classRoom.updatedAt as updatedAt',
+                'faculty.id as facultyId',
+                'faculty.name as facultyName',
                 'CONCAT(classTeacher.firstName, \' \', classTeacher.lastName) as classTeacherName',
             ])
             // Add aggregate student count fields

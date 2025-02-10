@@ -24,9 +24,11 @@ export const PASSWORD_SALT_COUNT = 10 as const;
 
 export const GRADE_REGEX = /^[A-F](\+|-|\*)*$/;
 
-export const MAX_BOOK_ISSUE_LIMIT = 5;
+export const MAX_BOOK_ISSUE_LIMIT = 5 as const;
 
-export const WEAK_PERCENTAGE_THRESHOLD = 50;
+export const WEAK_PERCENTAGE_THRESHOLD = 50 as const;
+
+export const MAX_RECENT_DAYS = 7 as const;
 
 export const CHARGE_HEADS = {
     admissionFee: "Admission Fee",
@@ -48,8 +50,3 @@ export const thisSchool = {
     phone: '9800525463',
     logo: 'https://marketplace.canva.com/EAGLphtN1-E/1/0/1600w/canva-blue-modern-school-logo-bVNORNpm-c8.jpg',
 } as const;
-
-export const enum CookieKey {
-    BRANCH_ID = 'branchId',
-    ACADEMIC_YEAR_ID = 'academicYearId',
-}

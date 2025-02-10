@@ -62,6 +62,8 @@ export class DashboardService extends BaseRepository {
     async getLeaveRequests() {
         const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
 
+        // STUDENTS -->
+
         const studentsLeaveRequestsQueryBuilder = this.getRepository(LeaveRequest).createQueryBuilder('leaveRequest')
             .orderBy('leaveRequest.createdAt', 'DESC')
             .leftJoin('leaveRequest.account', 'account')
@@ -72,46 +74,52 @@ export class DashboardService extends BaseRepository {
             .leftJoin('account.profileImage', 'profileImage')
             .where('account.role = :role', { role: Role.STUDENT })
             .andWhere('leaveRequest.status = :status', { status: ELeaveRequestStatus.PENDING })
-        this.utilitiesService.applyBranchFilter(studentsLeaveRequestsQueryBuilder);
-
-        const studentsLeaveRequests = await studentsLeaveRequestsQueryBuilder.clone()
-            .limit(3)
             .select([
                 'leaveRequest.id as id',
                 'leaveRequest.leaveFrom as leaveFrom',
                 'leaveRequest.leaveTo as leaveTo',
                 'leaveRequest.title as title',
                 'leaveRequest.requestedOn as requestedOn',
-                'CONCAT(student.firstName, " ", student.lastName) as studentName',
-                'CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, " (", classRoom.name, ")") END as classRoomName',
+                `CONCAT(COALESCE(student.firstName, ''), ' ', COALESCE(student.lastName, '')) as studentName`,
+                `
+                    CASE 
+                        WHEN parent.id IS NULL THEN COALESCE(classRoom.name, '') 
+                        ELSE CONCAT(COALESCE(parent.name, ''), ' (', COALESCE(classRoom.name, ''), ')') 
+                    END AS classRoomName
+                `,
                 'profileImage.url as profileImageUrl',
-            ]).getRawMany();
+            ])
+            .limit(3)
+        this.utilitiesService.applyBranchFilter(studentsLeaveRequestsQueryBuilder);
 
-        const studentsLeaveRequestCount = await studentsLeaveRequestsQueryBuilder.clone().getCount();
+        const studentsLeaveRequestCount = await studentsLeaveRequestsQueryBuilder.getCount();
+
+        const studentsLeaveRequests = await studentsLeaveRequestsQueryBuilder.getRawMany();
+
+        // TEACHERS -->
 
         const teachersLeaveRequestsQueryBuilder = this.getRepository(LeaveRequest).createQueryBuilder('leaveRequest')
             .orderBy('leaveRequest.createdAt', 'DESC')
-            .limit(3)
             .leftJoin('leaveRequest.account', 'account')
             .leftJoin('account.teacher', 'teacher')
             .leftJoin('account.profileImage', 'profileImage')
             .where('account.role = :role', { role: Role.TEACHER })
             .andWhere('leaveRequest.status = :status', { status: ELeaveRequestStatus.PENDING })
-        this.utilitiesService.applyBranchFilter(teachersLeaveRequestsQueryBuilder);
-
-        const teachersLeaveRequests = await teachersLeaveRequestsQueryBuilder.clone()
-            .limit(3)
             .select([
                 'leaveRequest.id as id',
                 'leaveRequest.leaveFrom as leaveFrom',
                 'leaveRequest.leaveTo as leaveTo',
                 'leaveRequest.title as title',
                 'leaveRequest.requestedOn as requestedOn',
-                'CONCAT(teacher.firstName, " ", teacher.lastName) as teacherName',
+                `CONCAT(COALESCE(teacher.firstName, ''), ' ', COALESCE(teacher.lastName, '')) as teacherName`,
                 'profileImage.url as profileImageUrl',
-            ]).getRawMany();
+            ])
+            .limit(3)
+        this.utilitiesService.applyBranchFilter(teachersLeaveRequestsQueryBuilder);
 
-        const teachersLeaveRequestCount = await teachersLeaveRequestsQueryBuilder.clone().getCount();
+        const teachersLeaveRequestCount = await teachersLeaveRequestsQueryBuilder.getCount();
+
+        const teachersLeaveRequests = await teachersLeaveRequestsQueryBuilder.getRawMany();
 
         return {
             studentsLeaveRequests: {
@@ -139,7 +147,7 @@ export class DashboardService extends BaseRepository {
             }))
             .select([
                 'account.id as id',
-                'CONCAT(account.firstName, " ", account.lastName) as name',
+                `CONCAT(COALESCE(account.firstName, ''), ' ', COALESCE(account.lastName, '')) as name`,
                 'account.role as role',
                 'student.id as studentId',
                 'teacher.id as teacherId',

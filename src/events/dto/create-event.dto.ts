@@ -1,7 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsDateString, IsOptional, IsArray, ValidateIf, IsMilitaryTime } from 'class-validator';
-import { differenceInMinutes, isAfter, parse } from 'date-fns';
+import { differenceInMinutes, isAfter, isBefore, isPast, isToday, parse } from 'date-fns';
 
 export class CreateEventDto {
     @ApiProperty({ example: 'Annual Sports Meet', description: 'The title of the event' })
@@ -37,11 +37,25 @@ export class CreateEventDto {
     @ApiProperty({ example: '2024-12-01T10:00:00Z', description: 'Start date and time of the event' })
     @IsDateString()
     @IsNotEmpty()
+    @ValidateIf((o: CreateEventDto) => {
+        if (o.dateFrom && !isToday(o.dateFrom) && isPast(o.dateFrom)) {
+            throw new BadRequestException('Start date cannot be in the past');
+        }
+
+        return true;
+    })
     dateFrom: string;
 
     @ApiProperty({ example: '2024-12-01T18:00:00Z', description: 'End date and time of the event' })
     @IsDateString()
     @IsNotEmpty()
+    @ValidateIf((o: CreateEventDto) => {
+        if (o.dateFrom && o.dateTo && isBefore(o.dateTo, o.dateFrom)) {
+            throw new BadRequestException('End date cannot be before start date');
+        }
+
+        return true;
+    })
     dateTo: string;
 
     @ApiProperty({ example: 'City Park', description: 'Location of the event' })
