@@ -140,10 +140,10 @@ export class Student extends BaseEntity {
     |--------------------------------------------------
     */
 
-    @Column({ type: 'varchar', default: '' })
+    @Column({ type: 'varchar', nullable: true, unique: true })
     nationalIdCardNo: string;
 
-    @Column({ type: 'varchar', default: '' })
+    @Column({ type: 'varchar', nullable: true, unique: true })
     birthCertificateNumber: string;
 
     @OneToMany(() => File, (documentAttachments) => documentAttachments.student_documentAttachment)

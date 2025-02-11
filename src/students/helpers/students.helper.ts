@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import { ConflictException, Inject, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { Brackets, DataSource, Not } from "typeorm";
 import { Student } from "../entities/student.entity";
 import { PastStudentsQueryDto, StudentAttendanceQueryDto, StudentQueryDto } from "../dto/student-query.dto";
@@ -100,6 +100,26 @@ export class StudentsHelper extends BaseRepository {
     async checkIfStudentExists(studentDto: CreateStudentDto | UpdateStudentDto, student?: Student) {
         const { rollNo, email, bankAccountNumber, nationalIdCardNo } = studentDto;
 
+        const duplicateEmailMsg = {
+            field: 'email',
+            message: 'Student with this email already exists'
+        };
+
+        const duplicateRollNoMsg = {
+            field: 'rollNo',
+            message: 'Student with this rollNo already exists'
+        };
+
+        const duplicateNationalIdCardNoMsg = {
+            field: 'nationalIdCardNo',
+            message: 'Student with this nationalIdCardNo already exists'
+        };
+
+        const duplicateBankAccountNumberMsg = {
+            field: 'bankAccountNumber',
+            message: 'Student with this bankAccountNumber already exists'
+        };
+
         const existingStudent = await this.getRepository(Student).createQueryBuilder('student')
             .where(new Brackets(qb => {
                 qb.where([
@@ -111,13 +131,15 @@ export class StudentsHelper extends BaseRepository {
             })).getOne();
 
         if (existingStudent && !student) {
-            if (existingStudent.email === email) throw new BadRequestException('Student with this email already exists');
-            if (existingStudent.nationalIdCardNo === nationalIdCardNo) throw new BadRequestException('Student with this nationalIdCardNo already exists');
-            if (existingStudent.bankAccountNumber === bankAccountNumber) throw new BadRequestException('Student with this bankAccountNumber already exists');
+            if (existingStudent.email === email) throw new ConflictException(duplicateEmailMsg);
+            if (existingStudent.rollNo === rollNo) throw new ConflictException(duplicateRollNoMsg);
+            if (existingStudent.nationalIdCardNo === nationalIdCardNo) throw new ConflictException(duplicateNationalIdCardNoMsg);
+            if (existingStudent.bankAccountNumber === bankAccountNumber) throw new ConflictException(duplicateBankAccountNumberMsg);
         } else if (existingStudent && student) {
-            if (existingStudent.email === email && existingStudent.id !== student.id) throw new BadRequestException('Student with this email already exists');
-            if (existingStudent.nationalIdCardNo === nationalIdCardNo && existingStudent.id !== student.id) throw new BadRequestException('Student with this nationalIdCardNo already exists');
-            if (existingStudent.bankAccountNumber === bankAccountNumber && existingStudent.id !== student.id) throw new BadRequestException('Student with this bankAccountNumber already exists');
+            if (existingStudent.email === email && existingStudent.id !== student.id) throw new ConflictException(duplicateEmailMsg);
+            if (existingStudent.nationalIdCardNo === nationalIdCardNo && existingStudent.id !== student.id) throw new ConflictException(duplicateNationalIdCardNoMsg);
+            if (existingStudent.rollNo === rollNo && existingStudent.id !== student.id) throw new ConflictException(duplicateRollNoMsg);
+            if (existingStudent.bankAccountNumber === bankAccountNumber && existingStudent.id !== student.id) throw new ConflictException(duplicateBankAccountNumberMsg);
         }
     }
 
