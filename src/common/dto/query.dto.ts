@@ -29,7 +29,7 @@ export class QueryDto extends PageOptionsDto {
     @IsOptional()
     @IsBoolean()
     @Transform(({ value }) => value === 'true')
-    onlyBasicInfo?: boolean = false;
+    onlyBasicInfo: boolean = false;
 
     @ApiPropertyOptional({ type: "string", format: 'uuid', description: 'Academic year id' })
     @IsUUID()

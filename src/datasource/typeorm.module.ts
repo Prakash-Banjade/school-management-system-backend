@@ -17,6 +17,12 @@ import { Global, Module } from '@nestjs/common';
                         entities: [`${__dirname}/../**/**.entity{.ts,.js}`], // this will automatically load all entity file in the src folder
                         synchronize: process.env.DB_SYNCHRONIZE === 'true',
                         timezone: 'Z', // Use UTC,
+                        cache: {
+                            type: 'redis',
+                            options: {
+                                url: process.env.REDIS_URL!
+                            }
+                        }
                         // logger: 'advanced-console',
                         // logging: 'all'
                     });
