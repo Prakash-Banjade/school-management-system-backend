@@ -22,7 +22,7 @@ import { Global, Module } from '@nestjs/common';
                             options: {
                                 url: process.env.REDIS_URL!
                             }
-                        }
+                        },
                         // logger: 'advanced-console',
                         // logging: 'all'
                     });
