@@ -107,13 +107,13 @@ export class TeachersHelper extends BaseRepository {
                 `
                     JSON_ARRAYAGG(
                         JSON_OBJECT(
-                            "classRoomName", 
+                            'classRoomName', 
                             CASE 
                                 WHEN parent.id IS NULL 
                                 THEN assignedClassRooms.name 
                                 ELSE CONCAT(parent.name, ' - ', assignedClassRooms.name) 
                             END,
-                            "facultyName", faculty.name
+                            'facultyName', faculty.name
                         )
                     ) AS assignedClassRooms
                 `,
