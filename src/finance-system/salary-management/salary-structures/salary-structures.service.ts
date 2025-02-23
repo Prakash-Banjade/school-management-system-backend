@@ -48,9 +48,9 @@ export class SalaryStructuresService extends BaseRepository {
                 'salaryStructure.grossSalary as grossSalary',
                 `
                     CASE WHEN teacher.id IS NOT NULL THEN
-                        CONCAT(teacher.firstName, " ", teacher.lastName)
+                        CONCAT(teacher.firstName, ' ', teacher.lastName)
                     ELSE
-                        CONCAT(staff.firstName, " ", staff.lastName)
+                        CONCAT(staff.firstName, ' ', staff.lastName)
                     END
                     as fullName
                 `,
