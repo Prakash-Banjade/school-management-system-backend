@@ -5,13 +5,12 @@ import { CreateBookCategoryDto } from './dto/create-book-category.dto';
 import { UpdateBookCategoryDto } from './dto/update-book-category.dto';
 import { BookCategory } from './entities/book-category.entity';
 import { QueryDto } from 'src/common/dto/query.dto';
-import paginatedData from 'src/utils/paginatedData';
+import { paginatedRawData } from 'src/utils/paginatedData';
 
 @Injectable()
 export class BookCategoriesService {
   constructor(
-    @InjectRepository(BookCategory)
-    private readonly bookCategoryRepository: Repository<BookCategory>,
+    @InjectRepository(BookCategory) private readonly bookCategoryRepository: Repository<BookCategory>,
   ) { }
 
   async create(createBookCategoryDto: CreateBookCategoryDto) {
@@ -24,19 +23,33 @@ export class BookCategoriesService {
     return { message: "Created successfully" }
   }
 
-  async findAll(queryDto: QueryDto) {
+  async findAll(queryDto: QueryDto, branchId: string | undefined) {
     const queryBuilder = this.bookCategoryRepository.createQueryBuilder('bookCategory');
+
+    queryBuilder.orderBy("bookCategory.createdAt", queryDto.order);
+
+    if (!queryDto.skipPagination) {
+      queryBuilder.offset(queryDto.skip).limit(queryDto.take)
+    }
+
     queryBuilder
-      .orderBy("bookCategory.createdAt", queryDto.order)
-      .skip(queryDto.skipPagination ? undefined : queryDto.skip)
-      .take(queryDto.skipPagination ? undefined : queryDto.take)
-      .loadRelationCountAndMap('bookCategory.booksCount', 'bookCategory.books')
+      .leftJoin(
+        'bookCategory.books',
+        'books',
+        branchId ? 'books.branchId = :branchId' : undefined,
+        { branchId }
+      )
       .where(new Brackets(qb => {
         queryDto.search && qb.andWhere("LOWER(bookCategory.name) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
       }))
-      .select(['bookCategory.id', 'bookCategory.name']);
+      .select([
+        'bookCategory.id as id',
+        'bookCategory.name as name',
+        `COUNT(books.id) as booksCount`
+      ])
+      .groupBy('bookCategory.id')
 
-    return paginatedData(queryDto, queryBuilder);
+    return paginatedRawData(queryDto, queryBuilder);
   }
 
   async findOne(id: string): Promise<BookCategory> {

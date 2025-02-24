@@ -229,7 +229,7 @@ export class FeeInvoiceService extends BaseRepository {
                 JSON_OBJECT(
                     "id", student.id,
                     "studentId", student.studentId,
-                    "name", CONCAT(student.firstName, " ", student.lastName),
+                    "name", CONCAT(student.firstName, ' ', student.lastName),
                     "email", student.email,
                     "phone", student.phone,
                     "rollNo", enrollment.rollNo,

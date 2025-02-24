@@ -39,13 +39,13 @@ export class StudentsHelper extends BaseRepository {
             .leftJoin('enrollments.classRoom', 'classRoom')
             .leftJoin('classRoom.parent', 'parent')
             .leftJoin('classRoom.faculty', 'faculty')
-            .leftJoin('student.account', 'account');
+            .leftJoin('student.account', 'account')
+            .leftJoin('enrollments.ledger', 'ledger');
 
         if (!queryDto.onlyBasicInfo) {
             queryBuilder
                 .leftJoin('account.profileImage', 'profileImage')
                 .leftJoin('student.routeStop', 'routeStop')
-                .leftJoin('enrollments.ledger', 'ledger')
         }
 
         queryBuilder

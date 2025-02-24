@@ -26,21 +26,26 @@ export class SalaryStructuresService extends BaseRepository {
             .leftJoin('salaryStructure.teacher', 'teacher')
             .leftJoin('teacher.account', 'teacherAccount', 'teacher.id IS NOT NULL')
             .leftJoin('salaryStructure.staff', 'staff')
-            .leftJoin('staff.account', 'staffAccount', 'staff.id IS NOT NULL')
-            .where(new Brackets(qb => {
-                queryDto.search && qb.andWhere(new Brackets(subQb => {
-                    subQb.orWhere('LOWER(CONCAT(teacher.firstName, " ", teacher.lastName)) LIKE LOWER(:search)', { search: `%${queryDto.search}%` })
-                        .orWhere('LOWER(CONCAT(staff.firstName, " ", staff.lastName)) LIKE LOWER(:search)', { search: `%${queryDto.search}%` })
-                        .orWhere('teacher.teacherId = :exactSearch', { exactSearch: queryDto.search })
-                        .orWhere('staff.staffId = :exactSearch', { exactSearch: queryDto.search });
-                }));
+            .leftJoin('staff.account', 'staffAccount', 'staff.id IS NOT NULL');
 
-                if (branchId) {
-                    qb.andWhere('teacherAccount.branchId = :branchId OR staffAccount.branchId = :branchId', { branchId });
-                }
+        if (queryDto.search) {
+            querybuilder.andWhere(new Brackets(qb => {
+                qb.andWhere(`teacherAccount.lowerCasedFullName LIKE LOWER(:search)`, { search: `${queryDto.search}%` })
+                    .orWhere(`staffAccount.lowerCasedFullName LIKE LOWER(:search)`, { search: `${queryDto.search}%` })
+                    .orWhere('teacher.teacherId = :exactSearch', { exactSearch: queryDto.search })
+                    .orWhere('staff.staffId = :exactSearch', { exactSearch: queryDto.search });
+            }));
+        }
 
-                queryDto.designations?.length && qb.andWhere('teacherAccount.role IN (:...roles) OR staff.type IN (:...roles)', { roles: queryDto.designations });
-            }))
+        if (branchId) {
+            querybuilder.andWhere('teacherAccount.branchId = :branchId OR staffAccount.branchId = :branchId', { branchId });
+        }
+
+        if (queryDto.designations?.length) {
+            querybuilder.andWhere('teacherAccount.role IN (:...roles) OR staff.type IN (:...roles)', { roles: queryDto.designations });
+        }
+
+        querybuilder
             .select([
                 'salaryStructure.id as id',
                 'salaryStructure.basicSalary as basicSalary',

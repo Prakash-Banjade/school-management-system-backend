@@ -148,14 +148,14 @@ export class PayrollsService extends BaseRepository {
                 `
                     CASE WHEN teacher.id IS NOT NULL THEN JSON_OBJECT(
                         'id', teacher.id,
-                        'fullName', CONCAT(teacher.firstName, " ", teacher.lastName),
+                        'fullName', CONCAT(teacher.firstName, ' ', teacher.lastName),
                         'employeeId', teacher.teacherId,
                         'designation', 'teacher', 
                         'phone', teacher.phone,
                         'email', teacher.email
                     ) ELSE JSON_OBJECT(
                         'id', staff.id,
-                        'fullName', CONCAT(staff.firstName, " ", staff.lastName),
+                        'fullName', CONCAT(staff.firstName, ' ', staff.lastName),
                         'employeeId', staff.staffId,
                         'designation', staff.type,
                         'phone', staff.phone,
