@@ -11,6 +11,8 @@ coverage
 # Environment (contains sensitive data)
 .env
 .env.local
+.env.example
+.env.prod
 
 # Files not required for production
 .editorconfig
@@ -18,3 +20,8 @@ Dockerfile
 README.md
 .eslintrc.js
 nodemon.json
+LICENSE
+INITIAL_DB_SETUP.md
+wwwroot
+test
+public
