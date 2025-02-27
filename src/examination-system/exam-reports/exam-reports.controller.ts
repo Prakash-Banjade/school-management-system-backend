@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseIntercepto
 import { ExamReportsService } from './exam-reports.service';
 import { CreateExamReportDto } from './dto/create-exam-report.dto';
 import { ExamReportBySubjectQueryDto, ExamReportQueryDto } from './dto/exam-report-query.dto';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiBearerAuth, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, Role } from 'src/common/types/global.type';
 import { ExamReportsHelper } from './helpers/exam-reports.helper';
@@ -18,6 +18,10 @@ export class ExamReportsController {
   ) { }
 
   @Patch()
+  @ApiOperation({ description: "Update exam reports" })
+  @ApiNotFoundResponse({ description: "Exam subject or student not found" })
+  @ApiBadRequestResponse({ description: "One or more obtained mark is greater than full mark" })
+  @ApiCreatedResponse({ description: "Exam report updated" })
   @UseInterceptors(TransactionInterceptor)
   @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
   mutate(@Body() createExamReportDto: CreateExamReportDto) {
@@ -25,6 +29,7 @@ export class ExamReportsController {
   }
 
   @Get()
+  @ApiOperation({ description: "Get all exam reports" })
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findAll(@Query() queryDto: ExamReportQueryDto) {
     return this.examReportsService.findAll(queryDto);

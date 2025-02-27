@@ -87,8 +87,12 @@ export class ClassRoutinesService extends BaseRepository {
 
     querybuilder
       .orderBy("classRoutine.createdAt", queryDto.order)
-      .skip(queryDto.skipPagination ? undefined : queryDto.skip)
-      .take(queryDto.skipPagination ? undefined : queryDto.take)
+
+    if (!queryDto.skipPagination) {
+      querybuilder.offset(queryDto.skip).limit(queryDto.take);
+    }
+
+    querybuilder
       .leftJoin('classRoutine.classRoom', 'classRoom')
       .leftJoin('classRoom.parent', 'parent')
       .leftJoin('classRoutine.subject', 'subject')
@@ -110,6 +114,7 @@ export class ClassRoutinesService extends BaseRepository {
           qb.andWhere('classRoom.id = :classRoomId', { classRoomId: currentUser.classRoomId });
         }
       }))
+      .cache(true);
 
     applySelectColumns(querybuilder, classRoutinesSelectCols, 'classRoutine');
     this.utilitiesService.applyBranchFilter(querybuilder, 'classRoom.branchId = :branchId');

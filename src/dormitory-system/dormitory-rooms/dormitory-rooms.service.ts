@@ -106,7 +106,7 @@ export class DormitoryRoomsService {
         'roomType.name as roomTypeName',
         `
           CASE WHEN students.id IS NOT NULL THEN
-            JSON_ARRAYAGG(JSON_OBJECT("id", students.id, "name", CONCAT(students.firstName, " ", students.lastName), "classroomName", CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, \' - \', classRoom.name) END))
+            JSON_ARRAYAGG(JSON_OBJECT("id", students.id, "name", CONCAT(students.firstName, ' ', students.lastName), "classroomName", CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, \' - \', classRoom.name) END))
           ELSE
             NULL
           END as roomMates

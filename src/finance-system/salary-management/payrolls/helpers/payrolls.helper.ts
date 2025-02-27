@@ -30,8 +30,8 @@ export class PayrollsHelper extends BaseRepository {
             .leftJoin('staff.account', 'staffAccount', 'staff.id IS NOT NULL')
             .where(new Brackets(qb => {
                 queryDto.search && qb.andWhere(new Brackets(subQb => {
-                    subQb.orWhere('LOWER(CONCAT(teacher.firstName, " ", teacher.lastName)) LIKE LOWER(:search)', { search: `%${queryDto.search}%` })
-                        .orWhere('LOWER(CONCAT(staff.firstName, " ", staff.lastName)) LIKE LOWER(:search)', { search: `%${queryDto.search}%` })
+                    subQb.orWhere(`LOWER(CONCAT(teacher.firstName, ' ', teacher.lastName)) LIKE LOWER(:search)`, { search: `%${queryDto.search}%` })
+                        .orWhere(`LOWER(CONCAT(staff.firstName, ' ', staff.lastName)) LIKE LOWER(:search)`, { search: `%${queryDto.search}%` })
                         .orWhere('teacher.teacherId = :exactSearch', { exactSearch: queryDto.search })
                         .orWhere('staff.staffId = :exactSearch', { exactSearch: queryDto.search });
                 }));
@@ -47,9 +47,9 @@ export class PayrollsHelper extends BaseRepository {
                 'CASE WHEN teacher.id IS NOT NULL THEN teacher.payAmount ELSE staff.payAmount END as payAmount',
                 `
                     CASE WHEN teacher.id IS NOT NULL THEN
-                        CONCAT(teacher.firstName, " ", teacher.lastName)
+                        CONCAT(teacher.firstName, ' ', teacher.lastName)
                     ELSE
-                        CONCAT(staff.firstName, " ", staff.lastName)
+                        CONCAT(staff.firstName, ' ', staff.lastName)
                     END
                     as fullName
                 `,
@@ -112,7 +112,7 @@ export class PayrollsHelper extends BaseRepository {
                     CASE WHEN teacher.id IS NOT NULL THEN JSON_OBJECT(
                         'id', teacher.id,
                         'payAmount', teacher.payAmount,
-                        'fullName', CONCAT(teacher.firstName, " ", teacher.lastName),
+                        'fullName', CONCAT(teacher.firstName, ' ', teacher.lastName),
                         'employeeId', teacher.teacherId,
                         'designation', 'teacher', 
                         'phone', teacher.phone,
@@ -121,7 +121,7 @@ export class PayrollsHelper extends BaseRepository {
                     ) ELSE JSON_OBJECT(
                         'id', staff.id,
                         'payAmount', staff.payAmount,
-                        'fullName', CONCAT(staff.firstName, " ", staff.lastName),
+                        'fullName', CONCAT(staff.firstName, ' ', staff.lastName),
                         'employeeId', staff.staffId,
                         'designation', staff.type,
                         'phone', staff.phone,

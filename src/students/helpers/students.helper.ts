@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import { ConflictException, Inject, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { Brackets, DataSource, Not } from "typeorm";
 import { Student } from "../entities/student.entity";
 import { PastStudentsQueryDto, StudentAttendanceQueryDto, StudentQueryDto } from "../dto/student-query.dto";
@@ -27,18 +27,28 @@ export class StudentsHelper extends BaseRepository {
     async findAll(queryDto: StudentQueryDto) {
         const academicYearId = queryDto.academicYearId || await this.utilitiesService.getAcademicYearId();
 
-        const queryBuilder = this.getRepository(Student).createQueryBuilder('student')
-            .offset(queryDto.skipPagination ? undefined : queryDto.skip)
-            .limit(queryDto.skipPagination ? undefined : queryDto.take)
+        const queryBuilder = this.getRepository(Student).createQueryBuilder('student');
+
+        if (!queryDto.skipPagination) {
+            queryBuilder.offset(queryDto.skip).limit(queryDto.take);
+        }
+
+        queryBuilder
             .orderBy(queryDto.sortBy, queryDto.order)
-            .leftJoin('student.routeStop', 'routeStop', queryDto.onlyBasicInfo ? '1 = 0' : '1 = 1') // only basic info will not have route stop
             .innerJoin('student.enrollments', 'enrollments', "enrollments.academicYearId = :academicYearId", { academicYearId: academicYearId })
-            .leftJoin('enrollments.ledger', 'ledger', queryDto.includeLedgerAmount ? '1 = 1' : '1 = 0')
             .leftJoin('enrollments.classRoom', 'classRoom')
             .leftJoin('classRoom.parent', 'parent')
             .leftJoin('classRoom.faculty', 'faculty')
             .leftJoin('student.account', 'account')
-            .leftJoin('account.profileImage', 'profileImage', queryDto.onlyBasicInfo ? '1 = 0' : '1 = 1') // only basic info will not have profile image
+            .leftJoin('enrollments.ledger', 'ledger');
+
+        if (!queryDto.onlyBasicInfo) {
+            queryBuilder
+                .leftJoin('account.profileImage', 'profileImage')
+                .leftJoin('student.routeStop', 'routeStop')
+        }
+
+        queryBuilder
             .where(new Brackets(qb => {
                 if (queryDto.search) {
                     qb.orWhere("account.lowerCasedFullName LIKE LOWER(:search)", { search: `${queryDto.search}%` })
@@ -53,6 +63,7 @@ export class StudentsHelper extends BaseRepository {
                 // if class room id, check in both section and class room
                 queryDto.classRoomId && qb.andWhere('parent.id = :classRoomId OR classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
             }))
+            .cache(true)
             .select(
                 queryDto.includeLedgerAmount ? [
                     ...this.getStudentsSelectCols(queryDto.onlyBasicInfo),
@@ -98,26 +109,52 @@ export class StudentsHelper extends BaseRepository {
     }
 
     async checkIfStudentExists(studentDto: CreateStudentDto | UpdateStudentDto, student?: Student) {
-        const { rollNo, email, bankAccountNumber, nationalIdCardNo } = studentDto;
+        const { rollNo, email, bankAccountNumber, nationalIdCardNo, birthCertificateNumber } = studentDto;
+
+        const duplicateEmailMsg = {
+            field: 'email',
+            message: 'Student with this email already exists'
+        };
+
+        const duplicateRollNoMsg = {
+            field: 'rollNo',
+            message: 'Student with this rollNo already exists'
+        };
+
+        const duplicateNationalIdCardNoMsg = {
+            field: 'nationalIdCardNo',
+            message: 'Student with this nationalIdCardNo already exists'
+        };
+
+        const duplicateBankAccountNumberMsg = {
+            field: 'bankAccountNumber',
+            message: 'Student with this bankAccountNumber already exists'
+        };
 
         const existingStudent = await this.getRepository(Student).createQueryBuilder('student')
             .where(new Brackets(qb => {
                 qb.where([
                     { email },
                     { rollNo },
-                    { bankAccountNumber }
+                    { bankAccountNumber },
+                    { nationalIdCardNo },
+                    { birthCertificateNumber }
                 ])
                 student?.id && qb.andWhere({ id: Not(student.id) })
             })).getOne();
 
         if (existingStudent && !student) {
-            if (existingStudent.email === email) throw new BadRequestException('Student with this email already exists');
-            if (existingStudent.nationalIdCardNo === nationalIdCardNo) throw new BadRequestException('Student with this nationalIdCardNo already exists');
-            if (existingStudent.bankAccountNumber === bankAccountNumber) throw new BadRequestException('Student with this bankAccountNumber already exists');
+            if (existingStudent.email === email) throw new ConflictException(duplicateEmailMsg);
+            if (existingStudent.rollNo === rollNo) throw new ConflictException(duplicateRollNoMsg);
+            if (existingStudent.nationalIdCardNo === nationalIdCardNo) throw new ConflictException(duplicateNationalIdCardNoMsg);
+            if (existingStudent.bankAccountNumber === bankAccountNumber) throw new ConflictException(duplicateBankAccountNumberMsg);
+            if (existingStudent.birthCertificateNumber === birthCertificateNumber) throw new ConflictException(duplicateBankAccountNumberMsg);
         } else if (existingStudent && student) {
-            if (existingStudent.email === email && existingStudent.id !== student.id) throw new BadRequestException('Student with this email already exists');
-            if (existingStudent.nationalIdCardNo === nationalIdCardNo && existingStudent.id !== student.id) throw new BadRequestException('Student with this nationalIdCardNo already exists');
-            if (existingStudent.bankAccountNumber === bankAccountNumber && existingStudent.id !== student.id) throw new BadRequestException('Student with this bankAccountNumber already exists');
+            if (existingStudent.email === email && existingStudent.id !== student.id) throw new ConflictException(duplicateEmailMsg);
+            if (existingStudent.nationalIdCardNo === nationalIdCardNo && existingStudent.id !== student.id) throw new ConflictException(duplicateNationalIdCardNoMsg);
+            if (existingStudent.rollNo === rollNo && existingStudent.id !== student.id) throw new ConflictException(duplicateRollNoMsg);
+            if (existingStudent.bankAccountNumber === bankAccountNumber && existingStudent.id !== student.id) throw new ConflictException(duplicateBankAccountNumberMsg);
+            if (existingStudent.birthCertificateNumber === birthCertificateNumber && existingStudent.id !== student.id) throw new ConflictException(duplicateBankAccountNumberMsg);
         }
     }
 

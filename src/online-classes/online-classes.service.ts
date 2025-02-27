@@ -85,14 +85,14 @@ export class OnlineClassesService extends BaseRepository {
     const branchId = this.utilitiesService.getBranchId();
 
     const queryBuilder = this.getRepository(Student).createQueryBuilder('student')
-      .innerJoin('student.enrollments', 'enrollments', "enrollments.academicYearId = :academicYearId", { academicYearId })
+      .innerJoin('student.enrollments', 'enrollments', 'enrollments.academicYearId = :academicYearId', { academicYearId })
       .leftJoin('student.account', 'account')
       .leftJoin('account.profileImage', 'profileImage')
       .where('enrollments.classRoomId = :classRoomId', { classRoomId })
       .andWhere('account.branchId = :branchId', { branchId })
       .select([
         'account.id as id',
-        'CONCAT(account.firstName, " ", account.lastName) as fullName',
+        `CONCAT(account.firstName, ' ', account.lastName) as fullName`,
         'profileImage.url as profileImageUrl',
       ]);
 
@@ -135,7 +135,7 @@ export class OnlineClassesService extends BaseRepository {
         'onlineClass.status as status',
         'onlineClass.scheduleDate as scheduleDate',
         'onlineClass.description as description',
-        'CONCAT(teacher.firstName, " ", teacher.lastName) as teacherName',
+        `CONCAT(teacher.firstName, ' ', teacher.lastName) as teacherName`,
         'subject.subjectName as subjectName',
         'CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, " - ", classRoom.name) END as classRoomName',
       ]);

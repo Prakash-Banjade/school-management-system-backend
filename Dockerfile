@@ -32,5 +32,5 @@ ARG NODE_ENV=production
 ENV NODE_ENV=${NODE_ENV}
 
 # Expose port and set the start command
-EXPOSE 8000
+EXPOSE 3001
 CMD ["node", "dist/main.js"]

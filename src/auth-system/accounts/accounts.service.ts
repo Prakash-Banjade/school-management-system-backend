@@ -106,7 +106,7 @@ export class AccountsService extends BaseRepository {
     });
 
     account.setLowerCasedFullName();
-    
+
     await this.getRepository(Account).save(account);
 
     return this.authHelper.sendEmailConfirmation({

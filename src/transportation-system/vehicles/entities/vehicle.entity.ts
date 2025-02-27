@@ -7,7 +7,7 @@ import { Column, Entity, ManyToOne, OneToMany } from "typeorm";
 
 @Entity()
 export class Vehicle extends BaseEntity {
-    @Column({ type: 'varchar' })
+    @Column({ type: 'varchar', unique: true })
     vehicleNumber: string;
 
     @Column({ type: 'enum', enum: EVehicleType })

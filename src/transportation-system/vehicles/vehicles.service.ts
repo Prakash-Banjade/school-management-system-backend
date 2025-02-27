@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { Brackets, DataSource, ILike } from 'typeorm';
@@ -24,6 +24,13 @@ export class VehiclesService extends BaseRepository {
   ) { super(dataSource, req); }
 
   async create(createVehicleDto: CreateVehicleDto) {
+    const existingWithSameVehicleNumber = await this.getRepository(Vehicle).findOne({
+      where: { vehicleNumber: ILike(createVehicleDto.vehicleNumber) },
+      select: { id: true }
+    });
+
+    if (existingWithSameVehicleNumber) throw new ConflictException('Duplicate vehicle number entry');
+
     const driver = createVehicleDto.driverId ? await this.getRepository(Staff).findOne({
       where: { id: createVehicleDto.driverId, type: EStaff.DRIVER },
       select: { id: true }
@@ -96,6 +103,15 @@ export class VehiclesService extends BaseRepository {
 
   async update(id: string, updateVehicleDto: UpdateVehicleDto) {
     const existing = await this.findOne(id);
+
+    if (updateVehicleDto.vehicleNumber && updateVehicleDto.vehicleNumber !== existing.vehicleNumber) {
+      const existingWithSameVehicleNumber = await this.getRepository(Vehicle).findOne({
+        where: { vehicleNumber: ILike(updateVehicleDto.vehicleNumber) },
+        select: { id: true }
+      });
+
+      if (existingWithSameVehicleNumber) throw new ConflictException('Duplicate vehicle number entry');
+    }
 
     const driver = updateVehicleDto.driverId
       ? await this.getRepository(Staff).findOne({

@@ -139,7 +139,7 @@ export class EnrollmentsService extends BaseRepository {
       .leftJoin('classRoom.parent', 'parent')
       .leftJoin('enrollment.academicYear', 'academicYear')
       .where(new Brackets(qb => {
-        queryDto.search && qb.orWhere('CONCAT(student.firstName, " ", student.lastName) LIKE :search', { search: `%${queryDto.search}%` })
+        queryDto.search && qb.orWhere(`CONCAT(student.firstName, ' ', student.lastName) LIKE :search`, { search: `%${queryDto.search}%` })
           .orWhere('TRIM(enrollment.registrationNumber) = TRIM(:exactSearch)', { exactSearch: queryDto.search });
 
         queryDto.facultyId && qb.andWhere('faculty.id = :facultyId', { facultyId: queryDto.facultyId });

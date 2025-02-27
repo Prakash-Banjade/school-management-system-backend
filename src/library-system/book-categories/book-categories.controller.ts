@@ -6,6 +6,7 @@ import { QueryDto } from 'src/common/dto/query.dto';
 import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, Role } from 'src/common/types/global.type';
+import { BranchId } from 'src/common/decorators/branchId.decorator';
 
 @ApiBearerAuth()
 @ApiTags('Book Categories')
@@ -26,8 +27,8 @@ export class BookCategoriesController {
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   @ApiOperation({ summary: 'Get all book categories' })
   @ApiResponse({ status: 200, description: 'Book categories retrieved successfully' })
-  findAll(@Query() queryDto: QueryDto) {
-    return this.bookCategoriesService.findAll(queryDto);
+  findAll(@Query() queryDto: QueryDto, @BranchId() branchId: string | undefined) {
+    return this.bookCategoriesService.findAll(queryDto, branchId);
   }
 
   @Get(':id')
