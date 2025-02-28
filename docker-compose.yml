@@ -11,6 +11,11 @@ services:
       - .env.local
     volumes:
       - mysql:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      retries: 5
+      timeout: 5s
 
   redis:
     image: redis:8.0-M02-alpine
@@ -23,6 +28,11 @@ services:
     command: redis-server --save 20 1 --loglevel warning
     volumes:
       - cache:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      retries: 5
+      timeout: 5s
   app:
     build:
       context: .
