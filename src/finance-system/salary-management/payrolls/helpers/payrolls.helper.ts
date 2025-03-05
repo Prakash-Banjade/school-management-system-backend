@@ -1,27 +1,22 @@
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { REQUEST } from "@nestjs/core";
-import { FastifyRequest } from "fastify";
-import { BaseRepository } from "src/common/repository/base-repository";
-import { Brackets, DataSource } from "typeorm";
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { Brackets, Repository } from "typeorm";
 import { GetEmployeesQueryDto } from "../dto/payroll-query.dto";
 import { SalaryStructure } from "../../salary-structures/entities/salary-structure.entity";
 import { paginatedRawData } from "src/utils/paginatedData";
 import { Payroll } from "../entities/payroll.entity";
 import { ESalaryAdjustmentType } from "../../salary-adjustments/entities/salary-adjustment.entity";
-import { UtilitiesService } from "src/utilities/utilities.service";
+import { AuthUser } from "src/common/types/global.type";
+import { InjectRepository } from "@nestjs/typeorm";
 
 @Injectable()
-export class PayrollsHelper extends BaseRepository {
+export class PayrollsHelper {
     constructor(
-        dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
-        private readonly utilitiesService: UtilitiesService,
-    ) { super(dataSource, req) }
+        @InjectRepository(SalaryStructure) private readonly salaryStructureRepo: Repository<SalaryStructure>,
+    ) { }
 
-    getEmployees(queryDto: GetEmployeesQueryDto) {
-        const branchId = this.utilitiesService.getBranchId();
-
+    getEmployees(queryDto: GetEmployeesQueryDto, currentUser: AuthUser) {
         // getting employees based on the salary structure instead of account or individual teacher or staff entity
-        const querybuilder = this.getRepository(SalaryStructure).createQueryBuilder('salaryStructure')
+        const querybuilder = this.salaryStructureRepo.createQueryBuilder('salaryStructure')
             .limit(queryDto.take)
             .offset(queryDto.skip)
             .leftJoin('salaryStructure.teacher', 'teacher')
@@ -36,12 +31,15 @@ export class PayrollsHelper extends BaseRepository {
                         .orWhere('staff.staffId = :exactSearch', { exactSearch: queryDto.search });
                 }));
 
-                if (branchId) {
-                    qb.andWhere('teacherAccount.branchId = :branchId OR staffAccount.branchId = :branchId', { branchId });
-                }
-
                 queryDto.designations?.length && qb.andWhere('teacherAccount.role IN (:...roles) OR staff.type IN (:...roles)', { roles: queryDto.designations });
-            }))
+            }));
+
+
+        if (currentUser.branchId) {
+            querybuilder.andWhere('employeeAccount.branchId = :branchId', { branchId: currentUser.branchId });
+        }
+
+        querybuilder
             .select([
                 'CASE WHEN teacher.id IS NOT NULL THEN teacher.id ELSE staff.id END as id',
                 'CASE WHEN teacher.id IS NOT NULL THEN teacher.payAmount ELSE staff.payAmount END as payAmount',
@@ -82,7 +80,7 @@ export class PayrollsHelper extends BaseRepository {
     }
 
     async getEmployee(employeeId: string) { // employeeId is not pk, is teacherId or staffId
-        const salaryStructure = await this.getRepository(SalaryStructure).createQueryBuilder('salaryStructure')
+        const salaryStructure = await this.salaryStructureRepo.createQueryBuilder('salaryStructure')
             .leftJoin('salaryStructure.teacher', 'teacher')
             .leftJoin('teacher.account', 'teacherAccount')
             .leftJoin('teacherAccount.profileImage', 'teacherProfileImage')
