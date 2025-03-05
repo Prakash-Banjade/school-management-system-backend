@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Query } from '@nestjs/common';
 import { SalaryStructuresService } from './salary-structures.service';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { UpdateSalaryStructureDto } from './dto/update-salary-structure.dto';
 import { SalaryStructuresQueryDto } from './dto/salary-structures-query.dto';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
@@ -25,6 +25,7 @@ export class SalaryStructuresController {
   @ApiOperation({ summary: 'Update a salary structure' })
   @ApiResponse({ status: 200, description: 'Salary structure updated successfully' })
   @ApiResponse({ status: 404, description: 'Salary structure not found' })
+  @ApiParam({ name: 'id', type: 'string', description: 'ID of the salary structure' })
   update(@Param('id', ParseUUIDPipe) id: string, @Body() updateSalaryStructureDto: UpdateSalaryStructureDto) {
     return this.salaryStructuresService.update(id, updateSalaryStructureDto);
   }

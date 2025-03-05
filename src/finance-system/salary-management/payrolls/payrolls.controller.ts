@@ -4,9 +4,10 @@ import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@ne
 import { GetEmployeesQueryDto } from './dto/payroll-query.dto';
 import { PayrollsHelper } from './helpers/payrolls.helper';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action, Role } from 'src/common/types/global.type';
+import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { CreatePayrollDto, UpdatePayrollDto } from './dto/payroll.dto';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
+import { CurrentUser } from 'src/common/decorators/user.decorator';
 
 @ApiBearerAuth()
 @ApiTags('Payrolls')
@@ -33,8 +34,8 @@ export class PayrollsController {
   @ApiOperation({ summary: 'Get list of employees' })
   @ApiResponse({ status: 200, description: 'Employees fetched successfully' })
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  getEmployees(@Query() queryDto: GetEmployeesQueryDto) {
-    return this.payrollsHelper.getEmployees(queryDto);
+  getEmployees(@Query() queryDto: GetEmployeesQueryDto, @CurrentUser() currentUser: AuthUser) {
+    return this.payrollsHelper.getEmployees(queryDto, currentUser);
   }
 
   @Get('employees/:employeeId')
