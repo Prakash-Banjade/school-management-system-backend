@@ -59,13 +59,8 @@ export class Student extends BaseEntity {
     */
 
     @Index({ unique: true })
-    @Column({ type: 'int', unique: true })
-    studentId: number;
-
-    @BeforeInsert()
-    generateStudentId() {
-        this.studentId = generateTeacherId();
-    }
+    @Column({ type: 'varchar', unique: true })
+    studentId: string;
 
     @OneToOne(() => Account, account => account.student, { onDelete: "RESTRICT" })
     @JoinColumn()

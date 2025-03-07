@@ -91,6 +91,7 @@ export class StudentsService extends BaseRepository {
 
     const newStudent = this.getRepository<Student>(Student).create({
       ...createStudentDto,
+      studentId: await this.generateStudentId(),
       classRoom,
       documentAttachments,
       dormitoryRoom,
@@ -105,6 +106,32 @@ export class StudentsService extends BaseRepository {
     await this.accountsService.createAccount(savedStudent, profileImage);
 
     return { message: 'Student created' }
+  }
+
+  async generateStudentId() {
+    const currentYear = new Date().getFullYear();
+
+    const lastStudent = await this.getRepository(Student)
+      .createQueryBuilder('student')
+      .orderBy('student.createdAt', 'DESC')
+      .limit(1)
+      .select(['student.id', 'student.studentId'])
+      .getOne();
+
+    if (!lastStudent || !lastStudent.studentId) {
+      return `STU-${currentYear}-00001`;
+    }
+
+    const lastStudentIdParts = lastStudent.studentId?.split('-');
+    const lastYear = parseInt(lastStudentIdParts[1], 10);
+    const lastCounter = parseInt(lastStudentIdParts[2], 10);
+
+    if (lastYear !== currentYear) {
+      return `STU-${currentYear}-00001`; // Reset counter if the year has changed
+    }
+
+    const newCounter = (lastCounter + 1).toString().padStart(5, '0');
+    return `STU-${currentYear}-${newCounter}`;
   }
 
   async findOne(id: string) {
