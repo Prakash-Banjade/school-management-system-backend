@@ -38,6 +38,10 @@ export class EnvService implements OnModuleInit {
     MAIL_PASSWORD: string;
     STREAM_VIDEO_API_KEY: string;
     STREAM_VIDEO_API_SECRET: string;
+    AWS_ACCESS_KEY_ID: string;
+    AWS_SECRET_ACCESS_KEY: string;
+    AWS_REGION: string;
+    AWS_S3_BUCKET: string;
 
     onModuleInit() {
         this.PORT = +this.configService.get<string>('PORT');
@@ -69,6 +73,10 @@ export class EnvService implements OnModuleInit {
         this.MAIL_PASSWORD = this.configService.getOrThrow<string>('MAIL_PASSWORD');
         this.STREAM_VIDEO_API_KEY = this.configService.getOrThrow<string>('STREAM_VIDEO_API_KEY');
         this.STREAM_VIDEO_API_SECRET = this.configService.getOrThrow<string>('STREAM_VIDEO_API_SECRET');
+        this.AWS_ACCESS_KEY_ID = this.configService.getOrThrow<string>('AWS_ACCESS_KEY_ID');
+        this.AWS_SECRET_ACCESS_KEY = this.configService.getOrThrow<string>('AWS_SECRET_ACCESS_KEY');
+        this.AWS_REGION = this.configService.getOrThrow<string>('AWS_REGION');
+        this.AWS_S3_BUCKET = this.configService.getOrThrow<string>('AWS_S3_BUCKET');
     }
 
 }

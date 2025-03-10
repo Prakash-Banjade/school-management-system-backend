@@ -1,8 +1,11 @@
 import { CACHE_MANAGER } from "@nestjs/cache-manager";
 import { Inject, Injectable, Scope } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
 import { Cache } from "cache-manager";
+import { LoginDevice } from "src/auth-system/accounts/entities/login-devices.entity";
 import { EnvService } from "src/env/env.service";
 import { UtilitiesService } from "src/utilities/utilities.service";
+import { Repository } from "typeorm";
 
 export interface TRefreshToken {
     deviceId: string,
@@ -16,6 +19,7 @@ export class RefreshTokenService {
 
     constructor(
         @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+        @InjectRepository(LoginDevice) private readonly devicesRepo: Repository<LoginDevice>,
         private readonly envService: EnvService,
         private readonly utilitiesService: UtilitiesService
     ) { }
@@ -51,18 +55,28 @@ export class RefreshTokenService {
     }
 
     async removeAll() {
-        const keys = await this.cacheManager.store.keys(`user:${this.email}:*`);
+        const loginDevices = await this.devicesRepo.find({
+            where: { account: { email: this.email } },
+            select: { deviceId: true }
+        });
 
-        await this.cacheManager.store.mdel(...keys);
+        const keys = loginDevices.map((device: LoginDevice) => `user:${this.email}:${device.deviceId}`);
+
+        await this.cacheManager.mdel(keys);
     }
 
     async getAll() {
-        const keys = await this.cacheManager.store.keys(`user:${this.email}:*`);
+        const loginDevices = await this.devicesRepo.find({
+            where: { account: { email: this.email } },
+            select: { deviceId: true }
+        });
+
+        const keys = loginDevices.map((device: LoginDevice) => `user:${this.email}:${device.deviceId}`);
 
         if (!keys?.length) return [];
 
-        const tokens = await this.cacheManager.store.mget(...keys);
+        const tokens = await this.cacheManager.mget(keys);
 
-        return tokens.map((token: string | null) => token ? JSON.parse(token) as TRefreshToken : null);
+        return tokens.map((token: string | null) => token ? JSON.parse(token) as TRefreshToken : null)?.filter(t => !!t);
     }
 }

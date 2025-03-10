@@ -7,7 +7,7 @@ export class AuthVerifyDto {
     @IsEmail()
     email!: string;
 
-    @ApiProperty({ type: 'object', description: 'Authentication response' })
+    @ApiProperty({ description: 'Authentication response' })
     @IsDefined()
     authenticationResponse!: AuthenticationResponseJSON;
 }

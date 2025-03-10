@@ -9,14 +9,14 @@ export class UpdateWebAuthnCredentialDto {
 }
 
 export class VerifyRegisterPassKeyDto {
-    @ApiProperty({ type: 'object', description: 'Registration response after passkey register prompt has completed.' })
+    @ApiProperty({ description: 'Registration response after passkey register prompt has completed.' })
     @IsNotEmpty({ message: 'Registration response is required' })
     @IsDefined()
     registrationResponse: RegistrationResponseJSON
 }
 
 export class AuthenticatePassKeyDto {
-    @ApiProperty({ type: 'object', description: 'Authentication response after passkey login prompt has completed.' })
+    @ApiProperty({ description: 'Authentication response after passkey login prompt has completed.' })
     @IsNotEmpty({ message: 'Authentication response is required' })
     @IsDefined()
     authenticationResponse: AuthenticationResponseJSON
