@@ -11,8 +11,7 @@ import { BookTransaction } from "src/library-system/book-transactions/entities/b
 import { OptionalSubject } from "src/optional-subject/entities/optional-subject.entity";
 import { TaskSubmission } from "src/task-system/task-submissions/entities/task-submission.entity";
 import { RouteStop } from "src/transportation-system/route-stops/entities/route-stop.entity";
-import { generateTeacherId } from "src/utils/generate-teacher-id";
-import { BeforeInsert, Column, Entity, Index, JoinColumn, ManyToMany, ManyToOne, OneToMany, OneToOne } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToMany, ManyToOne, OneToMany, OneToOne } from "typeorm";
 
 @Entity()
 export class Student extends BaseEntity {

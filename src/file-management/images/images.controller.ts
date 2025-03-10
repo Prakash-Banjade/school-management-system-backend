@@ -3,7 +3,7 @@ import { ImagesService } from './images.service';
 import { CreateImageDto } from './dto/create-image.dto';
 import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { FormDataRequest } from 'nestjs-form-data';
-import { SkipThrottle } from '@nestjs/throttler';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { ImageQueryDto } from './dto/image-query.dto';
 import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
@@ -24,6 +24,7 @@ export class ImagesController {
   @CheckAbilities({ action: Action.CREATE, subject: Role.USER })
   @ApiBearerAuth()
   @Post()
+  @Throttle({ default: { limit: 1, ttl: 1 * 1000 } }) // upload one file per second
   upload(@Body() createImageDto: CreateImageDto, @CurrentUser() currentUser: AuthUser) {
     return this.imagesService.upload(createImageDto, currentUser);
   }

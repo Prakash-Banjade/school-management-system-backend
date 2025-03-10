@@ -7,7 +7,7 @@ export class AuthChallengeDto {
     @IsEmail()
     email!: string;
 
-    @ApiProperty({ type: 'enum', enum: EPasskeyChallengeType, description: 'Challenge type' })
+    @ApiProperty({ type: 'string', enum: EPasskeyChallengeType, description: 'Challenge type' })
     @IsEnum(EPasskeyChallengeType)
     @IsOptional()
     type?: EPasskeyChallengeType = EPasskeyChallengeType.Login

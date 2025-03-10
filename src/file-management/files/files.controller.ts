@@ -7,7 +7,7 @@ import { FastifyReply } from 'fastify';
 import { Public } from 'src/common/decorators/setPublicRoute.decorator';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, Role } from 'src/common/types/global.type';
-import { SkipThrottle } from '@nestjs/throttler';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 
 @ApiTags('Files')
 @Controller('upload/files')
@@ -22,6 +22,7 @@ export class FilesController {
   @CheckAbilities({ action: Action.CREATE, subject: Role.USER })
   @ApiBearerAuth()
   @Post()
+  @Throttle({ default: { limit: 1, ttl: 1 * 1000 } }) // upload one file per second
   upload(@Body() createFileDto: CreateFileDto) {
     return this.filesService.upload(createFileDto);
   }
