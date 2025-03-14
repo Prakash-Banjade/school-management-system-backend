@@ -310,7 +310,10 @@ export class AuthService extends BaseRepository {
       where: { email, verifiedAt: Not(IsNull()) },
       select: { id: true, email: true, firstName: true, lastName: true },
     });
-    if (!foundAccount) throw new NotFoundException('Account not found');
+    if (!foundAccount) throw new NotFoundException({
+      message: "Invalid email. No account exist.",
+      field: "email"
+    });
 
     const [resetToken, hashedResetToken] = await this.authHelper.getEncryptedHashTokenPair(
       { email: foundAccount.email },
