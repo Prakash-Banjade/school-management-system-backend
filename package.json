@@ -26,10 +26,10 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org aribt --project sms-backend-prod ./dist && sentry-cli sourcemaps upload --org aribt --project sms-backend-prod ./dist"
+    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org aribt --project sms-backend-prod ./dist && sentry-cli sourcemaps upload --org aribt --project sms-backend-prod ./dist",
+    "preinstall": "npx only-allow pnpm"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.758.0",
     "@casl/ability": "^6.7.3",
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^10.0.2",

@@ -64,9 +64,4 @@ export const envSchema = Joi.object({
     STREAM_VIDEO_API_KEY: Joi.string().required(),
 
     SENTRY_DSN: Joi.string().uri().required(),
-
-    AWS_ACCESS_KEY_ID: Joi.string().required(),
-    AWS_SECRET_ACCESS_KEY: Joi.string().required(),
-    AWS_REGION: Joi.string().required(),
-    AWS_S3_BUCKET: Joi.string().required(),
 });

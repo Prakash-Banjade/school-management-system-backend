@@ -8,4 +8,4 @@ import { FilesModule } from './files/files.module';
         FilesModule,
     ],
 })
-export class FileManagementModule {}
+export class FileManagementModule { }
