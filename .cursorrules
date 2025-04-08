@@ -1,2 +1,1 @@
-for commit messages, keep them super sort and concise if things related to single work is done, if multiple different things are changed add description also, don't forget to add keywords like 'feat'
-'chore', 'doc' whatever suits the best
+for commit messages, if multiple files are changed, add a generic message with detailed description else keep the commit message short and simple

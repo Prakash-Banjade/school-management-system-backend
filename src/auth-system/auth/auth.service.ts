@@ -29,18 +29,13 @@ import { ChangePasswordDto, OtpVerificationDto, ResetPasswordDto, UpdateEmailDto
 @Injectable({ scope: Scope.REQUEST })
 export class AuthService extends BaseRepository {
   constructor(
-    private readonly datasource: DataSource,
-    @Inject(REQUEST) req: FastifyRequest,
+    datasource: DataSource, @Inject(REQUEST) req: FastifyRequest,
     private readonly jwtService: JwtService,
     private readonly envService: EnvService,
     private readonly authHelper: AuthHelper,
     private readonly eventEmitter: EventEmitter2,
     private readonly refreshTokenService: RefreshTokenService,
   ) { super(datasource, req) }
-
-  private readonly accountsRepo = this.datasource.getRepository<Account>(Account)
-  private readonly otpVerificationPendingRepo = this.datasource.getRepository<OtpVerificationPending>(OtpVerificationPending)
-  private readonly passwordChangeRequestRepo = this.datasource.getRepository<PasswordChangeRequest>(PasswordChangeRequest);
 
   async login(signInDto: SignInDto, req: FastifyRequest, reply: FastifyReply) {
     const data = await this.authHelper.validateAccount(signInDto.email, signInDto.password);
@@ -139,8 +134,9 @@ export class AuthService extends BaseRepository {
     return {
       secure: this.envService.NODE_ENV === 'production',
       httpOnly: true,
+      priority: 'high',
       signed: true,
-      sameSite: this.envService.NODE_ENV === 'production' ? 'none' : 'lax',
+      sameSite: 'strict',
       expires: new Date(Date.now() + (this.envService.REFRESH_TOKEN_EXPIRATION_SEC * 1000)),
       path: '/', // necessary to be able to access cookie from out of this route path context, like auth.guard.ts
     }
@@ -153,7 +149,7 @@ export class AuthService extends BaseRepository {
     });
 
     // GET ACCOUNT FROM DATABASE
-    const foundAccount = await this.accountsRepo.findOne({
+    const foundAccount = await this.getRepository(Account).findOne({
       where: { email: foundRequest.email },
       select: { id: true, email: true, firstName: true, lastName: true }
     });
@@ -166,7 +162,7 @@ export class AuthService extends BaseRepository {
     foundAccount.prevPasswords = [bcrypt.hashSync(newPassword, PASSWORD_SALT_COUNT)];
     await this.getRepository(Account).save(foundAccount);
 
-    await this.otpVerificationPendingRepo.remove(foundRequest); // remove from db
+    await this.getRepository(OtpVerificationPending).remove(foundRequest); // remove from db
 
     // add login device // TODO: might need to check for existing with same deviceId
     await this.getRepository(LoginDevice).save({
@@ -205,7 +201,7 @@ export class AuthService extends BaseRepository {
 
     reply.clearCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME, this.getRefreshCookieOptions()); // a new refresh token is to be generated
 
-    const account = await this.accountsRepo.findOne({
+    const account = await this.getRepository(Account).findOne({
       where: { id: req.accountId },
       relations: { branch: true, profileImage: true },
       select: {
@@ -262,7 +258,7 @@ export class AuthService extends BaseRepository {
   }
 
   async changePassword(changePasswordDto: ChangePasswordDto, currentUser: AuthUser) {
-    const account = await this.accountsRepo.findOne({
+    const account = await this.getRepository(Account).findOne({
       where: { id: currentUser.accountId, verifiedAt: Not(IsNull()) },
       select: { id: true, password: true, prevPasswords: true, passwordUpdatedAt: true, verifiedAt: true }
     });
@@ -295,7 +291,7 @@ export class AuthService extends BaseRepository {
       account.prevPasswords.shift(); // remove the oldest one, index [0]
     }
 
-    await this.accountsRepo.update({ id: account.id }, account);
+    await this.getRepository(Account).update({ id: account.id }, account);
 
     if (changePasswordDto.logout) {
       this.refreshTokenService.init({});
@@ -306,7 +302,7 @@ export class AuthService extends BaseRepository {
   }
 
   async forgotPassword(email: string) {
-    const foundAccount = await this.accountsRepo.findOne({
+    const foundAccount = await this.getRepository(Account).findOne({
       where: { email, verifiedAt: Not(IsNull()) },
       select: { id: true, email: true, firstName: true, lastName: true },
     });
@@ -323,19 +319,19 @@ export class AuthService extends BaseRepository {
 
     // existing request
     let changeRequest: PasswordChangeRequest;
-    const existingRequest = await this.passwordChangeRequestRepo.findOneBy({ email });
+    const existingRequest = await this.getRepository(PasswordChangeRequest).findOne({ where: { email }, select: { id: true } });
     if (existingRequest) {
       existingRequest.hashedResetToken = hashedResetToken;
       changeRequest = existingRequest;
     } else {
-      const passwordChangeRequest = this.passwordChangeRequestRepo.create({
+      const passwordChangeRequest = this.getRepository(PasswordChangeRequest).create({
         email: foundAccount.email,
         hashedResetToken,
       });
       changeRequest = passwordChangeRequest;
     }
 
-    await this.passwordChangeRequestRepo.save(changeRequest);
+    await this.getRepository(PasswordChangeRequest).save(changeRequest);
 
     // send reset password link mail
     this.eventEmitter.emit(MailEvents.RESET_PASSWORD, new ResetPasswordMailEventDto({
@@ -371,14 +367,14 @@ export class AuthService extends BaseRepository {
     const { payload, tokenHash } = result;
 
     // Retrieve the hashed reset token from the database
-    const passwordChangeRequest = await this.passwordChangeRequestRepo.findOneBy({ hashedResetToken: tokenHash, email: payload.email });
+    const passwordChangeRequest = await this.getRepository(PasswordChangeRequest).findOneBy({ hashedResetToken: tokenHash, email: payload.email });
 
     if (!passwordChangeRequest) throw new NotFoundException('Invalid request');
 
     // Check if the reset token has expired # JWT WILL VERIFY THE EXPIRATION
 
     // retrieve the user from the database
-    const account = await this.accountsRepo.findOne({
+    const account = await this.getRepository(Account).findOne({
       where: { email: passwordChangeRequest.email },
       select: { id: true, email: true, prevPasswords: true, verifiedAt: true }
     });
@@ -404,7 +400,7 @@ export class AuthService extends BaseRepository {
     await this.getRepository(Account).save(account);
 
     // clear the reset token from the database
-    await this.passwordChangeRequestRepo.remove(passwordChangeRequest);
+    await this.getRepository(PasswordChangeRequest).remove(passwordChangeRequest);
 
     // logout of all devices
     this.refreshTokenService.init({ email: account.email });
@@ -415,7 +411,7 @@ export class AuthService extends BaseRepository {
   }
 
   async updateEmail(updateEmailDto: UpdateEmailDto, currentUser: AuthUser) {
-    const account = await this.accountsRepo.findOne({
+    const account = await this.getRepository(Account).findOne({
       where: { id: currentUser.accountId },
       select: { id: true, password: true, verifiedAt: true }
     });

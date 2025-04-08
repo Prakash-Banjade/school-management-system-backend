@@ -18,6 +18,7 @@ import { isStudent } from 'src/utils/utils';
 import { AcademicYearsService } from 'src/academic-years/academic-years.service';
 import { ExamType } from '../exam-types/entities/exam-type.entity';
 import { UtilitiesService } from 'src/utilities/utilities.service';
+import { AcademicYear } from 'src/academic-years/entities/academic-year.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class ExamsService extends BaseRepository {
@@ -40,7 +41,11 @@ export class ExamsService extends BaseRepository {
     const examType = await this.getRepository(ExamType).findOne({ where: { id: createExamDto.examTypeId }, select: { id: true, name: true } });
     if (!examType) throw new NotFoundException('Exam type not found');
 
-    const academicYear = await this.academicYearService.getActive();
+    const academicYear = await this.getRepository(AcademicYear).findOne({
+      where: { isActive: true },
+      select: { id: true }
+    });
+    if (!academicYear) throw new NotFoundException('Current academic year not found');
 
     // check if exam exists
     const existing = await this.getRepository(Exam).findOne({

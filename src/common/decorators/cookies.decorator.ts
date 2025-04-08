@@ -3,7 +3,16 @@ import { FastifyRequest } from 'fastify';
 
 export const Cookies = createParamDecorator((data: string, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest<FastifyRequest>();
-    return data ? request.cookies?.[data] : request.cookies;
+
+    const cookieValue = request.cookies?.[data];
+
+    // unsign the cookie if signed
+    if (cookieValue) {
+        const { valid, value } = request.unsignCookie(cookieValue);
+        if (valid) return value;
+    }
+
+    return data ? cookieValue : request.cookies;
 });
 
 export const enum CookieKey {

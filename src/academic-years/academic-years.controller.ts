@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Res, Req } from '@nestjs/common';
 import { AcademicYearsService } from './academic-years.service';
 import { CreateAcademicYearDto } from './dto/create-academic-year.dto';
 import { UpdateAcademicYearDto } from './dto/update-academic-year.dto';
@@ -7,6 +7,8 @@ import { QueryDto } from 'src/common/dto/query.dto';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, Role } from 'src/common/types/global.type';
 import { AcademicYearOptionsDto } from './dto/academic-year-options.dto';
+import { FastifyReply, FastifyRequest } from 'fastify';
+import { CookieKey, Cookies } from 'src/common/decorators/cookies.decorator';
 
 @ApiBearerAuth()
 @ApiTags('Academic Years')
@@ -27,16 +29,16 @@ export class AcademicYearsController {
   @CheckAbilities({ action: Action.READ, subject: Role.SUPER_ADMIN })
   @ApiOperation({ summary: 'Get a list of all academic years' })
   @ApiResponse({ status: 200, description: 'List of academic years retrieved successfully.' })
-  findAll(@Query() queryDto: QueryDto) {
-    return this.academicYearsService.findAll(queryDto);
+  findAll(@Query() queryDto: QueryDto, @Cookies(CookieKey.ACADEMIC_YEAR_ID) academicYearIdCookie: string | undefined) {
+    return this.academicYearsService.findAll(queryDto, academicYearIdCookie);
   }
 
   @Get('options')
   @CheckAbilities({ action: Action.READ, subject: Role.ADMIN })
   @ApiOperation({ summary: 'Get options for academic years' })
   @ApiResponse({ status: 200, description: 'Academic year options retrieved successfully.' })
-  getOptions(@Query() queryDto: AcademicYearOptionsDto) {
-    return this.academicYearsService.getOptions(queryDto);
+  getOptions(@Query() queryDto: AcademicYearOptionsDto, @Cookies(CookieKey.ACADEMIC_YEAR_ID) academicYearIdCookie: string | undefined) {
+    return this.academicYearsService.getOptions(queryDto, academicYearIdCookie);
   }
 
   @Get('active')
@@ -44,8 +46,8 @@ export class AcademicYearsController {
   @ApiOperation({ summary: 'Get the active academic year' })
   @ApiResponse({ status: 200, description: 'Active academic year retrieved successfully.' })
   @ApiResponse({ status: 404, description: 'Academic year not found.' })
-  getActive() {
-    return this.academicYearsService.getActive();
+  getActive(@Cookies(CookieKey.ACADEMIC_YEAR_ID) academicYearIdCookie: string | undefined) {
+    return this.academicYearsService.getActive(academicYearIdCookie);
   }
 
   @Get(':id')
@@ -64,8 +66,8 @@ export class AcademicYearsController {
   @ApiParam({ name: 'id', description: 'The ID of the academic year' })
   @ApiResponse({ status: 200, description: 'The academic year active status has been successfully updated.' })
   @ApiResponse({ status: 404, description: 'Academic year not found.' })
-  udpateActive(@Param('id') id: string) {
-    return this.academicYearsService.udpateActive(id);
+  udpateActive(@Param('id') id: string, @Res({ passthrough: true }) reply: FastifyReply) {
+    return this.academicYearsService.udpateActive(id, reply);
   }
 
   @Patch(':id')

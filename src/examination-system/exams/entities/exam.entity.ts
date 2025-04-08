@@ -3,9 +3,10 @@ import { ClassRoom } from "src/class-rooms/entities/class-room.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { ExamSubject } from "src/examination-system/exam-subjects/entities/exam-subject.entity";
 import { ExamType } from "src/examination-system/exam-types/entities/exam-type.entity";
-import { Entity, ManyToOne, OneToMany } from "typeorm";
+import { Entity, ManyToOne, OneToMany, Unique } from "typeorm";
 
 @Entity()
+@Unique(['examType', 'classRoom', 'academicYear'])
 export class Exam extends BaseEntity {
     @ManyToOne(() => ExamType, examType => examType.exams, { onDelete: 'RESTRICT', nullable: false })
     examType: ExamType;

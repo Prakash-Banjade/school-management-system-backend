@@ -3,7 +3,7 @@ import { CreateAcademicYearDto } from './dto/create-academic-year.dto';
 import { UpdateAcademicYearDto } from './dto/update-academic-year.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AcademicYear } from './entities/academic-year.entity';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, Not, Repository } from 'typeorm';
 import { QueryDto } from 'src/common/dto/query.dto';
 import { PageMetaDto } from 'src/common/dto/pageMeta.dto';
 import { PageDto } from 'src/common/dto/page.dto.';
@@ -11,11 +11,15 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { CACHE_KEYS } from 'src/common/CONSTANTS';
 import { Cache } from 'cache-manager';
 import { AcademicYearOptionsDto } from './dto/academic-year-options.dto';
+import { FastifyReply, FastifyRequest } from 'fastify';
+import { CookieKey } from 'src/common/decorators/cookies.decorator';
+import { EnvService } from 'src/env/env.service';
 
 @Injectable()
 export class AcademicYearsService {
   constructor(
     @InjectRepository(AcademicYear) private academicYearRepo: Repository<AcademicYear>,
+    private readonly envService: EnvService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) { }
 
@@ -46,9 +50,9 @@ export class AcademicYearsService {
     }
   }
 
-  async findAll(queryDto: QueryDto) {
+  async findAll(queryDto: QueryDto, academicYearIdCookie: string | undefined) {
     // the default setup is altered because the first one should be the active one
-    const activeYear = await this.academicYearRepo.findOneBy({ isActive: true });
+    const activeYear = await this.getActive(academicYearIdCookie);
 
     const queryBuilder = this.academicYearRepo.createQueryBuilder('academicYear');
 
@@ -57,8 +61,14 @@ export class AcademicYearsService {
       .take(queryDto.take - 1)
       .skip(queryDto.skip)
       .where(new Brackets(qb => {
-        qb.where({ isActive: false }) // select all non-active years
+        qb.where({ id: Not(activeYear?.id) }) // select all non-active years
       }))
+      .select([
+        "academicYear.id",
+        "academicYear.name",
+        "academicYear.startDate",
+        "academicYear.endDate",
+      ])
 
     const itemCount = await queryBuilder.getCount() + 1;
     const { entities } = await queryBuilder.getRawAndEntities();
@@ -68,9 +78,9 @@ export class AcademicYearsService {
     return new PageDto(!!activeYear ? [activeYear, ...entities] : entities, pageMetaDto);
   }
 
-  async getOptions(queryDto: AcademicYearOptionsDto) {
+  async getOptions(queryDto: AcademicYearOptionsDto, academicYearIdCookie: string | undefined) {
     const queryBuilder = this.academicYearRepo.createQueryBuilder('academicYear');
-    const active = queryDto.onlyPast ? await this.getActive() : undefined;
+    const active = queryDto.onlyPast ? await this.getActive(academicYearIdCookie) : undefined;
 
     queryBuilder
       .orderBy("academicYear.createdAt", queryDto.order)
@@ -99,32 +109,31 @@ export class AcademicYearsService {
     return existing;
   }
 
-  async getActive() {
-    const existing = await this.academicYearRepo.findOne({
-      where: { isActive: true },
-      select: ['id', 'name', 'startDate']
+  async getActive(academicYearIdCookie: string | undefined) {
+    const existing = await this.academicYearRepo.findOne({ // if updated manually (by super admin), use the id from cookie
+      where: academicYearIdCookie ? { id: academicYearIdCookie } : { isActive: true },
+      select: ['id', 'name', 'startDate', 'endDate']
     });
     if (!existing) throw new BadRequestException('Academic year not found');
     return existing;
   }
 
-  async udpateActive(id: string) {
-    const existing = await this.findOne(id);
+  async udpateActive(id: string, reply: FastifyReply) {
+    const existing = await this.academicYearRepo.findOne({ where: { id }, select: { id: true } });
 
-    // make all the previous years inactive
-    await this.academicYearRepo.update({ isActive: true }, { isActive: false });
-
-    existing.isActive = true;
-    const saved = await this.academicYearRepo.save(existing);
-
-    await this.cacheManager.set(CACHE_KEYS.CAY_ID, saved.id, 0); // update cache
+    if (existing?.id) {
+      reply.setCookie(CookieKey.ACADEMIC_YEAR_ID, existing.id, {
+        secure: this.envService.NODE_ENV === 'production',
+        httpOnly: true,
+        signed: true,
+        sameSite: 'strict',
+        expires: new Date(Date.now() + (this.envService.REFRESH_TOKEN_EXPIRATION_SEC * 1000)),
+        path: '/',
+      });
+    }
 
     return {
       message: "Academic year changed",
-      academicYear: {
-        id: saved.id,
-        name: saved.name,
-      }
     }
   }
 
@@ -133,14 +142,10 @@ export class AcademicYearsService {
 
     // update the academic year
     Object.assign(existing, updateAcademicYearDto);
-    const saved = await this.academicYearRepo.save(existing);
+    await this.academicYearRepo.save(existing);
 
     return {
       message: "Updated successfully",
-      academicYear: {
-        id: saved.id,
-        name: saved.name,
-      }
     }
 
   }

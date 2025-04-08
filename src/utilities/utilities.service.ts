@@ -24,7 +24,17 @@ export class UtilitiesService {
     }
 
     async getAcademicYearId(): Promise<string | undefined> {
-        return this.request.query["academicYearId"] ?? (this.request?.cookies[CookieKey.ACADEMIC_YEAR_ID] ?? await this.cacheManager.get(CACHE_KEYS.CAY_ID));
+        const fromRequest = this.request.query["academicYearId"];
+        if (!!fromRequest) return fromRequest;
+
+        const fromCookie: string | undefined = this.request?.cookies[CookieKey.ACADEMIC_YEAR_ID];
+
+        if (fromCookie) {
+            const { valid, value } = this.request.unsignCookie(fromCookie);
+            return valid ? value : fromRequest;
+        }
+
+        return await this.cacheManager.get(CACHE_KEYS.CAY_ID);
     }
 
     applyBranchFilter<T>(queryBuilder: SelectQueryBuilder<T>, query?: string): SelectQueryBuilder<T> {
