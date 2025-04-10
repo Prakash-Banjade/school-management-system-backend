@@ -1,5 +1,5 @@
 import { BeforeInsert, BeforeUpdate, Column, Entity, PrimaryGeneratedColumn } from "typeorm";
-import * as bcrypt from 'bcrypt'
+import bcrypt from "bcryptjs";
 import { PASSWORD_SALT_COUNT } from "src/common/CONSTANTS";
 
 export enum EOptVerificationType {

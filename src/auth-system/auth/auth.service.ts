@@ -11,7 +11,7 @@ import { SignInDto } from './dto/signIn.dto';
 import { AuthHelper } from './helpers/auth.helper';
 import { JwtService } from '../jwt/jwt.service';
 import { CookieSerializeOptions } from '@fastify/cookie';
-import * as bcrypt from 'bcrypt';
+import bcrypt from "bcryptjs";
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { MailEvents } from 'src/mail/mail.service';
 import { ResetPasswordMailEventDto, UserCredentialsEventDto } from 'src/mail/dto/events.dto';

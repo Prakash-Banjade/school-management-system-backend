@@ -20,7 +20,7 @@ export const enum AuthMessage {
 
 export const MAX_PREV_PASSWORDS = 3 as const;
 
-export const PASSWORD_SALT_COUNT = 10 as const;
+export const PASSWORD_SALT_COUNT = 12 as const;
 
 export const GRADE_REGEX = /^[A-F](\+|-|\*)*$/;
 
