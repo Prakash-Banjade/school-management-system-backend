@@ -35,7 +35,7 @@ export class Account extends BaseEntity {
     }
 
     @Index({ unique: true })
-    @Column({ type: 'varchar', unique: true })
+    @Column({ type: 'varchar' })
     email!: string;
 
     @Column({ type: 'varchar', nullable: true })
