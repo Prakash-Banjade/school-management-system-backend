@@ -3,7 +3,6 @@ import { Global, Module } from '@nestjs/common';
 
 @Global() // makes the module available globally for other modules once imported in the app modules
 @Module({
-    imports: [],
     providers: [
         {
             provide: DataSource, // add the datasource as a provider
@@ -17,8 +16,11 @@ import { Global, Module } from '@nestjs/common';
                         entities: [`${__dirname}/../**/**.entity{.ts,.js}`], // this will automatically load all entity file in the src folder
                         synchronize: process.env.DB_SYNCHRONIZE === 'true',
                         timezone: 'Z', // Use UTC,
+                        migrationsTableName: 'migrations',
+                        migrations: [__dirname + '/../migrations/**/*.ts'],
                         cache: {
                             type: 'redis',
+                            duration: 30 * 1000,
                             options: {
                                 url: process.env.REDIS_URL!
                             }
