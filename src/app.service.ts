@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { User } from './auth-system/users/entities/user.entity';
@@ -8,16 +8,19 @@ import { Faculty } from './faculties/entities/faculty.entity';
 import { AcademicYear } from './academic-years/entities/academic-year.entity';
 import { ChargeHead, EChargeHeadPeriod } from './finance-system/fee-management/charge-heads/entities/charge-head.entity';
 import { Role } from './common/types/global.type';
-import { CHARGE_HEADS, PASSWORD_SALT_COUNT } from './common/CONSTANTS';
+import { CACHE_KEYS, CHARGE_HEADS, PASSWORD_SALT_COUNT } from './common/CONSTANTS';
 import bcrypt from 'bcryptjs';
 import { endOfYear, startOfYear } from 'date-fns';
 import { startOfDayString } from './utils/utils';
+import { Cache } from 'cache-manager';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 @Injectable()
 export class AppService {
   constructor(
     private readonly dataSource: DataSource,
     private readonly configService: ConfigService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) { }
 
   getHello(): string {
@@ -69,7 +72,8 @@ export class AppService {
       name: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
       isActive: true,
     });
-    await academicYearRepo.save(academicYear);
+    const newAcademicYear = await academicYearRepo.save(academicYear);
+    await this.cacheManager.set(CACHE_KEYS.CAY_ID, newAcademicYear.id, 0); // update cache
 
     // Create mandatory charge heads
     const mandatoryHeads: Partial<ChargeHead>[] = [

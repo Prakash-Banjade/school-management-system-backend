@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CreateAcademicYearDto } from './dto/create-academic-year.dto';
 import { UpdateAcademicYearDto } from './dto/update-academic-year.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -11,7 +11,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { CACHE_KEYS } from 'src/common/CONSTANTS';
 import { Cache } from 'cache-manager';
 import { AcademicYearOptionsDto } from './dto/academic-year-options.dto';
-import { FastifyReply, FastifyRequest } from 'fastify';
+import { FastifyReply } from 'fastify';
 import { CookieKey } from 'src/common/decorators/cookies.decorator';
 import { EnvService } from 'src/env/env.service';
 
@@ -162,8 +162,7 @@ export class AcademicYearsService {
   }
 
   async isPast() {
-    const currentAcademicYearId = await this.cacheManager.get(CACHE_KEYS.CAY_ID); // this is one that is currently active
-    if (!currentAcademicYearId) throw new NotFoundException('Current academic year not found');
+    const currentAcademicYearId = await this.getCurrentAcademicYearId();
 
     const latestAcademicYear = await this.academicYearRepo.createQueryBuilder('academicYear') // this is one which is last added
       .orderBy('academicYear.startDate', 'DESC')
@@ -176,6 +175,21 @@ export class AcademicYearsService {
       isPast: currentAcademicYearId !== latestAcademicYear.id,
       latestAcademicYear,
     };
+  }
+
+  async getCurrentAcademicYearId() {
+    const fromCache: string | undefined = await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+
+    if (fromCache) return fromCache;
+
+    const currentAcademicYear = await this.academicYearRepo.findOne({ where: { isActive: true }, select: { id: true } });
+
+    if (currentAcademicYear) {
+      await this.cacheManager.set(CACHE_KEYS.CAY_ID, currentAcademicYear.id, 0); // update cache
+      return currentAcademicYear.id;
+    };
+
+    throw new InternalServerErrorException('Current academic year not found');
   }
 
   async remove(id: string) {

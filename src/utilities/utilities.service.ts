@@ -3,6 +3,8 @@ import { Inject, Injectable, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Cache } from 'cache-manager';
 import { FastifyRequest } from 'fastify';
+import { AcademicYearsService } from 'src/academic-years/academic-years.service';
+import { AcademicYear } from 'src/academic-years/entities/academic-year.entity';
 import { CACHE_KEYS } from 'src/common/CONSTANTS';
 import { CookieKey } from 'src/common/decorators/cookies.decorator';
 import { AuthUser } from 'src/common/types/global.type';
@@ -13,6 +15,7 @@ export class UtilitiesService {
     constructor(
         @Inject(REQUEST) private readonly request: FastifyRequest,
         @Inject(CACHE_MANAGER) private cacheManager: Cache,
+        private readonly academicYearService: AcademicYearsService,
     ) { }
 
     getCurrentUser(): AuthUser {
@@ -34,7 +37,7 @@ export class UtilitiesService {
             return valid ? value : fromRequest;
         }
 
-        return await this.cacheManager.get(CACHE_KEYS.CAY_ID);
+        return this.academicYearService.getCurrentAcademicYearId();
     }
 
     applyBranchFilter<T>(queryBuilder: SelectQueryBuilder<T>, query?: string): SelectQueryBuilder<T> {
