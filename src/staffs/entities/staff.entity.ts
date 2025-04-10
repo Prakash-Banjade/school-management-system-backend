@@ -12,7 +12,7 @@ import { BeforeInsert, Column, Entity, Index, JoinColumn, JoinTable, ManyToMany,
 @Entity()
 export class Staff extends BaseEntity {
     @Index({ unique: true })
-    @Column({ type: 'int', unique: true })
+    @Column({ type: 'int' })
     staffId: number;
 
     @BeforeInsert()

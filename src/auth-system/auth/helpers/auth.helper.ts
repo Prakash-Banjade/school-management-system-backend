@@ -7,7 +7,7 @@ import { DataSource, IsNull, Not } from "typeorm";
 import { FastifyReply, FastifyRequest } from "fastify";
 import { REQUEST } from "@nestjs/core";
 import { JwtService as JwtSer, TokenExpiredError } from "@nestjs/jwt";
-import * as bcrypt from 'bcrypt';
+import bcrypt from "bcryptjs";
 import { EncryptionService } from "src/auth-system/encryption/encryption.service";
 import { AuthMessage, Tokens } from "src/common/CONSTANTS";
 import { EventEmitter2 } from "@nestjs/event-emitter";

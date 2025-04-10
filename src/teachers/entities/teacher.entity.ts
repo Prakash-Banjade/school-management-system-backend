@@ -16,7 +16,7 @@ import { BeforeInsert, Column, Entity, Index, JoinColumn, JoinTable, ManyToMany,
 @Entity()
 export class Teacher extends BaseEntity {
     @Index({ unique: true })
-    @Column({ type: 'int', unique: true })
+    @Column({ type: 'int' })
     teacherId: number;
 
     @BeforeInsert()

@@ -69,7 +69,6 @@ export class FacultiesService {
 
   async getOptions(queryDto: FacultyOptionsQueryDto) {
     const branchId = this.utilitiesService.getBranchId();
-    const { role, accountId } = this.utilitiesService.getCurrentUser();
 
     const includeSection = queryDto.include === 'section';
     const includeClassRoom = includeSection || queryDto.include === 'classRoom';
@@ -108,7 +107,9 @@ export class FacultiesService {
             "children.name"
           ] : []
         )
-      ]).getMany()
+      ])
+      .cache(true)
+      .getMany()
   }
 
 
@@ -123,7 +124,9 @@ export class FacultiesService {
       .select([
         "faculty.name as label",
         "faculty.id as value"
-      ]).getRawMany();
+      ])
+      .cache(true)
+      .getRawMany();
   }
 
   async update(id: string, updateFacultyDto: UpdateFacultyDto) {

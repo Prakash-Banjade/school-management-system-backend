@@ -9,7 +9,7 @@ import { BaseRepository } from 'src/common/repository/base-repository';
 import { FastifyRequest } from 'fastify';
 import { Role } from 'src/common/types/global.type';
 import { generateRandomPassword } from 'src/utils/generatePassword';
-import * as bcrypt from 'bcrypt';
+import bcrypt from "bcryptjs";
 import { PASSWORD_SALT_COUNT } from 'src/common/CONSTANTS';
 import { AuthHelper } from '../auth/helpers/auth.helper';
 import { User } from '../users/entities/user.entity';

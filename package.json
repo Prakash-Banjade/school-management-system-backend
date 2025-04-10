@@ -27,7 +27,8 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "sentry:sourcemaps": "sentry-cli sourcemaps inject --org aribt --project sms-backend-prod ./dist && sentry-cli sourcemaps upload --org aribt --project sms-backend-prod ./dist",
-    "preinstall": "npx only-allow pnpm"
+    "preinstall": "npx only-allow pnpm",
+    "seed": "ts-node -r tsconfig-paths/register src/datasource/db-seeder/seeder.ts"
   },
   "dependencies": {
     "@casl/ability": "^6.7.3",
@@ -55,7 +56,7 @@
     "@sentry/profiling-node": "^9.5.0",
     "@simplewebauthn/server": "^13.1.1",
     "@stream-io/node-sdk": "^0.4.17",
-    "bcrypt": "^5.1.1",
+    "bcryptjs": "^3.0.2",
     "cache-manager": "^6.4.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
@@ -82,7 +83,6 @@
     "@nestjs/testing": "^11.0.1",
     "@swc/cli": "^0.6.0",
     "@swc/core": "^1.10.7",
-    "@types/bcrypt": "^5.0.2",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.10.7",
     "@types/nodemailer": "^6.4.17",

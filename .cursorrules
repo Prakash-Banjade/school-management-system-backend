@@ -1,1 +1,1 @@
-for commit messages, if multiple files are changed, add a generic message with detailed description else keep the commit message short and simple
+for commit messages, keep the message short and simple describing what stuff/feature is implemented or modified or removed

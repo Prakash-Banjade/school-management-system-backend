@@ -1,5 +1,5 @@
 import { BeforeInsert, BeforeUpdate, Column, Entity, Index, ManyToOne, OneToMany, OneToOne } from "typeorm";
-import * as bcrypt from 'bcrypt';
+import bcrypt from "bcryptjs";
 import { BadRequestException } from "@nestjs/common";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { AuthProvider, Role } from "src/common/types/global.type";
@@ -35,7 +35,7 @@ export class Account extends BaseEntity {
     }
 
     @Index({ unique: true })
-    @Column({ type: 'varchar', unique: true })
+    @Column({ type: 'varchar' })
     email!: string;
 
     @Column({ type: 'varchar', nullable: true })

@@ -1,3 +1,5 @@
-1. Create Academic Year
-2. Add mandatory charge heads (Admission & Monthly fees)
-3. Add faculty "School Level"
+1. Create super_admin
+2. Create a default branch
+3. Create Academic Year
+4. Add mandatory charge heads (Admission & Monthly fees)
+5. Add faculty "School Level"

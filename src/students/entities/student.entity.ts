@@ -58,7 +58,7 @@ export class Student extends BaseEntity {
     */
 
     @Index({ unique: true })
-    @Column({ type: 'varchar', unique: true })
+    @Column({ type: 'varchar' })
     studentId: string;
 
     @OneToOne(() => Account, account => account.student, { onDelete: "RESTRICT" })
