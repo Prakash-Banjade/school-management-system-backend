@@ -16,6 +16,7 @@ import { OptionalSubject } from 'src/optional-subject/entities/optional-subject.
 import { Teacher } from 'src/teachers/entities/teacher.entity';
 import { isAdmin, isStudent } from 'src/utils/utils';
 import { UtilitiesService } from 'src/utilities/utilities.service';
+import { QueryDto } from 'src/common/dto/query.dto';
 
 @Injectable({ scope: Scope.REQUEST })
 export class SubjectsService extends BaseRepository {
@@ -100,6 +101,44 @@ export class SubjectsService extends BaseRepository {
     return paginatedData(queryDto, queryBuilder);
   }
 
+  // student will query this endpoint
+  async findAllByStudent(queryDto: QueryDto, currentUser: AuthUser) {
+    if (!isStudent(currentUser)) return;
+
+    const classRoom = await this.getRepository(ClassRoom).findOne({
+      where: { id: currentUser.classRoomId },
+      relations: { parent: true },
+      select: { id: true, parent: { id: true } }
+    });
+
+    if (!classRoom) throw new NotFoundException('Class room not found');
+
+    const parentClassRoomId = classRoom.parent?.id ?? classRoom.id;
+
+    console.log(currentUser.classRoomId)
+    
+    const queryBuilder = this.getRepository(Subject).createQueryBuilder('subject')
+      .orderBy("subject.subjectName", queryDto.order)
+      .leftJoin('subject.classRoutines', 'classRoutines', 'classRoutines.classRoomId = :studentClassRoomId', { studentClassRoomId: currentUser.classRoomId }) // fetch only the class routines of the student's class room
+      .leftJoin('classRoutines.teacher', 'teacher')
+      .where('subject.classRoomId = :classRoomId', { classRoomId: parentClassRoomId }) // subject is always in primary class room
+      .select([
+        'subject.id',
+        'subject.subjectName',
+        'subject.subjectCode',
+        'subject.type',
+        'teacher.id',
+        'teacher.firstName',
+        'teacher.lastName',
+        'classRoutines.id',
+        'classRoutines.startTime',
+        'classRoutines.endTime',
+        'classRoutines.dayOfTheWeek',
+      ]);
+
+    return paginatedData(queryDto, queryBuilder);
+  }
+
   async getOptions(queryDto: SubjectOptionsQueryDto) {
     const querybuilder = this.getRepository(Subject).createQueryBuilder('subject')
       .orderBy("subject.createdAt", queryDto.order)
@@ -110,21 +149,6 @@ export class SubjectsService extends BaseRepository {
     this.utilitiesService.applyBranchFilter(querybuilder, "classRoom.branchId = :branchId");
 
     return querybuilder.getMany();
-  }
-
-  // this is just for mock if need
-  async getMyAssignedSubjects() {
-    const accountId = ''
-
-    const assignedSubjects = await this.getRepository(Subject).find({
-      where: { teachers: { account: { id: accountId } } },
-      relations: { classRoom: { parent: true } },
-      select: {
-        id: true,
-        subjectName: true,
-        classRoom: { id: true, name: true, parent: { id: true, name: true } }
-      }
-    });
   }
 
   async findOne(id: string) {

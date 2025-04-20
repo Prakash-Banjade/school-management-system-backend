@@ -26,7 +26,6 @@ export class StudentsHelper extends BaseRepository {
 
     async findAll(queryDto: StudentQueryDto) {
         const academicYearId = queryDto.academicYearId || await this.utilitiesService.getAcademicYearId();
-        console.log(academicYearId)
 
         const queryBuilder = this.getRepository(Student).createQueryBuilder('student');
 

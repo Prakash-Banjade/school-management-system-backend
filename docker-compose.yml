@@ -3,7 +3,6 @@ version: '3.9'
 services:
   db:
     image: mysql:latest
-    restart: always
     container_name: sms_db_mysql
     ports:
       - "3309:3306"
@@ -19,7 +18,6 @@ services:
 
   redis:
     image: redis:8.0-M02-alpine
-    restart: always
     container_name: redis
     ports:
       - '6379:6379'
@@ -33,19 +31,19 @@ services:
       interval: 10s
       retries: 5
       timeout: 5s
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: sms-backend
-    restart: always # on crash restart the container
-    env_file:
-      - .env.local
-    ports:
-      - "3001:3001" # as in Dockerfile
-    depends_on:
-      - db
-      - redis
+  # app:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: sms-backend
+  #   restart: always # on crash restart the container
+  #   env_file:
+  #     - .env.local
+  #   ports:
+  #     - "3001:3001" # as in Dockerfile
+  #   depends_on:
+  #     - db
+  #     - redis
 
 volumes:
   mysql:

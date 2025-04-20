@@ -126,7 +126,7 @@ export class AcademicYearsService {
         secure: this.envService.NODE_ENV === 'production',
         httpOnly: true,
         signed: true,
-        sameSite: 'strict',
+        sameSite: this.envService.NODE_ENV === 'production' ? 'none' : 'lax',
         expires: new Date(Date.now() + (this.envService.REFRESH_TOKEN_EXPIRATION_SEC * 1000)),
         path: '/',
       });

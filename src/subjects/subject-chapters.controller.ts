@@ -21,7 +21,10 @@ export class SubjectChaptersController {
 
     @Get()
     @ApiPaginatedResponse(CreateSubjectChapterDto)
-    @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+    @CheckAbilities(
+        { subject: Role.ADMIN, action: Action.READ },
+        { subject: Role.STUDENT, action: Action.READ }
+    )
     findAll(@Query() queryDto: SubjectChapterQueryDto) {
         return this.subjectChaptersService.findAll(queryDto);
     }

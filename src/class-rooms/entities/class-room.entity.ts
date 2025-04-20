@@ -28,6 +28,21 @@ export class ClassRoom extends BaseEntity {
     @Column({ type: "varchar" })
     name: string;
 
+    @Column({ type: 'varchar' })
+    fullName: string; // full name of class room including parent class, eg: Class 1 - A
+
+    @BeforeInsert()
+    @BeforeUpdate()
+    setFullName() {
+        if (this.name && this.parent?.name) {
+            this.fullName = `${this.parent.name} - ${this.name}`
+        }
+
+        if (this.name && this.parent === null) {
+            this.fullName = `${this.name}`
+        }
+    }
+
     @Column({ type: "longtext", nullable: true })
     description: string;
 
@@ -58,7 +73,7 @@ export class ClassRoom extends BaseEntity {
         if (this.parent && (this.parent.classType === EClassType.SECTION)) {
             throw new BadRequestException(`Class type of ${this.parent.classType} cannot have children class.`)
         }
-        if (this.classType === this.parent?.classType) {
+        if (this.classType && this.classType === this.parent?.classType) {
             throw new BadRequestException(`Class type of ${this.classType} cannot have parent class of same type.`)
         }
     }
