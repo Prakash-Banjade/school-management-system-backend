@@ -1,14 +1,13 @@
-import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { ForbiddenException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Brackets, Repository } from "typeorm";
 import { Task } from "./entities/task.entity";
 import { PageMetaDto } from "src/common/dto/pageMeta.dto";
 import { PageDto } from "src/common/dto/page.dto.";
-import { TaskQueryDto } from "./dto/task-query.dto";
+import { ETaskCategory, TaskQueryDto } from "./dto/task-query.dto";
 import { AuthUser } from "src/common/types/global.type";
-import { selectTaskCols_student } from "./helpers/select-task-cols.config";
-import { applySelectColumns } from "src/utils/apply-select-cols";
 import { isStudent } from "src/utils/utils";
+import { paginatedRawData } from "src/utils/paginatedData";
 
 @Injectable()
 export class TaskStudentViewService {
@@ -26,76 +25,73 @@ export class TaskStudentViewService {
             .offset(queryDto.skip)
             .limit(queryDto.take)
             .leftJoin('task.subject', 'subject')
-            .leftJoin('task.classRooms', 'classRoom')
-            .leftJoin('classRoom.parent', 'parent')
             .leftJoin('task.attachments', 'attachments')
-            .leftJoin('task.submissions', 'submissions', 'submissions.studentId = :studentId', { studentId: currentUser.studentId })
+            .leftJoin('task.classRooms', 'classRoom')
+            .leftJoin('task.submissions', 'submission', 'submission.studentId = :studentId', { studentId: currentUser.studentId })
+            .leftJoin('submission.evaluation', 'evaluation')
+            .where('classRoom.id = :classRoomId', { classRoomId: currentUser.classRoomId })
             .andWhere(new Brackets(qb => {
                 queryDto.search && qb.andWhere("LOWER(task.title) LIKE LOWER(:search)", { search: `%${queryDto.search}%` });
 
-                // task of only the classroom the student belongs to
-                qb.andWhere(new Brackets(qb => {
-                    qb.orWhere('classRoom.id = :classRoomId', { classRoomId: currentUser.classRoomId });
-                    qb.orWhere('parent.id = :classRoomId', { classRoomId: currentUser.classRoomId });
-                }))
-
-                queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId }); // section is the class room
                 queryDto.subjectId && qb.andWhere('subject.id = :subjectId', { subjectId: queryDto.subjectId });
                 queryDto.taskType && qb.andWhere('task.taskType = :taskType', { taskType: queryDto.taskType });
-                queryDto.overdue
-                    ? qb.andWhere('DATE(task.deadline) < CURRENT_DATE()')
-                    : qb.andWhere('DATE(task.deadline) >= CURRENT_DATE()');
+            }))
+            .andWhere(new Brackets(qb => {
+                if (queryDto.category === ETaskCategory.PENDING) {
+                    qb.andWhere('submission.id IS NULL');
+                }
+
+                if (queryDto.category === ETaskCategory.SUBMITTED) {
+                    qb.andWhere('submission.id IS NOT NULL && evaluation.id IS NULL');
+                }
+
+                if (queryDto.category === ETaskCategory.EVALUATED) {
+                    qb.andWhere('evaluation.id IS NOT NULL');
+                }
             }))
             .select([
                 "task.id as id",
                 "task.title as title",
+                "task.description as description",
                 "task.deadline as deadline",
                 "task.taskType as taskType",
                 "task.marks as marks",
                 "task.createdAt as createdAt",
                 "subject.subjectName as subjectName",
-                "JSON_ARRAYAGG(JSON_OBJECT('id', classRoom.id, 'name', classRoom.name)) as classRooms", // Aggregate classrooms as JSON
-                "MAX(parent.id) as parentClassId",  // Aggregate non-grouped fields with MAX
-                "MAX(parent.name) as parentClassName",
-                "JSON_ARRAYAGG(JSON_OBJECT('status', submissions.status)) as submission",
+                `JSON_ARRAYAGG(
+                    JSON_OBJECT(
+                        'id', attachments.id,
+                        'originalName', attachments.originalName,
+                        'url', attachments.url
+                    )
+                ) as attachments`,
             ])
             .groupBy("task.id");
 
-        const itemCount = await queryBuilder.getCount();
-        const data = await queryBuilder.getRawMany();
-
-        const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto: queryDto });
-
-        return new PageDto(data, pageMetaDto);
+        return paginatedRawData(queryDto, queryBuilder);
     }
 
-    async findOne(id: string, currentUser: AuthUser) {
+    async getCounts(queryDto: TaskQueryDto, currentUser: AuthUser) {
         if (!isStudent(currentUser)) throw new ForbiddenException('Access Denied');
 
-        const querybuilder = this.taskRepository.createQueryBuilder('task')
-            .leftJoin('task.subject', 'subject')
+        const counts = await this.taskRepository.createQueryBuilder('task')
+            .leftJoin('task.submissions', 'submission', 'submission.studentId = :studentId', { studentId: currentUser.studentId })
+            .leftJoin('submission.evaluation', 'evaluation')
             .leftJoin('task.classRooms', 'classRooms')
-            .leftJoin('classRooms.parent', 'parent')
-            .leftJoin('task.setBy', 'setBy')
-            .leftJoin('task.attachments', 'attachments')
-            .leftJoin('task.submissions', 'submissions', 'submissions.studentId = :studentId', { studentId: currentUser.studentId })
-            .leftJoin('submissions.attachments', 'submissionAttachments')
-            .leftJoin('submissions.evaluation', 'evaluation')
-            .where(new Brackets(qb => {
-                qb.andWhere('task.id = :id', { id }); // filter by id
-
-                qb.andWhere(new Brackets(qb => {
-                    qb.orWhere('classRooms.id = :classRoomId', { classRoomId: currentUser.classRoomId });
-                    qb.orWhere('parent.id = :classRoomId', { classRoomId: currentUser.classRoomId });
-                }))
+            .where('classRooms.id = :classRoomId', { classRoomId: currentUser.classRoomId })
+            .andWhere(new Brackets(qb => {
+                if (queryDto.taskType) {
+                    qb.andWhere('task.taskType = :taskType', { taskType: queryDto.taskType });
+                }
             }))
+            .select([
+                `COUNT(CASE WHEN submission.id IS NULL THEN 1 END) AS "pending"`,
+                `COUNT(CASE WHEN submission.id IS NOT NULL AND evaluation.id IS NULL THEN 1 END) AS "submitted"`,
+                `COUNT(CASE WHEN evaluation.id IS NOT NULL THEN 1 END) AS "evaluated"`
+            ])
+            .getRawOne();
 
-        applySelectColumns(querybuilder, selectTaskCols_student, 'task');
-
-        const task = await querybuilder.getOne();
-
-        if (!task) throw new NotFoundException(`Task with id ${id} not found`);
-        return task;
+        return counts;
     }
 
 }

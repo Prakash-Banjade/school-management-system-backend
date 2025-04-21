@@ -115,8 +115,6 @@ export class SubjectsService extends BaseRepository {
 
     const parentClassRoomId = classRoom.parent?.id ?? classRoom.id;
 
-    console.log(currentUser.classRoomId)
-    
     const queryBuilder = this.getRepository(Subject).createQueryBuilder('subject')
       .orderBy("subject.subjectName", queryDto.order)
       .leftJoin('subject.classRoutines', 'classRoutines', 'classRoutines.classRoomId = :studentClassRoomId', { studentClassRoomId: currentUser.classRoomId }) // fetch only the class routines of the student's class room

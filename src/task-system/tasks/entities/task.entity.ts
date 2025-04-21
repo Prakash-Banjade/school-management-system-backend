@@ -1,3 +1,4 @@
+import { addDays } from "date-fns";
 import { Account } from "src/auth-system/accounts/entities/account.entity";
 import { ClassRoom } from "src/class-rooms/entities/class-room.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
@@ -5,6 +6,7 @@ import { ETask } from "src/common/types/global.type";
 import { File } from "src/file-management/files/entities/file.entity";
 import { Subject } from "src/subjects/entities/subject.entity";
 import { TaskSubmission } from "src/task-system/task-submissions/entities/task-submission.entity";
+import { startOfDayString } from "src/utils/utils";
 import { BeforeInsert, BeforeUpdate, Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany } from "typeorm";
 
 @Entity()
@@ -22,14 +24,14 @@ export class Task extends BaseEntity {
     @BeforeUpdate()
     setDeadline() {
         if (this.taskType !== ETask.ASSIGNMENT) {
-            this.deadline = new Date(new Date().setDate(new Date().getDate() + 1)).toISOString();
+            this.deadline = startOfDayString(addDays(new Date(), 1));
         }
     }
 
     @Column({ type: 'enum', enum: ETask })
     taskType: ETask;
 
-    @Column({ type: 'int', nullable: true })
+    @Column({ type: 'int', default: 0 })
     marks: number;
 
     @OneToMany(() => File, file => file.task_attachment)

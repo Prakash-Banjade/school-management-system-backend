@@ -13,7 +13,7 @@ export class TaskEvaluation extends BaseEntity {
     @ManyToOne(() => Teacher, teacher => teacher.taskEvaluations, { onDelete: 'SET NULL' })
     evaluator: Teacher;
 
-    @Column({ type: 'float' })
+    @Column({ type: 'float', default: 0 })
     score: number;
 
     @Column({ type: 'text', nullable: true })

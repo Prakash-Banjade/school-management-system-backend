@@ -8,11 +8,11 @@ export class CreateTaskSubmissionDto {
     @IsNotEmpty()
     taskId: string;
 
-    @ApiProperty({ example: 'Assignment content or file link', description: 'Content of the submission', required: false })
+    @ApiProperty({ example: 'Assignment note or file link', description: 'Note of the submission', required: false })
     @IsString()
     @IsNotEmpty()
-    @MaxLength(200, { message: 'Content cannot be longer than 200 characters' })
-    content: string;
+    @MaxLength(200, { message: 'Note cannot be longer than 200 characters' })
+    note: string;
 
     @ApiPropertyOptional({ example: 'Attachment IDs', description: 'IDs of the attachments', required: false })
     @IsUuidOrUrl({ each: true, message: 'Attachment IDs must be either a valid UUID or a valid URL' })

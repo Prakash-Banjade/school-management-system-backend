@@ -1,10 +1,15 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsUUID } from "class-validator";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { IsOptional, IsString, IsUUID } from "class-validator";
 import { QueryDto } from "src/common/dto/query.dto";
 
 export class TaskSubmissionQueryDto extends QueryDto {
     @ApiProperty({ format: 'uuid' })
     @IsUUID()
-    @IsNotEmpty()
-    taskId: string;
+    @IsOptional()
+    taskId?: string;
+
+    @ApiPropertyOptional({ type: 'string', format: 'uuid', example: '' })
+    @IsOptional()
+    @IsString()
+    subjectId: string;
 }

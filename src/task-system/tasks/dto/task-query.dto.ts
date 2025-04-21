@@ -1,8 +1,13 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { IsBoolean, IsEnum, IsOptional, IsString } from "class-validator";
+import { IsEnum, IsOptional, IsString } from "class-validator";
 import { ClassRoomSearchQueryDto } from "src/common/dto/classRoomSearchQueryDto";
 import { ETask } from "src/common/types/global.type";
+
+export enum ETaskCategory {
+    PENDING = 'pending',
+    SUBMITTED = 'submitted',
+    EVALUATED = 'evaluated',
+}
 
 export class TaskQueryDto extends ClassRoomSearchQueryDto {
 
@@ -16,9 +21,8 @@ export class TaskQueryDto extends ClassRoomSearchQueryDto {
     @IsOptional()
     taskType?: ETask;
 
-    @ApiPropertyOptional()
-    @IsBoolean()
+    @ApiPropertyOptional({ enum: ETaskCategory, default: ETaskCategory.PENDING })
     @IsOptional()
-    @Transform(({ value }) => value === "true")
-    overdue?: boolean;
+    @IsString()
+    category: ETaskCategory = ETaskCategory.PENDING;
 }

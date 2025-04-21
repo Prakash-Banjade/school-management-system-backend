@@ -4,9 +4,10 @@ import { File } from 'src/file-management/files/entities/file.entity';
 import { Student } from 'src/students/entities/student.entity';
 import { TaskEvaluation } from 'src/task-system/task-evaluations/entities/task-evaluation.entity';
 import { Task } from 'src/task-system/tasks/entities/task.entity';
-import { Entity, Column, ManyToOne, OneToMany, OneToOne } from 'typeorm';
+import { Entity, Column, ManyToOne, OneToMany, OneToOne, Unique } from 'typeorm';
 
 @Entity()
+@Unique(['task', 'student'])
 export class TaskSubmission extends BaseEntity {
 
     @ManyToOne(() => Task, task => task.submissions, { onDelete: 'CASCADE' })
@@ -19,7 +20,7 @@ export class TaskSubmission extends BaseEntity {
     status: ETaskSubmissionStatus;
 
     @Column({ type: 'text' })
-    content: string;
+    note: string;
 
     @OneToMany(() => File, file => file.task_submission_attachment)
     attachments: File[];

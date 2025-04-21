@@ -1,40 +1,39 @@
-import { BadRequestException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { Brackets, DataSource, In } from 'typeorm';
+import { Brackets, In, Repository } from 'typeorm';
 import { Task } from './entities/task.entity';
 import { SubjectsService } from 'src/subjects/subjects.service';
 import { AuthUser, EClassType } from 'src/common/types/global.type';
 import { selectTaskCols } from './helpers/select-task-cols.config';
-import { BaseRepository } from 'src/common/repository/base-repository';
-import { REQUEST } from '@nestjs/core';
-import { FastifyRequest } from 'fastify';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { TaskQueryDto } from './dto/task-query.dto';
 import { FilesService } from 'src/file-management/files/files.service';
 import { paginatedRawData } from 'src/utils/paginatedData';
 import { UtilitiesService } from 'src/utilities/utilities.service';
 import { Account } from 'src/auth-system/accounts/entities/account.entity';
+import { InjectRepository } from '@nestjs/typeorm';
 
-@Injectable({ scope: Scope.REQUEST })
-export class TasksService extends BaseRepository {
+@Injectable()
+export class TasksService {
   constructor(
-    dataSource: DataSource,
-    @Inject(REQUEST) private req: FastifyRequest,
+    @InjectRepository(Account) private readonly accountRepo: Repository<Account>,
+    @InjectRepository(Task) private readonly taskRepo: Repository<Task>,
+    @InjectRepository(ClassRoom) private readonly classRoomRepo: Repository<ClassRoom>,
     private readonly subjectsService: SubjectsService,
     private readonly filesService: FilesService,
     private readonly utilitiesService: UtilitiesService,
-  ) { super(dataSource, req) }
+  ) { }
 
   async create(createTaskDto: CreateTaskDto, currentUser: AuthUser) {
-    const account = await this.getRepository(Account).findOne({ where: { id: currentUser.accountId }, select: { id: true } });
+    const account = await this.accountRepo.findOne({ where: { id: currentUser.accountId }, select: { id: true } });
 
     const attachments = createTaskDto.attachmentIds?.length
       ? await this.filesService.findAllByIds(createTaskDto.attachmentIds)
       : null;
 
     // validate if class room have the subject
-    const classRoomWithSubject = await this.getRepository(ClassRoom).createQueryBuilder('classRoom')
+    const classRoomWithSubject = await this.classRoomRepo.createQueryBuilder('classRoom')
       .leftJoin('classRoom.subjects', 'subject')
       .leftJoin('classRoom.children', 'children')
       .where('subject.id = :subjectId', { subjectId: createTaskDto.subjectId })
@@ -51,7 +50,7 @@ export class TasksService extends BaseRepository {
 
     if (!classRoomsTheTaskFor?.length) throw new NotFoundException('Class room not found with subject');
 
-    const newTask = this.getRepository(Task).create({
+    const newTask = this.taskRepo.create({
       ...createTaskDto,
       setBy: account,
       subject: classRoomWithSubject.subjects[0],
@@ -59,12 +58,12 @@ export class TasksService extends BaseRepository {
       classRooms: classRoomsTheTaskFor,
     })
 
-    await this.getRepository(Task).save(newTask);
+    await this.taskRepo.save(newTask);
     return { message: 'Task created successfully' };
   }
 
   async findAll(queryDto: TaskQueryDto) {
-    const queryBuilder = this.getRepository(Task).createQueryBuilder('task');
+    const queryBuilder = this.taskRepo.createQueryBuilder('task');
 
     queryBuilder
       .orderBy("task.createdAt", queryDto.order)
@@ -105,7 +104,7 @@ export class TasksService extends BaseRepository {
   }
 
   async getStatistics(taskId: string) {
-    const queryBuilder = this.getRepository(Task).createQueryBuilder('task')
+    const queryBuilder = this.taskRepo.createQueryBuilder('task')
       .where('task.id = :id', { id: taskId })
       .leftJoin('task.submissions', 'submission')
       .leftJoin('submission.evaluation', 'evaluation')
@@ -121,7 +120,7 @@ export class TasksService extends BaseRepository {
   }
 
   async findOne(id: string) {
-    const existingTask = await this.getRepository(Task).findOne({
+    const existingTask = await this.taskRepo.findOne({
       where: {
         id,
         classRooms: { branch: { id: this.utilitiesService.getBranchId() } }
@@ -154,7 +153,7 @@ export class TasksService extends BaseRepository {
 
     // validate class room
     const classRooms = updateTaskDto.classRoomIds?.length
-      ? await this.getRepository(ClassRoom).find({
+      ? await this.classRoomRepo.find({
         where: {
           id: In(updateTaskDto.classRoomIds)
         },
@@ -174,15 +173,15 @@ export class TasksService extends BaseRepository {
     existingTask.subject = subject;
     existingTask.classRooms = classRooms;
 
-    const updatedTask = this.getRepository(Task).merge(existingTask, updateTaskDto);
+    const updatedTask = this.taskRepo.merge(existingTask, updateTaskDto);
 
-    await this.getRepository(Task).save(updatedTask)
+    await this.taskRepo.save(updatedTask)
 
     return { message: 'Task updated' }
   }
 
   async remove(id: string) {
-    await this.getRepository(Task).delete({ id });
+    await this.taskRepo.delete({ id });
 
     return { message: 'Task removed' }
   }
