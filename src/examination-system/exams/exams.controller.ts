@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe, UseInterceptors, ParseBoolPipe } from '@nestjs/common';
 import { ExamsService } from './exams.service';
 import { CreateExamDto } from './dto/create-exam.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
@@ -50,7 +50,7 @@ export class ExamsController {
   @ApiResponse({ status: 404, description: 'Student or exam report not found.' })
   getExamReportByStudent(@Query() queryDto: ExamReportByStudentQueryDto, @CurrentUser() currentUser: AuthUser) {
     if (isStudent(currentUser)) queryDto.studentId = currentUser.studentId;
-    return this.examsHelper.getExamReportByStudent(queryDto.studentId, queryDto.examTypeId);
+    return this.examsHelper.getExamReportByStudent(queryDto.studentId, queryDto.examTypeId, currentUser);
   }
 
   @Get(':id/students')
@@ -71,6 +71,15 @@ export class ExamsController {
   @ApiResponse({ status: 404, description: 'Exam not found.' })
   findOne(@Param('id', ParseUUIDPipe) id: string, @Query() queryDto: ExamQueryDto) {
     return this.examsService.findOne(id, queryDto);
+  }
+
+  @Patch(':id/publish')
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
+  @ApiOperation({ summary: 'Toggle the publish status of an existing exam' })
+  @ApiParam({ name: 'id', description: 'Exam ID to update' })
+  @ApiResponse({ status: 200, description: 'Exam updated successfully.' })
+  publishReport(@Param('id', ParseUUIDPipe) id: string, @Query('publish', ParseBoolPipe) publish: boolean) {
+    return this.examsService.publishReport(id, publish);
   }
 
   @Patch(':id')

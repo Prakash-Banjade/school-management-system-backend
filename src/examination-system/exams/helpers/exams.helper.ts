@@ -1,15 +1,16 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { REQUEST } from "@nestjs/core";
 import { FastifyRequest } from "fastify";
-import { WEAK_PERCENTAGE_THRESHOLD } from "src/common/CONSTANTS";
+import { AuthMessage, WEAK_PERCENTAGE_THRESHOLD } from "src/common/CONSTANTS";
 import { BaseRepository } from "src/common/repository/base-repository";
 import { Student } from "src/students/entities/student.entity";
 import { Brackets, DataSource } from "typeorm";
 import { Exam } from "../entities/exam.entity";
 import { ExamReportsService } from "src/examination-system/exam-reports/exam-reports.service";
 import { ExamStudentsQueryDto } from "../dto/exam-query.dto";
-import { ESubjectType } from "src/common/types/global.type";
+import { AuthUser, ESubjectType } from "src/common/types/global.type";
 import { UtilitiesService } from "src/utilities/utilities.service";
+import { isStudent } from "src/utils/utils";
 
 @Injectable()
 export class ExamsHelper extends BaseRepository {
@@ -49,8 +50,8 @@ export class ExamsHelper extends BaseRepository {
         return querybuilder.getRawMany();
     }
 
-    async getExamReportByStudent(studentId: string, examTypeId: string) {
-        if (!studentId) throw new BadRequestException('Student id is required'); // studentId is optional because student can request this api without student id
+    async getExamReportByStudent(studentId: string, examTypeId: string, currentUser: AuthUser) {
+        if (!studentId) throw new BadRequestException('Student id is required');
 
         const academicYearId = await this.utilitiesService.getAcademicYearId();
 
@@ -85,7 +86,7 @@ export class ExamsHelper extends BaseRepository {
 
         const studentOptionalSubjectIds = (typeof student.optionalSubjectIds === 'string' ? JSON.parse(student.optionalSubjectIds) : student.optionalSubjectIds).filter(Boolean);
 
-        const querybuilder = this.getRepository(Exam).createQueryBuilder('exam')
+        const examQueryBuilder = this.getRepository(Exam).createQueryBuilder('exam')
             .leftJoin("exam.examType", "examType")
             .leftJoin("exam.classRoom", "classRoom")
             .leftJoin('exam.examSubjects', 'examSubjects')
@@ -101,6 +102,7 @@ export class ExamsHelper extends BaseRepository {
             .innerJoin('examSubjects.examReports', 'examReports', 'examReports.studentId = :studentId', { studentId: student.id })
             .select([
                 "exam.id",
+                "exam.isReportPublished",
                 "examType.id",
                 "examType.name",
                 "examSubjects.id",
@@ -119,11 +121,14 @@ export class ExamsHelper extends BaseRepository {
                 "examReports.gpa",
                 "examReports.grade",
             ]);
-        this.utilitiesService.applyBranchFilter(querybuilder, 'classRoom.branchId = :branchId');
 
-        const exam = await querybuilder.getOne();
+        this.utilitiesService.applyBranchFilter(examQueryBuilder, 'classRoom.branchId = :branchId');
+
+        const exam = await examQueryBuilder.getOne();
 
         if (!exam) throw new NotFoundException('Exam not found');
+
+        if (isStudent(currentUser) && !exam.isReportPublished) throw new NotFoundException(AuthMessage.REPORT_NOT_PUBLISHED);
 
         // sum the obtained marks of all exam subjects and evaluate corresponding percentage, grade and gpa
         let totalObtainedMarks = 0;
