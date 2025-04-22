@@ -5,9 +5,14 @@ import { AccountsModule } from 'src/auth-system/accounts/accounts.module';
 import { ImagesModule } from 'src/file-management/images/images.module';
 import { TeachersHelper } from './helpers/teacher.helper';
 import { TeachersStudentViewService } from './teachers.student-view.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Teacher } from './entities/teacher.entity';
 
 @Module({
   imports: [
+    TypeOrmModule.forFeature([
+      Teacher,
+    ]),
     AccountsModule,
     ImagesModule,
   ],
