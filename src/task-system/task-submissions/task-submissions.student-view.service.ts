@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { TaskSubmission } from "./entities/task-submission.entity";
-import { Repository } from "typeorm";
+import { Brackets, Repository } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 import { AuthUser } from "src/common/types/global.type";
 import { isStudent } from "src/utils/utils";
@@ -17,10 +17,20 @@ export class TaskSubmissionsStudentViewService {
         if (!isStudent(currentUser)) return;
 
         const queryBuilder = this.taskSubmissionRepo.createQueryBuilder('taskSubmission')
+            .orderBy('taskSubmission.createdAt', queryDto.order)
+            .take(queryDto.take)
+            .skip(queryDto.skip)
             .leftJoin('taskSubmission.task', 'task')
             .leftJoin('task.subject', 'subject')
             .leftJoin('taskSubmission.attachments', 'attachments')
-            .where('taskSubmission.studentId = :studentId', { studentId: currentUser.studentId })
+            .where('taskSubmission.studentId = :studentId', { studentId: currentUser.studentId });
+
+        if (queryDto.notEvaluated) {
+            queryBuilder.leftJoin('taskSubmission.evaluation', 'evaluation')
+                .andWhere('evaluation.id IS NULL');
+        }
+
+        queryBuilder
             .select([
                 'taskSubmission.id',
                 'taskSubmission.note',
