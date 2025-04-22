@@ -10,6 +10,7 @@ export type AuthUser = {
     email: string;
     role: Role.STUDENT;
     classRoomId: string;
+    parentClassId: string | null;
     studentId: string;
     branchId: string;
     deviceId: string;

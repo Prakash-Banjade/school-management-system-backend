@@ -102,7 +102,7 @@ export class SubjectsService extends BaseRepository {
   }
 
   // student will query this endpoint
-  async findAllByStudent(queryDto: QueryDto, currentUser: AuthUser) {
+  async findAllByStudent(queryDto: SubjectQueryDto, currentUser: AuthUser) {
     if (!isStudent(currentUser)) return;
 
     const classRoom = await this.getRepository(ClassRoom).findOne({
@@ -120,7 +120,18 @@ export class SubjectsService extends BaseRepository {
       .leftJoin('subject.classRoutines', 'classRoutines', 'classRoutines.classRoomId = :studentClassRoomId', { studentClassRoomId: currentUser.classRoomId }) // fetch only the class routines of the student's class room
       .leftJoin('classRoutines.teacher', 'teacher')
       .where('subject.classRoomId = :classRoomId', { classRoomId: parentClassRoomId }) // subject is always in primary class room
-      .select([
+
+    if (queryDto.asOptions) {
+      queryBuilder
+        .select([
+          'subject.id as value',
+          'subject.subjectName as label'
+        ])
+        .groupBy('subject.id');
+
+      return queryBuilder.getRawMany();
+    } else {
+      queryBuilder.select([
         'subject.id',
         'subject.subjectName',
         'subject.subjectCode',
@@ -133,8 +144,9 @@ export class SubjectsService extends BaseRepository {
         'classRoutines.endTime',
         'classRoutines.dayOfTheWeek',
       ]);
+      return paginatedData(queryDto, queryBuilder);
+    }
 
-    return paginatedData(queryDto, queryBuilder);
   }
 
   async getOptions(queryDto: SubjectOptionsQueryDto) {

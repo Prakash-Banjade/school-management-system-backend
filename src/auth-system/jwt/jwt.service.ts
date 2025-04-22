@@ -60,12 +60,12 @@ export class JwtService {
                     account: { id: account.id },
                 },
                 relations: {
-                    classRoom: true,
+                    classRoom: { parent: true },
                     account: { branch: true },
                 },
                 select: {
                     id: true,
-                    classRoom: { id: true },
+                    classRoom: { id: true, parent: { id: true } },
                     account: { id: true, branch: { id: true } }
                 }
             });
@@ -75,6 +75,7 @@ export class JwtService {
                 email: account.email,
                 role: Role.STUDENT,
                 classRoomId: student.classRoom.id,
+                parentClassId: student.classRoom.parent?.id,
                 studentId: student.id,
                 branchId: student.account?.branch?.id ?? undefined,
                 deviceId,

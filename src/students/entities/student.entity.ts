@@ -27,7 +27,7 @@ export class Student extends BaseEntity {
     @Column({ type: 'simple-array' })
     academicYearIds: string[];
 
-    @ManyToOne(() => ClassRoom, (classRoom) => classRoom.students, { onDelete: 'RESTRICT' })
+    @ManyToOne(() => ClassRoom, (classRoom) => classRoom.students, { onDelete: 'RESTRICT', nullable: false })
     classRoom: ClassRoom;
 
     @ManyToMany(() => OptionalSubject, (optionalSubject) => optionalSubject.students, { cascade: true })
