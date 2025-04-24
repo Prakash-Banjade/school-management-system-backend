@@ -87,12 +87,8 @@ export class LibraryHelper extends BaseRepository {
         if (!isStudent(currentUser)) throw new ForbiddenException();
 
         const transactionCount = await this.getRepository(BookTransaction).createQueryBuilder("transaction")
-            .leftJoin("transaction.book", "book")
             .leftJoin("transaction.student", "student")
             .where("student.id = :studentId", { studentId: currentUser.studentId })
-            .andWhere(new Brackets(qb => {
-                currentUser.branchId && qb.andWhere('book.branchId = :branchId', { branchId: currentUser.branchId });
-            }))
             .select([
                 "COUNT(transaction.id) AS totalCount",
                 `COUNT(CASE WHEN transaction.returnedAt IS NULL AND DATE(transaction.dueDate) >= DATE(:today) THEN 1 END) AS issuedCount`,

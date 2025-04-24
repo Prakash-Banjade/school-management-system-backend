@@ -25,6 +25,8 @@ export class AttendancesHelper extends BaseRepository {
     ) { super(dataSource, req) }
 
     async getCount(queryDto: AttendanceCountQueryDto, currentUser: AuthUser) {
+        const accountId = isAdmin(currentUser) ? queryDto.accountId : currentUser.accountId;
+
         const monthlyQuery = this.getRepository(Attendance).createQueryBuilder('attendance')
             .leftJoin('attendance.account', 'account')
             .select('attendance.status', 'status')
@@ -33,11 +35,8 @@ export class AttendancesHelper extends BaseRepository {
                 queryDto.month && qb.andWhere('MONTH(attendance.date) = :month', { month: queryDto.month });
                 queryDto.year && qb.andWhere('YEAR(attendance.date) = :year', { year: queryDto.year });
 
-                if (isAdmin(currentUser)) { // admin access
-                    queryDto.accountId && qb.andWhere('account.id = :accountId', { accountId: queryDto.accountId });
-                } else { // other user can access their attendances only
-                    qb.andWhere('account.id = :accountId', { accountId: currentUser.accountId });
-                }
+                if (accountId) qb.andWhere('account.id = :accountId', { accountId })
+
             }))
             .groupBy('attendance.status');
 
@@ -47,12 +46,8 @@ export class AttendancesHelper extends BaseRepository {
             .addSelect('COUNT(attendance.id)', 'attendanceCount')
             .where(new Brackets(qb => {
                 queryDto.year && qb.andWhere('YEAR(attendance.date) = :year', { year: queryDto.year });
-
-                if (isAdmin(currentUser)) { // admin access
-                    queryDto.accountId && qb.andWhere('account.id = :accountId', { accountId: queryDto.accountId });
-                } else { // other user can access their attendances only
-                    qb.andWhere('account.id = :accountId', { accountId: currentUser.accountId });
-                }
+                
+                if (accountId) qb.andWhere('account.id = :accountId', { accountId })
             }))
             .groupBy('attendance.status');
 

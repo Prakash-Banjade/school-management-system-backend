@@ -9,6 +9,7 @@ import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
+import { isStudent } from 'src/utils/utils';
 
 @ApiBearerAuth()
 @ApiTags('Subjects')
@@ -24,10 +25,15 @@ export class SubjectsController {
   }
 
   @Get()
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @CheckAbilities(
+    { subject: Role.ADMIN, action: Action.READ },
+    { subject: Role.STUDENT, action: Action.READ }
+  )
   @ApiPaginatedResponse(SubjectQueryDto)
   findAll(@Query() queryDto: SubjectQueryDto, @CurrentUser() currentUser: AuthUser) {
-    return this.subjectsService.findAll(queryDto, currentUser);
+    return isStudent(currentUser)
+      ? this.subjectsService.findAllByStudent(queryDto, currentUser)
+      : this.subjectsService.findAll(queryDto, currentUser);
   }
 
   @Get('options')
@@ -37,7 +43,10 @@ export class SubjectsController {
   }
 
   @Get(':id')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @CheckAbilities(
+    { subject: Role.ADMIN, action: Action.READ },
+    { subject: Role.STUDENT, action: Action.READ }
+  )
   findOne(@Param('id') id: string) {
     return this.subjectsService.findOne(id);
   }

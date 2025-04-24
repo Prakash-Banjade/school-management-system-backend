@@ -14,12 +14,12 @@ const BACKEND_URL = process.env.BACKEND_URL;
 export class IsUuidOrUrlConstraint implements ValidatorConstraintInterface {
     validate(value: any, args: ValidationArguments) {
         if (typeof value !== 'string') return false;
-        
+
         return isUUID(value) || value.startsWith(BACKEND_URL);
     }
 
     defaultMessage(args: ValidationArguments) {
-        return 'The value must be either a valid UUID or a valid URL';
+        return `${args.property} must be either a valid UUID or a valid URL`;
     }
 }
 

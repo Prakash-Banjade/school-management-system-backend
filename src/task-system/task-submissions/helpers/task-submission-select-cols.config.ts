@@ -16,7 +16,7 @@ export const taskSubmissionSelectCols: FindOptionsSelect<TaskSubmission> = {
         url: true,
         originalName: true,
     },
-    content: true,
+    note: true,
     status: true,
     evaluation: {
         id: true,

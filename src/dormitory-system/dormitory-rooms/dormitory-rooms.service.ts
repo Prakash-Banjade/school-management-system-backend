@@ -94,31 +94,33 @@ export class DormitoryRoomsService {
       .where('dormitoryRoom.id = :id', { id: dormitoryRoom.id })
       .leftJoin('dormitoryRoom.students', 'students', 'students.id != :studentId', { studentId: currentUser.studentId })
       .leftJoin('students.classRoom', 'classRoom')
-      .leftJoin('classRoom.parent', 'parent')
+      .leftJoin('students.account', 'account')
+      .leftJoin('account.profileImage', 'profileImage')
       .leftJoin('dormitoryRoom.dormitory', 'dormitory')
       .leftJoin('dormitoryRoom.roomType', 'roomType')
       .select([
-        'dormitoryRoom.id as id',
-        'dormitoryRoom.roomNumber as roomNumber',
-        'dormitoryRoom.costPerBed as costPerBed',
-        'dormitoryRoom.noOfBeds as noOfBeds',
-        'dormitory.name as dormitoryName',
-        'roomType.name as roomTypeName',
-        `
-          CASE WHEN students.id IS NOT NULL THEN
-            JSON_ARRAYAGG(JSON_OBJECT("id", students.id, "name", CONCAT(students.firstName, ' ', students.lastName), "classroomName", CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, \' - \', classRoom.name) END))
-          ELSE
-            NULL
-          END as roomMates
-        `
+        'dormitoryRoom.id',
+        'dormitoryRoom.roomNumber',
+        'dormitoryRoom.costPerBed',
+        'dormitoryRoom.noOfBeds',
+        'dormitory.id',
+        'dormitory.name',
+        'roomType.id',
+        'roomType.name',
+        'students.id',
+        'students.firstName',
+        'students.lastName',
+        'students.phone',
+        'account.id',
+        'account.email',
+        'profileImage.id',
+        'profileImage.url',
+        'classRoom.id',
+        'classRoom.fullName',
       ])
-      .groupBy('students.id')
-      .getRawOne();
+      .getOne();
 
-    return {
-      ...roomDetail,
-      roomMates: typeof roomDetail.roomMates === 'string' ? JSON.parse(roomDetail.roomMates) : roomDetail.roomMates,
-    };
+    return roomDetail;
   }
 
   async findOne(id: string) {

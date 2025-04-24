@@ -3,7 +3,7 @@ import { ClassRoom } from "src/class-rooms/entities/class-room.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { ExamSubject } from "src/examination-system/exam-subjects/entities/exam-subject.entity";
 import { ExamType } from "src/examination-system/exam-types/entities/exam-type.entity";
-import { Entity, ManyToOne, OneToMany, Unique } from "typeorm";
+import { Column, Entity, ManyToOne, OneToMany, Unique } from "typeorm";
 
 @Entity()
 @Unique(['examType', 'classRoom', 'academicYear'])
@@ -19,4 +19,7 @@ export class Exam extends BaseEntity {
 
     @ManyToOne(() => AcademicYear, academicYear => academicYear.exams, { onDelete: 'CASCADE', nullable: false })
     academicYear: AcademicYear;
+
+    @Column({ type: 'boolean', default: false })
+    isReportPublished: boolean;
 }

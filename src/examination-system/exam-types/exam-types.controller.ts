@@ -32,7 +32,7 @@ export class ExamTypesController {
   }
 
   @Get('options')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @CheckAbilities({ subject: Role.USER, action: Action.READ })
   @ApiOperation({ summary: 'Get options for exam types' })
   @ApiResponse({ status: 200, description: 'Exam type options retrieved successfully.' })
   getOptions(@Query() queryDto: QueryDto) {

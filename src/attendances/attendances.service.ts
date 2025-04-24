@@ -48,6 +48,8 @@ export class AttendancesService extends BaseRepository {
   async findAll(queryDto: AttendanceQueryDto, currentUser: AuthUser) {
     const queryBuilder = this.getRepository(Attendance).createQueryBuilder('attendance');
 
+    const accountId = isAdmin(currentUser) ? queryDto.accountId : currentUser.accountId;
+
     queryBuilder
       .orderBy("attendance.createdAt", queryDto.order)
       .skip(queryDto.skip)
@@ -57,11 +59,7 @@ export class AttendancesService extends BaseRepository {
         queryDto.status && qb.andWhere('attendance.status = :status', { status: queryDto.status })
         queryDto.month && qb.andWhere('MONTH(attendance.date) = :month', { month: queryDto.month });
 
-        if (isAdmin(currentUser)) { // admin access
-          queryDto.accountId && qb.andWhere('account.id = :accountId', { accountId: queryDto.accountId })
-        } else { // student access
-          qb.andWhere('account.id = :accountId', { accountId: currentUser.accountId })
-        }
+        if (accountId) qb.andWhere('account.id = :accountId', { accountId })
       }));
 
     applySelectColumns(queryBuilder, attendanceSelectCols, 'attendance');

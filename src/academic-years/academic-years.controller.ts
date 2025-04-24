@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Res, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Res } from '@nestjs/common';
 import { AcademicYearsService } from './academic-years.service';
 import { CreateAcademicYearDto } from './dto/create-academic-year.dto';
 import { UpdateAcademicYearDto } from './dto/update-academic-year.dto';
@@ -34,7 +34,7 @@ export class AcademicYearsController {
   }
 
   @Get('options')
-  @CheckAbilities({ action: Action.READ, subject: Role.ADMIN })
+  @CheckAbilities({ action: Action.READ, subject: Role.USER })
   @ApiOperation({ summary: 'Get options for academic years' })
   @ApiResponse({ status: 200, description: 'Academic year options retrieved successfully.' })
   getOptions(@Query() queryDto: AcademicYearOptionsDto, @Cookies(CookieKey.ACADEMIC_YEAR_ID) academicYearIdCookie: string | undefined) {

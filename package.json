@@ -27,8 +27,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "sentry:sourcemaps": "sentry-cli sourcemaps inject --org aribt --project sms-backend-prod ./dist && sentry-cli sourcemaps upload --org aribt --project sms-backend-prod ./dist",
-    "preinstall": "npx only-allow pnpm",
-    "seed": "ts-node -r tsconfig-paths/register src/datasource/db-seeder/seeder.ts"
+    "preinstall": "node -e \"if (process.env.NODE_ENV !== 'production') require('child_process').execSync('npx only-allow pnpm', { stdio: 'inherit' })\""
   },
   "dependencies": {
     "@casl/ability": "^6.7.3",

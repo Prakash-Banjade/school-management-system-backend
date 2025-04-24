@@ -10,6 +10,8 @@ import { BaseRepository } from 'src/common/repository/base-repository';
 import { FastifyRequest } from 'fastify';
 import { REQUEST } from '@nestjs/core';
 import { UtilitiesService } from 'src/utilities/utilities.service';
+import { AuthUser } from 'src/common/types/global.type';
+import { isStudent } from 'src/utils/utils';
 
 @Injectable({ scope: Scope.REQUEST })
 export class ExamSubjectsService extends BaseRepository {
@@ -19,9 +21,10 @@ export class ExamSubjectsService extends BaseRepository {
     private readonly utilitiesService: UtilitiesService,
   ) { super(dataSource, req); }
 
-  async findAll(queryDto: ExamSubjectQueryDto) {
+  async findAll(queryDto: ExamSubjectQueryDto, currentUser: AuthUser) {
     const querybuilder = this.examSubjectRepo.createQueryBuilder('examSubject');
     const currentAcademicYearId: string = await this.utilitiesService.getAcademicYearId();
+    const classRoomId = isStudent(currentUser) ? (currentUser.parentClassId ?? currentUser.classRoomId) : queryDto.classRoomId; // exams are linked to primary class, so check for parentClassId first
 
     querybuilder
       .orderBy("examSubject.examDate", queryDto.order)
@@ -35,14 +38,28 @@ export class ExamSubjectsService extends BaseRepository {
       .leftJoin('examSubject.subject', 'subject')
       .andWhere(new Brackets(qb => {
         queryDto.search && qb.andWhere('LOWER(subject.subjectName) LIKE LOWER(:search)', { search: `%${queryDto.search}%` })
-        queryDto.examId && qb.andWhere("exam.id = :examId", { examId: queryDto.examId })
-        queryDto.academicYearId && qb.andWhere("exam.academicYearId = :academicYearId", { academicYearId: queryDto.academicYearId })
         queryDto.onlyPast && qb.andWhere("DATE(exam.examDate) < CURRENT_DATE()")
-        queryDto.examTypeId && qb.andWhere('examType.id = :examTypeId', { examTypeId: queryDto.examTypeId })
-        queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId OR children.id = :classRoomId', { classRoomId: queryDto.classRoomId }) // this is done because student can be in section and the exam is in primary class, so look in children; this is done when student queries the exam-subjects
       }))
-      .groupBy('examSubject.id')
-      .select(queryDto.asOptions ? examSubjectOptionsSelectCols : examSubjectSelectCols);
+      .addGroupBy('examSubject.id')
+
+
+    if (queryDto.examId) {
+      querybuilder.andWhere("exam.id = :examId", { examId: queryDto.examId })
+    }
+
+    if (queryDto.academicYearId) {
+      querybuilder.andWhere("exam.academicYearId = :academicYearId", { academicYearId: queryDto.academicYearId });
+    }
+
+    if (queryDto.examTypeId) {
+      querybuilder.andWhere('examType.id = :examTypeId', { examTypeId: queryDto.examTypeId });
+    }
+
+    if (classRoomId) {
+      querybuilder.andWhere('classRoom.id = :classRoomId OR children.id = :classRoomId', { classRoomId: classRoomId }) // this is done because student can be in section and the exam is in primary class, so look in children; this is done when student queries the exam-subjects
+    }
+
+    querybuilder.select(queryDto.asOptions ? examSubjectOptionsSelectCols : examSubjectSelectCols);
 
     this.utilitiesService.applyBranchFilter(querybuilder, "classRoom.branchId = :branchId");
 

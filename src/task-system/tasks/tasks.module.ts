@@ -7,11 +7,15 @@ import { SubjectsModule } from 'src/subjects/subjects.module';
 import { FilesModule } from 'src/file-management/files/files.module';
 import { TaskStudentViewService } from './task.student-view.service';
 import { TasksCron } from './tasks.cron';
+import { Account } from 'src/auth-system/accounts/entities/account.entity';
+import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       Task,
+      Account,
+      ClassRoom,
     ]),
     FilesModule,
     SubjectsModule,

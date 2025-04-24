@@ -22,7 +22,6 @@ export class TasksController {
 
   @Post()
   @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
-  @UseInterceptors(TransactionInterceptor)
   create(@Body() createTaskDto: CreateTaskDto, @CurrentUser() currentUser: AuthUser) {
     return this.tasksService.create(createTaskDto, currentUser);
   }
@@ -38,6 +37,12 @@ export class TasksController {
       : this.tasksService.findAll(queryDto);
   }
 
+  @Get('counts')
+  @CheckAbilities({ subject: Role.STUDENT, action: Action.READ })
+  getTaskCounts(@Query() queryDto: TaskQueryDto, @CurrentUser() currentUser: AuthUser) {
+    return this.taskStudentViewService.getCounts(queryDto, currentUser);
+  }
+
   @Get(':id/statistics')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   getStatistics(@Param('id') id: string) {
@@ -45,14 +50,9 @@ export class TasksController {
   }
 
   @Get(':id')
-  @CheckAbilities(
-    { subject: Role.ADMIN, action: Action.READ },
-    { subject: Role.STUDENT, action: Action.READ }
-  )
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findOne(@Param('id') id: string, @CurrentUser() currentUser: AuthUser) {
-    return isStudent(currentUser)
-      ? this.taskStudentViewService.findOne(id, currentUser)
-      : this.tasksService.findOne(id);
+    return this.tasksService.findOne(id);
   }
 
   @Patch(':id')

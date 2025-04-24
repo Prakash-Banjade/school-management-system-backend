@@ -1,32 +1,28 @@
-import { ForbiddenException, Inject, Injectable } from "@nestjs/common";
-import { REQUEST } from "@nestjs/core";
-import { FastifyRequest } from "fastify";
-import { BaseRepository } from "src/common/repository/base-repository";
-import { Brackets, DataSource } from "typeorm";
+import { ForbiddenException, Injectable } from "@nestjs/common";
+import { Brackets, Repository } from "typeorm";
 import { BookTransactionsQueryDto } from "./dto/book-transactions-query.dto";
 import { BookTransaction } from "./entities/book-transaction.entity";
 import { AuthUser, EBookTransactionStatus } from "src/common/types/global.type";
-import { PageMetaDto } from "src/common/dto/pageMeta.dto";
-import { PageDto } from "src/common/dto/page.dto.";
 import { isStudent } from "src/utils/utils";
+import { InjectRepository } from "@nestjs/typeorm";
+import { paginatedRawData } from "src/utils/paginatedData";
 
 @Injectable()
-export class BookTransactionsStudentViewService extends BaseRepository {
+export class BookTransactionsStudentViewService {
     constructor(
-        dataSource: DataSource,
-        @Inject(REQUEST) private req: FastifyRequest,
-    ) { super(dataSource, req) }
+        @InjectRepository(BookTransaction) private readonly bookTransactionRepo: Repository<BookTransaction>,
+    ) { }
 
     async findAll(queryDto: BookTransactionsQueryDto, currentUser: AuthUser) {
         if (!isStudent(currentUser)) throw new ForbiddenException();
 
-        const queryBuilder = this.getRepository(BookTransaction).createQueryBuilder('transaction');
+        const queryBuilder = this.bookTransactionRepo.createQueryBuilder('transaction');
 
         queryBuilder
             .orderBy("transaction.updatedAt", queryDto.order)
             .limit(queryDto.take) // need to use limit and offset instead of skip and take while using getRawMany
             .offset(queryDto.skip)
-            .leftJoin("transaction.student", "student", "student.id = :studentId", { studentId: currentUser.studentId })
+            .innerJoin("transaction.student", "student", "student.id = :studentId", { studentId: currentUser.studentId })
             .leftJoin("transaction.book", "book")
             .where(new Brackets(qb => {
                 if (queryDto.search) {
@@ -53,15 +49,12 @@ export class BookTransactionsStudentViewService extends BaseRepository {
                 "transaction.dueDate as dueDate",
                 "transaction.returnedAt as returnedAt",
                 "transaction.createdAt as createdAt",
+                "transaction.fine as fine",
+                "transaction.paidAt as paidAt",
                 "book.bookName AS bookName",
                 "book.bookCode AS bookCode",
             ])
 
-        const itemCount = await queryBuilder.getCount();
-        const data = await queryBuilder.getRawMany();
-
-        const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto: queryDto });
-
-        return new PageDto(data, pageMetaDto);
+        return paginatedRawData(queryDto, queryBuilder);
     }
 }

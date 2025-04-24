@@ -109,10 +109,6 @@ export class ClassRoomsService extends BaseRepository {
     };
   }
 
-  async exchangeParentAndSection({ }: { dto: CreateClassRoomDto, parent: ClassRoom }) {
-
-  }
-
   async findOne(id: string) {
     const existing = await this.getRepository(ClassRoom).findOne({
       where: {

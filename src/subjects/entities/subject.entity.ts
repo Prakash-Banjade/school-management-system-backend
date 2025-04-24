@@ -1,6 +1,6 @@
 import { ClassRoom } from "src/class-rooms/entities/class-room.entity";
 import { Teacher } from "src/teachers/entities/teacher.entity";
-import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne } from "typeorm";
+import { Column, Entity, Index, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne } from "typeorm";
 import { SubjectChapter } from "./subject-chapter.entity";
 import { Task } from "src/task-system/tasks/entities/task.entity";
 import { ClassRoutine } from "src/class-routines/entities/class-routine.entity";
@@ -16,6 +16,7 @@ export class Subject extends BaseEntity {
     @Column({ type: 'varchar' })
     subjectName: string;
 
+    @Index({ unique: true })
     @Column({ type: 'varchar' })
     subjectCode: string;
 

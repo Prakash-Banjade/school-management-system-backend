@@ -132,6 +132,7 @@ export class ExamsService extends BaseRepository {
       .select([
         'exam.id as id',
         'exam.createdAt as createdAt',
+        'exam.isReportPublished as isReportPublished',
         'examType.id as examTypeId', // required in frontend in exam columns
         'examType.name as examType',
         'classRoom.id as classRoomId', // required in frontend in exam columns
@@ -227,6 +228,18 @@ export class ExamsService extends BaseRepository {
     await this.getRepository(Exam).save(existing);
 
     return { message: 'Exam updated' }
+  }
+
+  async publishReport(id: string, publish: boolean) {
+    const existing = await this.getRepository(Exam).findOne({ where: { id }, select: { id: true } });
+
+    if (!existing) return;
+
+    existing.isReportPublished = publish;
+    
+    await this.getRepository(Exam).save(existing);
+
+    return { message: publish ? 'Report published' : 'Report unpublished' }
   }
 
   private async removeDiscardedSubjects(previousExamSubjectIds: string[], currentExamSubjectIds: string[]) {
