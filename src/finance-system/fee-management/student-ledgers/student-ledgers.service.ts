@@ -10,6 +10,8 @@ import { LedgerQueryDto } from './dto/ledger-query.dto';
 import { LedgerItem } from './entities/ledger-item.entity';
 import { PageMetaDto } from 'src/common/dto/pageMeta.dto';
 import { UtilitiesService } from 'src/utilities/utilities.service';
+import { AuthUser } from 'src/common/types/global.type';
+import { isStudent } from 'src/utils/utils';
 
 @Injectable()
 export class StudentLedgersService extends BaseRepository {
@@ -36,8 +38,9 @@ export class StudentLedgersService extends BaseRepository {
         await this.getRepository(Enrollment).save(enrollments);
     }
 
-    async findAll(queryDto: LedgerQueryDto) {
+    async findAll(queryDto: LedgerQueryDto, currentUser: AuthUser) {
         const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
+        const studentId = isStudent(currentUser) ? currentUser.studentId : queryDto.studentId;
 
         const querybuilder = this.getRepository(LedgerItem).createQueryBuilder('ledgerItem')
             .leftJoin('ledgerItem.studentLedger', 'studentLedger')
@@ -51,7 +54,7 @@ export class StudentLedgersService extends BaseRepository {
             .offset(queryDto.skip)
             .orderBy('ledgerItem.createdAt', queryDto.order)
             .andWhere(new Brackets(qb => {
-                queryDto.studentId && qb.andWhere('enrollment.studentId = :studentId', { studentId: queryDto.studentId });
+                studentId && qb.andWhere('enrollment.studentId = :studentId', { studentId });
 
                 queryDto.particular === 'invoice' && qb.andWhere('feeInvoice.id IS NOT NULL');
 
@@ -70,7 +73,7 @@ export class StudentLedgersService extends BaseRepository {
 
         const ledgerAmount = await querybuilder.clone()
             .andWhere(new Brackets(qb => {
-                queryDto.studentId && qb.andWhere('enrollment.studentId = :studentId', { studentId: queryDto.studentId });
+                studentId && qb.andWhere('enrollment.studentId = :studentId', { studentId });
             }))
             .select('studentLedger.amount', 'ledgerAmount')
             .getRawOne();
