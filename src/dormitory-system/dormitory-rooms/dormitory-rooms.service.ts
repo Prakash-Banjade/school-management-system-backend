@@ -94,6 +94,8 @@ export class DormitoryRoomsService {
       .where('dormitoryRoom.id = :id', { id: dormitoryRoom.id })
       .leftJoin('dormitoryRoom.students', 'students', 'students.id != :studentId', { studentId: currentUser.studentId })
       .leftJoin('students.classRoom', 'classRoom')
+      .leftJoin('students.account', 'account')
+      .leftJoin('account.profileImage', 'profileImage')
       .leftJoin('dormitoryRoom.dormitory', 'dormitory')
       .leftJoin('dormitoryRoom.roomType', 'roomType')
       .select([
@@ -108,6 +110,11 @@ export class DormitoryRoomsService {
         'students.id',
         'students.firstName',
         'students.lastName',
+        'students.phone',
+        'account.id',
+        'account.email',
+        'profileImage.id',
+        'profileImage.url',
         'classRoom.id',
         'classRoom.fullName',
       ])

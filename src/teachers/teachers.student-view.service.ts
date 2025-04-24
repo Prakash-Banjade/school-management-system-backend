@@ -24,22 +24,22 @@ export class TeachersStudentViewService {
             .limit(queryDto.take)
             .leftJoin('teacher.account', 'account')
             .leftJoin("account.profileImage", "profileImage")
-            .leftJoin("teacher.assignedSubjects", "assignedSubjects")
-            .leftJoin("assignedSubjects.classRoom", "classRoom")
-            .andWhere('classRoom.id = :classRoomId', { classRoomId: currentUser.parentClassId ?? currentUser.classRoomId })
+            .innerJoin("teacher.classRoutines", "classRoutines", 'classRoutines.classRoomId = :classRoomId', { classRoomId: currentUser.classRoomId })
+            // .leftJoin("classRoutines.subject", "subject")
             .andWhere(new Brackets(qb => {
                 queryDto.search && qb.andWhere(new Brackets(qb => {
                     qb.orWhere("account.lowerCasedFullName LIKE LOWER(:search)", { search: `${queryDto.search}%` })
                 }))
             }))
             .select([
-                'teacher.teacherId as teacherId',
+                'teacher.id as teacherId',
                 'CONCAT(teacher.firstName, \' \', teacher.lastName) as teacherFullName',
                 'teacher.email as email',
                 'teacher.phone as phone',
                 'profileImage.url as profileImageUrl',
-                'JSON_ARRAYAGG(JSON_OBJECT("subjectId", assignedSubjects.id, "subjectName", assignedSubjects.subjectName)) as subjects',
+                // 'JSON_ARRAYAGG(JSON_OBJECT("subjectId", subject.id, "subjectName", subject.subjectName)) as subjects', // TODO: avoid duplicate subjects, for now it is done in frontend
             ])
+            .cache(true)
             .groupBy('teacher.id');
 
         return paginatedRawData(queryDto, queryBuilder);
