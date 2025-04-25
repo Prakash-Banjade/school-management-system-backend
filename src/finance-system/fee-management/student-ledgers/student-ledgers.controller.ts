@@ -23,4 +23,12 @@ export class StudentLedgersController {
   findAllLedgerItems(@Query() queryDto: LedgerQueryDto, @CurrentUser() currentUser: AuthUser) {
     return this.studentLedgersService.findAll(queryDto, currentUser);
   }
+
+  @Get('statistics')
+  @ApiOperation({ summary: 'Get student ledger statistics' })
+  @ApiResponse({ status: 200, description: 'Student ledger statistics returned successfully' })
+  @CheckAbilities({ subject: Role.STUDENT, action: Action.READ })
+  getStatistics(@CurrentUser() currentUser: AuthUser) {
+    return this.studentLedgersService.getStatistics(currentUser);
+  }
 }

@@ -6,7 +6,7 @@ import { ClassRoom } from './entities/class-room.entity';
 import { REQUEST } from '@nestjs/core';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { FastifyRequest } from 'fastify';
-import { EClassType } from 'src/common/types/global.type';
+import { AuthUser, EClassType } from 'src/common/types/global.type';
 import { classRoomColumnsConfig } from './helpers/class-room-select-cols.config';
 import { FeeStructuresService } from 'src/finance-system/fee-management/fee-structures/fee-structures.service';
 import { Teacher } from 'src/teachers/entities/teacher.entity';
@@ -14,6 +14,7 @@ import { UtilitiesService } from 'src/utilities/utilities.service';
 import { BranchesService } from 'src/branches/branches.service';
 import { Faculty } from 'src/faculties/entities/faculty.entity';
 import { FeeStructure } from 'src/finance-system/fee-management/fee-structures/entities/fee-structure.entity';
+import { isStudent } from 'src/utils/utils';
 
 @Injectable({ scope: Scope.REQUEST })
 export class ClassRoomsService extends BaseRepository {
@@ -161,5 +162,16 @@ export class ClassRoomsService extends BaseRepository {
       select: { id: true }
     });
     if (existingWithSameName) throw new ConflictException('Class room with same name already exists');
+  }
+
+  async getMyClassInfo(currentUser: AuthUser) {
+    if (!isStudent(currentUser)) return null;
+
+    return this.getRepository(ClassRoom).findOne({
+      where: {
+        id: currentUser.classRoomId,
+      },
+      select: { id: true, fullName: true }
+    });
   }
 }

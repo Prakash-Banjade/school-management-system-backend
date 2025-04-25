@@ -7,10 +7,11 @@ import { ClassRoomOptionsQueryDto, ClassRoomQueryDto } from './dto/classRoom-que
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 import { ApiPaginatedResponse } from 'src/common/decorators/apiPaginatedResponse.decorator';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action, Role } from 'src/common/types/global.type';
+import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { ClassRoomsHelper } from './helpers/class-rooms.helper';
 import { AttendanceStatisticsQueryDto } from './dto/attendance-statistics-query.dto';
 import { ClassRoomsStatistics } from './helpers/class-rooms.statistics';
+import { CurrentUser } from 'src/common/decorators/user.decorator';
 
 @ApiBearerAuth()
 @ApiTags('Class rooms')
@@ -79,6 +80,15 @@ export class ClassRoomsController {
   @ApiResponse({ status: 200, description: 'Assigned classes retrieved successfully.' })
   getMyAssignedClasses(@Query() queryDto: ClassRoomQueryDto) {
     return this.classRoomsHelper.getMyAssignedClasses(queryDto);
+  }
+
+  @Get('my-class')
+  @ApiOperation({ summary: 'Get my class info' })
+  @ApiResponse({ status: 200, description: 'My class info returned successfully.' })
+  @ApiResponse({ status: 403, description: 'Forbidden. Only student can access.' })
+  @CheckAbilities({ subject: Role.STUDENT, action: Action.READ })
+  getMyInfo(@CurrentUser() currentUser: AuthUser) {
+    return this.classRoomsService.getMyClassInfo(currentUser);
   }
 
   @Get(':id')

@@ -1,42 +1,27 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
 import { BaseRepository } from 'src/common/repository/base-repository';
-import { Student } from 'src/students/entities/student.entity';
 import { Brackets, DataSource } from 'typeorm';
-import { StudentLedger } from './entities/student-ledger.entity';
-import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { LedgerQueryDto } from './dto/ledger-query.dto';
 import { LedgerItem } from './entities/ledger-item.entity';
 import { PageMetaDto } from 'src/common/dto/pageMeta.dto';
 import { UtilitiesService } from 'src/utilities/utilities.service';
 import { AuthUser } from 'src/common/types/global.type';
 import { isStudent } from 'src/utils/utils';
+import { StudentLedger } from './entities/student-ledger.entity';
+import { AcademicYearsService } from 'src/academic-years/academic-years.service';
+import { FeeInvoice } from '../fee-invoice/entities/fee-invoice.entity';
+import { FeePayment } from '../fee-payments/entities/fee-payment.entity';
 
 @Injectable()
 export class StudentLedgersService extends BaseRepository {
     constructor(
         dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
         private readonly utilitiesService: UtilitiesService,
+        private readonly academicYearService: AcademicYearsService
     ) { super(dataSource, req); }
 
-    async createStudentsLedger() { // TODO: remove in production
-        const academicYearId = await this.utilitiesService.getAcademicYearId();
-
-        const students = await this.getRepository(Student).createQueryBuilder('student')
-            .leftJoin('student.enrollments', 'enrollments')
-            .where('enrollments.academicYearId = :academicYearId', { academicYearId: academicYearId })
-            .select(['student.id', 'enrollments.id'])
-            .getMany();
-
-        const enrollments = students.map(student => {
-            const enrollment = student.enrollments[0];
-            enrollment.ledger = this.getRepository(StudentLedger).create();
-            return enrollment;
-        });
-
-        await this.getRepository(Enrollment).save(enrollments);
-    }
 
     async findAll(queryDto: LedgerQueryDto, currentUser: AuthUser) {
         const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
@@ -90,6 +75,57 @@ export class StudentLedgersService extends BaseRepository {
             ledgerAmount: ledgerAmount?.ledgerAmount,
             meta: pageMetaDto,
         };
+    }
+
+    async getStatistics(currentUser: AuthUser) {
+        const currentAcademicYearId = await this.academicYearService.getCurrentAcademicYearId();
+
+        if (!isStudent(currentUser)) throw new ForbiddenException('Access Denied');
+
+        const studentLedger = await this.getRepository(StudentLedger).createQueryBuilder('ledger')
+            .leftJoin('ledger.enrollment', 'enrollment')
+            .where("enrollment.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
+            .andWhere("enrollment.studentId = :studentId", { studentId: currentUser.studentId })
+            .select([
+                'ledger.id',
+                'ledger.amount',
+            ])
+            .getOne();
+
+        if (!studentLedger) throw new NotFoundException('Ledger not found');
+
+        const lastInvoice = await this.getRepository(FeeInvoice).createQueryBuilder('invoice')
+            .orderBy('invoice.createdAt', 'DESC')
+            .leftJoin("invoice.ledgerItem", "ledgerItem")
+            .leftJoin("ledgerItem.studentLedger", "studentLedger")
+            .where("studentLedger.id = :studentLedgerId", { studentLedgerId: studentLedger.id })
+            .select([
+                "invoice.id",
+                "invoice.totalAmount",
+                "invoice.dueDate",
+                "invoice.invoiceNo"
+            ])
+            .limit(1)
+            .getOne();
+
+        const lastPayment = await this.getRepository(FeePayment).createQueryBuilder('payment')
+            .orderBy('payment.createdAt', 'DESC')
+            .leftJoin("payment.ledgerItem", "ledgerItem")
+            .leftJoin("ledgerItem.studentLedger", "studentLedger")
+            .where("studentLedger.id = :studentLedgerId", { studentLedgerId: studentLedger.id })
+            .select([
+                "payment.id",
+                "payment.amount",
+                "payment.createdAt",
+            ])
+            .limit(1)
+            .getOne();
+
+        return {
+            studentLedger,
+            lastInvoice,
+            lastPayment
+        }
     }
 
 }

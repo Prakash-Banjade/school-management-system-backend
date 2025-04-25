@@ -20,6 +20,9 @@ export class Exam extends BaseEntity {
     @ManyToOne(() => AcademicYear, academicYear => academicYear.exams, { onDelete: 'CASCADE', nullable: false })
     academicYear: AcademicYear;
 
+    @Column({ type: 'datetime', nullable: false })
+    startingFrom: string;
+
     @Column({ type: 'boolean', default: false })
     isReportPublished: boolean;
 }

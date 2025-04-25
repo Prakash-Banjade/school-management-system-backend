@@ -1,19 +1,17 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { REQUEST } from "@nestjs/core";
-import { FastifyRequest } from "fastify";
-import { BaseRepository } from "src/common/repository/base-repository";
-import { Brackets, DataSource } from "typeorm";
+import { Injectable } from "@nestjs/common";
+import { Brackets, Repository } from "typeorm";
 import { BookTransaction } from "../entities/book-transaction.entity";
 import { UnpaidTransactionsQueryDto } from "../dto/book-transactions-query.dto";
+import { InjectRepository } from "@nestjs/typeorm";
 
 @Injectable()
-export class BookTransactionsHelper extends BaseRepository {
+export class BookTransactionsHelper {
     constructor(
-        dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
-    ) { super(dataSource, req) }
+        @InjectRepository(BookTransaction) private readonly bookTransactionRepo: Repository<BookTransaction>
+    ) { }
 
     async getUnPaidTransactions(queryDto: UnpaidTransactionsQueryDto) {
-        const querybuilder = this.getRepository(BookTransaction).createQueryBuilder('transaction')
+        const querybuilder = this.bookTransactionRepo.createQueryBuilder('transaction')
             .leftJoin('transaction.book', 'book')
             .where('transaction.returnedAt IS NOT NULL') // ensure book is returned
             .andWhere('transaction.paidAt IS NULL') // unpaid transactions

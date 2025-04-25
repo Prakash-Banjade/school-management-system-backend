@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Query, UseInterceptors, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Query, UseInterceptors } from '@nestjs/common';
 import { StudentsService } from './students.service';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentClassDto, UpdateStudentDto } from './dto/update-student.dto';
@@ -6,10 +6,8 @@ import { PastStudentsQueryDto, StudentAttendanceQueryDto, StudentQueryDto } from
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action, AuthUser, Role } from 'src/common/types/global.type';
-import { CurrentUser } from 'src/common/decorators/user.decorator';
+import { Action, Role } from 'src/common/types/global.type';
 import { StudentsHelper } from './helpers/students.helper';
-import { isStudent } from 'src/utils/utils';
 
 @ApiBearerAuth()
 @ApiTags('Students')
@@ -66,16 +64,6 @@ export class StudentsController {
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   findFeeStudent(@Param('studentId') studentId: string) {
     return this.studentsHelper.getFeeStudent(studentId);
-  }
-
-  @Get('me')
-  @ApiOperation({ summary: 'Get my info' })
-  @ApiResponse({ status: 200, description: 'My info returned successfully.' })
-  @ApiResponse({ status: 403, description: 'Forbidden. Only student can access.' })
-  @CheckAbilities({ subject: Role.STUDENT, action: Action.READ })
-  getMyInfo(@CurrentUser() currentUser: AuthUser) {
-    if (!isStudent(currentUser)) throw new ForbiddenException()
-    return this.studentsService.findOne(currentUser.studentId);
   }
 
   @Get(':id')

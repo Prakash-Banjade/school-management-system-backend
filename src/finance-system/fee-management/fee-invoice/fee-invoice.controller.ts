@@ -3,8 +3,9 @@ import { FeeInvoiceService } from './fee-invoice.service';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreateFeeInvoiceDto } from './dto/create-fee-invoice.dto';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action, Role } from 'src/common/types/global.type';
+import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
+import { CurrentUser } from 'src/common/decorators/user.decorator';
 
 @ApiBearerAuth()
 @ApiTags('Fee Invoices')
@@ -39,8 +40,11 @@ export class FeeInvoiceController {
   @ApiOperation({ summary: 'Get fee invoice by id' })
   @ApiResponse({ status: 200, description: 'Fee invoice returned successfully' })
   @ApiResponse({ status: 404, description: 'Fee invoice not found' })
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  findOne(@Param('id') id: string) {
-    return this.feeInvoiceService.findOne(id);
+  @CheckAbilities(
+    { subject: Role.ADMIN, action: Action.READ },
+    { subject: Role.STUDENT, action: Action.READ }
+  )
+  findOne(@Param('id') id: string, @CurrentUser() currentUser: AuthUser) {
+    return this.feeInvoiceService.findOne(id, currentUser);
   }
 }

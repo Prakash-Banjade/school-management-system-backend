@@ -1,16 +1,17 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { REQUEST } from "@nestjs/core";
 import { FastifyRequest } from "fastify";
 import { AuthMessage, WEAK_PERCENTAGE_THRESHOLD } from "src/common/CONSTANTS";
 import { BaseRepository } from "src/common/repository/base-repository";
 import { Student } from "src/students/entities/student.entity";
-import { Brackets, DataSource } from "typeorm";
+import { Brackets, DataSource, QueryBuilder } from "typeorm";
 import { Exam } from "../entities/exam.entity";
 import { ExamReportsService } from "src/examination-system/exam-reports/exam-reports.service";
 import { ExamStudentsQueryDto } from "../dto/exam-query.dto";
 import { AuthUser, ESubjectType } from "src/common/types/global.type";
 import { UtilitiesService } from "src/utilities/utilities.service";
 import { isStudent } from "src/utils/utils";
+import { AcademicYearsService } from "src/academic-years/academic-years.service";
 
 @Injectable()
 export class ExamsHelper extends BaseRepository {
@@ -18,6 +19,7 @@ export class ExamsHelper extends BaseRepository {
         dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
         private readonly examReportsService: ExamReportsService,
         private readonly utilitiesService: UtilitiesService,
+        private readonly academicYearService: AcademicYearsService,
     ) { super(dataSource, req) }
 
     async getExamStudents(examId: string, queryDto: ExamStudentsQueryDto) {
@@ -160,5 +162,32 @@ export class ExamsHelper extends BaseRepository {
             failedSubjectsCount,
             weakSubjects
         }
+    }
+
+    async getUpcommingExam(currentUser: AuthUser) { // used in student dashboard
+        if (!isStudent(currentUser)) throw new ForbiddenException();
+
+        const academicYearId = await this.academicYearService.getCurrentAcademicYearId();
+
+        const querybuilder = this.getRepository(Exam).createQueryBuilder('exam')
+            .where("exam.academicYearId = :academicYearId", { academicYearId })
+            .andWhere("exam.classRoomId = :classRoomId", { classRoomId: currentUser.parentClassId ?? currentUser.classRoomId }) // exam is associated with primary class, so check with parentClassId first
+            .andWhere("DATE(exam.startingFrom) >= DATE(:startingFrom)", { startingFrom: new Date() })
+            .leftJoin("exam.examType", "examType")
+            .leftJoin("exam.examSubjects", "examSubjects")
+            .leftJoin("examSubjects.subject", "subject")
+            .select([
+                "exam.id",
+                "examType.id",
+                "examType.name",
+                "examSubjects.id",
+                "examSubjects.examDate",
+                "subject.id",
+                "subject.subjectName",
+                "examSubjects.venue",
+                "examSubjects.startTime",
+            ]);
+
+        return querybuilder.getOne();
     }
 }

@@ -14,6 +14,8 @@ import { ELedgerItemType, LedgerItem } from '../student-ledgers/entities/ledger-
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EFeeInvoiceEvent, FeeInvoiceCreatedEvent } from './fee-invoice.mailer';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
+import { AuthUser } from 'src/common/types/global.type';
+import { isStudent } from 'src/utils/utils';
 
 @Injectable({ scope: Scope.REQUEST })
 export class FeeInvoiceService extends BaseRepository {
@@ -195,7 +197,7 @@ export class FeeInvoiceService extends BaseRepository {
         };
     }
 
-    async findOne(id: string) {
+    async findOne(id: string, currentUser: AuthUser) {
         const queryBuilder = this.getRepository(FeeInvoice).createQueryBuilder('feeInvoice')
             .leftJoin('feeInvoice.feePayments', 'feePayments')
             .leftJoin('feeInvoice.ledgerItem', 'ledgerItem')
@@ -223,7 +225,13 @@ export class FeeInvoiceService extends BaseRepository {
                 'chargeHead.id',
                 'chargeHead.name',
                 // 'feePayments.amount'
-            ])
+            ]);
+
+        if (isStudent(currentUser)) { // student can view only their own invoice
+            queryBuilder.andWhere('student.id = :studentId', { studentId: currentUser.studentId });
+        }
+
+        queryBuilder
             .addSelect('SUM(feePayments.amount)', 'totalFeesPaid')
             .addSelect(`
                 JSON_OBJECT(

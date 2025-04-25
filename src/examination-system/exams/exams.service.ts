@@ -15,7 +15,6 @@ import { FastifyRequest } from 'fastify';
 import { REQUEST } from '@nestjs/core';
 import { paginatedRawData } from 'src/utils/paginatedData';
 import { isStudent } from 'src/utils/utils';
-import { AcademicYearsService } from 'src/academic-years/academic-years.service';
 import { ExamType } from '../exam-types/entities/exam-type.entity';
 import { UtilitiesService } from 'src/utilities/utilities.service';
 import { AcademicYear } from 'src/academic-years/entities/academic-year.entity';
@@ -24,7 +23,6 @@ import { AcademicYear } from 'src/academic-years/entities/academic-year.entity';
 export class ExamsService extends BaseRepository {
   constructor(
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
-    private readonly academicYearService: AcademicYearsService,
     private readonly utilitiesService: UtilitiesService,
   ) { super(dataSource, req); }
 
@@ -76,13 +74,16 @@ export class ExamsService extends BaseRepository {
         venue: examSubject.venue,
         subject
       })
-    }))
+    }));
+
+    const startingFrom = examSubjects.sort((a, b) => new Date(a.examDate).getTime() - new Date(b.examDate).getTime())[0].examDate;
 
     const newExam = this.getRepository(Exam).create({
       examType,
       classRoom,
       academicYear,
       examSubjects,
+      startingFrom
     });
 
     await this.getRepository(Exam).save(newExam);
@@ -236,7 +237,7 @@ export class ExamsService extends BaseRepository {
     if (!existing) return;
 
     existing.isReportPublished = publish;
-    
+
     await this.getRepository(Exam).save(existing);
 
     return { message: publish ? 'Report published' : 'Report unpublished' }
