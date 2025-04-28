@@ -14,6 +14,13 @@ export type AuthUser = {
     studentId: string;
     branchId: string;
     deviceId: string;
+} | {
+    accountId: string;
+    email: string;
+    role: Role.TEACHER;
+    teacherId: string;
+    branchId: string;
+    deviceId: string;
 }
 
 export enum Action {

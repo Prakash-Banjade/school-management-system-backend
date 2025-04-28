@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
-import { IsOptional, IsString } from "class-validator";
+import { IsBoolean, IsOptional, IsString } from "class-validator";
 import { QueryDto } from "src/common/dto/query.dto";
 
 export class FacultyOptionsQueryDto extends QueryDto {
@@ -13,4 +13,11 @@ export class FacultyOptionsQueryDto extends QueryDto {
     @IsOptional()
     @Transform(({ value }) => value === 'true')
     keyValue: boolean;
+
+    // used by teacher to get assigned classes
+    @ApiPropertyOptional({ description: 'Flag to include only assigned classes. If true, returns the assigned classes.' })
+    @IsOptional()
+    @IsBoolean()
+    @Transform(({ value }) => value === 'true')
+    assigned: boolean = false;
 }

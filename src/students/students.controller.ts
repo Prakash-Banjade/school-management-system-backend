@@ -45,7 +45,10 @@ export class StudentsController {
 
   @Get('attendances')
   @ApiOperation({ summary: 'Get all students with attendance of specified date.' })
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @CheckAbilities(
+    { subject: Role.ADMIN, action: Action.READ },
+    { subject: Role.TEACHER, action: Action.READ },
+  )
   findAllAttendance(@Query() queryDto: StudentAttendanceQueryDto) {
     return this.studentsHelper.getStudentsWithAttendance(queryDto);
   }

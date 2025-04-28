@@ -91,6 +91,8 @@ export class AttendancesService extends BaseRepository {
   async updateInBatch(updateAttendanceBatchDto: UpdateAttendanceBatchDto) {
     const attendancesToRemove = updateAttendanceBatchDto.updatedAttendances?.map(attendance => attendance.status === null ? attendance.id : null).filter(Boolean);
 
+    // TODO: if teacher is updating the attendance, make sure he is the class teacher
+    
     const attendances = await Promise.all(updateAttendanceBatchDto.updatedAttendances.filter(a => a.status !== null)?.map(async attendance => {
       if (!!attendance?.outTime && !attendance?.inTime) throw new BadRequestException('There must be in time to have out time.')
 

@@ -156,7 +156,6 @@ export class ClassRoomsHelper extends BaseRepository {
             .leftJoin('classRoom.classRoutines', 'classRoutine')
             .leftJoin('classRoutine.teacher', 'teacher')
             .leftJoin('classRoutine.subject', 'subject')
-            .leftJoin('classRoom.parent', 'parent')
             .where('teacher.accountId = :accountId', { accountId })
             .andWhere(new Brackets((qb) => {
                 if (queryDto.search) {
@@ -166,7 +165,7 @@ export class ClassRoomsHelper extends BaseRepository {
             .groupBy('classRoom.id, subject.id') // Group by unique key combination
             .select([
                 'classRoom.id as id',
-                'CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, \' - \', classRoom.name) END as name',
+                'classRoom.fullName as name',
                 'subject.id as subjectId',
                 'subject.subjectName as subjectName',
             ]);

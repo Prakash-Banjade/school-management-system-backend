@@ -16,6 +16,7 @@ import { FeeInvoice } from "src/finance-system/fee-management/fee-invoice/entiti
 import { ELedgerItemType } from "src/finance-system/fee-management/student-ledgers/entities/ledger-item.entity";
 import { isUUID } from "class-validator";
 import { UtilitiesService } from "src/utilities/utilities.service";
+import { isTeacher } from "src/utils/utils";
 
 @Injectable()
 export class StudentsHelper extends BaseRepository {
@@ -160,6 +161,7 @@ export class StudentsHelper extends BaseRepository {
 
     async getStudentsWithAttendance(queryDto: StudentAttendanceQueryDto) {
         const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
+        const currentUser = this.utilitiesService.getCurrentUser();
 
         const queryBuilder = this.getRepository(Student).createQueryBuilder('student')
             .innerJoin("student.enrollments", "enrollments", "enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
@@ -173,10 +175,20 @@ export class StudentsHelper extends BaseRepository {
                 "attendance.accountId = account.id AND DATE(attendance.date) = DATE(:attendanceDate)",
                 { attendanceDate: queryDto.date }
             )
-            .andWhere(new Brackets((qb) => {
-                queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId OR parent.id = :classRoomId', { classRoomId: queryDto.classRoomId });
-                queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId });
-            }))
+
+        if (queryDto.classRoomId) {
+            queryBuilder.andWhere('classRoom.id = :classRoomId OR parent.id = :classRoomId', { classRoomId: queryDto.classRoomId })
+        }
+
+        if (queryDto.sectionId) {
+            queryBuilder.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId })
+        }
+
+        if (isTeacher(currentUser)) { // teacher can view the attendance of their assigned classes only
+            queryBuilder.andWhere('classRoom.classTeacherId = :teacherId', { teacherId: currentUser.teacherId })
+        }
+
+        queryBuilder
             .select([
                 "student.id",
                 "student.firstName",

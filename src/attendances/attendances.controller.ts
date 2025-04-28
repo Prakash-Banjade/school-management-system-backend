@@ -59,7 +59,10 @@ export class AttendancesController {
   }
 
   @Patch('batch')
-  @CheckAbilities({ action: Action.UPDATE, subject: Role.ADMIN })
+  @CheckAbilities(
+    { action: Action.UPDATE, subject: Role.ADMIN },
+    { action: Action.UPDATE, subject: Role.TEACHER }
+  )
   @UseInterceptors(TransactionInterceptor)
   @ApiOperation({ summary: 'Update multiple attendance records in a batch' })
   @ApiResponse({ status: 200, description: 'Attendance records have been successfully updated in batch.' })

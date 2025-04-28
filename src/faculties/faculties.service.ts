@@ -8,7 +8,7 @@ import { FacultyOptionsQueryDto } from './dto/faculties-query.dto';
 import { paginatedRawData } from 'src/utils/paginatedData';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { UtilitiesService } from 'src/utilities/utilities.service';
-import { EClassType } from 'src/common/types/global.type';
+import { EClassType, Role } from 'src/common/types/global.type';
 import { QueryDto } from 'src/common/dto/query.dto';
 
 @Injectable()
@@ -69,47 +69,41 @@ export class FacultiesService {
 
   async getOptions(queryDto: FacultyOptionsQueryDto) {
     const branchId = this.utilitiesService.getBranchId();
+    const currentUser = this.utilitiesService.getCurrentUser();
 
     const includeSection = queryDto.include === 'section';
-    const includeClassRoom = includeSection || queryDto.include === 'classRoom';
+    const includeClassRoom = includeSection || queryDto.include === 'classRoom' || currentUser.role === Role.TEACHER;
 
     if (queryDto.keyValue) return this.getOptionsByKeyValue(queryDto);
 
-    return this.facultiesRepo.createQueryBuilder('faculty')
+    const querybuilder = this.facultiesRepo.createQueryBuilder('faculty')
       .orderBy('faculty.name', 'ASC')
-      .leftJoin(
+      .select(["faculty.id", "faculty.name"]);
+
+    if (includeClassRoom) {
+      querybuilder.leftJoin(
         'faculty.classRooms',
         'classRooms',
-        includeClassRoom
-          ? !!branchId
-            ? "classRooms.branchId = :branchId AND classRooms.classType = :classType"
-            : 'classRooms.classType = :classType'
-          : '1 = 0',
+        !!branchId
+          ? "classRooms.branchId = :branchId AND classRooms.classType = :classType"
+          : 'classRooms.classType = :classType',
         { branchId, classType: EClassType.PRIMARY }
-      )
-      .leftJoin(
-        'classRooms.children',
-        'children',
-        includeSection ? '1 = 1' : '1 = 0'
-      )
-      .select([
-        "faculty.id",
-        "faculty.name",
-        ...(
-          includeClassRoom ? [
-            "classRooms.id",
-            "classRooms.name"
-          ] : []
-        ),
-        ...(
-          includeSection ? [
-            "children.id",
-            "children.name"
-          ] : []
-        )
+      ).addSelect([
+        "classRooms.id",
+        "classRooms.name"
       ])
-      .cache(true)
-      .getMany()
+    }
+
+    if (includeSection) {
+      querybuilder
+        .leftJoin('classRooms.children', 'children')
+        .addSelect([
+          "children.id",
+          "children.name"
+        ])
+    }
+
+    return querybuilder.cache(true).getMany();
   }
 
 

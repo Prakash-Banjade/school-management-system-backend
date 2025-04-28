@@ -1,10 +1,10 @@
-import { Injectable } from "@nestjs/common";
+import { ForbiddenException, Injectable } from "@nestjs/common";
 import { DataSource } from "typeorm";
 import { FacultyOptionsQueryDto } from "../dto/faculties-query.dto";
 import { UtilitiesService } from "src/utilities/utilities.service";
 import { Faculty } from "../entities/faculty.entity";
 import { EClassType } from "src/common/types/global.type";
-import { ClassRoutine } from "src/class-routines/entities/class-routine.entity";
+import { isTeacher } from "src/utils/utils";
 
 @Injectable()
 export class FacultiesHelper {
@@ -15,68 +15,47 @@ export class FacultiesHelper {
 
     async getOptionsForTeacher(queryDto: FacultyOptionsQueryDto) {
         const branchId = this.utilitiesService.getBranchId();
-        const { accountId } = this.utilitiesService.getCurrentUser();
+        const currentUser = this.utilitiesService.getCurrentUser();
 
-        const includeSection = queryDto.include === 'section';
-        const includeClassRoom = includeSection || queryDto.include === 'classRoom';
+        if (!isTeacher(currentUser)) throw new ForbiddenException('Access Denied');
 
-        const querybuilder = this.dataSource.getRepository(Faculty).createQueryBuilder('faculty').orderBy('faculty.name', 'ASC').distinct(true)
+        const querybuilder = this.dataSource.getRepository(Faculty).createQueryBuilder('faculty')
+            .orderBy('faculty.name', 'ASC')
+            .select(["faculty.id", "faculty.name"]);
 
-        if (includeClassRoom) {
-            querybuilder.leftJoin(
+        // select class rooms
+        querybuilder
+            .leftJoin(
                 "faculty.classRooms",
                 "classRooms",
                 "classRooms.classType = :classType AND classRooms.branchId = :branchId",
                 { classType: EClassType.PRIMARY, branchId }
             )
-        }
-
-        if (includeSection) {
-            querybuilder.leftJoin("classRooms.children", "children")
-        }
-
-        querybuilder.select([
-            "faculty.id",
-            "faculty.name",
-            ...(
-                includeClassRoom ? [
-                    "classRooms.id",
-                    "classRooms.name"
-                ] : []
-            ),
-            ...(
-                includeSection ? [
-                    "children.id",
-                    "children.name"
-                ] : []
-            )
-        ]);
-
-        return querybuilder.getMany();
-    }
-
-
-    /**
-    |--------------------------------------------------
-    | TODO: IMPLEMENT A DEFAULT SECTION WITH SAME CLASS NAME WHEN CLASS ROOM IS ADDED AT FIRST, SO THAT NO NO CLASSROOM WITH NO CHILDREN
-    |--------------------------------------------------
-    */
-
-    private async getClassRoomIds() {
-        const { accountId } = this.utilitiesService.getCurrentUser();
-
-        const classRoutines = this.dataSource.getRepository(ClassRoutine).createQueryBuilder('classRoutine')
-            .leftJoin('classRoutine.classRoom', 'classRoom')
-            .leftJoin('classRoom.parent', 'parent')
-            .leftJoin('classRoutine.teacher', 'teacher')
-            .where('teacher.accountId = :accountId', { accountId })
-            .select([
-                'classRoutine.id',
-                'classRoom.id',
-                'parent.id',
+            .addSelect([
+                "classRooms.id",
+                "classRooms.name"
             ])
-            .distinct(true);
 
-        return classRoutines.getMany();
+        // select children classes
+        querybuilder
+            .leftJoin('classRooms.children', 'children')
+            .addSelect([
+                "children.id",
+                "children.name"
+            ])
+
+        // apply filter to get the classes of teacher
+        if (queryDto.assigned) {
+            querybuilder
+                .andWhere('classRooms.classTeacherId = :teacherId OR children.classTeacherId = :teacherId', { teacherId: currentUser.teacherId });
+        } else {
+            querybuilder
+                .leftJoin('classRooms.classRoutines', 'classRoutine')
+                .leftJoin('children.classRoutines', 'childrenClassRoutine')
+                .andWhere('classRoutine.teacherId = :teacherId OR childrenClassRoutine.teacherId = :teacherId', { teacherId: currentUser.teacherId });
+        }
+
+
+        return querybuilder.cache(true).distinct(true).getMany();
     }
 }

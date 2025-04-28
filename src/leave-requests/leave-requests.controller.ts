@@ -26,7 +26,6 @@ export class LeaveRequestsController {
 
   @Get()
   @CheckAbilities(
-    { subject: Role.SUPER_ADMIN, action: Action.READ },
     { subject: Role.ADMIN, action: Action.READ },
     { subject: Role.TEACHER, action: Action.READ },
   )
