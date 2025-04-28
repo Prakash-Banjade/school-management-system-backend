@@ -9,6 +9,7 @@ import { Attendance } from "src/attendances/entities/attendance.entity";
 import { Student } from "src/students/entities/student.entity";
 import { ClassRoom } from "../entities/class-room.entity";
 import { UtilitiesService } from "src/utilities/utilities.service";
+import { isTeacher } from "src/utils/utils";
 
 @Injectable()
 export class ClassRoomsStatistics extends BaseRepository {
@@ -19,6 +20,7 @@ export class ClassRoomsStatistics extends BaseRepository {
 
     async getAttendanceStatistics(classRoomId: string, queryDto: AttendanceStatisticsQueryDto) {
         const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
+        const currentUser = this.utilitiesService.getCurrentUser();
 
         const attendanceCondition = queryDto.period === ClassRoomAttendancePeriod.THIS_WEEK
             ? "WEEK(attendance.date) = WEEK(CURRENT_DATE()) AND YEAR(attendance.date) = YEAR(CURRENT_DATE())"
@@ -30,10 +32,16 @@ export class ClassRoomsStatistics extends BaseRepository {
                         ? "DATE(attendance.date) >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY) AND DATE(attendance.date) <= CURRENT_DATE()"
                         : null;
 
-        const classRoom = await this.getRepository(ClassRoom).createQueryBuilder('classRoom')
+        const classRoomQueryBuilder = this.getRepository(ClassRoom).createQueryBuilder('classRoom')
             .where("classRoom.id = :classRoomId", { classRoomId: classRoomId })
             .leftJoin("classRoom.children", "childClass")
-            .select(["classRoom.id", "childClass.id"]).getOne();
+            .select(["classRoom.id", "childClass.id"])
+
+        if (isTeacher(currentUser)) { // if teacher is requesting, make sure he has access to the class
+            classRoomQueryBuilder.andWhere('classRoom.classTeacherId = :teacherId', { teacherId: currentUser.teacherId });
+        }
+
+        const classRoom = await classRoomQueryBuilder.getOne();
 
         if (!classRoom) throw new NotFoundException('Class room not found');
 

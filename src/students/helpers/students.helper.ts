@@ -27,6 +27,7 @@ export class StudentsHelper extends BaseRepository {
 
     async findAll(queryDto: StudentQueryDto) {
         const academicYearId = queryDto.academicYearId || await this.utilitiesService.getAcademicYearId();
+        const currentUser = this.utilitiesService.getCurrentUser();
 
         const queryBuilder = this.getRepository(Student).createQueryBuilder('student');
 
@@ -71,6 +72,14 @@ export class StudentsHelper extends BaseRepository {
                     "ledger.amount as ledgerAmount"
                 ] : this.getStudentsSelectCols(queryDto.onlyBasicInfo)
             );
+
+        if (isTeacher(currentUser)) { // teacher can request students of his class routine classes
+            queryBuilder
+                .innerJoin('classRoom.classRoutines', 'classRoutine', 'classRoutine.teacherId = :teacherId', { teacherId: currentUser.teacherId })
+                .groupBy('student.id')
+                .addGroupBy("enrollments.rollNo")
+                .addGroupBy("classRoom.id")
+        }
 
         this.utilitiesService.applyBranchFilter(queryBuilder);
 

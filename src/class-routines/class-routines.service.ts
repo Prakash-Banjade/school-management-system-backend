@@ -13,7 +13,7 @@ import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
-import { isAdmin, isStudent } from 'src/utils/utils';
+import { isAdmin, isStudent, isTeacher } from 'src/utils/utils';
 import { UtilitiesService } from 'src/utilities/utilities.service';
 import { Teacher } from 'src/teachers/entities/teacher.entity';
 
@@ -85,8 +85,7 @@ export class ClassRoutinesService extends BaseRepository {
   async findAll(queryDto: ClassRoutineQueryDto, currentUser: AuthUser) {
     const querybuilder = this.getRepository(ClassRoutine).createQueryBuilder('classRoutine');
 
-    querybuilder
-      .orderBy("classRoutine.createdAt", queryDto.order)
+    querybuilder.orderBy("classRoutine.createdAt", queryDto.order)
 
     if (!queryDto.skipPagination) {
       querybuilder.offset(queryDto.skip).limit(queryDto.take);
@@ -101,20 +100,23 @@ export class ClassRoutinesService extends BaseRepository {
         queryDto.dayOfTheWeek && qb.andWhere('classRoutine.dayOfTheWeek = :dayOfTheWeek', { dayOfTheWeek: queryDto.dayOfTheWeek });
 
         if (isAdmin(currentUser) && queryDto.classRoomId) { // routine can be associated with parent ot itself is a parent
-          qb.andWhere(new Brackets(qb => {
-            qb.orWhere('parent.id = :classRoomId', { classRoomId: queryDto.classRoomId });
-            qb.orWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
-          }))
+          qb.andWhere("classRoom.id = :classRoomId OR parent.id = :classRoomId", { classRoomId: queryDto.classRoomId });
         }
 
-        if (isAdmin(currentUser)) { // admin access
+        if (isAdmin(currentUser)) {
           queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId }); // the sectionId send by the frontend is the class room id
           queryDto.subjectId && qb.andWhere('subject.id = :subjectId', { subjectId: queryDto.subjectId });
-        } else if (isStudent(currentUser)) {
-          qb.andWhere('classRoom.id = :classRoomId', { classRoomId: currentUser.classRoomId });
         }
       }))
       .cache(true);
+
+    if (isStudent(currentUser)) {
+      querybuilder.andWhere('classRoom.id = :classRoomId', { classRoomId: currentUser.classRoomId });
+    }
+
+    if (isTeacher(currentUser)) {
+      querybuilder.andWhere('teacher.id = :teacherId', { teacherId: currentUser.teacherId });
+    }
 
     applySelectColumns(querybuilder, classRoutinesSelectCols, 'classRoutine');
     this.utilitiesService.applyBranchFilter(querybuilder, 'classRoom.branchId = :branchId');

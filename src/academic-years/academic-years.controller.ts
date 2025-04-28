@@ -7,7 +7,7 @@ import { QueryDto } from 'src/common/dto/query.dto';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, Role } from 'src/common/types/global.type';
 import { AcademicYearOptionsDto } from './dto/academic-year-options.dto';
-import { FastifyReply, FastifyRequest } from 'fastify';
+import { FastifyReply } from 'fastify';
 import { CookieKey, Cookies } from 'src/common/decorators/cookies.decorator';
 
 @ApiBearerAuth()

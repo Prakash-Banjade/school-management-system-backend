@@ -1,40 +1,37 @@
-import { BadRequestException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateLeaveRequestDto } from './dto/create-leave-request.dto';
 import { UpdateLeaveRequestDto, UpdateLeaveRequestStatusDto } from './dto/update-leave-request.dto';
 import { LeaveRequest } from './entities/leave-request.entity';
-import { Brackets, DataSource } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import { LeaveRequestQueryDto } from './dto/leave-request-query.dto';
 import { AuthUser, ELeaveRequestStatus, Role } from 'src/common/types/global.type';
 import paginatedData from 'src/utils/paginatedData';
 import { applySelectColumns } from 'src/utils/apply-select-cols';
 import { employeesLeaveRequestSelectCols, leaveRequestSelectCols } from './helpers/leave-requests-select-cols.config';
-import { BaseRepository } from 'src/common/repository/base-repository';
-import { FastifyRequest } from 'fastify';
-import { REQUEST } from '@nestjs/core';
 import { Account } from 'src/auth-system/accounts/entities/account.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { AttendanceEvent } from 'src/attendances/helpers/attendances.helper';
 import { CreateLeaveAttendanceEvent } from 'src/attendances/dto/create-attendance.dto';
-import { isAdmin, isStudent, startOfDayString } from 'src/utils/utils';
-import { UtilitiesService } from 'src/utilities/utilities.service';
+import { isTeacher, startOfDayString } from 'src/utils/utils';
+import { InjectRepository } from '@nestjs/typeorm';
 
-@Injectable({ scope: Scope.REQUEST })
-export class LeaveRequestsService extends BaseRepository {
+@Injectable()
+export class LeaveRequestsService {
   constructor(
-    dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
+    @InjectRepository(LeaveRequest) private readonly leaveRequestRepo: Repository<LeaveRequest>,
+    @InjectRepository(Account) private readonly accountsRepo: Repository<Account>,
     private readonly eventEmitter: EventEmitter2,
-    private readonly utilitiesService: UtilitiesService,
-  ) { super(dataSource, req) }
+  ) { }
 
   async create(createLeaveRequestDto: CreateLeaveRequestDto, currentUser: AuthUser) {
     const account = await this.getAccount(currentUser.accountId);
 
-    const newLeaveRequest = this.getRepository(LeaveRequest).create({
+    const newLeaveRequest = this.leaveRequestRepo.create({
       ...createLeaveRequestDto,
       account
     });
 
-    await this.getRepository(LeaveRequest).save(newLeaveRequest);
+    await this.leaveRequestRepo.save(newLeaveRequest);
 
     return {
       message: 'Leave request applied successfully. You will be notified once it has been approved.',
@@ -42,7 +39,7 @@ export class LeaveRequestsService extends BaseRepository {
   }
 
   private async getAccount(accountId: string) {
-    const account = await this.getRepository(Account).findOne({
+    const account = await this.accountsRepo.findOne({
       where: { id: accountId },
       select: { id: true }
     });
@@ -50,8 +47,8 @@ export class LeaveRequestsService extends BaseRepository {
     return account;
   }
 
-  async findAll(queryDto: LeaveRequestQueryDto, currentUser: AuthUser) { // only for students leave request
-    const querybuilder = this.getRepository(LeaveRequest).createQueryBuilder('leaveRequest');
+  async findAll(queryDto: LeaveRequestQueryDto, currentUser: AuthUser, branchId: string) { // only for students leave request
+    const querybuilder = this.leaveRequestRepo.createQueryBuilder('leaveRequest');
 
     querybuilder
       .orderBy('leaveRequest.createdAt', queryDto.order)
@@ -62,32 +59,27 @@ export class LeaveRequestsService extends BaseRepository {
       .leftJoin('student.classRoom', 'classRoom')
       .leftJoin('classRoom.parent', 'parent')
       .leftJoin('classRoom.faculty', 'faculty')
+      .where('account.role = :role', { role: Role.STUDENT })
       .andWhere(new Brackets(qb => {
-        if (isAdmin(currentUser)) { // admin access
-          queryDto.classRoomId && qb.andWhere(new Brackets(qb => {
-            qb.orWhere('parent.id = :classRoomId', { classRoomId: queryDto.classRoomId });
-            qb.orWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
-          }));
-
-          queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId });
-          queryDto.facultyId && qb.andWhere('faculty.id = :facultyId', { facultyId: queryDto.facultyId });
-          queryDto.status?.length && qb.andWhere('leaveRequest.status IN (:...status)', { status: Array.isArray(queryDto.status) ? queryDto.status : [queryDto.status] });
-
-          qb.andWhere('account.role = :role', { role: Role.STUDENT }); // only for students
-
-        } else if (isStudent(currentUser)) {
-          qb.andWhere('account.id = :accountId', { accountId: currentUser.accountId })
-        }
+        queryDto.classRoomId && qb.andWhere("parent.id = :classRoomId OR classRoom.id = :classRoomId", { classRoomId: queryDto.classRoomId })
+        queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId });
+        queryDto.facultyId && qb.andWhere('faculty.id = :facultyId', { facultyId: queryDto.facultyId });
+        queryDto.status?.length && qb.andWhere('leaveRequest.status IN (:...status)', { status: Array.isArray(queryDto.status) ? queryDto.status : [queryDto.status] });
       }));
 
+    if (isTeacher(currentUser)) {
+      querybuilder.andWhere("classRoom.classTeacherId = :teacherId", { teacherId: currentUser.teacherId })
+    }
+
+    if (branchId) querybuilder.andWhere('classRoom.branchId = :branchId', { branchId });
+
     applySelectColumns(querybuilder, leaveRequestSelectCols, 'leaveRequest');
-    this.utilitiesService.applyBranchFilter(querybuilder, 'classRoom.branchId = :branchId');
 
     return paginatedData(queryDto, querybuilder);
   }
 
-  async getEmployeeLeaveRequests(queryDto: LeaveRequestQueryDto) {
-    const querybuilder = this.getRepository(LeaveRequest).createQueryBuilder('leaveRequest');
+  async getEmployeeLeaveRequests(queryDto: LeaveRequestQueryDto, branchId: string) {
+    const querybuilder = this.leaveRequestRepo.createQueryBuilder('leaveRequest');
 
     querybuilder
       .orderBy('leaveRequest.createdAt', queryDto.order)
@@ -112,17 +104,16 @@ export class LeaveRequestsService extends BaseRepository {
       }));
 
     applySelectColumns(querybuilder, employeesLeaveRequestSelectCols, 'leaveRequest');
-    this.utilitiesService.applyBranchFilter(querybuilder);
+
+    if (branchId) querybuilder.andWhere('classRoom.branchId = :branchId', { branchId });
 
     return paginatedData(queryDto, querybuilder);
   }
 
-  async getMyLeaveRequests() {
-    const { accountId } = this.utilitiesService.getCurrentUser();
-
-    return this.getRepository(LeaveRequest).find({
+  async getMyLeaveRequests(currentUser: AuthUser) {
+    return this.leaveRequestRepo.find({
       where: {
-        account: { id: accountId }
+        account: { id: currentUser.accountId }
       },
       order: { createdAt: 'DESC' },
       select: {
@@ -137,30 +128,43 @@ export class LeaveRequestsService extends BaseRepository {
     });
   }
 
-  async findOne(id: string) {
-    const existing = await this.getRepository(LeaveRequest).findOne({
-      where: { id },
-      relations: {
-        account: true,
-      },
-      select: {
-        account: {
-          id: true,
-        }
-      }
-    });
-    if (!existing) throw new NotFoundException('Leave request not found');
+  async findOne(id: string, currentUser: AuthUser) {
+    const querybuilder = this.leaveRequestRepo.createQueryBuilder('leaveRequest')
+      .where({ id })
+      .leftJoin("leaveRequest.account", "account")
+      .select([
+        "leaveRequest.id",
+        "leaveRequest.createdAt",
+        "leaveRequest.leaveFrom",
+        "leaveRequest.leaveTo",
+        "leaveRequest.title",
+        "leaveRequest.description",
+        "leaveRequest.requestedOn",
+        "leaveRequest.status",
+        "account.id"
+      ]);
 
-    return existing;
+    if (isTeacher(currentUser)) { // teacher can request leave request of student of his assigned classes only
+      querybuilder
+        .andWhere("account.role = :role", { role: Role.STUDENT })
+        .leftJoin("account.student", "student")
+        .innerJoin("student.classRoom", "classRoom", "classRoom.classTeacherId = :teacherId", { teacherId: currentUser.teacherId })
+    }
+
+    const leaveRequest = await querybuilder.getOne();
+
+    if (!leaveRequest) throw new NotFoundException('Leave request not found');
+
+    return leaveRequest;
   }
 
-  async updateStatus(id: string, updateLeaveRequestStatusDto: UpdateLeaveRequestStatusDto) {
-    const existing = await this.findOne(id);
+  async updateStatus(id: string, updateLeaveRequestStatusDto: UpdateLeaveRequestStatusDto, currentUser: AuthUser) {
+    const existing = await this.findOne(id, currentUser);
 
     if (existing.status !== ELeaveRequestStatus.PENDING) throw new BadRequestException('Cannot change the status now');
 
     existing.status = updateLeaveRequestStatusDto.status;
-    await this.getRepository(LeaveRequest).save(existing);
+    await this.leaveRequestRepo.save(existing);
 
     // update the attendance for leave
     if (updateLeaveRequestStatusDto.status === ELeaveRequestStatus.APPROVED) {
@@ -176,20 +180,20 @@ export class LeaveRequestsService extends BaseRepository {
     };
   }
 
-  async update(id: string, updateLeaveRequestDto: UpdateLeaveRequestDto) {
-    const existing = await this.findOne(id);
+  async update(id: string, updateLeaveRequestDto: UpdateLeaveRequestDto, currentUser: AuthUser) {
+    const existing = await this.findOne(id, currentUser);
 
     Object.assign(existing, updateLeaveRequestDto);
-    await this.getRepository(LeaveRequest).save(existing);
+    await this.leaveRequestRepo.save(existing);
 
     return {
       message: 'Updated successfully',
     };
   }
 
-  async remove(id: string) {
-    const existing = await this.findOne(id);
-    await this.getRepository(LeaveRequest).remove(existing);
+  async remove(id: string, currentUser: AuthUser) {
+    const existing = await this.findOne(id, currentUser);
+    await this.leaveRequestRepo.remove(existing);
 
     return {
       message: 'Removed successfully',

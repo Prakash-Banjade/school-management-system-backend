@@ -29,7 +29,8 @@ export class ClassRoutinesController {
   @Get()
   @CheckAbilities(
     { action: Action.READ, subject: Role.ADMIN },
-    { action: Action.READ, subject: Role.STUDENT }
+    { action: Action.READ, subject: Role.STUDENT },
+    { action: Action.READ, subject: Role.TEACHER },
   )
   @ApiOperation({ summary: 'Get a list of class routines' })
   @ApiResponse({ status: 200, description: 'List of class routines retrieved successfully.' })

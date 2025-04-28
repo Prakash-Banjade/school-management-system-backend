@@ -30,7 +30,10 @@ export class StudentsController {
   @Get()
   @ApiOperation({ summary: 'Get all students' })
   @ApiResponse({ status: 200, description: 'List of students returned successfully.' })
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @CheckAbilities(
+    { subject: Role.ADMIN, action: Action.READ },
+    { subject: Role.TEACHER, action: Action.READ }
+  )
   findAll(@Query() queryDto: StudentQueryDto) {
     return this.studentsHelper.findAll(queryDto);
   }
@@ -72,7 +75,10 @@ export class StudentsController {
   @Get(':id')
   @ApiOperation({ summary: 'Get student by ID' })
   @ApiParam({ name: 'id', required: true, description: 'Unique ID of the student' })
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @CheckAbilities(
+    { subject: Role.ADMIN, action: Action.READ },
+    { subject: Role.TEACHER, action: Action.READ }
+  )
   findOne(@Param('id') id: string) {
     return this.studentsService.findOne(id);
   }

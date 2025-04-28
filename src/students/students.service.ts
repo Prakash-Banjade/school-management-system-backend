@@ -11,7 +11,7 @@ import { ImagesService } from 'src/file-management/images/images.service';
 import { AccountsService } from 'src/auth-system/accounts/accounts.service';
 import { FastifyRequest } from 'fastify';
 import { StudentsHelper } from './helpers/students.helper';
-import { EClassType } from 'src/common/types/global.type';
+import { AuthUser, EClassType } from 'src/common/types/global.type';
 import { FilesService } from 'src/file-management/files/files.service';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { AcademicYear } from 'src/academic-years/entities/academic-year.entity';
@@ -23,6 +23,7 @@ import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { AcademicYearsService } from 'src/academic-years/academic-years.service';
 import { UtilitiesService } from 'src/utilities/utilities.service';
 import { UpdateAccountDto } from 'src/auth-system/accounts/dto/update-account.dto';
+import { isTeacher } from 'src/utils/utils';
 
 @Injectable({ scope: Scope.REQUEST })
 export class StudentsService extends BaseRepository {
@@ -136,6 +137,7 @@ export class StudentsService extends BaseRepository {
 
   async findOne(id: string) {
     const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
+    const currentUser = this.utilitiesService.getCurrentUser();
 
     const querybuilder = this.getRepository<Student>(Student).createQueryBuilder('student')
       .leftJoin('student.account', 'account')
@@ -149,6 +151,10 @@ export class StudentsService extends BaseRepository {
       .leftJoin('student.routeStop', 'routeStop')
       .leftJoin('routeStop.vehicle', 'vehicle')
       .where('student.id = :id', { id })
+
+    if (isTeacher(currentUser)) { // teacher can request students of his class routine classes
+      querybuilder.innerJoin('classRoom.classRoutines', 'classRoutine', 'classRoutine.teacherId = :teacherId', { teacherId: currentUser.teacherId })
+    }
 
     applySelectColumns(querybuilder, singleStudentColumnsConfig, 'student');
 

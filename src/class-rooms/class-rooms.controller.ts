@@ -12,6 +12,8 @@ import { ClassRoomsHelper } from './helpers/class-rooms.helper';
 import { AttendanceStatisticsQueryDto } from './dto/attendance-statistics-query.dto';
 import { ClassRoomsStatistics } from './helpers/class-rooms.statistics';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
+import { ClassRoomsTeacherViewService } from './helpers/class-rooms_teacher-view.service';
+import { isTeacher } from 'src/utils/utils';
 
 @ApiBearerAuth()
 @ApiTags('Class rooms')
@@ -21,6 +23,7 @@ export class ClassRoomsController {
     private readonly classRoomsService: ClassRoomsService,
     private readonly classRoomsHelper: ClassRoomsHelper,
     private readonly classRoomsStatistics: ClassRoomsStatistics,
+    private readonly classRoomsTeacherViewService: ClassRoomsTeacherViewService,
   ) { }
 
   @Post()
@@ -37,11 +40,16 @@ export class ClassRoomsController {
 
   @Get()
   @ApiPaginatedResponse(CreateClassRoomDto)
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @CheckAbilities(
+    { subject: Role.ADMIN, action: Action.READ },
+    { subject: Role.TEACHER, action: Action.READ }
+  )
   @ApiOperation({ summary: 'Get a list of class rooms' })
   @ApiResponse({ status: 200, description: 'List of class rooms retrieved successfully.' })
-  findAll(@Query() queryDto: ClassRoomQueryDto) {
-    return this.classRoomsHelper.findAll(queryDto);
+  findAll(@Query() queryDto: ClassRoomQueryDto, @CurrentUser() currentUser: AuthUser) {
+    return isTeacher(currentUser)
+      ? this.classRoomsTeacherViewService.findAll(queryDto, currentUser)
+      : this.classRoomsHelper.findAll(queryDto);
   }
 
   @Get('options')
@@ -65,7 +73,10 @@ export class ClassRoomsController {
   }
 
   @Get(':id/attendance-statistics')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @CheckAbilities(
+    { subject: Role.ADMIN, action: Action.READ },
+    { subject: Role.TEACHER, action: Action.READ }
+  )
   @ApiOperation({ summary: 'Get attendance statistics for a specific class room' })
   @ApiParam({ name: 'id', description: 'The ID of the class room' })
   @ApiResponse({ status: 200, description: 'Attendance statistics retrieved successfully.' })
