@@ -3,12 +3,12 @@ import { TasksService } from './tasks.service';
 import { TasksController } from './tasks.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Task } from './entities/task.entity';
-import { SubjectsModule } from 'src/subjects/subjects.module';
 import { FilesModule } from 'src/file-management/files/files.module';
 import { TaskStudentViewService } from './task.student-view.service';
 import { TasksCron } from './tasks.cron';
 import { Account } from 'src/auth-system/accounts/entities/account.entity';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
+import { ClassRoutine } from 'src/class-routines/entities/class-routine.entity';
 
 @Module({
   imports: [
@@ -16,9 +16,10 @@ import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
       Task,
       Account,
       ClassRoom,
+      ClassRoutine,
     ]),
     FilesModule,
-    SubjectsModule,
+    // SubjectsModule,
   ],
   controllers: [TasksController],
   providers: [

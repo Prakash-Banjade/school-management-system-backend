@@ -11,6 +11,7 @@ import { FastifyRequest } from "fastify";
 import { REQUEST } from "@nestjs/core";
 import { UtilitiesService } from "src/utilities/utilities.service";
 import { QueryDto } from "src/common/dto/query.dto";
+import { isTeacher } from "src/utils/utils";
 
 @Injectable()
 export class ClassRoomsHelper extends BaseRepository {
@@ -119,14 +120,21 @@ export class ClassRoomsHelper extends BaseRepository {
     // this is used in single class room page in frontend
     async getClassRoomDetails(id: string) {
         const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
+        const currentUser = this.utilitiesService.getCurrentUser();
 
-        return this.getRepository(ClassRoom).createQueryBuilder('classRoom')
+        const querybuilder = this.getRepository(ClassRoom).createQueryBuilder('classRoom')
             .where('classRoom.id = :classroomId', { classroomId: id }) // Filter by specific classroom ID
             .leftJoin('classRoom.classTeacher', 'classTeacher')
             .leftJoin('classRoom.faculty', 'faculty')
             .leftJoin('classRoom.students', 'student', 'FIND_IN_SET(:currentAcademicYearId, student.academicYearIds) > 0', { currentAcademicYearId })
             .leftJoin('classRoom.children', 'childClass')
-            .leftJoin('childClass.students', 'childClassStudent', 'FIND_IN_SET(:currentAcademicYearId, childClassStudent.academicYearIds) > 0', { currentAcademicYearId })
+            .leftJoin('childClass.students', 'childClassStudent', 'FIND_IN_SET(:currentAcademicYearId, childClassStudent.academicYearIds) > 0', { currentAcademicYearId });
+
+        if (isTeacher(currentUser)) {
+            querybuilder.andWhere("classRoom.classTeacherId = :teacherId", { teacherId: currentUser.teacherId });
+        }
+
+        querybuilder
             .select([
                 'classRoom.id as id',
                 'classRoom.name as name',
@@ -144,7 +152,9 @@ export class ClassRoomsHelper extends BaseRepository {
                 'COUNT(DISTINCT student.id) + COUNT(DISTINCT childClassStudent.id) AS totalStudentsCount',
                 `COUNT(DISTINCT CASE WHEN student.gender = '${Gender.MALE}' THEN student.id END) + COUNT(DISTINCT CASE WHEN childClassStudent.gender = '${Gender.MALE}' THEN childClassStudent.id END) AS totalMaleStudentsCount`,
                 `COUNT(DISTINCT CASE WHEN student.gender = '${Gender.FEMALE}' THEN student.id END) + COUNT(DISTINCT CASE WHEN childClassStudent.gender = '${Gender.FEMALE}' THEN childClassStudent.id END) AS totalFemaleStudentsCount`
-            ]).getRawOne();
+            ]);
+
+        return querybuilder.getRawOne();
     }
 
     // used in teacher panel

@@ -2,7 +2,7 @@ import { BeforeInsert, BeforeUpdate, Column, Entity, Index, ManyToOne, OneToMany
 import bcrypt from "bcryptjs";
 import { BadRequestException } from "@nestjs/common";
 import { BaseEntity } from "src/common/entities/base.entity";
-import { AuthProvider, Role } from "src/common/types/global.type";
+import { Role } from "src/common/types/global.type";
 import { User } from "src/auth-system/users/entities/user.entity";
 import { Image } from "src/file-management/images/entities/image.entity";
 import { BCRYPT_HASH, EMAIL_REGEX, PASSWORD_SALT_COUNT } from "src/common/CONSTANTS";

@@ -25,9 +25,8 @@ export class TaskSubmissionsStudentViewService {
             .leftJoin('taskSubmission.attachments', 'attachments')
             .where('taskSubmission.studentId = :studentId', { studentId: currentUser.studentId });
 
-        if (queryDto.notEvaluated) {
-            queryBuilder.leftJoin('taskSubmission.evaluation', 'evaluation')
-                .andWhere('evaluation.id IS NULL');
+        if (queryDto.evaluated === "true") {
+            queryBuilder.innerJoin('taskSubmission.evaluation', 'evaluation', 'evaluation.id IS NOT NULL')
         }
 
         queryBuilder

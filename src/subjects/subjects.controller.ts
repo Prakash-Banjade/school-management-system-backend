@@ -37,7 +37,10 @@ export class SubjectsController {
   }
 
   @Get('options')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @CheckAbilities(
+    { subject: Role.ADMIN, action: Action.READ },
+    { subject: Role.TEACHER, action: Action.READ }
+  )
   getOptions(@Query() queryDto: SubjectOptionsQueryDto) {
     return this.subjectsService.getOptions(queryDto);
   }

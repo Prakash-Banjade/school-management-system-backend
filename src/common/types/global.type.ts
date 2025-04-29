@@ -34,15 +34,10 @@ export enum Action {
 
 export enum Role {
     SUPER_ADMIN = 'super_admin',
-    MODERATOR = 'moderator',
     ADMIN = 'admin',
     USER = 'user',
     TEACHER = 'teacher',
-    GUARDIAN = 'guardian',
-    ACCOUNTANT = 'accountant',
-    RECEPTIONIST = 'receptionist',
     STUDENT = 'student',
-    LIBRARIAN = 'librarian',
     STAFF = 'staff',
 }
 
@@ -50,11 +45,6 @@ export enum Gender {
     MALE = 'male',
     FEMALE = 'female',
     OTHER = 'other',
-}
-
-export enum AuthProvider {
-    GOOGLE = 'google',
-    CREDENTIALS = 'credentials',
 }
 
 export enum EClassType {

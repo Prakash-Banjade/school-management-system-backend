@@ -16,5 +16,5 @@ export class TaskSubmissionQueryDto extends QueryDto {
     @ApiPropertyOptional({ type: 'boolean', description: 'Flag for not evaluated submissions' })
     @IsOptional()
     @IsString()
-    notEvaluated?: boolean; // used by frontend to filter submissions that are not evaluated
+    evaluated?: string;
 }

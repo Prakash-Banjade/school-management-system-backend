@@ -14,7 +14,7 @@ import { UtilitiesService } from 'src/utilities/utilities.service';
 import { BranchesService } from 'src/branches/branches.service';
 import { Faculty } from 'src/faculties/entities/faculty.entity';
 import { FeeStructure } from 'src/finance-system/fee-management/fee-structures/entities/fee-structure.entity';
-import { isStudent } from 'src/utils/utils';
+import { isStudent, isTeacher } from 'src/utils/utils';
 
 @Injectable({ scope: Scope.REQUEST })
 export class ClassRoomsService extends BaseRepository {
@@ -111,10 +111,13 @@ export class ClassRoomsService extends BaseRepository {
   }
 
   async findOne(id: string) {
+    const currentUser = this.utilitiesService.getCurrentUser();
+
     const existing = await this.getRepository(ClassRoom).findOne({
       where: {
         id,
-        branch: { id: this.utilitiesService.getBranchId() }
+        branch: { id: this.utilitiesService.getBranchId() },
+        ...(isTeacher(currentUser) ? { classTeacher: { id: currentUser.teacherId } } : {}) // teacher can read only their classes
       },
       relations: {
         parent: true,

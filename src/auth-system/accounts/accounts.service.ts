@@ -56,9 +56,8 @@ export class AccountsService extends BaseRepository {
       ? Role.TEACHER
       : entity instanceof Student
         ? Role.STUDENT
-        : entity instanceof Staff ?
-          Role.STAFF
-          : Role.GUARDIAN;
+        : Role.STAFF
+
 
     const account = this.getRepository<Account>(Account).create({
       email: entity.email,

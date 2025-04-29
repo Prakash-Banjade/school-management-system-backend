@@ -24,7 +24,7 @@ export const selectTaskCols: FindOptionsSelect<Task> = {
         id: true,
         subjectName: true,
     },
-    classRooms: {
+    classRoom: {
         id: true,
         name: true,
         parent: {

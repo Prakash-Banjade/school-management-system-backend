@@ -14,7 +14,7 @@ import { REQUEST } from '@nestjs/core';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { OptionalSubject } from 'src/optional-subject/entities/optional-subject.entity';
 import { Teacher } from 'src/teachers/entities/teacher.entity';
-import { isAdmin, isStudent } from 'src/utils/utils';
+import { isAdmin, isStudent, isTeacher } from 'src/utils/utils';
 import { UtilitiesService } from 'src/utilities/utilities.service';
 import { QueryDto } from 'src/common/dto/query.dto';
 
@@ -150,13 +150,22 @@ export class SubjectsService extends BaseRepository {
   }
 
   async getOptions(queryDto: SubjectOptionsQueryDto) {
+    const currentUser = this.utilitiesService.getCurrentUser();
+
     const querybuilder = this.getRepository(Subject).createQueryBuilder('subject')
       .orderBy("subject.createdAt", queryDto.order)
       .leftJoin('subject.classRoom', 'classRoom')
       .where('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId })
-      .select(["subject.id", "subject.subjectName"])
+      .select(["subject.id", "subject.subjectName"]);
 
-    this.utilitiesService.applyBranchFilter(querybuilder, "classRoom.branchId = :branchId");
+    if (isAdmin(currentUser)) {
+      this.utilitiesService.applyBranchFilter(querybuilder, "classRoom.branchId = :branchId");
+    }
+
+    if (isTeacher(currentUser)) {
+      querybuilder
+        .innerJoin("subject.classRoutines", "classRoutines", "classRoutines.teacherId = :teacherId AND classRoom.id = :classRoomId", { teacherId: currentUser.teacherId, classRoomId: queryDto.classRoomId })
+    }
 
     return querybuilder.getMany();
   }

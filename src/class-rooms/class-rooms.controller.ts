@@ -64,7 +64,10 @@ export class ClassRoomsController {
   }
 
   @Get(':id/details')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @CheckAbilities(
+    { subject: Role.ADMIN, action: Action.READ },
+    { subject: Role.TEACHER, action: Action.READ }
+  )
   @ApiOperation({ summary: 'Get details of a specific class room' })
   @ApiParam({ name: 'id', description: 'The ID of the class room' })
   @ApiResponse({ status: 200, description: 'Class room details retrieved successfully.' })
@@ -103,7 +106,10 @@ export class ClassRoomsController {
   }
 
   @Get(':id')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @CheckAbilities(
+    { subject: Role.ADMIN, action: Action.READ },
+    { subject: Role.TEACHER, action: Action.READ }
+  )
   @ApiOperation({ summary: 'Get a specific class room by ID' })
   @ApiParam({ name: 'id', description: 'The ID of the class room' })
   @ApiResponse({ status: 200, description: 'Class room retrieved successfully.' })

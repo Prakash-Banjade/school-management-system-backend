@@ -2,8 +2,6 @@ import { ForbiddenException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Brackets, Repository } from "typeorm";
 import { Task } from "./entities/task.entity";
-import { PageMetaDto } from "src/common/dto/pageMeta.dto";
-import { PageDto } from "src/common/dto/page.dto.";
 import { ETaskCategory, TaskQueryDto } from "./dto/task-query.dto";
 import { AuthUser } from "src/common/types/global.type";
 import { isStudent } from "src/utils/utils";
@@ -26,7 +24,7 @@ export class TaskStudentViewService {
             .limit(queryDto.take)
             .leftJoin('task.subject', 'subject')
             .leftJoin('task.attachments', 'attachments')
-            .leftJoin('task.classRooms', 'classRoom')
+            .leftJoin('task.classRoom', 'classRoom')
             .leftJoin('task.submissions', 'submission', 'submission.studentId = :studentId', { studentId: currentUser.studentId })
             .leftJoin('submission.evaluation', 'evaluation')
             .where('classRoom.id = :classRoomId', { classRoomId: currentUser.classRoomId })
@@ -77,8 +75,8 @@ export class TaskStudentViewService {
         const counts = await this.taskRepository.createQueryBuilder('task')
             .leftJoin('task.submissions', 'submission', 'submission.studentId = :studentId', { studentId: currentUser.studentId })
             .leftJoin('submission.evaluation', 'evaluation')
-            .leftJoin('task.classRooms', 'classRooms')
-            .where('classRooms.id = :classRoomId', { classRoomId: currentUser.classRoomId })
+            .leftJoin('task.classRoom', 'classRoom')
+            .where('classRoom.id = :classRoomId', { classRoomId: currentUser.classRoomId })
             .andWhere(new Brackets(qb => {
                 if (queryDto.taskType) {
                     qb.andWhere('task.taskType = :taskType', { taskType: queryDto.taskType });

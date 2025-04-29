@@ -186,7 +186,8 @@ export class ExamsHelper extends BaseRepository {
                 "subject.subjectName",
                 "examSubjects.venue",
                 "examSubjects.startTime",
-            ]);
+            ])
+            .cache(true);
 
         return querybuilder.getOne();
     }
