@@ -12,6 +12,10 @@ import { ESalaryAdjustmentType } from '../salary-adjustments/entities/salary-adj
 import { isBefore, isSameMonth, isSameYear } from 'date-fns';
 import { SalaryPayment } from '../salary-payemnts/entities/salary-payment.entity';
 import { UtilitiesService } from 'src/utilities/utilities.service';
+import { AuthUser } from 'src/common/types/global.type';
+import { isTeacher } from 'src/utils/utils';
+import { QueryDto } from 'src/common/dto/query.dto';
+import { paginatedRawData } from 'src/utils/paginatedData';
 
 @Injectable({ scope: Scope.REQUEST })
 export class PayrollsService extends BaseRepository {
@@ -241,5 +245,85 @@ export class PayrollsService extends BaseRepository {
         return {
             message: 'Payroll updated'
         }
+    }
+
+    async getAll(queryDto: QueryDto, currentUser: AuthUser) {
+        if (!isTeacher(currentUser)) throw new ForbiddenException('Access denied');
+
+        const querybuilder = this.getRepository(Payroll).createQueryBuilder('payroll')
+            .orderBy('payroll.createdAt', 'DESC')
+            .limit(queryDto.take)
+            .offset(queryDto.skip)
+            .where("payroll.teacherId = :teacherId", { teacherId: currentUser.teacherId })
+            .select([
+                'payroll.id as id',
+                'payroll.date as date',
+                'payroll.netSalary as netSalary',
+                'payroll.grossSalary as grossSalary',
+            ]);
+
+        return paginatedRawData(queryDto, querybuilder);
+    }
+
+    async findOne(currentUser: AuthUser) {
+        if (!isTeacher(currentUser)) throw new ForbiddenException('Access denied');
+
+        const payroll = await this.getRepository(Payroll).createQueryBuilder('payroll')
+            .leftJoin('payroll.salaryAdjustments', 'salaryAdjustments')
+            .leftJoin('payroll.salaryPayments', 'salaryPayments')
+            .leftJoin('payroll.teacher', 'teacher')
+            .where('teacher.id = :teacherId', { teacherId: currentUser.teacherId })
+            .select([
+                'payroll.id as id',
+                'payroll.date as date',
+                'payroll.netSalary as netSalary',
+                'payroll.grossSalary as grossSalary',
+                `
+                    JSON_OBJECT(
+                        'id', teacher.id,
+                        'fullName', CONCAT(teacher.firstName, ' ', teacher.lastName),
+                        'employeeId', teacher.teacherId,
+                        'designation', 'teacher', 
+                        'phone', teacher.phone,
+                        'email', teacher.email
+                    )
+                    as employee
+                `,
+                `
+                    JSON_ARRAYAGG(
+                        JSON_OBJECT(
+                            'id', salaryAdjustments.id,
+                            'type', salaryAdjustments.type,
+                            'amount', salaryAdjustments.amount,
+                            'description', salaryAdjustments.description
+                        )
+                    ) as salaryAdjustments
+                `,
+            ])
+            .groupBy('payroll.id')
+            .addGroupBy('salaryPayments.id')
+            .orderBy('payroll.date', 'DESC')
+            .limit(1)
+            .getRawOne();
+
+        if (!payroll?.employee) return null;
+
+        // TODO: this can be achieved from above query also, but something doesn't work
+        const salaryPayments = await this.getRepository(SalaryPayment).createQueryBuilder('salaryPayment')
+            .where('salaryPayment.payrollId = :payrollId', { payrollId: payroll.id })
+            .select('SUM(salaryPayment.amount) as amount')
+            .getRawOne();
+
+        return {
+            ...payroll,
+            employee: typeof payroll.employee === 'string'
+                ? JSON.parse(payroll.employee)
+                : payroll.employee,
+            salaryAdjustments: typeof payroll.salaryAdjustments === 'string'
+                ? JSON.parse(payroll.salaryAdjustments) ?? []
+                : payroll.salaryAdjustments,
+            paidSalary: salaryPayments?.amount ?? 0,
+        };
+
     }
 }

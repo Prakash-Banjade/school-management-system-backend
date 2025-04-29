@@ -8,6 +8,7 @@ import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { CreatePayrollDto, UpdatePayrollDto } from './dto/payroll.dto';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
+import { QueryDto } from 'src/common/dto/query.dto';
 
 @ApiBearerAuth()
 @ApiTags('Payrolls')
@@ -28,6 +29,14 @@ export class PayrollsController {
   @UseInterceptors(TransactionInterceptor)
   create(@Body() createPayrollDto: CreatePayrollDto) {
     return this.payrollsService.create(createPayrollDto);
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'Get all payrolls' })
+  @ApiResponse({ status: 200, description: 'Payrolls fetched successfully' })
+  @CheckAbilities({ subject: Role.TEACHER, action: Action.READ })
+  getAll(@Query() queryDto: QueryDto, @CurrentUser() currentUser: AuthUser) {
+    return this.payrollsService.getAll(queryDto, currentUser);
   }
 
   @Get('employees')

@@ -4,7 +4,8 @@ import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@ne
 import { UpdateSalaryStructureDto } from './dto/update-salary-structure.dto';
 import { SalaryStructuresQueryDto } from './dto/salary-structures-query.dto';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action, Role } from 'src/common/types/global.type';
+import { Action, AuthUser, Role } from 'src/common/types/global.type';
+import { CurrentUser } from 'src/common/decorators/user.decorator';
 
 @ApiBearerAuth()
 @ApiTags('Salary Structures')
@@ -28,5 +29,13 @@ export class SalaryStructuresController {
   @ApiParam({ name: 'id', type: 'string', description: 'ID of the salary structure' })
   update(@Param('id', ParseUUIDPipe) id: string, @Body() updateSalaryStructureDto: UpdateSalaryStructureDto) {
     return this.salaryStructuresService.update(id, updateSalaryStructureDto);
+  }
+
+  @Get('my-details')
+  @ApiOperation({ summary: 'Get my salary details' })
+  @ApiResponse({ status: 200, description: 'My salary details retrieved successfully' })
+  @CheckAbilities({ subject: Role.TEACHER, action: Action.UPDATE })
+  getMySalaryDetails(@CurrentUser() currentUser: AuthUser) {
+    return this.salaryStructuresService.getMySalaryDetails(currentUser);
   }
 }

@@ -11,6 +11,8 @@ import { Teacher } from 'src/teachers/entities/teacher.entity';
 import { Staff } from 'src/staffs/entities/staff.entity';
 import { SalaryPaymentQueryDto } from './dto/salary-payment-query.dto';
 import { paginatedRawData } from 'src/utils/paginatedData';
+import { AuthUser } from 'src/common/types/global.type';
+import { isAdmin, isTeacher } from 'src/utils/utils';
 
 @Injectable({ scope: Scope.REQUEST })
 export class SalaryPaymentsService extends BaseRepository {
@@ -67,16 +69,23 @@ export class SalaryPaymentsService extends BaseRepository {
         }
     }
 
-    async findAll(queryDto: SalaryPaymentQueryDto) {
+    async findAll(queryDto: SalaryPaymentQueryDto, currentUser: AuthUser) {
         const querybuilder = this.getRepository(SalaryPayment).createQueryBuilder('salaryPayment')
             .leftJoin('salaryPayment.payroll', 'payroll')
             .where(new Brackets(qb => {
                 queryDto.dateFrom && qb.andWhere('DATE(salaryPayment.paymentDate) >= DATE(:dateFrom)', { dateFrom: queryDto.dateFrom });
                 queryDto.dateTo && qb.andWhere('DATE(salaryPayment.paymentDate) <= DATE(:dateTo)', { dateTo: queryDto.dateTo });
-            }))
-            .andWhere(new Brackets(qb => {
-                queryDto.employeeId && qb.andWhere('payroll.teacherId = :employeeId OR payroll.staffId = :employeeId', { employeeId: queryDto.employeeId });
-            }))
+            }));
+
+        if (isAdmin(currentUser) && queryDto.employeeId) {
+            querybuilder.andWhere('payroll.teacherId = :employeeId OR payroll.staffId = :employeeId', { employeeId: queryDto.employeeId })
+        }
+
+        if (isTeacher(currentUser)) {
+            querybuilder.andWhere('payroll.teacherId = :teacherId', { teacherId: currentUser.teacherId });
+        }
+
+        querybuilder
             .select([
                 'salaryPayment.id as id',
                 'salaryPayment.paymentDate as paymentDate',

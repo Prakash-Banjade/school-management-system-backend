@@ -2,11 +2,12 @@ import { Body, Controller, Get, Post, Query, UseInterceptors } from '@nestjs/com
 import { SalaryPaymentsService } from './salary-payments.service';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action, Role } from 'src/common/types/global.type';
+import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 import { CreateSalaryPaymentDto } from './dto/create-salary-payment.dto';
 import { SalaryPaymentQueryDto } from './dto/salary-payment-query.dto';
 import { SalaryPayment } from './entities/salary-payment.entity';
+import { CurrentUser } from 'src/common/decorators/user.decorator';
 
 @ApiBearerAuth()
 @ApiTags('Salary Payments')
@@ -25,11 +26,14 @@ export class SalaryPaymentsController {
   }
 
   @Get()
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @CheckAbilities(
+    { subject: Role.ADMIN, action: Action.READ },
+    { subject: Role.TEACHER, action: Action.READ }
+  )
   @ApiOperation({ summary: 'Get all salary payments' })
   @ApiResponse({ status: 200, description: 'Returns a list of salary payments', type: [SalaryPayment] })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  findAll(@Query() queryDto: SalaryPaymentQueryDto) {
-    return this.salaryPaymentsService.findAll(queryDto);
+  findAll(@Query() queryDto: SalaryPaymentQueryDto, @CurrentUser() currentUser: AuthUser) {
+    return this.salaryPaymentsService.findAll(queryDto, currentUser);
   }
 }

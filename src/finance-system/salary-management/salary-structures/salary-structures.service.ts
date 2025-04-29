@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
 import { BaseRepository } from 'src/common/repository/base-repository';
@@ -8,6 +8,10 @@ import { SalaryStructure } from './entities/salary-structure.entity';
 import { paginatedRawData } from 'src/utils/paginatedData';
 import { UpdateSalaryStructureDto } from './dto/update-salary-structure.dto';
 import { UtilitiesService } from 'src/utilities/utilities.service';
+import { AuthUser } from 'src/common/types/global.type';
+import { isTeacher } from 'src/utils/utils';
+import { SalaryPayment } from '../salary-payemnts/entities/salary-payment.entity';
+import { startOfYear } from 'date-fns';
 
 @Injectable()
 export class SalaryStructuresService extends BaseRepository {
@@ -106,5 +110,33 @@ export class SalaryStructuresService extends BaseRepository {
         await this.getRepository(SalaryStructure).save(existing);
 
         return { message: 'Updated successfully' }
+    }
+
+    async getMySalaryDetails(currentUser: AuthUser) {
+        if (!isTeacher(currentUser)) throw new ForbiddenException("Access denied");
+
+        const salaryStructure = await this.getRepository(SalaryStructure).findOne({
+            where: {
+                teacher: { id: currentUser.teacherId }
+            },
+            relations: { teacher: true },
+            select: { id: true, basicSalary: true, allowances: true, grossSalary: true, teacher: { id: true, payAmount: true } }
+        });
+
+        const thisYearTotalPayment = await this.getRepository(SalaryPayment).createQueryBuilder('payment')
+            .innerJoin("payment.ledger", "ledger", "ledger.teacher = :teacherId", { teacherId: currentUser.teacherId })
+            .where("payment.paymentDate >= :startDate AND payment.paymentDate <= :endDate", {
+                startDate: startOfYear(new Date()),
+                endDate: new Date(),
+            })
+            .select([
+                'SUM(payment.amount) as totalPayment',
+            ])
+            .getRawOne();
+
+        return {
+            ...salaryStructure,
+            totalPayment: thisYearTotalPayment.totalPayment
+        }
     }
 }
