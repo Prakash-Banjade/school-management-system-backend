@@ -120,7 +120,7 @@ export class SalaryStructuresService extends BaseRepository {
                 teacher: { id: currentUser.teacherId }
             },
             relations: { teacher: true },
-            select: { id: true, basicSalary: true, allowances: true, grossSalary: true, teacher: { id: true, payAmount: true } }
+            select: { id: true, basicSalary: true, allowances: true, grossSalary: true, teacher: { id: true, teacherId: true, payAmount: true } }
         });
 
         const thisYearTotalPayment = await this.getRepository(SalaryPayment).createQueryBuilder('payment')

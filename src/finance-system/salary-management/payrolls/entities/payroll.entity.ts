@@ -17,7 +17,7 @@ export class Payroll extends BaseEntity {
     date: string;
 
     @Column({ type: 'float' })
-    grossSalary: number;
+    basicSalary: number;
 
     @Column({ type: 'float' })
     netSalary: number;
@@ -33,7 +33,7 @@ export class Payroll extends BaseEntity {
                 : acc += curr.amount;
             return acc;
         }, 0);
-        this.netSalary = this.grossSalary + adjustmentAmount;
+        this.netSalary = this.basicSalary + adjustmentAmount;
     }
 
     @OneToMany(() => SalaryPayment, payment => payment.payroll, { cascade: true })

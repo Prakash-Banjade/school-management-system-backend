@@ -13,9 +13,9 @@ import { isBefore, isSameMonth, isSameYear } from 'date-fns';
 import { SalaryPayment } from '../salary-payemnts/entities/salary-payment.entity';
 import { UtilitiesService } from 'src/utilities/utilities.service';
 import { AuthUser } from 'src/common/types/global.type';
-import { isTeacher } from 'src/utils/utils';
-import { QueryDto } from 'src/common/dto/query.dto';
+import { isAdmin, isTeacher } from 'src/utils/utils';
 import { paginatedRawData } from 'src/utils/paginatedData';
+import { PayrollsQueryDto } from './dto/payroll-query.dto';
 
 @Injectable({ scope: Scope.REQUEST })
 export class PayrollsService extends BaseRepository {
@@ -92,7 +92,7 @@ export class PayrollsService extends BaseRepository {
 
         const payroll = this.getRepository(Payroll).create({
             date: dto.date,
-            grossSalary: salaryStructure.basicSalary, // allowances are included in adjustments to separately show entries in template
+            basicSalary: salaryStructure.basicSalary, // allowances are included in adjustments to separately show entries in template
             salaryAdjustments: [
                 ...dto.salaryAdjustments,
                 salaryStructure.advanceAmount !== null
@@ -117,6 +117,8 @@ export class PayrollsService extends BaseRepository {
             staff,
         });
 
+        // TODO: generate a pdf and save it in some object store or backend
+
         payroll.calculateNetSalary(); // calculate net salary
 
         if (payroll.netSalary < 0) throw new BadRequestException('Something seems wrong with the salary structure or adjustments');
@@ -128,9 +130,7 @@ export class PayrollsService extends BaseRepository {
             ? await this.getRepository(Teacher).update(teacher.id, { payAmount: payroll.netSalary })
             : await this.getRepository(Staff).update(staff.id, { payAmount: payroll.netSalary });
 
-        return {
-            message: 'Payroll created',
-        };
+        return { message: 'Payroll created' };
     }
 
     private readonly sameSalaryMonthOrBefore = (lastSalaryDate: string, newSalaryDate: string) => {
@@ -247,7 +247,7 @@ export class PayrollsService extends BaseRepository {
         }
     }
 
-    async getAll(queryDto: QueryDto, currentUser: AuthUser) {
+    async getAll(queryDto: PayrollsQueryDto, currentUser: AuthUser) {
         if (!isTeacher(currentUser)) throw new ForbiddenException('Access denied');
 
         const querybuilder = this.getRepository(Payroll).createQueryBuilder('payroll')
@@ -255,29 +255,34 @@ export class PayrollsService extends BaseRepository {
             .limit(queryDto.take)
             .offset(queryDto.skip)
             .where("payroll.teacherId = :teacherId", { teacherId: currentUser.teacherId })
+            .andWhere(new Brackets(qb => {
+                queryDto.dateFrom && qb.andWhere('DATE(payroll.date) >= :dateFrom', { dateFrom: queryDto.dateFrom });
+                queryDto.dateTo && qb.andWhere('DATE(payroll.date) <= :dateTo', { dateTo: queryDto.dateTo });
+            }))
             .select([
                 'payroll.id as id',
                 'payroll.date as date',
                 'payroll.netSalary as netSalary',
-                'payroll.grossSalary as grossSalary',
+                'payroll.basicSalary as basicSalary',
             ]);
 
         return paginatedRawData(queryDto, querybuilder);
     }
 
-    async findOne(currentUser: AuthUser) {
+    async findOne(id: string, currentUser: AuthUser) {
         if (!isTeacher(currentUser)) throw new ForbiddenException('Access denied');
 
         const payroll = await this.getRepository(Payroll).createQueryBuilder('payroll')
             .leftJoin('payroll.salaryAdjustments', 'salaryAdjustments')
             .leftJoin('payroll.salaryPayments', 'salaryPayments')
             .leftJoin('payroll.teacher', 'teacher')
-            .where('teacher.id = :teacherId', { teacherId: currentUser.teacherId })
+            .where('payroll.id = :id', { id })
+            .andWhere('teacher.id = :teacherId', { teacherId: currentUser.teacherId })
             .select([
                 'payroll.id as id',
                 'payroll.date as date',
                 'payroll.netSalary as netSalary',
-                'payroll.grossSalary as grossSalary',
+                'payroll.basicSalary as basicSalary',
                 `
                     JSON_OBJECT(
                         'id', teacher.id,
@@ -302,8 +307,6 @@ export class PayrollsService extends BaseRepository {
             ])
             .groupBy('payroll.id')
             .addGroupBy('salaryPayments.id')
-            .orderBy('payroll.date', 'DESC')
-            .limit(1)
             .getRawOne();
 
         if (!payroll?.employee) return null;
