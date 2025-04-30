@@ -1,4 +1,4 @@
-import { Inject, Injectable, Scope } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, Scope } from '@nestjs/common';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { Brackets, DataSource } from 'typeorm';
 import { FastifyRequest } from 'fastify';
@@ -8,9 +8,12 @@ import { Teacher } from 'src/teachers/entities/teacher.entity';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { Staff } from 'src/staffs/entities/staff.entity';
 import { LeaveRequest } from 'src/leave-requests/entities/leave-request.entity';
-import { EClassType, ELeaveRequestStatus, Role } from 'src/common/types/global.type';
+import { AuthUser, EClassType, EDayOfWeek, ELeaveRequestStatus, Role } from 'src/common/types/global.type';
 import { UtilitiesService } from 'src/utilities/utilities.service';
 import { Account } from 'src/auth-system/accounts/entities/account.entity';
+import { isTeacher } from 'src/utils/utils';
+import { TaskSubmission } from 'src/task-system/task-submissions/entities/task-submission.entity';
+import { ClassRoutine } from 'src/class-routines/entities/class-routine.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class DashboardService extends BaseRepository {
@@ -164,6 +167,73 @@ export class DashboardService extends BaseRepository {
             totalCount,
             data: birthdayMembers,
         }
+    }
+
+    async getTeacherDashboardCounts(currentUser: AuthUser) {
+        if (!isTeacher(currentUser)) throw new ForbiddenException('Access denied');
+
+        const totalClassesQuerybuilder = this.getRepository(ClassRoom).createQueryBuilder('classRoom')
+            .innerJoin(
+                'classRoom.classRoutines',
+                'classRoutine',
+                'classRoutine.teacherId = :teacherId OR classRoom.classTeacherId = :teacherId',
+                { teacherId: currentUser.teacherId }
+            );
+
+        const pendingAssignmentsQuerybuilder = this.getRepository(TaskSubmission).createQueryBuilder('taskSubmission')
+            .leftJoin('taskSubmission.task', 'task')
+            .leftJoin('task.classRoom', 'classRoom')
+            .innerJoin("taskSubmission.evaluation", "evaluation", "evaluation.id IS NULL")
+            .innerJoin('classRoom.classRoutines', 'classRoutine', 'classRoutine.teacherId = :teacherId', { teacherId: currentUser.teacherId });
+
+        const pendingLeaveRequestsQuerybuilder = this.getRepository(LeaveRequest).createQueryBuilder('leaveRequest')
+            .leftJoin("leaveRequest.account", "account")
+            .leftJoin("account.student", "student")
+            .innerJoin("student.classRoom", "classRoom", "classRoom.classTeacherId = :teacherId", { teacherId: currentUser.teacherId })
+            .where('leaveRequest.status = :status', { status: ELeaveRequestStatus.PENDING });
+
+        const teacher = this.getRepository(Teacher).createQueryBuilder('teacher')
+            .where({ id: currentUser.teacherId })
+            .select(['teacher.payAmount']);
+
+        const [totalClasses, pendingAssignments, pendingLeaveRequests, { payAmount: teacherPayAmount }] = await Promise.all([
+            totalClassesQuerybuilder.getCount(),
+            pendingAssignmentsQuerybuilder.getCount(),
+            pendingLeaveRequestsQuerybuilder.getCount(),
+            teacher.getOne(),
+        ]);
+
+        return {
+            totalClasses,
+            pendingAssignments,
+            pendingLeaveRequests,
+            teacherPayAmount: teacherPayAmount,
+        }
+    }
+
+    async getTodaySchedule(currentUser: AuthUser) {
+        if (!isTeacher(currentUser)) throw new ForbiddenException('Access denied');
+
+        // const today = Object.entries(EDayOfWeek)[new Date().getDay() - 1][1];
+        const today = Object.entries(EDayOfWeek)[new Date().getDay()][1];
+
+        const querybuilder = this.getRepository(ClassRoutine).createQueryBuilder("classRoutine")
+            .leftJoin('classRoutine.classRoom', 'classRoom')
+            .leftJoin('classRoom.parent', 'parent')
+            .leftJoin('classRoutine.subject', 'subject')
+            .leftJoin('classRoutine.teacher', 'teacher')
+            .andWhere('teacher.id = :teacherId', { teacherId: currentUser.teacherId })
+            .andWhere('classRoutine.dayOfTheWeek = :dayOfTheWeek', { dayOfTheWeek: today })
+            .select([
+                "classRoutine.id as id",
+                "classRoutine.startTime as startTime",
+                "classRoutine.endTime as endTime",
+                "classRoom.fullName as classRoomName",
+                "subject.subjectName as subjectName",
+            ])
+            .cache(true)
+
+        return querybuilder.getRawMany();
     }
 }
 

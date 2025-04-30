@@ -2,8 +2,9 @@ import { Controller, Get, UseInterceptors } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
-import { Action, Role } from 'src/common/types/global.type';
+import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
+import { CurrentUser } from 'src/common/decorators/user.decorator';
 
 @ApiBearerAuth()
 @ApiTags('Dashboard')
@@ -34,10 +35,33 @@ export class DashboardController {
   @Get('birthdays')
   @ApiOperation({ summary: 'Get today birthdays', description: 'Get today birthdays of students, teachers and staffs.' })
   @ApiResponse({ status: 200, description: 'Success' })
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @CheckAbilities(
+    { subject: Role.ADMIN, action: Action.READ },
+    { subject: Role.TEACHER, action: Action.READ }
+  )
   @UseInterceptors(CacheInterceptor)
   @CacheTTL(30 * 1000)
   getBirthdays() {
     return this.dashboardService.todayBirthdays();
+  }
+
+  @Get('teacher')
+  @ApiOperation({ summary: 'Get dashboard count', description: 'Get dashboard count of teacher.' })
+  @ApiResponse({ status: 200, description: 'Success' })
+  @CheckAbilities({ subject: Role.TEACHER, action: Action.READ })
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(30 * 1000)
+  getTeacherDashboardCounts(@CurrentUser() currentUser: AuthUser) {
+    return this.dashboardService.getTeacherDashboardCounts(currentUser);
+  }
+
+  @Get('teacher/schedule')
+  @ApiOperation({ summary: 'Get today schedule', description: 'Get today schedule of teacher.' })
+  @ApiResponse({ status: 200, description: 'Success' })
+  @CheckAbilities({ subject: Role.TEACHER, action: Action.READ })
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(30 * 1000)
+  getTodaySchedule(@CurrentUser() currentUser: AuthUser) {
+    return this.dashboardService.getTodaySchedule(currentUser);
   }
 }
