@@ -92,12 +92,45 @@ export class SalaryPaymentsService extends BaseRepository {
                 'salaryPayment.paymentMethod as paymentMethod',
                 'salaryPayment.remark as remark',
                 'salaryPayment.amount as amount',
-                'payroll.date as salaryDate'
+                'payroll.date as salaryDate',
+                'payroll.id as payrollId'
             ])
             .limit(queryDto.take)
             .offset(queryDto.skip)
             .orderBy('salaryPayment.createdAt', 'DESC')
 
         return paginatedRawData(queryDto, querybuilder);
+    }
+
+    async findOne(id: string, currentUser: AuthUser) {
+        const querybuilder = this.getRepository(SalaryPayment).createQueryBuilder('payment')
+            .where('payment.id = :id', { id })
+            .leftJoin('payment.payroll', 'payroll')
+            .leftJoin('payroll.teacher', 'teacher')
+            .leftJoin('payroll.salaryAdjustments', 'salaryAdjustments');
+
+        if (isTeacher(currentUser)) {
+            querybuilder.andWhere('teacher.id = :teacherId', { teacherId: currentUser.teacherId });
+        }
+
+        querybuilder.select([
+            "payment.id",
+            "payroll.id",
+            "payroll.date",
+            "payroll.netSalary",
+            "payroll.basicSalary",
+            "teacher.id",
+            "teacher.firstName",
+            "teacher.lastName",
+            "teacher.teacherId",
+            "teacher.email",
+            "teacher.phone",
+            "salaryAdjustments.id",
+            "salaryAdjustments.type",
+            "salaryAdjustments.amount",
+            "salaryAdjustments.description"
+        ]);
+
+        return querybuilder.getOne();
     }
 }

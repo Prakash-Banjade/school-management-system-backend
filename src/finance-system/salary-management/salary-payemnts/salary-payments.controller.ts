@@ -1,6 +1,6 @@
-import { Body, Controller, Get, Post, Query, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseInterceptors } from '@nestjs/common';
 import { SalaryPaymentsService } from './salary-payments.service';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
@@ -35,5 +35,16 @@ export class SalaryPaymentsController {
   @ApiResponse({ status: 400, description: 'Bad request' })
   findAll(@Query() queryDto: SalaryPaymentQueryDto, @CurrentUser() currentUser: AuthUser) {
     return this.salaryPaymentsService.findAll(queryDto, currentUser);
+  }
+
+  @Get(':id')
+  @CheckAbilities(
+    { subject: Role.ADMIN, action: Action.READ },
+    { subject: Role.TEACHER, action: Action.READ }
+  )
+  @ApiOperation({ summary: 'Get salary payment by id' })
+  @ApiOkResponse({ description: 'Returns a salary payment by id', type: [SalaryPayment] })
+  findOne(@Param('id') id: string, @CurrentUser() currentUser: AuthUser) {
+    return this.salaryPaymentsService.findOne(id, currentUser);
   }
 }
