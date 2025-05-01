@@ -107,7 +107,10 @@ export class LessonPlansService {
     const existing = await this.lessonPlansRepo.findOne({
       where: {
         id,
-        classRoom: { branch: { id: currentUser.branchId } }
+        classRoom: {
+          branch: { id: currentUser.branchId },
+          ...(isStudent(currentUser) ? { id: currentUser.classRoomId } : {}) // student can see only his class
+        }
       },
       relations: {
         subject: true,
