@@ -10,6 +10,7 @@ import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { UtilitiesService } from 'src/utilities/utilities.service';
 import { EClassType, Role } from 'src/common/types/global.type';
 import { QueryDto } from 'src/common/dto/query.dto';
+import { SCHOOL_LEVEL_FACULTY_NAME } from 'src/common/CONSTANTS';
 
 @Injectable()
 export class FacultiesService {
@@ -126,6 +127,8 @@ export class FacultiesService {
   async update(id: string, updateFacultyDto: UpdateFacultyDto) {
     const existing = await this.findOne(id)
 
+    if (existing.name === SCHOOL_LEVEL_FACULTY_NAME) throw new ForbiddenException("Cannot update school level faculty.");
+
     if (updateFacultyDto.name && updateFacultyDto.name?.toLowerCase() !== existing.name?.toLocaleLowerCase()) {
       const existingWithSameName = await this.facultiesRepo.findOne({ where: { name: ILike(updateFacultyDto.name) }, select: { id: true } });
       if (existingWithSameName) throw new ConflictException('Faculty with same name already exists');
@@ -139,10 +142,13 @@ export class FacultiesService {
   async remove(id: string) {
     const existingClassroom = await this.classRoomsRepo.findOne({
       where: { faculty: { id } },
-      select: { id: true }
+      relations: { faculty: true },
+      select: { id: true, name: true, faculty: { id: true, name: true } }
     });
 
     if (existingClassroom) throw new ForbiddenException("Cannot delete faculty because it has class rooms. Please delete the class rooms first.");
+
+    if (existingClassroom.faculty?.name === SCHOOL_LEVEL_FACULTY_NAME) throw new ForbiddenException("Cannot delete school level faculty.");
 
     await this.facultiesRepo.delete({ id });
 
