@@ -1,4 +1,4 @@
-import { ConflictException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { CreateSubjectDto } from './dto/create-subject.dto';
 import { UpdateSubjectDto } from './dto/update-subject.dto';
 import { Subject } from './entities/subject.entity';
@@ -105,21 +105,11 @@ export class SubjectsService extends BaseRepository {
   async findAllByStudent(queryDto: SubjectQueryDto, currentUser: AuthUser) {
     if (!isStudent(currentUser)) return;
 
-    const classRoom = await this.getRepository(ClassRoom).findOne({
-      where: { id: currentUser.classRoomId },
-      relations: { parent: true },
-      select: { id: true, parent: { id: true } }
-    });
-
-    if (!classRoom) throw new NotFoundException('Class room not found');
-
-    const parentClassRoomId = classRoom.parent?.id ?? classRoom.id;
-
     const queryBuilder = this.getRepository(Subject).createQueryBuilder('subject')
       .orderBy("subject.subjectName", queryDto.order)
       .leftJoin('subject.classRoutines', 'classRoutines', 'classRoutines.classRoomId = :studentClassRoomId', { studentClassRoomId: currentUser.classRoomId }) // fetch only the class routines of the student's class room
       .leftJoin('classRoutines.teacher', 'teacher')
-      .where('subject.classRoomId = :classRoomId', { classRoomId: parentClassRoomId }) // subject is always in primary class room
+      .where('subject.classRoomId = :classRoomId', { classRoomId: currentUser.parentClassId ?? currentUser.classRoomId }) // subject is always in primary class room
 
     if (queryDto.asOptions) {
       queryBuilder
@@ -151,21 +141,34 @@ export class SubjectsService extends BaseRepository {
 
   async getOptions(queryDto: SubjectOptionsQueryDto) {
     const currentUser = this.utilitiesService.getCurrentUser();
+    const branchId = this.utilitiesService.getBranchId();
+
+    if ((isAdmin(currentUser) || isTeacher(currentUser)) && !queryDto.classRoomId) throw new BadRequestException('classRoomId is required');
+
+    const classRoomId = isStudent(currentUser)
+      ? (currentUser.parentClassId ?? currentUser.classRoomId) // subjects are always in primary class
+      : queryDto.classRoomId
 
     const querybuilder = this.getRepository(Subject).createQueryBuilder('subject')
       .orderBy("subject.createdAt", queryDto.order)
-      .leftJoin('subject.classRoom', 'classRoom')
-      .where('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId })
-      .select(["subject.id", "subject.subjectName"]);
+      .where('subject.classRoomId = :classRoomId', { classRoomId });
 
-    if (isAdmin(currentUser)) {
-      this.utilitiesService.applyBranchFilter(querybuilder, "classRoom.branchId = :branchId");
+    if (branchId) {
+      querybuilder.innerJoin('subject.classRoom', 'classRoom', 'classRoom.branchId = :branchId', { branchId });
+    } else {
+      querybuilder.leftJoin('subject.classRoom', 'classRoom');
     }
 
     if (isTeacher(currentUser)) {
-      querybuilder
-        .innerJoin("subject.classRoutines", "classRoutines", "classRoutines.teacherId = :teacherId AND classRoom.id = :classRoomId", { teacherId: currentUser.teacherId, classRoomId: queryDto.classRoomId })
+      querybuilder.innerJoin(
+        "subject.classRoutines",
+        "classRoutines",
+        "classRoutines.teacherId = :teacherId AND classRoom.id = :classRoomId",
+        { teacherId: currentUser.teacherId, classRoomId: queryDto.classRoomId }
+      )
     }
+
+    querybuilder.select(["subject.id", "subject.subjectName"]);
 
     return querybuilder.getMany();
   }

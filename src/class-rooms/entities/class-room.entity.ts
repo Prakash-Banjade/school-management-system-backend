@@ -99,7 +99,7 @@ export class ClassRoom extends BaseEntity {
     @OneToMany(() => Exam, exam => exam.classRoom)
     exams: Exam[];
 
-    @ManyToMany(() => LessonPlan, lessonPlan => lessonPlan.classRooms)
+    @OneToMany(() => LessonPlan, lessonPlan => lessonPlan.classRoom)
     lessonPlans: LessonPlan[];
 
     @OneToMany(() => FeeStructure, feeStructure => feeStructure.classRoom, { cascade: true })

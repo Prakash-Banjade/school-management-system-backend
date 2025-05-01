@@ -7,6 +7,7 @@ import { Faculty } from "src/faculties/entities/faculty.entity";
 import { EmployeeLedger } from "src/finance-system/salary-management/employee-ledgers/entities/employee-ledger.entity";
 import { Payroll } from "src/finance-system/salary-management/payrolls/entities/payroll.entity";
 import { SalaryStructure } from "src/finance-system/salary-management/salary-structures/entities/salary-structure.entity";
+import { LessonPlan } from "src/lesson-plans/entities/lesson-plan.entity";
 import { OnlineClass } from "src/online-classes/entities/online-class.entity";
 import { Subject } from "src/subjects/entities/subject.entity";
 import { TaskEvaluation } from "src/task-system/task-evaluations/entities/task-evaluation.entity";
@@ -82,6 +83,9 @@ export class Teacher extends BaseEntity {
 
     @OneToMany(() => OnlineClass, onlineClass => onlineClass.teacher)
     onlineClasses: OnlineClass[];
+
+    @OneToMany(() => LessonPlan, (lessonPlan) => lessonPlan.createdBy)
+    createdLessonPlans: LessonPlan[]
 
     @OneToMany(() => ClassRoutine, (classRoutine) => classRoutine.teacher)
     classRoutines: ClassRoutine[]

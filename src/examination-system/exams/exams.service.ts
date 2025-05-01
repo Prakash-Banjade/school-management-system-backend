@@ -76,14 +76,17 @@ export class ExamsService extends BaseRepository {
       })
     }));
 
-    const startingFrom = examSubjects.sort((a, b) => new Date(a.examDate).getTime() - new Date(b.examDate).getTime())[0].examDate;
+    const examSubjectsSortedByDate = examSubjects.sort((a, b) => new Date(a.examDate).getTime() - new Date(b.examDate).getTime());
+    const startingFrom = examSubjectsSortedByDate[0].examDate;
+    const endsOn = examSubjectsSortedByDate[examSubjectsSortedByDate.length - 1].examDate;
 
     const newExam = this.getRepository(Exam).create({
       examType,
       classRoom,
       academicYear,
       examSubjects,
-      startingFrom
+      startingFrom,
+      endsOn
     });
 
     await this.getRepository(Exam).save(newExam);
@@ -133,6 +136,8 @@ export class ExamsService extends BaseRepository {
       .select([
         'exam.id as id',
         'exam.createdAt as createdAt',
+        'exam.startingFrom as startingFrom',
+        'exam.endsOn as endsOn',
         'exam.isReportPublished as isReportPublished',
         'examType.id as examTypeId', // required in frontend in exam columns
         'examType.name as examType',

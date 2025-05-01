@@ -4,6 +4,7 @@ import { BaseEntity } from "src/common/entities/base.entity";
 import { ELessonPlanStatus } from "src/common/types/global.type";
 import { File } from "src/file-management/files/entities/file.entity";
 import { Subject } from "src/subjects/entities/subject.entity";
+import { Teacher } from "src/teachers/entities/teacher.entity";
 import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany } from "typeorm";
 
 @Entity()
@@ -20,15 +21,14 @@ export class LessonPlan extends BaseEntity {
     @Column({ type: 'longtext' })
     description: string;
 
-    @ManyToOne(() => Subject, subject => subject.lessonPlans, { onDelete: 'CASCADE' })
+    @ManyToOne(() => Subject, subject => subject.lessonPlans, { onDelete: 'CASCADE', nullable: false })
     subject: Subject;
 
-    @ManyToMany(() => ClassRoom, classRoom => classRoom.lessonPlans, { onDelete: 'CASCADE' })
-    @JoinTable()
-    classRooms: ClassRoom[];
+    @ManyToOne(() => ClassRoom, classRoom => classRoom.lessonPlans, { onDelete: 'CASCADE', nullable: false })
+    classRoom: ClassRoom;
 
-    @ManyToOne(() => Account, account => account.createdLessonPlans, { onDelete: 'SET NULL' })
-    createdBy: Account;
+    @ManyToOne(() => Teacher, teacher => teacher.createdLessonPlans, { onDelete: 'CASCADE', nullable: false })
+    createdBy: Teacher;
 
     @OneToMany(() => File, file => file.lessonPlan_attachment)
     attachments: File[];

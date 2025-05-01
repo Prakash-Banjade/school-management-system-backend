@@ -13,9 +13,9 @@ export const lessonPlanSelectCols: FindOptionsSelect<LessonPlan> = {
         id: true,
         subjectName: true,
     },
-    classRooms: {
+    classRoom: {
         id: true,
-        name: true,
+        fullName: true,
         parent: {
             id: true,
             name: true,

@@ -63,14 +63,6 @@ export class ExamsController {
     return this.examsHelper.getExamStudents(id, queryDto);
   }
 
-  @Get("upcomming")
-  @CheckAbilities({ subject: Role.STUDENT, action: Action.READ })
-  @ApiOperation({ summary: "Get upcomming exam list" })
-  @ApiOkResponse({ description: "Exam fetched successfully" })
-  getUpcommingExam(@CurrentUser() currentUser: AuthUser) { // used in student dashboard}
-    return this.examsHelper.getUpcommingExam(currentUser);
-  }
-
   @Get(':id')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   @ApiOperation({ summary: 'Get a specific exam' })

@@ -41,8 +41,9 @@ export class SubjectQueryDto extends ClassRoomSearchQueryDto {
 
 export class SubjectOptionsQueryDto extends QueryDto {
 
-    @ApiProperty({ type: "string", format: 'uuid' })
+    @ApiPropertyOptional({ type: "string", format: 'uuid' })
     @IsUUID()
-    classRoomId: string;
+    @IsOptional()
+    classRoomId?: string;
 }
 

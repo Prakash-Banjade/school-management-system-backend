@@ -1,16 +1,22 @@
 import { Controller, Get, UseInterceptors } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
+import { TeacherDashboardService } from './teacher-dashboard.service';
+import { StudentDashboardService } from './student-dashboard.service';
 
 @ApiBearerAuth()
 @ApiTags('Dashboard')
 @Controller('dashboard')
 export class DashboardController {
-  constructor(private readonly dashboardService: DashboardService) { }
+  constructor(
+    private readonly dashboardService: DashboardService,
+    private readonly teacherDashboardService: TeacherDashboardService,
+    private readonly studentDashboardService: StudentDashboardService,
+  ) { }
 
   @Get('admin/counts')
   @ApiOperation({ summary: 'Get admin dashboard counts', description: 'Get total counts of students, teachers, staffs, classrooms' })
@@ -52,7 +58,7 @@ export class DashboardController {
   @UseInterceptors(CacheInterceptor)
   @CacheTTL(30 * 1000)
   getTeacherDashboardCounts(@CurrentUser() currentUser: AuthUser) {
-    return this.dashboardService.getTeacherDashboardCounts(currentUser);
+    return this.teacherDashboardService.getTeacherDashboardCounts(currentUser);
   }
 
   @Get('teacher/schedule')
@@ -62,6 +68,17 @@ export class DashboardController {
   @UseInterceptors(CacheInterceptor)
   @CacheTTL(30 * 1000)
   getTodaySchedule(@CurrentUser() currentUser: AuthUser) {
-    return this.dashboardService.getTodaySchedule(currentUser);
+    return this.teacherDashboardService.getTodaySchedule(currentUser);
+  }
+
+  
+  @Get("student/upcomming-exams")
+  @CheckAbilities({ subject: Role.STUDENT, action: Action.READ })
+  @ApiOperation({ summary: "Get upcomming exam list" })
+  @ApiOkResponse({ description: "Exam fetched successfully" })
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(30 * 1000)
+  getUpcommingExam(@CurrentUser() currentUser: AuthUser) { // used in student dashboard}
+    return this.studentDashboardService.getUpcommingExam(currentUser);
   }
 }
