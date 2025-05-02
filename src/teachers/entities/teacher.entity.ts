@@ -31,7 +31,7 @@ export class Teacher extends BaseEntity {
     @Column({ type: 'varchar', default: '' })
     lastName?: string;
 
-    @OneToOne(() => Account, account => account.teacher, { onDelete: 'CASCADE', nullable: false })
+    @OneToOne(() => Account, account => account.teacher, { onDelete: 'CASCADE' })
     @JoinColumn()
     account: Account;
 

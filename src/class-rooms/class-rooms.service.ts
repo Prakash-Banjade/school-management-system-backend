@@ -154,11 +154,14 @@ export class ClassRoomsService extends BaseRepository {
     }
   }
 
-  private async checkIfExisting(dto: Partial<{ name: string, classType: EClassType, facultyId: string }>) {
+  private async checkIfExisting(dto: Partial<{ name: string, classType: EClassType, facultyId: string, parentClassId: string }>) {
     const existingWithSameName = await this.getRepository(ClassRoom).findOne({
       where: {
         name: ILike(dto.name),
         classType: dto.classType,
+        parent: {
+          id: dto.parentClassId
+        },
         branch: { id: this.utilitiesService.getBranchId() },
         faculty: { id: dto.facultyId }
       },

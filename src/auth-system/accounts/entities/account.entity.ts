@@ -65,7 +65,7 @@ export class Account extends BaseEntity {
     @ManyToOne(() => Branch, branch => branch.accounts, { onDelete: 'RESTRICT', nullable: true })
     branch: Branch | null;
 
-    @OneToOne(() => User, user => user.account, { nullable: true })
+    @OneToOne(() => User, user => user.account, { nullable: true, cascade: true })
     user: User;
 
     @OneToOne(() => Student, student => student.account, { nullable: true })
