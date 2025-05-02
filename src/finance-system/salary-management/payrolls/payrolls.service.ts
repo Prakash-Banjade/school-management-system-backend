@@ -148,7 +148,7 @@ export class PayrollsService extends BaseRepository {
                 'payroll.id as id',
                 'payroll.date as date',
                 'payroll.netSalary as netSalary',
-                'payroll.grossSalary as grossSalary',
+                'payroll.basicSalary as basicSalary',
                 `
                     CASE WHEN teacher.id IS NOT NULL THEN JSON_OBJECT(
                         'id', teacher.id,
@@ -248,36 +248,52 @@ export class PayrollsService extends BaseRepository {
     }
 
     async getAll(queryDto: PayrollsQueryDto, currentUser: AuthUser) {
-        if (!isTeacher(currentUser)) throw new ForbiddenException('Access denied');
+        const employeeId = isTeacher(currentUser) ? currentUser.teacherId : queryDto.employeeId;
+
+        if (!employeeId) throw new BadRequestException('Employee ID is required');
 
         const querybuilder = this.getRepository(Payroll).createQueryBuilder('payroll')
             .orderBy('payroll.createdAt', 'DESC')
             .limit(queryDto.take)
             .offset(queryDto.skip)
-            .where("payroll.teacherId = :teacherId", { teacherId: currentUser.teacherId })
-            .andWhere(new Brackets(qb => {
+            .where(new Brackets(qb => {
                 queryDto.dateFrom && qb.andWhere('DATE(payroll.date) >= :dateFrom', { dateFrom: queryDto.dateFrom });
                 queryDto.dateTo && qb.andWhere('DATE(payroll.date) <= :dateTo', { dateTo: queryDto.dateTo });
             }))
-            .select([
-                'payroll.id as id',
-                'payroll.date as date',
-                'payroll.netSalary as netSalary',
-                'payroll.basicSalary as basicSalary',
-            ]);
+
+        if (isTeacher(currentUser)) {
+            querybuilder.where("payroll.teacherId = :employeeId", { employeeId: employeeId });
+        }
+
+        if (isAdmin(currentUser)) {
+            querybuilder
+                .leftJoin('payroll.teacher', 'teacher')
+                .leftJoin('payroll.staff', 'staff')
+                .andWhere("teacher.teacherId = :employeeId OR staff.staffId = :employeeId", { employeeId: employeeId }); // when admin is requesting he sends employeeId as teacher.teacherId not teacher.id
+        }
+
+        querybuilder.select([
+            'payroll.id as id',
+            'payroll.date as date',
+            'payroll.netSalary as netSalary',
+            'payroll.basicSalary as basicSalary',
+        ]);
 
         return paginatedRawData(queryDto, querybuilder);
     }
 
     async findOne(id: string, currentUser: AuthUser) {
-        if (!isTeacher(currentUser)) throw new ForbiddenException('Access denied');
-
-        const payroll = await this.getRepository(Payroll).createQueryBuilder('payroll')
+        const querybuilder = this.getRepository(Payroll).createQueryBuilder('payroll')
             .leftJoin('payroll.salaryAdjustments', 'salaryAdjustments')
             .leftJoin('payroll.salaryPayments', 'salaryPayments')
             .leftJoin('payroll.teacher', 'teacher')
-            .where('payroll.id = :id', { id })
-            .andWhere('teacher.id = :teacherId', { teacherId: currentUser.teacherId })
+            .where('payroll.id = :id', { id });
+
+        if (isTeacher(currentUser)) {
+            querybuilder.andWhere('teacher.id = :teacherId', { teacherId: currentUser.teacherId })
+        }
+
+        querybuilder
             .select([
                 'payroll.id as id',
                 'payroll.date as date',
@@ -307,7 +323,9 @@ export class PayrollsService extends BaseRepository {
             ])
             .groupBy('payroll.id')
             .addGroupBy('salaryPayments.id')
-            .getRawOne();
+
+
+        const payroll = await querybuilder.getRawOne();
 
         if (!payroll?.employee) return null;
 

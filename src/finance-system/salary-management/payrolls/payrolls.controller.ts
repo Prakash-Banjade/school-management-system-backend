@@ -33,7 +33,10 @@ export class PayrollsController {
   @Get()
   @ApiOperation({ summary: 'Get all payrolls' })
   @ApiResponse({ status: 200, description: 'Payrolls fetched successfully' })
-  @CheckAbilities({ subject: Role.TEACHER, action: Action.READ })
+  @CheckAbilities(
+    { subject: Role.TEACHER, action: Action.READ },
+    { subject: Role.ADMIN, action: Action.READ }
+  )
   getAll(@Query() queryDto: PayrollsQueryDto, @CurrentUser() currentUser: AuthUser) {
     return this.payrollsService.getAll(queryDto, currentUser);
   }
@@ -42,7 +45,10 @@ export class PayrollsController {
   @ApiOperation({ summary: 'Get payroll by id' })
   @ApiResponse({ status: 200, description: 'Payroll fetched successfully' })
   @ApiNotFoundResponse({ description: 'Payroll not found' })
-  @CheckAbilities({ subject: Role.TEACHER, action: Action.READ })
+  @CheckAbilities(
+    { subject: Role.ADMIN, action: Action.READ },
+    { subject: Role.TEACHER, action: Action.READ },
+  )
   findOne(@Param('id') id: string, @CurrentUser() currentUser: AuthUser) {
     return this.payrollsService.findOne(id, currentUser);
   }
@@ -61,7 +67,7 @@ export class PayrollsController {
   @ApiResponse({ status: 200, description: 'Employee details fetched successfully' })
   @ApiResponse({ status: 404, description: 'Employee not found' })
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  getSalaryEmployee(@Param('employeeId') employeeId: string) {
+  getSalaryEmployee(@Query('employeeId') employeeId: string) {
     return this.payrollsHelper.getEmployee(employeeId);
   }
 
@@ -70,7 +76,7 @@ export class PayrollsController {
   @ApiParam({ name: 'employeeId', required: true, description: 'Employee ID' })
   @ApiResponse({ status: 200, description: 'Last payroll fetched successfully' })
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  getLastPayroll(@Param('employeeId') employeeId: string) {
+  getLastPayroll(@Query('employeeId') employeeId: string) {
     return this.payrollsService.getLastPayroll(employeeId);
   }
 

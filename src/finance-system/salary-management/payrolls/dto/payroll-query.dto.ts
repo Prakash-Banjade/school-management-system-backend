@@ -33,6 +33,11 @@ export class GetEmployeesQueryDto extends QueryDto {
 }
 
 export class PayrollsQueryDto extends QueryDto {
+    @ApiPropertyOptional({ type: 'string', description: 'Employee id' })
+    @IsOptional()
+    @IsString()
+    employeeId?: string;
+
     @ApiPropertyOptional({ format: 'date-time', description: 'Date from' })
     @IsDateString()
     @IsOptional()
