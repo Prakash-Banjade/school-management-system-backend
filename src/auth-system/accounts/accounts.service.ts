@@ -84,7 +84,7 @@ export class AccountsService extends BaseRepository {
     } as Account);
   }
 
-  async createAdminAccount(user: User, branch: Branch, dto: { firstName: string, lastName: string, email: string }) {
+  async createAdminAccount(branch: Branch, dto: { firstName: string, lastName: string, email: string }) {
     const existingAccount = await this.getRepository(Account).findOne({ where: { email: dto.email }, select: { id: true } });
     if (existingAccount) throw new BadRequestException({
       message: 'Duplicate email. Please use different email.',
@@ -98,7 +98,6 @@ export class AccountsService extends BaseRepository {
       firstName: dto.firstName,
       lastName: dto.lastName,
       role: Role.ADMIN,
-      user,
       password,
       prevPasswords: [bcrypt.hashSync(password, PASSWORD_SALT_COUNT)],
       branch,
@@ -106,14 +105,16 @@ export class AccountsService extends BaseRepository {
 
     account.setLowerCasedFullName();
 
-    await this.getRepository(Account).save(account);
+    const createdAccount = await this.getRepository(Account).save(account);
 
-    return this.authHelper.sendEmailConfirmation({
+    await this.authHelper.sendEmailConfirmation({
       id: account.id,
       email: account.email,
       firstName: account.firstName,
       lastName: account.lastName,
     } as Account);
+
+    return createdAccount
   }
 
   async update(id: string, dto: UpdateAccountDto) {
