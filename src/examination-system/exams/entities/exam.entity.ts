@@ -1,6 +1,7 @@
 import { AcademicYear } from "src/academic-years/entities/academic-year.entity";
 import { ClassRoom } from "src/class-rooms/entities/class-room.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
+import { ExamResult } from "src/examination-system/exam-results/entities/exam-result.entity";
 import { ExamSubject } from "src/examination-system/exam-subjects/entities/exam-subject.entity";
 import { ExamType } from "src/examination-system/exam-types/entities/exam-type.entity";
 import { Column, Entity, Index, ManyToOne, OneToMany, Unique } from "typeorm";
@@ -30,4 +31,7 @@ export class Exam extends BaseEntity {
 
     @Column({ type: 'boolean', default: false })
     isReportPublished: boolean;
+
+    @OneToMany(() => ExamResult, examResult => examResult.exam, { cascade: true })
+    examResults: ExamResult[];
 }

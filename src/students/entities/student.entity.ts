@@ -5,6 +5,7 @@ import { EBloodGroup, EReligion, Gender } from "src/common/types/global.type";
 import { DormitoryRoom } from "src/dormitory-system/dormitory-rooms/entities/dormitory-room.entity";
 import { Enrollment } from "src/enrollments/entities/enrollment.entity";
 import { ExamReport } from "src/examination-system/exam-reports/entities/exam-report.entity";
+import { ExamResult } from "src/examination-system/exam-results/entities/exam-result.entity";
 import { File } from "src/file-management/files/entities/file.entity";
 import { Guardian } from "src/guardians/entities/guardian.entity";
 import { BookTransaction } from "src/library-system/book-transactions/entities/book-transaction.entity";
@@ -44,6 +45,9 @@ export class Student extends BaseEntity {
 
     @OneToMany(() => ExamReport, (examReport) => examReport.student)
     examReports: ExamReport[];
+
+    @OneToMany(() => ExamResult, (examResult) => examResult.student)
+    examResults: ExamResult[];
 
     @OneToMany(() => BookTransaction, (bookTransaction) => bookTransaction.student)
     bookTransactions: BookTransaction[]

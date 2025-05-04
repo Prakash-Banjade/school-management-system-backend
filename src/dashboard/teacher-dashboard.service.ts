@@ -64,7 +64,7 @@ export class TeacherDashboardService {
     async getTodaySchedule(currentUser: AuthUser) {
         if (!isTeacher(currentUser)) throw new ForbiddenException('Access denied');
 
-        const today = Object.entries(EDayOfWeek)[new Date().getDay() - 1][1];
+        const today = Object.entries(EDayOfWeek)[new Date().getDay()][1];
 
         const querybuilder = this.classRoutinesRepo.createQueryBuilder("classRoutine")
             .leftJoin('classRoutine.classRoom', 'classRoom')

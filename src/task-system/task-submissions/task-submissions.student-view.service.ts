@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { TaskSubmission } from "./entities/task-submission.entity";
 import { Brackets, Repository } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
-import { AuthUser } from "src/common/types/global.type";
+import { AuthUser, ETask } from "src/common/types/global.type";
 import { isStudent } from "src/utils/utils";
 import paginatedData from "src/utils/paginatedData";
 import { TaskSubmissionQueryDto } from "./dto/task-submission-query.dto";
@@ -23,10 +23,15 @@ export class TaskSubmissionsStudentViewService {
             .leftJoin('taskSubmission.task', 'task')
             .leftJoin('task.subject', 'subject')
             .leftJoin('taskSubmission.attachments', 'attachments')
-            .where('taskSubmission.studentId = :studentId', { studentId: currentUser.studentId });
+            .where('taskSubmission.studentId = :studentId', { studentId: currentUser.studentId })
 
         if (queryDto.evaluated === "true") {
             queryBuilder.innerJoin('taskSubmission.evaluation', 'evaluation', 'evaluation.id IS NOT NULL')
+        }
+
+        if (queryDto.evaluated === "false") {
+            queryBuilder.leftJoin('taskSubmission.evaluation', 'evaluation')
+                .andWhere('evaluation.id IS NULL')
         }
 
         queryBuilder

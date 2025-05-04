@@ -36,7 +36,7 @@ export class PayrollsHelper {
 
 
         if (currentUser.branchId) {
-            querybuilder.andWhere('employeeAccount.branchId = :branchId', { branchId: currentUser.branchId });
+            querybuilder.andWhere('teacherAccount.branchId = :branchId OR staffAccount.branchId = :branchId', { branchId: currentUser.branchId });
         }
 
         querybuilder

@@ -78,6 +78,7 @@ export class ExamsController {
   @ApiOperation({ summary: 'Toggle the publish status of an existing exam' })
   @ApiParam({ name: 'id', description: 'Exam ID to update' })
   @ApiResponse({ status: 200, description: 'Exam updated successfully.' })
+  @UseInterceptors(TransactionInterceptor)
   publishReport(@Param('id', ParseUUIDPipe) id: string, @Query('publish', ParseBoolPipe) publish: boolean) {
     return this.examsService.publishReport(id, publish);
   }

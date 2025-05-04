@@ -92,34 +92,35 @@ export class StudentLedgersService extends BaseRepository {
             ])
             .getOne();
 
-        if (!studentLedger) throw new NotFoundException('Ledger not found');
-
-        const lastInvoice = await this.getRepository(FeeInvoice).createQueryBuilder('invoice')
+        const lastInvoiceQuerybuilder = this.getRepository(FeeInvoice).createQueryBuilder('invoice')
             .orderBy('invoice.createdAt', 'DESC')
             .leftJoin("invoice.ledgerItem", "ledgerItem")
             .leftJoin("ledgerItem.studentLedger", "studentLedger")
             .where("studentLedger.id = :studentLedgerId", { studentLedgerId: studentLedger.id })
             .select([
-                "invoice.id",
-                "invoice.totalAmount",
-                "invoice.dueDate",
-                "invoice.invoiceNo"
+                "invoice.id as id",
+                "invoice.dueDate as dueDate",
+                "ledgerItem.ledgerAmount as totalAmount",
+                "invoice.invoiceNo as invoiceNo",
             ])
             .limit(1)
-            .getOne();
 
-        const lastPayment = await this.getRepository(FeePayment).createQueryBuilder('payment')
+        const lastPaymentQuerybuilder = this.getRepository(FeePayment).createQueryBuilder('payment')
             .orderBy('payment.createdAt', 'DESC')
             .leftJoin("payment.ledgerItem", "ledgerItem")
             .leftJoin("ledgerItem.studentLedger", "studentLedger")
             .where("studentLedger.id = :studentLedgerId", { studentLedgerId: studentLedger.id })
             .select([
-                "payment.id",
-                "payment.amount",
-                "payment.createdAt",
+                "payment.id as id",
+                "payment.amount as amount",
+                "payment.createdAt as createdAt",
             ])
             .limit(1)
-            .getOne();
+
+        const [lastInvoice, lastPayment] = await Promise.all([
+            lastInvoiceQuerybuilder.getRawOne(),
+            lastPaymentQuerybuilder.getRawOne(),
+        ]);
 
         return {
             studentLedger,

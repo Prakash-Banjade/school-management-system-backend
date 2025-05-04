@@ -18,12 +18,15 @@ import { isStudent } from 'src/utils/utils';
 import { ExamType } from '../exam-types/entities/exam-type.entity';
 import { UtilitiesService } from 'src/utilities/utilities.service';
 import { AcademicYear } from 'src/academic-years/entities/academic-year.entity';
+import { ExamResultsService } from '../exam-results/exam-results.service';
+import { ExamResult } from '../exam-results/entities/exam-result.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class ExamsService extends BaseRepository {
   constructor(
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
     private readonly utilitiesService: UtilitiesService,
+    private readonly examResultsService: ExamResultsService,
   ) { super(dataSource, req); }
 
   async create(createExamDto: CreateExamDto) {
@@ -237,13 +240,45 @@ export class ExamsService extends BaseRepository {
   }
 
   async publishReport(id: string, publish: boolean) {
-    const existing = await this.getRepository(Exam).findOne({ where: { id }, select: { id: true } });
+    const existing = await this.getRepository(Exam).findOne({
+      where: { id },
+      relations: {
+        classRoom: { children: true },
+        academicYear: true,
+        examSubjects: { subject: true }
+      },
+      select: {
+        id: true,
+        classRoom: { id: true, children: { id: true } },
+        academicYear: { id: true },
+        examSubjects: {
+          id: true,
+          theoryFM: true,
+          theoryPM: true,
+          practicalFM: true,
+          practicalPM: true,
+          subject: {
+            id: true,
+            type: true,
+          }
+        }
+      },
+    });
 
-    if (!existing) return;
+    if (!existing) throw new NotFoundException('Exam not found');
 
-    existing.isReportPublished = publish;
+    if (publish) {
+      await this.examResultsService.generate(existing);
+    } else {
+      // remove exam results of this exam
+      await this.getRepository(Exam).createQueryBuilder()
+        .delete()
+        .from(ExamResult)
+        .where('examId = :examId', { examId: existing.id })
+        .execute();
+    }
 
-    await this.getRepository(Exam).save(existing);
+    await this.getRepository(Exam).update({ id: existing.id }, { isReportPublished: publish });
 
     return { message: publish ? 'Report published' : 'Report unpublished' }
   }

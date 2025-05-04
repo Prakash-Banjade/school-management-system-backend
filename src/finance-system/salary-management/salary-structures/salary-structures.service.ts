@@ -30,7 +30,7 @@ export class SalaryStructuresService extends BaseRepository {
             .leftJoin('salaryStructure.teacher', 'teacher')
             .leftJoin('teacher.account', 'teacherAccount', 'teacher.id IS NOT NULL')
             .leftJoin('salaryStructure.staff', 'staff')
-            .leftJoin('stafef.account', 'staffAccount', 'staff.id IS NOT NULL');
+            .leftJoin('staff.account', 'staffAccount', 'staff.id IS NOT NULL');
 
         if (queryDto.search) {
             querybuilder.andWhere(new Brackets(qb => {
@@ -86,12 +86,19 @@ export class SalaryStructuresService extends BaseRepository {
     }
 
     async findOne(id: string) {
+        const branchId = this.utilitiesService.getBranchId();
+
         const existing = await this.getRepository(SalaryStructure).findOne({
-            where: {
-                id,
-                teacher: { account: { branch: { id: this.utilitiesService.getBranchId() } } },
-                staff: { account: { branch: { id: this.utilitiesService.getBranchId() } } },
-            },
+            where: [
+                {
+                    id,
+                    teacher: { account: { branch: { id: branchId } } },
+                },
+                {
+                    id,
+                    staff: { account: { branch: { id: branchId } } },
+                }
+            ],
             select: { id: true, basicSalary: true, allowances: true }
         });
 
