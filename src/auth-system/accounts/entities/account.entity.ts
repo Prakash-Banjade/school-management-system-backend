@@ -12,7 +12,6 @@ import { Staff } from "src/staffs/entities/staff.entity";
 import { Attendance } from "src/attendances/entities/attendance.entity";
 import { LeaveRequest } from "src/leave-requests/entities/leave-request.entity";
 import { Task } from "src/task-system/tasks/entities/task.entity";
-import { LessonPlan } from "src/lesson-plans/entities/lesson-plan.entity";
 import { Branch } from "src/branches/entities/branch.entity";
 import { WebAuthnCredential } from "src/auth-system/webAuthn/entities/webAuthnCredential.entity";
 import { LoginDevice } from "./login-devices.entity";
@@ -68,10 +67,10 @@ export class Account extends BaseEntity {
     @OneToOne(() => User, user => user.account, { nullable: true, cascade: true })
     user: User;
 
-    @OneToOne(() => Student, student => student.account, { nullable: true })
+    @OneToOne(() => Student, student => student.account, { cascade: true, nullable: true })
     student: Student;
 
-    @OneToOne(() => Teacher, teacher => teacher.account, { nullable: true })
+    @OneToOne(() => Teacher, teacher => teacher.account, { cascade: true, nullable: true })
     teacher: Teacher;
 
     @OneToOne(() => Staff, staff => staff.account, { nullable: true })

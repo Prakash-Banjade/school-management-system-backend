@@ -7,9 +7,15 @@ import { AccountsModule } from 'src/auth-system/accounts/accounts.module';
 import { StudentsHelper } from './helpers/students.helper';
 import { FilesModule } from 'src/file-management/files/files.module';
 import { RouteStopsModule } from 'src/transportation-system/route-stops/route-stops.module';
+import { StudentsUtils } from './helpers/students.utils';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Student } from './entities/student.entity';
 
 @Module({
   imports: [
+    TypeOrmModule.forFeature([
+      Student
+    ]),
     ImagesModule,
     AccountsModule,
     DormitoryRoomsModule,
@@ -17,7 +23,7 @@ import { RouteStopsModule } from 'src/transportation-system/route-stops/route-st
     RouteStopsModule,
   ],
   controllers: [StudentsController],
-  providers: [StudentsService, StudentsHelper],
+  providers: [StudentsService, StudentsHelper, StudentsUtils],
   exports: [StudentsService],
 })
 export class StudentsModule { }

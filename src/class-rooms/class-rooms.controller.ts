@@ -118,6 +118,18 @@ export class ClassRoomsController {
     return this.classRoomsService.findOne(id);
   }
 
+  @Patch(':id/update-roll-no')
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
+  @UseInterceptors(TransactionInterceptor)
+  @ApiOperation({ summary: 'Update roll no of students alphabet wise in a class room' })
+  @ApiParam({ name: 'id', description: 'The ID of the class room to update' })
+  @ApiResponse({ status: 200, description: 'Roll no of students successfully updated.' })
+  @ApiResponse({ status: 404, description: 'Class room not found.' })
+  @UseInterceptors(TransactionInterceptor)
+  updateRollNo(@Param('id') id: string) {
+    return this.classRoomsService.updateRollNo(id);
+  }
+
   @Patch(':id')
   @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
   @UseInterceptors(TransactionInterceptor)

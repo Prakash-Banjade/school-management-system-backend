@@ -1,5 +1,5 @@
 # Base image with build dependencies
-FROM node:20-alpine AS build
+FROM node:22-slim AS build
 
 # Set working directory
 WORKDIR /usr/src/app
@@ -13,7 +13,7 @@ COPY . .
 RUN npm run build
 
 # Production image
-FROM node:20-alpine AS production
+FROM node:22-slim AS production
 
 WORKDIR /usr/src/app
 

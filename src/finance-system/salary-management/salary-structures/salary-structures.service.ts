@@ -30,7 +30,7 @@ export class SalaryStructuresService extends BaseRepository {
             .leftJoin('salaryStructure.teacher', 'teacher')
             .leftJoin('teacher.account', 'teacherAccount', 'teacher.id IS NOT NULL')
             .leftJoin('salaryStructure.staff', 'staff')
-            .leftJoin('staff.account', 'staffAccount', 'staff.id IS NOT NULL');
+            .leftJoin('stafef.account', 'staffAccount', 'staff.id IS NOT NULL');
 
         if (queryDto.search) {
             querybuilder.andWhere(new Brackets(qb => {

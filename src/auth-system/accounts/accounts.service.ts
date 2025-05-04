@@ -132,9 +132,11 @@ export class AccountsService extends BaseRepository {
       account.profileImage = dto.profileImageId ? await this.imagesService.findOne(dto.profileImageId) : null;
     }
 
+    Object.assign(account, dto)
+
     account.setLowerCasedFullName();
 
-    await this.getRepository(Account).save(Object.assign(account, dto));
+    await this.getRepository(Account).save(account);
   }
 
   async getDevices() {

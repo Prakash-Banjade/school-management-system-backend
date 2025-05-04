@@ -22,12 +22,6 @@ export class CreateStudentDto {
     @IsNotEmpty()
     classRoomId: string;
 
-    @ApiProperty({ type: Number, description: 'Roll number of the student' })
-    @IsNumber()
-    @IsNotEmpty()
-    @Min(1, { message: 'Roll number must be greater than 0' })
-    rollNo: number;
-
     @ApiProperty({ type: Number, description: 'Admission date of the student' })
     @IsDateString()
     @IsNotFutureDate()

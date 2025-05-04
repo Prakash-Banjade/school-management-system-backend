@@ -51,6 +51,7 @@ export class ClassRoomsHelper extends BaseRepository {
                 "faculty.id as facultyId",
                 "CONCAT(classTeacher.firstName, ' ', classTeacher.lastName) as classTeacherName",
                 'parentClass.name as parentClassName',
+                'parentClass.id as parentClassId',
                 `(SELECT JSON_ARRAYAGG(
                     JSON_OBJECT(
                       'teacherName', CONCAT(childClassTeacher.firstName, ' ', childClassTeacher.lastName),
@@ -70,7 +71,7 @@ export class ClassRoomsHelper extends BaseRepository {
             ])
             .cache(true)
             .groupBy('classRoom.id')  // Ensure group by to aggregate counts per classRoom
-            .addGroupBy('parentClass.name')
+            .addGroupBy('parentClass.id')
 
         this.utilitiesService.applyBranchFilter(queryBuilder, "classRoom.branchId = :branchId");
 

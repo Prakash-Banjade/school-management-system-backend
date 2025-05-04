@@ -1,4 +1,4 @@
-import { ConflictException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { CreateClassRoomDto } from './dto/create-class-room.dto';
 import { UpdateClassRoomDto } from './dto/update-class-room.dto';
 import { DataSource, ILike } from 'typeorm';
@@ -15,6 +15,8 @@ import { BranchesService } from 'src/branches/branches.service';
 import { Faculty } from 'src/faculties/entities/faculty.entity';
 import { FeeStructure } from 'src/finance-system/fee-management/fee-structures/entities/fee-structure.entity';
 import { isStudent, isTeacher } from 'src/utils/utils';
+import { AcademicYearsService } from 'src/academic-years/academic-years.service';
+import { Student } from 'src/students/entities/student.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class ClassRoomsService extends BaseRepository {
@@ -23,6 +25,7 @@ export class ClassRoomsService extends BaseRepository {
     private readonly feeStructuresService: FeeStructuresService,
     private readonly utilitiesService: UtilitiesService,
     private readonly branchesService: BranchesService,
+    private readonly academicYearsService: AcademicYearsService,
   ) { super(dataSource, req) }
 
   async create(dto: CreateClassRoomDto) {
@@ -152,6 +155,39 @@ export class ClassRoomsService extends BaseRepository {
     return {
       message: savedClassRoom.classType === EClassType.SECTION ? 'Class section updated' : 'Class room updated',
     }
+  }
+
+  async updateRollNo(id: string) {
+    const activeAcademicYear = await this.academicYearsService.latest();
+
+    const classRoom = await this.getRepository(ClassRoom).findOne({
+      where: { id },
+      relations: { children: true },
+      select: { id: true, classType: true, children: { id: true } },
+    });
+
+    if (!classRoom) throw new NotFoundException('Class room not found');
+    if (classRoom.classType === EClassType.PRIMARY && classRoom.children.length > 0) throw new BadRequestException('Class room has sections, please update them');
+
+    // get all students in the class in latest academic year
+    const students = await this.getRepository(Student).find({
+      where: {
+        classRoom: { id: classRoom.id },
+        enrollments: { academicYear: { id: activeAcademicYear.id } }
+      },
+      relations: { account: true, enrollments: true },
+      select: { id: true, rollNo: true, account: { id: true, lowerCasedFullName: true }, enrollments: { id: true } },
+      order: { account: { lowerCasedFullName: 'ASC' } }
+    });
+
+    students.forEach((student, index) => {
+      student.rollNo = index + 1;
+      student.enrollments[0].rollNo = index + 1; // update roll number in enrollments as well
+    });
+
+    await this.getRepository(Student).save(students);
+
+    return { message: 'Roll numbers updated successfully' };
   }
 
   private async checkIfExisting(dto: Partial<{ name: string, classType: EClassType, facultyId: string, parentClassId: string }>) {
