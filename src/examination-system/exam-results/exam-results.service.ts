@@ -106,14 +106,16 @@ export class ExamResultsService extends BaseRepository {
       .orderBy('examResult.percentage', 'DESC')
       .take(queryDto.take)
       .skip(queryDto.skip)
-      .leftJoin("examResult.exam", "exam")
+      .innerJoin(
+        "examResult.exam",
+        "exam",
+        "exam.academicYearId = :academicYearId AND exam.examTypeId = :examTypeId AND exam.classRoomId = :classRoomId",
+        { academicYearId, examTypeId: queryDto.examTypeId, classRoomId: queryDto.classRoomId },
+      )
       .leftJoin("examResult.student", "student")
       .leftJoin("exam.examSubjects", "examSubjects")
       .leftJoin("examSubjects.subject", "subject")
-      .leftJoin("examSubjects.examReports", "examReports")
-      .where("exam.academicYearId = :academicYearId", { academicYearId })
-      .andWhere("exam.examTypeId = :examTypeId", { examTypeId: queryDto.examTypeId })
-      .andWhere("exam.classRoomId = :classRoomId", { classRoomId: queryDto.classRoomId })
+      .leftJoin("examSubjects.examReports", "examReports", "examReports.studentId = student.id") // ensure examReports are for the same student only, if no condition, all examReports will be fetched
       .select([
         'examResult.id',
         'examResult.percentage',

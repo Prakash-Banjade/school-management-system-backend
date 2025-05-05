@@ -7,8 +7,8 @@ export default async function paginatedData<T>(
     pageOptionsDto: PageOptionsDto,
     queryBuilder: SelectQueryBuilder<T>
 ) {
-    const itemCount = await queryBuilder.getCount();
-    const { entities } = await queryBuilder.getRawAndEntities();
+    // const itemCount = await queryBuilder.getCount();
+    const [entities, itemCount] = await queryBuilder.getManyAndCount();
 
     const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto });
 
