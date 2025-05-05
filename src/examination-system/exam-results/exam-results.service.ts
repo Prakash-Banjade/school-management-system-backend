@@ -135,7 +135,7 @@ export class ExamResultsService extends BaseRepository {
         'examReports.grade',
       ]);
 
-    const examSubjects = await this.getRepository(ExamSubject).createQueryBuilder('examSubject')
+    const examSubjectsQuerybuilder = this.getRepository(ExamSubject).createQueryBuilder('examSubject')
       .leftJoin('examSubject.exam', 'exam')
       .leftJoin('examSubject.subject', 'subject')
       .where("exam.academicYearId = :academicYearId", { academicYearId })
@@ -152,12 +152,16 @@ export class ExamResultsService extends BaseRepository {
         'subject.subjectCode',
         'subject.type',
       ])
-      .getMany();
+
+    const [examSubjects, data] = await Promise.all([
+      examSubjectsQuerybuilder.getMany(),
+      paginatedData(queryDto, querybuilder)
+    ]);
 
     return {
-      ...(await paginatedData(queryDto, querybuilder)),
       examSubjects,
-    };
+      ...data,
+    }
   }
 
   findOne(id: string) {
