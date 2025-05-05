@@ -38,7 +38,7 @@ export class StudentDashboardService {
                 "examSubjects.venue",
                 "examSubjects.startTime",
             ])
-            .orderBy("exam.startingFrom", "ASC")
+            .orderBy("examSubjects.examDate", "ASC")
             .cache(true);
 
         return querybuilder.getOne();
