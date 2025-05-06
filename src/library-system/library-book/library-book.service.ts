@@ -11,6 +11,8 @@ import { LibraryBookQueryDto } from './dto/library-book.query.dto';
 import { BookCategoriesService } from '../book-categories/book-categories.service';
 import { BranchesService } from 'src/branches/branches.service';
 import { UtilitiesService } from 'src/utilities/utilities.service';
+import { FilesService } from 'src/file-management/files/files.service';
+import { EFileMimeType } from 'src/common/types/global.type';
 
 @Injectable()
 export class LibraryBookService {
@@ -18,7 +20,8 @@ export class LibraryBookService {
     @InjectRepository(LibraryBook) private libraryBookRepo: Repository<LibraryBook>,
     private readonly bookCategoriesService: BookCategoriesService,
     private readonly utilitiesService: UtilitiesService,
-    private readonly branchesService: BranchesService
+    private readonly branchesService: BranchesService,
+    private readonly filesService: FilesService,
   ) { }
 
   async create(createLibraryBookDto: CreateLibraryBookDto) {
@@ -27,10 +30,15 @@ export class LibraryBookService {
 
     const category = await this.bookCategoriesService.findOne(createLibraryBookDto.categoryId);
 
+    const documents = createLibraryBookDto.documentIds?.length
+      ? await this.filesService.findAllByIds(createLibraryBookDto.documentIds, EFileMimeType.PDF)
+      : [];
+
     const libraryBook = this.libraryBookRepo.create({
       ...createLibraryBookDto,
       category,
-      branch: await this.branchesService.getBranch(this.utilitiesService.getBranchId())
+      branch: await this.branchesService.getBranch(this.utilitiesService.getBranchId()),
+      documents
     });
     await this.libraryBookRepo.save(libraryBook);
 
@@ -92,6 +100,11 @@ export class LibraryBookService {
 
     if (dto.copiesCount !== undefined && dto.copiesCount < existing.issuedCount) {
       throw new ConflictException(`${existing.issuedCount} copies are already issued. You can't reduce copies count than ${existing.issuedCount}`);
+    }
+
+    if (dto.documentIds?.length) {
+      const documents = await this.filesService.findAllByIds(dto.documentIds, EFileMimeType.PDF);
+      existing.documents = documents;
     }
 
     Object.assign(existing, dto);

@@ -4,6 +4,7 @@ import { LessonPlan } from "src/lesson-plans/entities/lesson-plan.entity";
 import { TaskSubmission } from "src/task-system/task-submissions/entities/task-submission.entity";
 import { Task } from "src/task-system/tasks/entities/task.entity";
 import { Column, Entity, ManyToOne } from "typeorm";
+import { LibraryBook } from "src/library-system/library-book/entities/library-book.entity";
 
 @Entity()
 export class File extends BaseEntity {
@@ -42,4 +43,7 @@ export class File extends BaseEntity {
 
     @ManyToOne(() => LessonPlan, lessonPlan => lessonPlan.attachments, { onDelete: 'CASCADE' })
     lessonPlan_attachment: LessonPlan;
+
+    @ManyToOne(() => LibraryBook, libraryBook => libraryBook.documents, { onDelete: 'CASCADE' })
+    libraryBook: LibraryBook;
 }
