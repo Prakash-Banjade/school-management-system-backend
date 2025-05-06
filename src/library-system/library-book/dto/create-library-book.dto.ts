@@ -21,6 +21,7 @@ export class CreateLibraryBookDto {
     @ApiPropertyOptional({ type: String, description: 'Brief description of the book', example: 'A classic novel set in the roaring twenties' })
     @IsString()
     @IsOptional()
+    @Length(0, 500, { message: 'Description must be less than 500 characters' })
     description?: string;
 
     @ApiProperty({ type: Number, description: 'Year of publication', example: 1925 })
