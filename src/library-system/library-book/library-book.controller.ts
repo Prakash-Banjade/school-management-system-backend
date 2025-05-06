@@ -31,7 +31,7 @@ export class LibraryBookController {
   @Get()
   @ApiOperation({ summary: 'Get all library books' })
   @ApiResponse({ status: 200, description: 'List of library books' })
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @CheckAbilities({ subject: Role.USER, action: Action.READ })
   findAll(@Query() queryDto: LibraryBookQueryDto) {
     return this.libraryBookService.findAll(queryDto);
   }
@@ -61,6 +61,7 @@ export class LibraryBookController {
   @ApiOperation({ summary: 'Get a library book by ID' })
   @ApiResponse({ status: 200, description: 'Library book' })
   @ApiParam({ name: 'id', type: String, required: true, description: 'Library book ID' })
+  @CheckAbilities({ subject: Role.USER, action: Action.READ })
   findOne(@Param('id') id: string) {
     return this.libraryBookService.findOne(id);
   }

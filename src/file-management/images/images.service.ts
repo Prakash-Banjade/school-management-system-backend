@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Image } from './entities/image.entity';
 import { Repository } from 'typeorm';
 import path from 'path';
-import fs from 'fs';
+import { createReadStream, promises as fsPromises } from 'fs';
 import sharp from 'sharp';
 import { ImageQueryDto } from './dto/image-query.dto';
 import { AuthUser } from 'src/common/types/global.type';
@@ -62,12 +62,21 @@ export class ImagesService {
     return existingImage
   }
 
-  async serveImage(filename: string, queryDto: ImageQueryDto, @Res() reply: FastifyReply) {
+  async serveImage(filename: string, queryDto: ImageQueryDto, reply: FastifyReply) {
     const imagePath = path.join(process.cwd(), 'public', filename);
 
     try {
+      // Check if the file exists
+      await fsPromises.access(imagePath);
+
       // Create a readable stream from the original image file
-      const readStream = fs.createReadStream(imagePath);
+      const readStream = createReadStream(imagePath);
+
+      // Handle errors during streaming
+      readStream.on('error', (err) => {
+        console.error('Error reading the file:', err);
+        reply.status(500).send('Error reading the image file');
+      });
 
       // Set the response header for the image type
       reply.header('Content-Type', 'image/webp');
@@ -81,31 +90,29 @@ export class ImagesService {
       reply.send(readStream.pipe(transform));
 
     } catch (err) {
+      console.error('File not found or inaccessible:', err);
       reply.status(404).send('Original image not found');
     }
   }
 
-  async update(existingImageId: string, newImageId: string | null) {
-    if (existingImageId === newImageId || isBackendUrl(newImageId)) return existingImageId;
+  async update(existingImageId: string | null, newImageId: string | null | undefined): Promise<Image | null> {
+    if (!existingImageId && !newImageId) return;
 
-    const existing = await this.findOne(existingImageId);
+    if ((!existingImageId && newImageId) || (existingImageId && newImageId && (existingImageId !== newImageId))) {
+      const image = await this.findOne(newImageId);
 
-    if (newImageId === null) { // if value is null, delete the image
-      await this.imagesRepository.remove(existing);
-      return;
+      if (existingImageId && existingImageId !== image.id) { // newImageId can be url of existingImageId image, so check if it's not the same before deleting
+        await this.imagesRepository.delete({ id: existingImageId });
+      }
+
+      return image;
     }
 
-    const newImage = await this.imagesRepository.findOneBy({ id: newImageId });
-    if (!newImage) throw new NotFoundException('Image not found');
+    if (existingImageId && newImageId === null) {
+      await this.imagesRepository.delete({ id: existingImageId });
+      return null;
+    }
 
-    // update image name
-    const { id, createdAt, ...dataToMerge } = newImage;
-
-    this.imagesRepository.merge(existing, dataToMerge);
-
-    await this.imagesRepository.save(existing);
-    await this.imagesRepository.remove(newImage);
-
-    return existing.id;
+    if (existingImageId && (existingImageId === newImageId)) return undefined;
   }
 }

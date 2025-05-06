@@ -17,7 +17,7 @@ export class FilesController {
   @ApiOperation({ description: 'Upload Files. Multiple files can be uploaded', summary: 'Upload File' })
   @ApiResponse({ status: 201, description: 'Files uploaded successfully' })
   @ApiResponse({ status: 400, description: 'Bad Request. Something is wrong with payload.' })
-  @FormDataRequest({ limits: { fileSize: 5 * 1024 * 1024, files: 10 } })
+  @FormDataRequest()
   @ApiConsumes('multipart/formdata')
   @CheckAbilities({ action: Action.CREATE, subject: Role.USER })
   @ApiBearerAuth()

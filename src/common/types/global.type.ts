@@ -186,6 +186,8 @@ export enum EFileMimeType {
     PDF = 'application/pdf',
     DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Audio = 'audio/mpeg',
+    MP4 = 'video/mp4',
 }
 
 export enum EVehicleType {

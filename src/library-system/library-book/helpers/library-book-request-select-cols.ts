@@ -1,7 +1,7 @@
 import { FindOptionsSelect } from "typeorm";
 import { LibraryBook } from "../entities/library-book.entity";
 
-export const libraryBookRequestSelectCols: FindOptionsSelect<LibraryBook> = {
+export const libraryBookSelectCols: FindOptionsSelect<LibraryBook> = {
     id: true,
     createdAt: true,
     bookCode: true,
@@ -9,10 +9,20 @@ export const libraryBookRequestSelectCols: FindOptionsSelect<LibraryBook> = {
     publisherName: true,
     description: true,
     publicationYear: true,
-    copiesCount: true,
-    issuedCount: true,
     category: {
         id: true,
         name: true,
+    },
+    documents: {
+        id: true,
+        url: true,
+        originalName: true,
+        size: true,
+        format: true,
+    },
+    coverImage: {
+        id: true,
+        url: true,
+        originalName: true,
     }
 }

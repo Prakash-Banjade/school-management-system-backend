@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Length, Max, Min } from "class-validator";
+import { ArrayMaxSize, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Length, Max, Min } from "class-validator";
 import { IsUuidOrUrl } from "src/common/decorators/validators/isUrlOrUUid.decorator";
 
 export class CreateLibraryBookDto {
@@ -39,7 +39,12 @@ export class CreateLibraryBookDto {
     categoryId: string;
 
     @ApiPropertyOptional({ type: 'string', format: 'uuid', isArray: true, description: 'List of document IDs', example: ['123e4567-e89b-12d3-a456-426614174000', '123e4567-e89b-12d3-a456-426614174001'] })
-    @IsOptional()
     @IsUuidOrUrl({ each: true })
-    documentIds?: string[];
+    @ArrayMaxSize(5, { message: 'Maximum 5 documents allowed' })
+    documentIds: string[] = [];
+
+    @ApiPropertyOptional({ type: 'string', format: 'uuid', description: 'ID of the cover image', example: '123e4567-e89b-12d3-a456-426614174000' })
+    @IsUuidOrUrl()
+    @IsOptional()
+    coverImageId?: string;
 }

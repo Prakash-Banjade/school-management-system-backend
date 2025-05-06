@@ -126,11 +126,8 @@ export class AccountsService extends BaseRepository {
 
     if (!account) throw new NotFoundException('No associated account found');
 
-    if (account.profileImage?.id && dto.profileImageId !== undefined) {
-      await this.imagesService.update(account.profileImage.id, dto.profileImageId);
-    } else if (dto.profileImageId !== undefined) {
-      account.profileImage = dto.profileImageId ? await this.imagesService.findOne(dto.profileImageId) : null;
-    }
+    const image = await this.imagesService.update(account.profileImage?.id, dto.profileImageId);
+    if (image !== undefined) account.profileImage = image;
 
     Object.assign(account, dto)
 

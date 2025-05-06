@@ -36,6 +36,6 @@ export class UpdateAccountDto {
         obj.email && (this.email = obj.email);
         obj.firstName && (this.firstName = obj.firstName)
         obj.lastName && (this.lastName = obj.lastName)
-        obj.profileImageId && (this.profileImageId = obj.profileImageId)
+        this.profileImageId = obj.profileImageId // profile image id can be null
     }
 }

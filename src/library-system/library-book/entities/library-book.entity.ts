@@ -4,6 +4,7 @@ import { BookTransaction } from "src/library-system/book-transactions/entities/b
 import { BookCategory } from "src/library-system/book-categories/entities/book-category.entity";
 import { Branch } from "src/branches/entities/branch.entity";
 import { File } from "src/file-management/files/entities/file.entity";
+import { Image } from "src/file-management/images/entities/image.entity";
 
 @Entity()
 export class LibraryBook extends BaseEntity {
@@ -12,6 +13,9 @@ export class LibraryBook extends BaseEntity {
 
     @Column({ type: 'varchar' })
     bookName: string;
+
+    @OneToOne(() => Image, (image) => image.libraryBookCoverImage, { onDelete: 'SET NULL', cascade: true, nullable: true })
+    coverImage: Image | null;
 
     @Column({ type: 'varchar', default: '' })
     publisherName: string;

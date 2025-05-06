@@ -8,6 +8,7 @@ import { EmployeeLedger } from "src/finance-system/salary-management/employee-le
 import { Payroll } from "src/finance-system/salary-management/payrolls/entities/payroll.entity";
 import { SalaryStructure } from "src/finance-system/salary-management/salary-structures/entities/salary-structure.entity";
 import { LessonPlan } from "src/lesson-plans/entities/lesson-plan.entity";
+import { BookTransaction } from "src/library-system/book-transactions/entities/book-transaction.entity";
 import { OnlineClass } from "src/online-classes/entities/online-class.entity";
 import { Subject } from "src/subjects/entities/subject.entity";
 import { TaskEvaluation } from "src/task-system/task-evaluations/entities/task-evaluation.entity";
@@ -108,4 +109,7 @@ export class Teacher extends BaseEntity {
     setPayAmount(amount: number) {
         this.payAmount += amount;
     }
+
+    @OneToMany(() => BookTransaction, (bookTransaction) => bookTransaction.teacher)
+    bookTransactions: BookTransaction[]; 
 }
