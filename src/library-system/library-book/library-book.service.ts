@@ -27,7 +27,7 @@ export class LibraryBookService {
   ) { }
 
   async create(createLibraryBookDto: CreateLibraryBookDto) {
-    const existingWithSameCode = await this.libraryBookRepo.findOne({ where: { bookCode: createLibraryBookDto.bookCode?.trim() }, select: { id: true } });
+    const existingWithSameCode = await this.libraryBookRepo.findOne({ where: { bookCode: ILike(createLibraryBookDto.bookCode?.trim()) }, select: { id: true } });
     if (existingWithSameCode) throw new ConflictException('Book code already exists');
 
     const category = await this.bookCategoriesService.findOne(createLibraryBookDto.categoryId);
@@ -61,13 +61,13 @@ export class LibraryBookService {
       .take(queryDto.take)
       .orderBy("libraryBook.createdAt", queryDto.order)
       .leftJoin("libraryBook.category", "category")
-      .leftJoin("libraryBook.documents", "documents")
       .leftJoin("libraryBook.coverImage", "coverImage")
       .where(new Brackets(qb => {
         if (queryDto.search) {
           qb.andWhere(new Brackets(subQb => {
-            subQb.orWhere("LOWER(libraryBook.bookName) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
-              .orWhere("TRIM(libraryBook.bookCode) = TRIM(:exactSearch)", { exactSearch: queryDto.search });
+            subQb.orWhere("LOWER(libraryBook.bookName) LIKE :search", { search: `%${queryDto.search.toLowerCase()}%` })
+              .orWhere("libraryBook.publisherName LIKE :search", { search: `%${queryDto.search.toLowerCase()}%` })
+              .orWhere("libraryBook.bookCode = :exactSearch", { exactSearch: queryDto.search })
           }))
         }
 
@@ -83,19 +83,21 @@ export class LibraryBookService {
         'libraryBook.publicationYear',
         'category.id',
         'category.name',
-        'documents.id',
-        'documents.url',
-        'documents.originalName',
         'coverImage.id',
         'coverImage.url',
         'coverImage.originalName',
       ]);
 
     if (isAdmin(currentUser)) { // necessary only for admin
-      queryBuilder.addSelect([
-        'libraryBook.copiesCount',
-        'libraryBook.issuedCount',
-      ])
+      queryBuilder
+        .leftJoin("libraryBook.documents", "documents")
+        .addSelect([
+          'documents.id',
+          'documents.url',
+          'documents.originalName',
+          'libraryBook.copiesCount',
+          'libraryBook.issuedCount',
+        ])
     }
 
     this.utilitiesService.applyBranchFilter(queryBuilder, 'libraryBook.branchId = :branchId');
