@@ -9,7 +9,7 @@ import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { LibraryBookQueryDto } from './dto/library-book.query.dto';
 import { LibraryHelper } from './helpers/library.helper';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
-import { isStudent } from 'src/utils/utils';
+import { isAdmin } from 'src/utils/utils';
 
 @ApiBearerAuth()
 @ApiTags('Library Book')
@@ -39,14 +39,11 @@ export class LibraryBookController {
   @Get('count')
   @ApiOperation({ summary: 'Get library overview dashboard count' })
   @ApiResponse({ status: 200, description: 'Library Overview Dashboard count' })
-  @CheckAbilities(
-    { subject: Role.ADMIN, action: Action.READ },
-    { subject: Role.STUDENT, action: Action.READ }
-  )
+  @CheckAbilities({ subject: Role.USER, action: Action.READ })
   getDashboardCount(@CurrentUser() currentUser: AuthUser) {
-    return isStudent(currentUser)
-      ? this.libraryHelper.getDashboardCount_student(currentUser)
-      : this.libraryHelper.getDashboardCount();
+    return isAdmin(currentUser)
+      ? this.libraryHelper.getDashboardCount()
+      : this.libraryHelper.getDashboardCount_member(currentUser);
   }
 
   @Get('options')

@@ -1,4 +1,4 @@
-import { ForbiddenException, Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { REQUEST } from "@nestjs/core";
 import { FastifyRequest } from "fastify";
 import { BaseRepository } from "src/common/repository/base-repository";
@@ -7,7 +7,7 @@ import { LibraryBook } from "../entities/library-book.entity";
 import { BookTransaction } from "src/library-system/book-transactions/entities/book-transaction.entity";
 import { QueryDto } from "src/common/dto/query.dto";
 import { AuthUser } from "src/common/types/global.type";
-import { isStudent } from "src/utils/utils";
+import { isStudent, isTeacher } from "src/utils/utils";
 import { UtilitiesService } from "src/utilities/utilities.service";
 
 @Injectable()
@@ -85,21 +85,26 @@ export class LibraryHelper extends BaseRepository {
         };
     }
 
-    async getDashboardCount_student(currentUser: AuthUser) {
-        if (!isStudent(currentUser)) throw new ForbiddenException();
+    async getDashboardCount_member(currentUser: AuthUser) {
+        const querybuilder = this.getRepository(BookTransaction).createQueryBuilder("transaction")
 
-        const transactionCount = await this.getRepository(BookTransaction).createQueryBuilder("transaction")
-            .leftJoin("transaction.student", "student")
-            .where("student.id = :studentId", { studentId: currentUser.studentId })
+        if (isTeacher(currentUser)) {
+            querybuilder.where("transaction.teacherId = :teacherId", { teacherId: currentUser.teacherId })
+        }
+
+        if (isStudent(currentUser)) {
+            querybuilder.where("transaction.studentId = :studentId", { studentId: currentUser.studentId })
+        }
+
+        querybuilder
             .select([
                 "COUNT(transaction.id) AS totalCount",
                 `COUNT(CASE WHEN transaction.returnedAt IS NULL AND DATE(transaction.dueDate) >= DATE(:today) THEN 1 END) AS issuedCount`,
                 `COUNT(CASE WHEN transaction.returnedAt IS NULL AND DATE(transaction.dueDate) < DATE(:today) THEN 1 END) AS overdueCount`,
             ])
             .setParameter("today", new Date().toISOString().split("T")[0])
-            .getRawOne();
 
-        return transactionCount;
+        return querybuilder.getRawOne();
     }
 
     async getOptions(queryDto: QueryDto) {

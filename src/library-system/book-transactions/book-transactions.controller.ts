@@ -8,9 +8,8 @@ import { TransactionInterceptor } from 'src/common/interceptors/transaction.inte
 import { BookTransactionByMemberQueryDto, BookTransactionsQueryDto, UnpaidTransactionsQueryDto } from './dto/book-transactions-query.dto';
 import { RenewBookTransactionDto, ReturnBookTransactionDto } from './dto/update-book-transaction.dto';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
-import { BookTransactionsStudentViewService } from './book-transactions-student-view.service';
 import { BookTransactionsHelper } from './helpers/book-transactinos.helper';
-import { isStudent } from 'src/utils/utils';
+import { isAdmin } from 'src/utils/utils';
 import { MAX_BOOK_ISSUE_LIMIT } from 'src/common/CONSTANTS';
 
 @ApiBearerAuth()
@@ -20,7 +19,6 @@ export class BookTransactionsController {
   constructor(
     private readonly bookTransactionsService: BookTransactionsService,
     private readonly bookTransactionsHelper: BookTransactionsHelper,
-    private readonly bookTransactionsStudentViewService: BookTransactionsStudentViewService,
   ) { }
 
   @Post()
@@ -40,14 +38,11 @@ export class BookTransactionsController {
   @Get()
   @ApiOperation({ summary: 'Get all book transactions' })
   @ApiResponse({ status: 200, description: 'The book transactions have been successfully retrieved.' })
-  @CheckAbilities(
-    { subject: Role.ADMIN, action: Action.READ },
-    { subject: Role.STUDENT, action: Action.READ }
-  )
+  @CheckAbilities({ subject: Role.USER, action: Action.READ })
   findAll(@Query() queryDto: BookTransactionsQueryDto, @CurrentUser() currentUser: AuthUser) {
-    return isStudent(currentUser)
-      ? this.bookTransactionsStudentViewService.findAll(queryDto, currentUser)
-      : this.bookTransactionsService.findAll(queryDto);
+    return isAdmin(currentUser)
+      ? this.bookTransactionsService.findAll(queryDto)
+      : this.bookTransactionsHelper.findAll_MemberView(queryDto, currentUser);
   }
 
   @Get('member')
