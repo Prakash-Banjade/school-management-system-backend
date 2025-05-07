@@ -1,9 +1,9 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateLibraryBookDto } from './dto/create-library-book.dto';
 import { UpdateLibraryBookDto } from './dto/update-library-book.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LibraryBook } from './entities/library-book.entity';
-import { Brackets, ILike, Repository } from 'typeorm';
+import { Brackets, DataSource, ILike, Repository } from 'typeorm';
 import paginatedData from 'src/utils/paginatedData';
 import { LibraryBookQueryDto } from './dto/library-book.query.dto';
 import { BookCategoriesService } from '../book-categories/book-categories.service';
@@ -14,20 +14,23 @@ import { EFileMimeType } from 'src/common/types/global.type';
 import { isAdmin } from 'src/utils/utils';
 import { ImagesService } from 'src/file-management/images/images.service';
 import { libraryBookSelectCols } from './helpers/library-book-request-select-cols';
+import { BaseRepository } from 'src/common/repository/base-repository';
+import { REQUEST } from '@nestjs/core';
+import { FastifyRequest } from 'fastify';
 
 @Injectable()
-export class LibraryBookService {
+export class LibraryBookService extends BaseRepository {
   constructor(
-    @InjectRepository(LibraryBook) private libraryBookRepo: Repository<LibraryBook>,
+    datasource: DataSource, @Inject(REQUEST) req: FastifyRequest,
     private readonly bookCategoriesService: BookCategoriesService,
     private readonly utilitiesService: UtilitiesService,
     private readonly branchesService: BranchesService,
     private readonly filesService: FilesService,
     private readonly imagesService: ImagesService,
-  ) { }
+  ) { super(datasource, req) }
 
   async create(createLibraryBookDto: CreateLibraryBookDto) {
-    const existingWithSameCode = await this.libraryBookRepo.findOne({ where: { bookCode: ILike(createLibraryBookDto.bookCode?.trim()) }, select: { id: true } });
+    const existingWithSameCode = await this.getRepository(LibraryBook).findOne({ where: { bookCode: ILike(createLibraryBookDto.bookCode?.trim()) }, select: { id: true } });
     if (existingWithSameCode) throw new ConflictException('Book code already exists');
 
     const category = await this.bookCategoriesService.findOne(createLibraryBookDto.categoryId);
@@ -40,20 +43,20 @@ export class LibraryBookService {
       ? await this.imagesService.findOne(createLibraryBookDto.coverImageId)
       : null;
 
-    const libraryBook = this.libraryBookRepo.create({
+    const libraryBook = this.getRepository(LibraryBook).create({
       ...createLibraryBookDto,
       category,
       branch: await this.branchesService.getBranch(this.utilitiesService.getBranchId()),
       documents,
       coverImage
     });
-    await this.libraryBookRepo.save(libraryBook);
+    await this.getRepository(LibraryBook).save(libraryBook);
 
     return { message: 'Library book added' }
   }
 
   async findAll(queryDto: LibraryBookQueryDto) {
-    const queryBuilder = this.libraryBookRepo.createQueryBuilder('libraryBook');
+    const queryBuilder = this.getRepository(LibraryBook).createQueryBuilder('libraryBook');
     const currentUser = this.utilitiesService.getCurrentUser();
 
     queryBuilder
@@ -108,7 +111,7 @@ export class LibraryBookService {
   async findOne(id: string) {
     const currentUser = this.utilitiesService.getCurrentUser();
 
-    const existing = await this.libraryBookRepo.findOne({
+    const existing = await this.getRepository(LibraryBook).findOne({
       where: {
         id,
         branch: { id: this.utilitiesService.getBranchId() }
@@ -132,7 +135,7 @@ export class LibraryBookService {
   }
 
   async update(id: string, dto: UpdateLibraryBookDto) {
-    const existing = await this.libraryBookRepo.findOne({
+    const existing = await this.getRepository(LibraryBook).findOne({
       where: {
         id,
         branch: { id: this.utilitiesService.getBranchId() }
@@ -152,7 +155,7 @@ export class LibraryBookService {
 
     // check if code is taken
     if (dto.bookCode && dto.bookCode !== existing.bookCode) {
-      const existingWithSameCode = await this.libraryBookRepo.findOne({ where: { bookCode: ILike(dto.bookCode.trim()) }, select: { id: true } });
+      const existingWithSameCode = await this.getRepository(LibraryBook).findOne({ where: { bookCode: ILike(dto.bookCode.trim()) }, select: { id: true } });
       if (existingWithSameCode) throw new ConflictException('Book code already exists');
     }
 
@@ -177,18 +180,18 @@ export class LibraryBookService {
     if (image !== undefined) existing.coverImage = image;
 
     Object.assign(existing, dto);
-    await this.libraryBookRepo.save(existing);
+    await this.getRepository(LibraryBook).save(existing);
 
     return { message: 'Library book updated' }
   }
 
   async updateCount(book: LibraryBook, type: 'issued' | 'returned') {
     book.issuedCount += type === 'issued' ? 1 : -1;
-    await this.libraryBookRepo.save(book);
+    await this.getRepository(LibraryBook).save(book);
   }
 
   async remove(id: string) {
-    await this.libraryBookRepo.delete({ id });
+    await this.getRepository(LibraryBook).delete({ id });
 
     return { message: 'Library book deleted' };
   }

@@ -17,7 +17,10 @@ import { BookTransactionsHelper } from './helpers/book-transactinos.helper';
     ]),
     LibraryBookModule
   ],
-  controllers: [BookTransactionsController],
+  controllers: [
+    BookTransactionsController,
+
+  ],
   providers: [
     BookTransactionsService,
     BookTransactionsStudentViewService,

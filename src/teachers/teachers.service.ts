@@ -16,6 +16,7 @@ import { SalaryStructure } from 'src/finance-system/salary-management/salary-str
 import { UtilitiesService } from 'src/utilities/utilities.service';
 import { Faculty } from 'src/faculties/entities/faculty.entity';
 import { UpdateAccountDto } from 'src/auth-system/accounts/dto/update-account.dto';
+import { TeacherUtilsService } from './helpers/teacher-utils.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class TeachersService extends BaseRepository {
@@ -24,6 +25,7 @@ export class TeachersService extends BaseRepository {
     private readonly imageService: ImagesService,
     private readonly accountsService: AccountsService,
     private readonly utilitiesService: UtilitiesService,
+    private readonly teacherUtilsService: TeacherUtilsService
   ) { super(dataSource, req) }
 
   async create(createTeacherDto: CreateTeacherDto) {
@@ -41,6 +43,7 @@ export class TeachersService extends BaseRepository {
 
     const teacher = this.getRepository(Teacher).create({
       ...createTeacherDto,
+      teacherId: await this.teacherUtilsService.generateTeacherId(),
       faculties,
       salaryStructure: this.getRepository(SalaryStructure).create({
         basicSalary: createTeacherDto.basicSalary,
@@ -107,6 +110,32 @@ export class TeachersService extends BaseRepository {
     if (!existingTeacher) throw new NotFoundException('Teacher not found');
 
     return existingTeacher;
+  }
+
+  async findLibraryTeacher(teacherId: string) {
+    const queryBuilder = this.getRepository(Teacher).createQueryBuilder('teacher')
+      .leftJoin("teacher.bookTransactions", "bookTransactions")
+      .leftJoin("teacher.account", "account")
+      .leftJoin("account.profileImage", "profileImage")
+      .leftJoin("teacher.faculties", "faculties")
+      .where("teacher.teacherId = :teacherId", { teacherId })
+      .select([
+        "teacher.id AS id",
+        "account.lowerCasedFullName AS name",
+        "teacher.phone AS phone",
+        "teacher.email AS email",
+        "profileImage.url AS profileImageUrl",
+        "COUNT(bookTransactions.id) AS transactionCount",
+        "JSON_ARRAYAGG(faculties.name) AS faculties"
+      ])
+      .groupBy('teacher.id')
+    this.utilitiesService.applyBranchFilter(queryBuilder);
+
+    const teacher = await queryBuilder.getRawOne();
+
+    if (!teacher) throw new NotFoundException('Teacher not found');
+
+    return teacher;
   }
 
   async update(id: string, updateTeacherDto: UpdateTeacherDto) {

@@ -5,7 +5,7 @@ import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@ne
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
-import { BookTransactionByStudentQueryDto, BookTransactionsQueryDto, UnpaidTransactionsQueryDto } from './dto/book-transactions-query.dto';
+import { BookTransactionByMemberQueryDto, BookTransactionsQueryDto, UnpaidTransactionsQueryDto } from './dto/book-transactions-query.dto';
 import { RenewBookTransactionDto, ReturnBookTransactionDto } from './dto/update-book-transaction.dto';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
 import { BookTransactionsStudentViewService } from './book-transactions-student-view.service';
@@ -33,8 +33,8 @@ export class BookTransactionsController {
   @ApiResponse({ status: 400, description: `Book is not available` })
   @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
   @UseInterceptors(TransactionInterceptor)
-  create(@Body() createBookTransactionDto: CreateBookTransactionDto) {
-    return this.bookTransactionsService.create(createBookTransactionDto);
+  create(@Body() dto: CreateBookTransactionDto) {
+    return this.bookTransactionsService.create(dto);
   }
 
   @Get()
@@ -50,12 +50,12 @@ export class BookTransactionsController {
       : this.bookTransactionsService.findAll(queryDto);
   }
 
-  @Get('student')
-  @ApiOperation({ summary: 'Get all book transactions of particular student' })
+  @Get('member')
+  @ApiOperation({ summary: 'Get all book transactions of particular member' })
   @ApiResponse({ status: 200, description: 'The book transactions have been successfully retrieved.' })
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  findAllByStudent(@Query() queryDto: BookTransactionByStudentQueryDto) {
-    return this.bookTransactionsService.findAllByStudent(queryDto);
+  findAllByMember(@Query() queryDto: BookTransactionByMemberQueryDto) {
+    return this.bookTransactionsService.findAllByMember(queryDto);
   }
 
   @Get('unpaid')
@@ -82,8 +82,8 @@ export class BookTransactionsController {
   @ApiResponse({ status: 404, description: 'Book transaction not found' })
   @UseInterceptors(TransactionInterceptor)
   @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
-  update(@Body() updateBookTransactionDto: ReturnBookTransactionDto) {
-    return this.bookTransactionsService.returnBook(updateBookTransactionDto.transactionIds);
+  update(@Body() dto: ReturnBookTransactionDto) {
+    return this.bookTransactionsService.returnBook(dto.transactionIds);
   }
 
   @Patch('renew')
@@ -93,7 +93,7 @@ export class BookTransactionsController {
   @ApiResponse({ status: 404, description: 'Book transaction not found' })
   @UseInterceptors(TransactionInterceptor)
   @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
-  renew(@Body() updateBookTransactionDto: RenewBookTransactionDto) {
-    return this.bookTransactionsService.renewBookTransaction(updateBookTransactionDto.transactionIds, updateBookTransactionDto.dueDate);
+  renew(@Body() dto: RenewBookTransactionDto) {
+    return this.bookTransactionsService.renewBookTransaction(dto.transactionIds, dto.dueDate);
   }
 }

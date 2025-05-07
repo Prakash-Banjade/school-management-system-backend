@@ -16,6 +16,7 @@ import { SalaryStructure } from 'src/finance-system/salary-management/salary-str
 import { UtilitiesService } from 'src/utilities/utilities.service';
 import { Faculty } from 'src/faculties/entities/faculty.entity';
 import { UpdateAccountDto } from 'src/auth-system/accounts/dto/update-account.dto';
+import { StaffUtilsService } from './helpers/staffs-utils.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class StaffsService extends BaseRepository {
@@ -24,6 +25,7 @@ export class StaffsService extends BaseRepository {
     private readonly imageService: ImagesService,
     private readonly accountsService: AccountsService,
     private readonly utilitiesService: UtilitiesService,
+    private readonly staffUtilsService: StaffUtilsService,
   ) {
     super(dataSource, req);
   }
@@ -43,6 +45,7 @@ export class StaffsService extends BaseRepository {
 
     const staff = this.getRepository(Staff).create({
       ...createStaffDto,
+      staffId: await this.staffUtilsService.generateStaffId(),
       salaryStructure: this.getRepository(SalaryStructure).create({
         basicSalary: createStaffDto.basicSalary,
         allowances: createStaffDto.allowances ?? [],

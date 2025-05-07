@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsDateString, IsNotEmpty, IsString, IsUUID } from "class-validator";
+import { IsDateString, IsUUID, ValidateIf } from "class-validator";
 import { IsFutureDate } from "src/common/decorators/validators/isFutureDate.decorator";
 
 export class CreateBookTransactionDto {
@@ -8,9 +8,14 @@ export class CreateBookTransactionDto {
     bookId: string;
 
     @ApiProperty({ type: String, description: 'Student id' })
-    @IsString()
-    @IsNotEmpty()
+    @IsUUID()
+    @ValidateIf(o => !o.teacherId)
     studentId: string;
+
+    @ApiProperty({ type: String, description: 'teacher id' })
+    @IsUUID()
+    @ValidateIf(o => !o.studentId)
+    teacherId: string;
 
     @ApiProperty({ format: 'date-time', description: 'Due date' })
     @IsDateString()

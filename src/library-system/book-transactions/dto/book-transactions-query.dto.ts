@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsDefined, IsEnum, IsOptional, IsString } from "class-validator";
+import { IsDefined, IsEnum, IsOptional, IsString, ValidateIf } from "class-validator";
 import { QueryDto } from "src/common/dto/query.dto";
 import { EBookTransactionStatus } from "src/common/types/global.type";
 
@@ -27,11 +27,18 @@ export class BookTransactionsQueryDto extends QueryDto {
     paid?: string;
 }
 
-export class BookTransactionByStudentQueryDto extends BookTransactionsQueryDto {
+export class BookTransactionByMemberQueryDto extends BookTransactionsQueryDto {
     @ApiProperty({ type: String, format: 'uuid', description: 'Student id' })
     @IsString()
     @IsDefined()
-    studentId: string;
+    @ValidateIf(o => !o.teacherId)
+    studentId?: string;
+
+    @ApiProperty({ type: String, format: 'uuid', description: 'Teacher id' })
+    @IsString()
+    @IsDefined()
+    @ValidateIf(o => !o.studentId)
+    teacherId?: string;
 }
 
 export class UnpaidTransactionsQueryDto extends QueryDto {

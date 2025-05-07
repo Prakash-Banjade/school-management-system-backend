@@ -158,19 +158,18 @@ export class StudentsService extends BaseRepository {
     const queryBuilder = this.getRepository<Student>(Student).createQueryBuilder('student')
       .innerJoin("student.enrollments", "enrollments", "enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
       .leftJoin('enrollments.classRoom', 'classRoom')
-      .leftJoin("classRoom.parent", "parent")
       .leftJoin("student.bookTransactions", "bookTransactions")
       .leftJoin("student.account", "account")
       .leftJoin("account.profileImage", "profileImage")
       .where("student.studentId = :studentId", { studentId })
       .select([
         "student.id AS id",
-        "CONCAT(student.firstName, ' ', student.lastName) AS name",
+        "account.lowerCasedFullName AS name",
         "student.rollNo AS rollNo",
         "student.phone AS phone",
         "student.email AS email",
         "profileImage.url AS profileImageUrl",
-        "CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, ' - ', classRoom.name) END AS classRoomName",
+        "classRoom.fullName AS classRoomName",
         "COUNT(bookTransactions.id) AS transactionCount"
       ])
       .groupBy('student.id')
