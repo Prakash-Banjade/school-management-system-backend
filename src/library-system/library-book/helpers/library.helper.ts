@@ -30,7 +30,6 @@ export class LibraryHelper extends BaseRepository {
             .getRawOne();
 
         const transactionCount = this.getRepository(BookTransaction).createQueryBuilder("transaction")
-            .leftJoin("transaction.student", "student")
             .leftJoin("transaction.book", "book")
             .where(new Brackets(qb => {
                 branchId && qb.andWhere('book.branchId = :branchId', { branchId });
@@ -42,15 +41,18 @@ export class LibraryHelper extends BaseRepository {
             ])
             .getRawOne();
 
-        const studentsCount = this.getRepository(BookTransaction).createQueryBuilder("transaction")
+        const membersCount = this.getRepository(BookTransaction).createQueryBuilder("transaction")
             .leftJoin("transaction.student", "student")
+            .leftJoin("transaction.teacher", "teacher")
             .leftJoin("transaction.book", "book")
             .where(new Brackets(qb => {
                 branchId && qb.andWhere('book.branchId = :branchId', { branchId });
             }))
             .select([
                 "COUNT(DISTINCT student.id) AS totalStudentCount",
-                `COUNT(DISTINCT CASE WHEN transaction.returnedAt IS NULL THEN student.id END) AS issuedStudentCount`
+                `COUNT(DISTINCT CASE WHEN transaction.returnedAt IS NULL THEN student.id END) AS issuedStudentCount`,
+                "COUNT(DISTINCT teacher.id) AS totalTeacherCount",
+                `COUNT(DISTINCT CASE WHEN transaction.returnedAt IS NULL THEN teacher.id END) AS issuedTeacherCount`,
             ])
             .getRawOne();
 
@@ -70,15 +72,15 @@ export class LibraryHelper extends BaseRepository {
             .getRawMany();
 
 
-        const data = await Promise.all([booksCount, transactionCount, studentsCount, topBooks]);
+        const data = await Promise.all([booksCount, transactionCount, membersCount, topBooks]);
 
         return {
             booksCount: +data[0].totalCount,
             transactionCount: +data[1].totalCount,
             issuedCount: +data[1].issuedCount,
             overdueCount: +data[1].overdueCount,
-            studentsCount: +data[2].totalStudentCount,
-            issuedStudentCount: +data[2].issuedStudentCount,
+            membersCount: +data[2].totalStudentCount + +data[2].totalTeacherCount,
+            issuedMembersCount: +data[2].issuedStudentCount + +data[2].issuedTeacherCount,
             topBooks: data[3]
         };
     }

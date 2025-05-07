@@ -108,15 +108,17 @@ export class BookTransactionsService extends BaseRepository {
       .limit(queryDto.take) // need to use limit and offset instead of skip and take while using getRawMany
       .offset(queryDto.skip)
       .leftJoin("transaction.student", "student")
+      .leftJoin("student.account", "studentAccount")
+      .leftJoin("transaction.teacher", "teacher")
+      .leftJoin("teacher.account", "teacherAccount")
       .leftJoin("transaction.book", "book")
-      .leftJoin("student.classRoom", "classRoom")
-      .leftJoin("classRoom.parent", "parent")
       .where(new Brackets(qb => {
         if (queryDto.search) {
           qb.andWhere(new Brackets(subQb => {
             subQb.orWhere("LOWER(book.bookName) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
-              .orWhere("TRIM(book.bookCode) = TRIM(:exactSearch)", { exactSearch: queryDto.search })
-              .orWhere("TRIM(student.studentId) = TRIM(:exactSearch)", { exactSearch: queryDto.search })
+              .orWhere("book.bookCode = :exactSearch", { exactSearch: queryDto.search.trim() })
+              .orWhere("student.studentId = :exactSearch", { exactSearch: queryDto.search.trim() })
+              .orWhere("teacher.teacherId = :exactSearch", { exactSearch: queryDto.search.trim() })
           }))
         };
 
@@ -135,15 +137,13 @@ export class BookTransactionsService extends BaseRepository {
         "transaction.dueDate as dueDate",
         "transaction.returnedAt as returnedAt",
         "transaction.createdAt as createdAt",
-        "student.studentId AS studentId",
+        "CASE WHEN student.id IS NOT NULL THEN student.studentId ELSE teacher.teacherId END AS memberId",
         "transaction.fine as fine",
         "transaction.paidAt as paidAt",
         "transaction.renewals as renewals",
         "book.bookName AS bookName",
         "book.bookCode AS bookCode",
-        "CONCAT(student.firstName, ' ', student.lastName) AS studentName",
-        "parent.name AS parentClassName",
-        "classRoom.name AS classRoomName",
+        "CASE WHEN student.id IS NOT NULL THEN studentAccount.lowerCasedFullName ELSE teacherAccount.lowerCasedFullName END AS memberName",
       ])
 
     return paginatedRawData(queryDto, queryBuilder);
