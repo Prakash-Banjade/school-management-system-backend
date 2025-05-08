@@ -38,10 +38,13 @@ export class FilesService {
   }
 
   async findAllByIds(ids: string[], mimeType?: EFileMimeType | EFileMimeType[]) {
+    const mimeTypeArrayQuery = mimeType ? In(Array.isArray(mimeType) ? mimeType : [mimeType]) : undefined;
+    const mimeTypeArrayQueryObject = mimeTypeArrayQuery ? { mimeType: mimeTypeArrayQuery } : {};
+
     return await this.filesRepository.find({
       where: [
-        { id: In(ids), mimeType: In(Array.isArray(mimeType) ? mimeType : [mimeType]) },
-        { url: In(ids), mimeType: In(Array.isArray(mimeType) ? mimeType : [mimeType]) }
+        { id: In(ids), ...mimeTypeArrayQueryObject },
+        { url: In(ids), ...mimeTypeArrayQueryObject }
       ],
       select: { id: true }
     })
