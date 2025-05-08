@@ -11,7 +11,7 @@ class ExamSubject extends OmitType(CreateExamSubjectDto, ['examId']) {
     id?: string; // id of the examSubject to be updated
 }
 
-export class UpdateExamDto extends PartialType(OmitType(CreateExamDto, ['classRoomId', 'examSubjects'])) {
+export class UpdateExamDto extends PartialType(OmitType(CreateExamDto, ['classRoomId', 'examSubjects', 'examTypeId'])) {
     @ApiProperty({ type: ExamSubject, isArray: true, description: 'Exam subjects' })
     @IsArray()
     @ArrayMinSize(1)
