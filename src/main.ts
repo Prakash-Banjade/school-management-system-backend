@@ -34,12 +34,13 @@ async function bootstrap() {
 
   app.register(fastifyCors, {
     credentials: true,
-    origin: (origin, callback) => {
-      if (configService.get<string>('NODE_ENV') === 'development' || origin === configService.get<string>('CLIENT_URL')) {
-        return callback(null, true);
-      }
-      return callback(new BadRequestException('Wrong Step'), false);
-    },
+    origin: configService.get<string>('CLIENT_URL'),
+    // origin: (origin, callback) => {
+    //   if (configService.get<string>('NODE_ENV') === 'development' || origin === configService.get<string>('CLIENT_URL')) {
+    //     return callback(null, true);
+    //   }
+    //   return callback(new BadRequestException('Wrong Step'), false);
+    // },
     allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
     optionsSuccessStatus: 200,
     methods: ['GET', 'POST', 'DELETE', 'PATCH'],
