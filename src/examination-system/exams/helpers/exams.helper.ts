@@ -4,7 +4,7 @@ import { FastifyRequest } from "fastify";
 import { AuthMessage, WEAK_PERCENTAGE_THRESHOLD } from "src/common/CONSTANTS";
 import { BaseRepository } from "src/common/repository/base-repository";
 import { Student } from "src/students/entities/student.entity";
-import { Brackets, DataSource} from "typeorm";
+import { Brackets, DataSource } from "typeorm";
 import { Exam } from "../entities/exam.entity";
 import { ExamReportsService } from "src/examination-system/exam-reports/exam-reports.service";
 import { ExamStudentsQueryDto } from "../dto/exam-query.dto";
@@ -34,10 +34,18 @@ export class ExamsHelper extends BaseRepository {
             .leftJoin('enrollments.classRoom', 'classRoom')
             .leftJoin('classRoom.parent', 'parent')
             .leftJoin('student.optionalSubjects', 'optionalSubjects', 'optionalSubjects.classRoomId = :classRoomId', { classRoomId: exam.classRoom.id })
-            .andWhere('CASE WHEN parent.id IS NULL THEN classRoom.id ELSE parent.id END = :classRoomId', { classRoomId: exam.classRoom.id })
-            .andWhere(new Brackets(qb => {
-                queryDto.optionalSubjectId && qb.andWhere('optionalSubjects.subjectId = :optionalSubjectId', { optionalSubjectId: queryDto.optionalSubjectId });
-            }))
+            .andWhere('CASE WHEN parent.id IS NULL THEN classRoom.id ELSE parent.id END = :classRoomId', { classRoomId: exam.classRoom.id });
+
+        if (queryDto.optionalSubjectId) {
+            querybuilder.andWhere('optionalSubjects.subjectId = :optionalSubjectId', { optionalSubjectId: queryDto.optionalSubjectId });
+        }
+
+        // section Id means the exact classroom of student
+        if (queryDto.sectionId) {
+            querybuilder.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId });
+        }
+
+        querybuilder
             .select([
                 "student.id as id",
                 "CONCAT(student.firstName, ' ', student.lastName) AS fullName",

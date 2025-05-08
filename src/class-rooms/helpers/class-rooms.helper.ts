@@ -138,7 +138,7 @@ export class ClassRoomsHelper extends BaseRepository {
         querybuilder
             .select([
                 'classRoom.id as id',
-                'classRoom.name as name',
+                'classRoom.fullName as name',
                 'classRoom.description as description',
                 'classRoom.location as location',
                 'classRoom.classType as classType',
