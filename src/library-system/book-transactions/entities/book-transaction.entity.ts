@@ -7,7 +7,7 @@ import { Teacher } from 'src/teachers/entities/teacher.entity';
 
 @Entity()
 export class BookTransaction extends BaseEntity {
-    @ManyToOne(() => LibraryBook, (libraryBook) => libraryBook.transactions, { onDelete: 'CASCADE', nullable: false })
+    @ManyToOne(() => LibraryBook, (libraryBook) => libraryBook.transactions, { onDelete: 'RESTRICT', nullable: false })
     book: LibraryBook;
 
     @ManyToOne(() => Student, (student) => student.bookTransactions, { onDelete: 'CASCADE' })
