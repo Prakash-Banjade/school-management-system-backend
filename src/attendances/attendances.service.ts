@@ -74,7 +74,10 @@ export class AttendancesService extends BaseRepository {
   }
 
   async findOne(id: string) {
-    const existing = await this.getRepository(Attendance).findOneBy({ id });
+    const existing = await this.getRepository(Attendance).findOne({
+      where: { id },
+      select: { id: true, status: true, inTime: true, outTime: true }
+    });
     if (!existing) throw new NotFoundException('Attendance not found');
 
     return existing;

@@ -105,7 +105,7 @@ export class LeaveRequestsService {
 
     applySelectColumns(querybuilder, employeesLeaveRequestSelectCols, 'leaveRequest');
 
-    if (branchId) querybuilder.andWhere('classRoom.branchId = :branchId', { branchId });
+    if (branchId) querybuilder.andWhere('account.branchId = :branchId', { branchId });
 
     return paginatedData(queryDto, querybuilder);
   }

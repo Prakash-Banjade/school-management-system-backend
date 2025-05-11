@@ -46,7 +46,7 @@ export class AttendancesHelper extends BaseRepository {
             .addSelect('COUNT(attendance.id)', 'attendanceCount')
             .where(new Brackets(qb => {
                 queryDto.year && qb.andWhere('YEAR(attendance.date) = :year', { year: queryDto.year });
-                
+
                 if (accountId) qb.andWhere('account.id = :accountId', { accountId })
             }))
             .groupBy('attendance.status');
