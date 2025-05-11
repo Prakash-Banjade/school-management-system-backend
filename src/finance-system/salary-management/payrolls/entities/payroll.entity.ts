@@ -5,7 +5,12 @@ import { Teacher } from "src/teachers/entities/teacher.entity";
 import { Staff } from "src/staffs/entities/staff.entity";
 import { SalaryPayment } from "../../salary-payemnts/entities/salary-payment.entity";
 
-const deductionTypes = [ESalaryAdjustmentType.Deduction, ESalaryAdjustmentType.Absent, ESalaryAdjustmentType.Past_Advance];
+const deductionTypes = [
+    ESalaryAdjustmentType.Deduction,
+    ESalaryAdjustmentType.Absent,
+    ESalaryAdjustmentType.Past_Advance,
+    ESalaryAdjustmentType.Library_Fine
+];
 
 @Entity()
 export class Payroll extends BaseEntity {

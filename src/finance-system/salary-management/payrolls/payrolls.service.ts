@@ -2,7 +2,7 @@ import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundEx
 import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
 import { BaseRepository } from 'src/common/repository/base-repository';
-import { Brackets, DataSource } from 'typeorm';
+import { Brackets, DataSource, In } from 'typeorm';
 import { CreatePayrollDto, UpdatePayrollDto } from './dto/payroll.dto';
 import { IAllowance, SalaryStructure } from '../salary-structures/entities/salary-structure.entity';
 import { Payroll } from './entities/payroll.entity';
@@ -18,13 +18,17 @@ import { paginatedRawData } from 'src/utils/paginatedData';
 import { PayrollsQueryDto } from './dto/payroll-query.dto';
 import { AttendancesHelper } from 'src/attendances/helpers/attendances.helper';
 import { ISalaryStructure } from './interface';
+import { BookTransactionsHelper } from 'src/library-system/book-transactions/helpers/book-transactinos.helper';
+import { UnpaidTransactionsQueryDto } from 'src/library-system/book-transactions/dto/book-transactions-query.dto';
+import { BookTransaction } from 'src/library-system/book-transactions/entities/book-transaction.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class PayrollsService extends BaseRepository {
     constructor(
         dataSource: DataSource, @Inject(REQUEST) private req: FastifyRequest,
         private readonly utilitiesService: UtilitiesService,
-        private readonly attendancesHelper: AttendancesHelper
+        private readonly attendancesHelper: AttendancesHelper,
+        private readonly bookTransactionsHelper: BookTransactionsHelper,
     ) { super(dataSource, req); }
 
     async create(dto: CreatePayrollDto, currentUser: AuthUser) {
@@ -102,7 +106,8 @@ export class PayrollsService extends BaseRepository {
             : salaryStructure.allowances?.reduce((acc, curr) => acc + curr.amount, 0);
 
         const absentAdjustment = await this.getAbsentAdjustment(salaryDate, salaryStructure, currentUser);
-        const adjustments = dto.salaryAdjustments.filter(s => s.type !== ESalaryAdjustmentType.Absent);
+        const libraryFineAdjustment = await this.getLibraryFineAdjustment(salaryStructure.teacherId);
+        const adjustments = dto.salaryAdjustments.filter(s => ![ESalaryAdjustmentType.Absent, ESalaryAdjustmentType.Library_Fine].includes(s.type));
 
         const payroll = this.getRepository(Payroll).create({
             date: startOfDayString(salaryDate),
@@ -117,6 +122,9 @@ export class PayrollsService extends BaseRepository {
                     } : null,
                 {
                     ...absentAdjustment
+                },
+                {
+                    ...libraryFineAdjustment,
                 },
                 {
                     amount: allowanceAmount ?? 0,
@@ -171,6 +179,23 @@ export class PayrollsService extends BaseRepository {
         }
 
         return absentAdjustment;
+    }
+
+    async getLibraryFineAdjustment(teacherId: string) {
+        const transactions = await this.bookTransactionsHelper.getUnPaidTransactions(new UnpaidTransactionsQueryDto({ teacherId }));
+
+        if (transactions.length === 0) return {};
+
+        const totalAmount = transactions.reduce((acc, curr) => acc + curr.fine, 0);
+
+        // update paidAt in transactions
+        await this.getRepository(BookTransaction).update({ id: In(transactions.map(t => t.id)) }, { paidAt: new Date().toISOString() })
+
+        return {
+            amount: totalAmount,
+            description: 'Library Fine',
+            type: ESalaryAdjustmentType.Library_Fine,
+        }
     }
 
     async getLastPayroll(employeeId: string) {

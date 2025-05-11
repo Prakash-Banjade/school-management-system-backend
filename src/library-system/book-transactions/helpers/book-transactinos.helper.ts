@@ -18,10 +18,17 @@ export class BookTransactionsHelper {
             .leftJoin('transaction.book', 'book')
             .where('transaction.returnedAt IS NOT NULL') // ensure book is returned
             .andWhere('transaction.paidAt IS NULL') // unpaid transactions
-            .andWhere('DATE(transaction.dueDate) < DATE(transaction.returnedAt)') // only over due transactions
-            .andWhere(new Brackets(qb => {
-                queryDto.studentId && qb.where('transaction.studentId = :studentId', { studentId: queryDto.studentId })
-            }))
+            .andWhere('DATE(transaction.dueDate) < DATE(transaction.returnedAt)'); // only over due transactions
+
+        if (queryDto.studentId) {
+            querybuilder.where('transaction.studentId = :studentId', { studentId: queryDto.studentId })
+        }
+
+        if (queryDto.teacherId) {
+            querybuilder.where('transaction.teacherId = :teacherId', { teacherId: queryDto.teacherId })
+        }
+
+        querybuilder
             .select([
                 'transaction.id as id',
                 'book.bookName as bookName',

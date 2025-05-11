@@ -44,8 +44,13 @@ export class BookTransactionByMemberQueryDto extends BookTransactionsQueryDto {
 export class UnpaidTransactionsQueryDto extends QueryDto {
     @ApiPropertyOptional({ type: String, format: 'uuid', description: 'Student id' })
     @IsString()
-    @IsOptional()
+    @ValidateIf(o => !o.teacherId, { message: 'Either studentId or teacherId is required' })
     studentId?: string;
+
+    @ApiPropertyOptional({ type: String, format: 'uuid', description: 'Teacher id' })
+    @IsString()
+    @ValidateIf(o => !o.studentId, { message: 'Either studentId or teacherId is required' })
+    teacherId?: string;
 
     constructor(dto: Partial<UnpaidTransactionsQueryDto>) {
         super();
