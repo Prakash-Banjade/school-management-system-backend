@@ -9,11 +9,11 @@ import { Payroll } from './entities/payroll.entity';
 import { Teacher } from 'src/teachers/entities/teacher.entity';
 import { Staff } from 'src/staffs/entities/staff.entity';
 import { ESalaryAdjustmentType } from '../salary-adjustments/entities/salary-adjustment.entity';
-import { isBefore, isSameMonth, isSameYear } from 'date-fns';
+import { addMonths, isBefore, isSameMonth, subMonths } from 'date-fns';
 import { SalaryPayment } from '../salary-payemnts/entities/salary-payment.entity';
 import { UtilitiesService } from 'src/utilities/utilities.service';
 import { AuthUser } from 'src/common/types/global.type';
-import { isAdmin, isTeacher } from 'src/utils/utils';
+import { isAdmin, isTeacher, startOfDayString } from 'src/utils/utils';
 import { paginatedRawData } from 'src/utils/paginatedData';
 import { PayrollsQueryDto } from './dto/payroll-query.dto';
 
@@ -25,6 +25,8 @@ export class PayrollsService extends BaseRepository {
     ) { super(dataSource, req); }
 
     async create(dto: CreatePayrollDto) {
+        const branchId = this.utilitiesService.getBranchId();
+
         const salaryStructure: {
             id: string;
             basicSalary: number;
@@ -37,8 +39,8 @@ export class PayrollsService extends BaseRepository {
         } | null = await this.getRepository(SalaryStructure).createQueryBuilder('salaryStructure')
             .leftJoin('salaryStructure.teacher', 'teacher')
             .leftJoin('salaryStructure.staff', 'staff')
-            .leftJoin('teacher.account', 'teacherAccount', 'teacher.id IS NOT NULL')
-            .leftJoin('staff.account', 'staffAccount', 'staff.id IS NOT NULL')
+            .leftJoin('teacher.account', 'teacherAccount')
+            .leftJoin('staff.account', 'staffAccount')
             .leftJoin(
                 qb => {
                     return qb
@@ -56,10 +58,22 @@ export class PayrollsService extends BaseRepository {
                 '(latestPayroll.teacherId = teacher.id OR latestPayroll.staffId = staff.id) AND latestPayroll.createdAt = ' +
                 '(SELECT MAX(innerPayroll.createdAt) FROM payroll innerPayroll WHERE (innerPayroll.teacherId = teacher.id OR innerPayroll.staffId = staff.id))'
             )
-            .where('teacher.id = :employeeId OR staff.id = :employeeId', { employeeId: dto.employeeId })
-            .andWhere(new Brackets(qb => {
-                qb.andWhere('teacherAccount.branchId = :branchId OR staffAccount.branchId = :branchId', { branchId: this.utilitiesService.getBranchId() });
+            .where(new Brackets(qb => {
+                if (branchId) {
+                    qb.andWhere(
+                        dto.employeeType === 'teacher'
+                            ? 'teacherAccount.branchId = :branchId'
+                            : 'staffAccount.branchId = :branchId'
+                        , { branchId })
+                }
             }))
+            .andWhere(
+                dto.employeeType === 'teacher'
+                    ? 'teacher.id = :employeeId'
+                    : 'staff.id = :employeeId'
+                ,
+                { employeeId: dto.employeeId }
+            )
             .select([
                 'salaryStructure.id as id',
                 'salaryStructure.basicSalary as basicSalary',
@@ -74,7 +88,9 @@ export class PayrollsService extends BaseRepository {
 
         if (!salaryStructure) throw new NotFoundException('Employee not found');
 
-        if (salaryStructure.date && this.sameSalaryMonthOrBefore(salaryStructure.date, dto.date)) throw new BadRequestException('Payroll already created for this month');
+        const salaryDate = salaryStructure.date ? addMonths(salaryStructure.date, 1) : subMonths(new Date(), 1);
+
+        if (!isBefore(salaryDate, new Date()) || isSameMonth(salaryDate, new Date())) throw new BadRequestException('Cannot generate payroll for future months.');
 
         const teacher = salaryStructure.teacherId ? {
             id: salaryStructure.teacherId,
@@ -90,8 +106,9 @@ export class PayrollsService extends BaseRepository {
             ? (JSON.parse(salaryStructure.allowances) as IAllowance[])?.reduce((acc, curr) => acc + curr.amount, 0)
             : salaryStructure.allowances?.reduce((acc, curr) => acc + curr.amount, 0);
 
+
         const payroll = this.getRepository(Payroll).create({
-            date: dto.date,
+            date: startOfDayString(salaryDate),
             basicSalary: salaryStructure.basicSalary, // allowances are included in adjustments to separately show entries in template
             salaryAdjustments: [
                 ...dto.salaryAdjustments,
@@ -131,10 +148,6 @@ export class PayrollsService extends BaseRepository {
             : await this.getRepository(Staff).update(staff.id, { payAmount: payroll.netSalary });
 
         return { message: 'Payroll created' };
-    }
-
-    private readonly sameSalaryMonthOrBefore = (lastSalaryDate: string, newSalaryDate: string) => {
-        return isBefore(newSalaryDate, lastSalaryDate) || (isSameMonth(newSalaryDate, lastSalaryDate) && isSameYear(newSalaryDate, lastSalaryDate));
     }
 
     async getLastPayroll(employeeId: string) {

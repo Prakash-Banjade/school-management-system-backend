@@ -92,8 +92,6 @@ export class BookTransactionsService extends BaseRepository {
       renewals: []
     });
 
-    console.log(transaction)
-
     await this.getRepository(BookTransaction).save(transaction);
 
     return { message: 'Issued successfully' };

@@ -67,8 +67,8 @@ export class PayrollsController {
   @ApiResponse({ status: 200, description: 'Employee details fetched successfully' })
   @ApiResponse({ status: 404, description: 'Employee not found' })
   @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  getSalaryEmployee(@Query('employeeId') employeeId: string) {
-    return this.payrollsHelper.getEmployee(employeeId);
+  getSalaryEmployee(@Query('employeeId') employeeId: string, @CurrentUser() currentUser: AuthUser) {
+    return this.payrollsHelper.getEmployee(employeeId, currentUser);
   }
 
   @Get('employees/last-payroll')

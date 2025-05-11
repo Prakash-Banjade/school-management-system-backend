@@ -22,6 +22,6 @@ export class SalaryAdjustment extends BaseEntity {
     @Column({ type: 'text' })
     description: string;
 
-    @ManyToOne(() => Payroll, (payroll) => payroll.salaryAdjustments, { onDelete: 'CASCADE' })
+    @ManyToOne(() => Payroll, (payroll) => payroll.salaryAdjustments, { onDelete: 'CASCADE', nullable: false })
     payroll: Payroll;
 }
