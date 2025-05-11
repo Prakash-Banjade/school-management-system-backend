@@ -5,6 +5,8 @@ import { Teacher } from "src/teachers/entities/teacher.entity";
 import { Staff } from "src/staffs/entities/staff.entity";
 import { SalaryPayment } from "../../salary-payemnts/entities/salary-payment.entity";
 
+const deductionTypes = [ESalaryAdjustmentType.Deduction, ESalaryAdjustmentType.Absent, ESalaryAdjustmentType.Past_Advance];
+
 @Entity()
 export class Payroll extends BaseEntity {
     @ManyToOne(() => Staff, staff => staff.payrolls, { onDelete: 'CASCADE' })
@@ -28,9 +30,7 @@ export class Payroll extends BaseEntity {
     @BeforeInsert()
     calculateNetSalary() {
         const adjustmentAmount = this.salaryAdjustments?.reduce((acc, curr) => {
-            (curr.type === ESalaryAdjustmentType.Deduction || curr.type === ESalaryAdjustmentType.Past_Advance)
-                ? acc -= curr.amount
-                : acc += curr.amount;
+            (deductionTypes.includes(curr.type)) ? acc -= curr.amount : acc += curr.amount;
             return acc;
         }, 0);
         this.netSalary = this.basicSalary + adjustmentAmount;

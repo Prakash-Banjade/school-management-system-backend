@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
-import { IsNumber, IsOptional, IsString } from "class-validator";
+import { IsBoolean, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class AttendanceCountQueryDto {
     @ApiPropertyOptional({ format: 'uuid', description: 'Account id' })
@@ -27,4 +27,10 @@ export class AttendanceCountQueryDto {
             : undefined;
     })
     month?: number = new Date().getMonth() + 1;
+
+    @ApiPropertyOptional({ type: Boolean, default: false, description: 'Only monthly flag' })
+    @IsOptional()
+    @IsBoolean()
+    @Transform(({ value }) => value === 'true')
+    onlyMonthly: boolean = false;
 }

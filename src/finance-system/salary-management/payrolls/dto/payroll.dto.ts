@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsArray, IsNumber, IsOptional, IsString, IsUUID, Min, ValidateNested } from "class-validator";
 import { CreateSalaryAdjustmentDto } from "../../salary-adjustments/dto/create-salary-adjustment.dto";
-import { Type } from "class-transformer";
+import { Transform, Type } from "class-transformer";
 
 export class CreatePayrollDto {
     @ApiPropertyOptional({ type: [CreateSalaryAdjustmentDto], isArray: true, description: 'Salary adjustments array' })

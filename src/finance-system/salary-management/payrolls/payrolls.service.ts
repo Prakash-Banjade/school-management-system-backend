@@ -8,7 +8,7 @@ import { IAllowance, SalaryStructure } from '../salary-structures/entities/salar
 import { Payroll } from './entities/payroll.entity';
 import { Teacher } from 'src/teachers/entities/teacher.entity';
 import { Staff } from 'src/staffs/entities/staff.entity';
-import { ESalaryAdjustmentType } from '../salary-adjustments/entities/salary-adjustment.entity';
+import { ESalaryAdjustmentType, SalaryAdjustment } from '../salary-adjustments/entities/salary-adjustment.entity';
 import { addMonths, isBefore, isSameMonth, subMonths } from 'date-fns';
 import { SalaryPayment } from '../salary-payemnts/entities/salary-payment.entity';
 import { UtilitiesService } from 'src/utilities/utilities.service';
@@ -16,27 +16,21 @@ import { AuthUser } from 'src/common/types/global.type';
 import { isAdmin, isTeacher, startOfDayString } from 'src/utils/utils';
 import { paginatedRawData } from 'src/utils/paginatedData';
 import { PayrollsQueryDto } from './dto/payroll-query.dto';
+import { AttendancesHelper } from 'src/attendances/helpers/attendances.helper';
+import { ISalaryStructure } from './interface';
 
 @Injectable({ scope: Scope.REQUEST })
 export class PayrollsService extends BaseRepository {
     constructor(
         dataSource: DataSource, @Inject(REQUEST) private req: FastifyRequest,
         private readonly utilitiesService: UtilitiesService,
+        private readonly attendancesHelper: AttendancesHelper
     ) { super(dataSource, req); }
 
-    async create(dto: CreatePayrollDto) {
+    async create(dto: CreatePayrollDto, currentUser: AuthUser) {
         const branchId = this.utilitiesService.getBranchId();
 
-        const salaryStructure: {
-            id: string;
-            basicSalary: number;
-            teacherId: string | null;
-            staffId: string | null;
-            payAmount: number;
-            date: string | null;
-            advanceAmount: number | null;
-            allowances: string | IAllowance[] | null;
-        } | null = await this.getRepository(SalaryStructure).createQueryBuilder('salaryStructure')
+        const salaryStructure: ISalaryStructure | null = await this.getRepository(SalaryStructure).createQueryBuilder('salaryStructure')
             .leftJoin('salaryStructure.teacher', 'teacher')
             .leftJoin('salaryStructure.staff', 'staff')
             .leftJoin('teacher.account', 'teacherAccount')
@@ -81,6 +75,7 @@ export class PayrollsService extends BaseRepository {
                 'teacher.id as teacherId',
                 'staff.id as staffId',
                 'CASE WHEN teacher.id IS NOT NULL THEN teacher.payAmount ELSE staff.payAmount END as payAmount',
+                'CASE WHEN teacher.id IS NOT NULL THEN teacherAccount.id ELSE staffAccount.id END as accountId',
                 'latestPayroll.date as date',
                 'latestPayroll.advanceAmount as advanceAmount',
             ])
@@ -106,18 +101,23 @@ export class PayrollsService extends BaseRepository {
             ? (JSON.parse(salaryStructure.allowances) as IAllowance[])?.reduce((acc, curr) => acc + curr.amount, 0)
             : salaryStructure.allowances?.reduce((acc, curr) => acc + curr.amount, 0);
 
+        const absentAdjustment = await this.getAbsentAdjustment(salaryDate, salaryStructure, currentUser);
+        const adjustments = dto.salaryAdjustments.filter(s => s.type !== ESalaryAdjustmentType.Absent);
 
         const payroll = this.getRepository(Payroll).create({
             date: startOfDayString(salaryDate),
             basicSalary: salaryStructure.basicSalary, // allowances are included in adjustments to separately show entries in template
             salaryAdjustments: [
-                ...dto.salaryAdjustments,
+                ...adjustments,
                 salaryStructure.advanceAmount !== null
                     ? {
                         amount: salaryStructure.advanceAmount,
                         type: ESalaryAdjustmentType.Past_Advance,
                         description: 'Past Advance'
                     } : null,
+                {
+                    ...absentAdjustment
+                },
                 {
                     amount: allowanceAmount ?? 0,
                     type: ESalaryAdjustmentType.Allowance,
@@ -148,6 +148,29 @@ export class PayrollsService extends BaseRepository {
             : await this.getRepository(Staff).update(staff.id, { payAmount: payroll.netSalary });
 
         return { message: 'Payroll created' };
+    }
+
+    async getAbsentAdjustment(salaryDate: Date, salaryStructure: ISalaryStructure, currentUser: AuthUser) {
+        // calculate absent amount
+        const count = await this.attendancesHelper.getCount({
+            onlyMonthly: true,
+            accountId: salaryStructure.accountId,
+            month: salaryDate.getMonth() + 1,
+            year: salaryDate.getFullYear(), // need to send year, otherwise totalDays will be undefined
+        }, currentUser);
+
+        const absentCount = +(count?.monthly.absent ?? 0);
+        const totalDays = +(count?.monthly.total ?? 30);
+
+        if (absentCount === 0) return {};
+
+        const absentAdjustment = {
+            amount: Math.round((absentCount / totalDays) * salaryStructure.basicSalary),
+            description: `Absent Fine (${absentCount} days)`,
+            type: ESalaryAdjustmentType.Absent,
+        }
+
+        return absentAdjustment;
     }
 
     async getLastPayroll(employeeId: string) {

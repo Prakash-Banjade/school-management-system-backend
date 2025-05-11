@@ -26,8 +26,8 @@ export class PayrollsController {
   @ApiResponse({ status: 404, description: 'Employee not found' })
   @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
   @UseInterceptors(TransactionInterceptor)
-  create(@Body() createPayrollDto: CreatePayrollDto) {
-    return this.payrollsService.create(createPayrollDto);
+  create(@Body() createPayrollDto: CreatePayrollDto, @CurrentUser() currentUser: AuthUser) {
+    return this.payrollsService.create(createPayrollDto, currentUser);
   }
 
   @Get()

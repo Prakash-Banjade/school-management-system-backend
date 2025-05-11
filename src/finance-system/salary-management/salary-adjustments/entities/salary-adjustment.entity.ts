@@ -9,6 +9,8 @@ export enum ESalaryAdjustmentType {
     Allowance = 'allowance', // used to track this month allowance amount
     Unpaid = 'unpaid', // use to track last month unpaid amount
     Past_Advance = 'past_advance', // used to track last month advance amount
+    Absent = 'absent', // used to track absent days
+    Library_Fine = 'library_fine' // used to track library fine
 }
 
 @Entity()

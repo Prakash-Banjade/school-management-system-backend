@@ -122,7 +122,8 @@ export class PayrollsHelper {
                         'designation', 'teacher', 
                         'phone', teacher.phone,
                         'email', teacher.email,
-                        'profileImageUrl', teacherProfileImage.url
+                        'profileImageUrl', teacherProfileImage.url,
+                        'accountId', teacherAccount.id
                     ) ELSE JSON_OBJECT(
                         'id', staff.id,
                         'payAmount', staff.payAmount,
@@ -131,7 +132,8 @@ export class PayrollsHelper {
                         'designation', staff.type,
                         'phone', staff.phone,
                         'email', staff.email,
-                        'profileImageUrl', staffProfileImage.url
+                        'profileImageUrl', staffProfileImage.url,
+                        'accountId', staffAccount.id
                     ) END
                     as employee
                 `,
