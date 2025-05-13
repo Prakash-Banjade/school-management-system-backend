@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, InternalServerErrorException, NotFoundException, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
 import { BaseRepository } from 'src/common/repository/base-repository';
@@ -105,27 +105,30 @@ export class PayrollsService extends BaseRepository {
             ? (JSON.parse(salaryStructure.allowances) as IAllowance[])?.reduce((acc, curr) => acc + curr.amount, 0)
             : salaryStructure.allowances?.reduce((acc, curr) => acc + curr.amount, 0);
 
+        // calculate adjustments
         const absentAdjustment = await this.getAbsentAdjustment(salaryDate, salaryStructure, currentUser);
         const libraryFineAdjustment = await this.getLibraryFineAdjustment(salaryStructure.teacherId);
-        const adjustments = dto.salaryAdjustments.filter(s => ![ESalaryAdjustmentType.Absent, ESalaryAdjustmentType.Library_Fine].includes(s.type));
+        const pastAdvanceAdjustment = salaryStructure.advanceAmount !== null ? {
+            amount: salaryStructure.advanceAmount,
+            type: ESalaryAdjustmentType.Past_Advance,
+            description: 'Past Advance'
+        } : null;
+        const advanceAmountAdjustment = dto.advance > 0 ? {
+            amount: dto.advance,
+            description: 'Advance',
+            type: ESalaryAdjustmentType.Advance
+        } : null;
 
+        // creating payroll
         const payroll = this.getRepository(Payroll).create({
             date: startOfDayString(salaryDate),
             basicSalary: salaryStructure.basicSalary, // allowances are included in adjustments to separately show entries in template
             salaryAdjustments: [
-                ...adjustments,
-                salaryStructure.advanceAmount !== null
-                    ? {
-                        amount: salaryStructure.advanceAmount,
-                        type: ESalaryAdjustmentType.Past_Advance,
-                        description: 'Past Advance'
-                    } : null,
-                {
-                    ...absentAdjustment
-                },
-                {
-                    ...libraryFineAdjustment,
-                },
+                ...dto.salaryAdjustments,
+                pastAdvanceAdjustment,
+                absentAdjustment,
+                libraryFineAdjustment,
+                advanceAmountAdjustment,
                 {
                     amount: allowanceAmount ?? 0,
                     type: ESalaryAdjustmentType.Allowance,
@@ -146,7 +149,7 @@ export class PayrollsService extends BaseRepository {
 
         payroll.calculateNetSalary(); // calculate net salary
 
-        if (payroll.netSalary < 0) throw new BadRequestException('Something seems wrong with the salary structure or adjustments');
+        if (payroll.netSalary < 0) throw new InternalServerErrorException('Something seems wrong with the salary structure or adjustments');
 
         await this.getRepository(Payroll).save(payroll);
 
@@ -170,7 +173,7 @@ export class PayrollsService extends BaseRepository {
         const absentCount = +(count?.monthly.absent ?? 0);
         const totalDays = +(count?.monthly.total ?? 30);
 
-        if (absentCount === 0) return {};
+        if (absentCount === 0) return null;
 
         const absentAdjustment = {
             amount: Math.round((absentCount / totalDays) * salaryStructure.basicSalary),
@@ -184,7 +187,7 @@ export class PayrollsService extends BaseRepository {
     async getLibraryFineAdjustment(teacherId: string) {
         const transactions = await this.bookTransactionsHelper.getUnPaidTransactions(new UnpaidTransactionsQueryDto({ teacherId }));
 
-        if (transactions.length === 0) return {};
+        if (transactions.length === 0) return null;
 
         const totalAmount = transactions.reduce((acc, curr) => acc + curr.fine, 0);
 
@@ -286,12 +289,36 @@ export class PayrollsService extends BaseRepository {
 
         if (existing.salaryPayments?.length > 0) throw new ForbiddenException('This payroll cannot be updated now');
 
+        const nonChangableAdjustments = existing.salaryAdjustments.filter(a => {
+            return [
+                ESalaryAdjustmentType.Allowance,
+                ESalaryAdjustmentType.Unpaid,
+                ESalaryAdjustmentType.Past_Advance,
+                ESalaryAdjustmentType.Absent,
+                ESalaryAdjustmentType.Library_Fine,
+            ].includes(a.type);
+        });
+
+        const advanceAmountAdjustment = dto.advance > 0 ? {
+            amount: dto.advance,
+            description: 'Advance',
+            type: ESalaryAdjustmentType.Advance
+        } : null;
+
+        // we need to delete old changable adjustments, if not they will no longer be attached with payroll which is invalid state
+        const changableAdjustments = existing.salaryAdjustments.filter(a => {
+            return !nonChangableAdjustments.some(na => na.id === a.id);
+        });
+
+        await this.getRepository(SalaryAdjustment).remove(changableAdjustments);
+
+        // assign new adjustments
         Object.assign(existing, {
             ...existing,
             salaryAdjustments: [
-                // adjustments with these three types are not updated
-                ...existing.salaryAdjustments?.filter(a => [ESalaryAdjustmentType.Allowance, ESalaryAdjustmentType.Past_Advance, ESalaryAdjustmentType.Unpaid].includes(a.type)),
+                ...nonChangableAdjustments,
                 ...dto.salaryAdjustments,
+                advanceAmountAdjustment
             ]
         });
 
@@ -303,9 +330,7 @@ export class PayrollsService extends BaseRepository {
             ? await this.getRepository(Teacher).update(existing.teacher.id, { payAmount: existing.netSalary })
             : await this.getRepository(Staff).update(existing.staff?.id, { payAmount: existing.netSalary });
 
-        return {
-            message: 'Payroll updated'
-        }
+        return { message: 'Payroll updated' }
     }
 
     async getAll(queryDto: PayrollsQueryDto, currentUser: AuthUser) {

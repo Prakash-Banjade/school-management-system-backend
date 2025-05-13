@@ -14,6 +14,7 @@ export class BookTransactionsCron {
     ) { }
 
     @Cron(CronExpression.EVERY_DAY_AT_6AM)
+    // @Cron(CronExpression.EVERY_5_SECONDS)
     async calculateOverDueFines() {
         console.log('Calculating library book over due fines...');
 
