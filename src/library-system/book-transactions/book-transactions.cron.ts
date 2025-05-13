@@ -3,8 +3,8 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { IsNull, Not, Repository } from "typeorm";
 import { BookTransaction } from "./entities/book-transaction.entity";
 import { Cron, CronExpression } from "@nestjs/schedule";
-import { differenceInDays, startOfDay } from "date-fns";
 import { GeneralSetting } from "src/general-settings/entities/general-setting.entity";
+import { format } from "date-fns";
 
 @Injectable()
 export class BookTransactionsCron {
@@ -13,31 +13,24 @@ export class BookTransactionsCron {
         @InjectRepository(GeneralSetting) private generalSettingsRepo: Repository<GeneralSetting>,
     ) { }
 
-    @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+    @Cron(CronExpression.EVERY_DAY_AT_6AM)
     async calculateOverDueFines() {
         console.log('Calculating library book over due fines...');
 
         const overDueTransactions = await this.bookTransactionRepo.createQueryBuilder('transaction')
-            .where("DATE(transaction.dueDate) < CURRENT_DATE() AND transaction.returnedAt IS NULL")
+            .where("DATE(transaction.dueDate) < :today AND transaction.returnedAt IS NULL", { today: format(new Date(), 'yyyy-MM-dd') })
             .select([
                 'transaction.id',
                 'transaction.dueDate',
+                'transaction.fine',
             ]).getMany();
 
         const libraryFine = (await this.generalSettingsRepo.findOne({
             where: { id: Not(IsNull()) },
         }))?.libraryFine ?? 0;
 
-        console.log(overDueTransactions)
-
         for (const transaction of overDueTransactions) {
-            const dueDays = differenceInDays(startOfDay(new Date()), startOfDay(transaction.dueDate));
-
-            const dueAmount = dueDays * libraryFine;
-
-            console.log(dueDays, dueAmount);
-
-            transaction.fine = dueAmount;
+            transaction.fine += libraryFine;
         }
 
         await this.bookTransactionRepo.save(overDueTransactions);
