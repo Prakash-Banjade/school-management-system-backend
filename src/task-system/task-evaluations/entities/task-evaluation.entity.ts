@@ -10,7 +10,7 @@ export class TaskEvaluation extends BaseEntity {
     @JoinColumn()
     submission: TaskSubmission;
 
-    @ManyToOne(() => Teacher, teacher => teacher.taskEvaluations, { onDelete: 'SET NULL' })
+    @ManyToOne(() => Teacher, teacher => teacher.taskEvaluations, { onDelete: 'CASCADE', nullable: false })
     evaluator: Teacher;
 
     @Column({ type: 'float', default: 0 })

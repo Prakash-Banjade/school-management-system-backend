@@ -19,38 +19,37 @@ export class AttendanceCron {
     /**
      * For employees, if the attendance of the day is not recorded, mark it as absent
      */
-    @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
-    @Cron("*/5 * * * * *")
-    async markAttendanceAsAbsent() {
-        console.log('Marking attendance as absent...');
+    // @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+    // async markAttendanceAsAbsent() {
+    //     console.log('Marking attendance as absent...');
 
-        const teachersWithNoAttendance = await this.teachersRepo.createQueryBuilder('teacher')
-            .leftJoin('teacher.account', 'account')
-            .leftJoin('account.attendances', 'attendances', 'DATE(attendances.date) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)')
-            .where('attendances.id IS NULL')
-            .select(['teacher.id', 'account.id']).getMany();
+    //     const teachersWithNoAttendance = await this.teachersRepo.createQueryBuilder('teacher')
+    //         .leftJoin('teacher.account', 'account')
+    //         .leftJoin('account.attendances', 'attendances', 'DATE(attendances.date) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)')
+    //         .where('attendances.id IS NULL')
+    //         .select(['teacher.id', 'account.id']).getMany();
 
-        const staffsWithNoAttendance = await this.staffsRepo.createQueryBuilder('staff')
-            .leftJoin('staff.account', 'account')
-            .leftJoin('account.attendances', 'attendances', 'DATE(attendances.date) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)')
-            .where('attendances.id IS NULL')
-            .select(['staff.id', 'account.id']).getMany();
+    //     const staffsWithNoAttendance = await this.staffsRepo.createQueryBuilder('staff')
+    //         .leftJoin('staff.account', 'account')
+    //         .leftJoin('account.attendances', 'attendances', 'DATE(attendances.date) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)')
+    //         .where('attendances.id IS NULL')
+    //         .select(['staff.id', 'account.id']).getMany();
 
-        const attendances: Attendance[] = [];
+    //     const attendances: Attendance[] = [];
 
-        for (const employee of [...teachersWithNoAttendance, ...staffsWithNoAttendance]) {
-            const attendance = this.attendanceRepo.create({
-                account: employee.account,
-                inTime: null,
-                outTime: null,
-                status: EAttendanceStatus.ABSENT,
-                date: format(sub(new Date(), { days: 1 }), 'yyyy-MM-dd'),
-            });
-            attendances.push(attendance);
-        }
+    //     for (const employee of [...teachersWithNoAttendance, ...staffsWithNoAttendance]) {
+    //         const attendance = this.attendanceRepo.create({
+    //             account: employee.account,
+    //             inTime: null,
+    //             outTime: null,
+    //             status: EAttendanceStatus.ABSENT,
+    //             date: format(sub(new Date(), { days: 1 }), 'yyyy-MM-dd'),
+    //         });
+    //         attendances.push(attendance);
+    //     }
 
-        if (attendances.length > 0) {
-            await this.attendanceRepo.save(attendances);
-        }
-    }
+    //     if (attendances.length > 0) {
+    //         await this.attendanceRepo.save(attendances);
+    //     }
+    // }
 }

@@ -27,15 +27,17 @@ export class UsersService extends BaseRepository {
   async create(createUserDto: CreateUserDto) {
     const branch = await this.branchesService.getBranch(createUserDto.branchId);
 
-    const user = this.getRepository(User).create({});
-
-    await this.getRepository(User).save(user);
-
-    await this.accountsService.createAdminAccount(user, branch, {
+    const account = await this.accountsService.createAdminAccount(branch, {
       email: createUserDto.email,
       firstName: createUserDto.firstName,
       lastName: createUserDto.lastName
-    })
+    });
+
+    const user = this.getRepository(User).create({
+      account,
+    });
+
+    await this.getRepository(User).save(user);
 
     return { message: 'Admin created' }
   }

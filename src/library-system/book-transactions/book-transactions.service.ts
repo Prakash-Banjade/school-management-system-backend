@@ -6,7 +6,7 @@ import { CreateBookTransactionDto } from './dto/create-book-transaction.dto';
 import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
 import { BaseRepository } from 'src/common/repository/base-repository';
-import { BookTransactionByStudentQueryDto, BookTransactionsQueryDto, EBookTransactionPeriod } from './dto/book-transactions-query.dto';
+import { BookTransactionByMemberQueryDto, BookTransactionsQueryDto, EBookTransactionPeriod } from './dto/book-transactions-query.dto';
 import { EBookTransactionStatus } from 'src/common/types/global.type';
 import { LibraryBook } from '../library-book/entities/library-book.entity';
 import { Student } from 'src/students/entities/student.entity';
@@ -14,6 +14,7 @@ import { paginatedRawData } from 'src/utils/paginatedData';
 import { MAX_BOOK_ISSUE_LIMIT } from 'src/common/CONSTANTS';
 import { startOfDayString } from 'src/utils/utils';
 import { UtilitiesService } from 'src/utilities/utilities.service';
+import { Teacher } from 'src/teachers/entities/teacher.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class BookTransactionsService extends BaseRepository {
@@ -21,31 +22,55 @@ export class BookTransactionsService extends BaseRepository {
     datasource: DataSource, @Inject(REQUEST) req: FastifyRequest,
     private readonly libraryBookService: LibraryBookService,
     private readonly utilitiesService: UtilitiesService
-  ) {
-    super(datasource, req);
-  }
+  ) { super(datasource, req) }
 
-  async create(createBookTransactionDto: CreateBookTransactionDto) {
-    const book = await this.libraryBookService.findOne(createBookTransactionDto.bookId);
-    const student = await this.getRepository(Student).findOne({
-      where: { id: createBookTransactionDto.studentId },
-      select: { id: true }
+  async create(dto: CreateBookTransactionDto) {
+    const { teacherId, studentId } = dto;
+    if (!teacherId && !studentId) throw new BadRequestException('Please provide teacherId or studentId');
+
+    // determine member type and id
+    const memberId = dto.teacherId ?? dto.studentId;
+    const memberType: 'teacher' | 'student' = dto.teacherId ? 'teacher' : 'student';
+
+    // find member
+    const member: Teacher | Student = memberType === 'teacher'
+      ? await this.getRepository(Teacher).findOne({ where: { id: memberId }, select: { id: true } })
+      : await this.getRepository(Student).findOne({ where: { id: memberId }, select: { id: true } });
+
+    if (!member) throw new NotFoundException('Member not found');
+
+    // find book
+    const book = await this.getRepository(LibraryBook).findOne({
+      where: { id: dto.bookId },
+      select: { id: true, issuedCount: true, copiesCount: true }
     });
-    if (!student) throw new NotFoundException('Student not found');
 
-    // check if student has any overdue book transactions
+    if (!book) throw new NotFoundException('Book not found');
+
+    // check if member has any overdue book transactions
     const unpaidTransactions = await this.getRepository(BookTransaction).createQueryBuilder('transaction')
-      .where('transaction.studentId = :studentId', { studentId: student.id })
+      .where(
+        memberType === 'teacher'
+          ? 'transaction.teacherId = :memberId'
+          : 'transaction.studentId = :memberId',
+        { memberId }
+      )
       .andWhere(new Brackets(qb => {
         qb.orWhere('DATE(transaction.dueDate) < CURRENT_DATE() AND transaction.returnedAt IS NULL') // currently overdue and not returned yet
           .orWhere('transaction.returnedAt IS NOT NULL AND transaction.paidAt IS NULL AND DATE(transaction.dueDate) < DATE(transaction.returnedAt)') // overdue + returned but not paid
       }))
       .select(['transaction.id']).getMany();
 
-    if (unpaidTransactions.length > 0) throw new BadRequestException('This student has an overdue transaction. Please make the payment first.');
+    if (unpaidTransactions.length > 0) throw new BadRequestException(`This ${memberType} has an overdue transaction. Please make the payment first.`);
 
+    // check if member has already issued the book
     const transactionsCount = await this.getRepository(BookTransaction).createQueryBuilder('transaction')
-      .where("transaction.studentId = :studentId", { studentId: student.id })
+      .where(
+        memberType === 'teacher'
+          ? 'transaction.teacherId = :memberId'
+          : 'transaction.studentId = :memberId',
+        { memberId }
+      )
       .andWhere("transaction.returnedAt IS NULL")
       .select([
         `COUNT(DISTINCT CASE WHEN transaction.bookId = '${book.id}' THEN transaction.id END) AS currentBookTransactionsCount`,
@@ -61,9 +86,9 @@ export class BookTransactionsService extends BaseRepository {
     await this.libraryBookService.updateCount(book, 'issued'); // increment issued count
 
     const transaction = this.getRepository(BookTransaction).create({
-      dueDate: createBookTransactionDto.dueDate,
+      dueDate: dto.dueDate,
       book,
-      student,
+      [memberType]: member, // teacher or student
       renewals: []
     });
 
@@ -81,15 +106,17 @@ export class BookTransactionsService extends BaseRepository {
       .limit(queryDto.take) // need to use limit and offset instead of skip and take while using getRawMany
       .offset(queryDto.skip)
       .leftJoin("transaction.student", "student")
+      .leftJoin("student.account", "studentAccount")
+      .leftJoin("transaction.teacher", "teacher")
+      .leftJoin("teacher.account", "teacherAccount")
       .leftJoin("transaction.book", "book")
-      .leftJoin("student.classRoom", "classRoom")
-      .leftJoin("classRoom.parent", "parent")
       .where(new Brackets(qb => {
         if (queryDto.search) {
           qb.andWhere(new Brackets(subQb => {
             subQb.orWhere("LOWER(book.bookName) LIKE LOWER(:search)", { search: `%${queryDto.search}%` })
-              .orWhere("TRIM(book.bookCode) = TRIM(:exactSearch)", { exactSearch: queryDto.search })
-              .orWhere("TRIM(student.studentId) = TRIM(:exactSearch)", { exactSearch: queryDto.search })
+              .orWhere("book.bookCode = :exactSearch", { exactSearch: queryDto.search.trim() })
+              .orWhere("student.studentId = :exactSearch", { exactSearch: queryDto.search.trim() })
+              .orWhere("teacher.teacherId = :exactSearch", { exactSearch: queryDto.search.trim() })
           }))
         };
 
@@ -108,15 +135,13 @@ export class BookTransactionsService extends BaseRepository {
         "transaction.dueDate as dueDate",
         "transaction.returnedAt as returnedAt",
         "transaction.createdAt as createdAt",
-        "student.studentId AS studentId",
+        "CASE WHEN student.id IS NOT NULL THEN student.studentId ELSE teacher.teacherId END AS memberId",
         "transaction.fine as fine",
         "transaction.paidAt as paidAt",
         "transaction.renewals as renewals",
         "book.bookName AS bookName",
         "book.bookCode AS bookCode",
-        "CONCAT(student.firstName, ' ', student.lastName) AS studentName",
-        "parent.name AS parentClassName",
-        "classRoom.name AS classRoomName",
+        "CASE WHEN student.id IS NOT NULL THEN studentAccount.lowerCasedFullName ELSE teacherAccount.lowerCasedFullName END AS memberName",
       ])
 
     return paginatedRawData(queryDto, queryBuilder);
@@ -141,15 +166,29 @@ export class BookTransactionsService extends BaseRepository {
    * Returns all the book transactions for a given student.
    * Accounts only for issued and returned transactions.
    */
-  async findAllByStudent(queryDto: BookTransactionByStudentQueryDto) {
+  async findAllByMember(queryDto: BookTransactionByMemberQueryDto) {
+    const { teacherId, studentId } = queryDto;
+
+    if (!teacherId && !studentId) throw new BadRequestException('Please provide teacherId or studentId');
+
     const queryBuilder = this.getRepository(BookTransaction).createQueryBuilder('transaction')
       .orderBy("transaction.createdAt", queryDto.order)
       .offset(queryDto.skipPagination ? undefined : queryDto.skip)
       .limit(queryDto.skipPagination ? undefined : queryDto.take)
-      .leftJoin("transaction.student", "student")
-      .leftJoin("transaction.book", "book")
-      .where(new Brackets(qb => {
-        qb.andWhere("student.studentId = :studentId", { studentId: queryDto.studentId })
+      .leftJoin("transaction.book", "book");
+
+    if (queryDto.teacherId) {
+      queryBuilder.leftJoin("transaction.teacher", "teacher")
+        .where("teacher.teacherId = :teacherId", { teacherId: queryDto.teacherId })
+    }
+
+    if (queryDto.studentId) {
+      queryBuilder.leftJoin("transaction.student", "student")
+        .where("student.studentId = :studentId", { studentId: queryDto.studentId })
+    }
+
+    queryBuilder
+      .andWhere(new Brackets(qb => {
         queryDto.status === EBookTransactionStatus.Issued
           ? qb.andWhere("transaction.returnedAt IS NULL") // issued
           : qb.andWhere("transaction.returnedAt IS NOT NULL") // returned

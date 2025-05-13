@@ -58,10 +58,6 @@ import { createKeyv } from '@keyv/redis';
       isGlobal: true,
       fileSystemStoragePath: 'public',
       autoDeleteFile: false,
-      limits: {
-        files: 10,
-        fileSize: 5 * 1024 * 1024,
-      },
       cleanupAfterSuccessHandle: false, // !important
     }),
     ThrottlerModule.forRoot([{

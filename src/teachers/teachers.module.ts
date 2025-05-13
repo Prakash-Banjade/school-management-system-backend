@@ -7,6 +7,7 @@ import { TeachersHelper } from './helpers/teacher.helper';
 import { TeachersStudentViewService } from './teachers.student-view.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Teacher } from './entities/teacher.entity';
+import { TeacherUtilsService } from './helpers/teacher-utils.service';
 
 @Module({
   imports: [
@@ -17,7 +18,7 @@ import { Teacher } from './entities/teacher.entity';
     ImagesModule,
   ],
   controllers: [TeachersController],
-  providers: [TeachersService, TeachersHelper, TeachersStudentViewService],
+  providers: [TeachersService, TeachersHelper, TeachersStudentViewService, TeacherUtilsService],
   exports: [TeachersService],
 })
 export class TeachersModule { }

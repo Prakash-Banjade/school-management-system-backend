@@ -5,7 +5,9 @@
   "compilerOptions": {
     "assets": [
       "mail/templates/**/*",
-      "/mail/templates/**/*"
+      "/mail/templates/**/*",
+      "finance-system/salary-management/payrolls/templates/**/*",
+      "/finance-system/salary-management/payrolls/templates/**/*"
     ],
     "deleteOutDir": true
   }

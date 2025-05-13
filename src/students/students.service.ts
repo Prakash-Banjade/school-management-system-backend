@@ -23,11 +23,14 @@ import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { AcademicYearsService } from 'src/academic-years/academic-years.service';
 import { UtilitiesService } from 'src/utilities/utilities.service';
 import { UpdateAccountDto } from 'src/auth-system/accounts/dto/update-account.dto';
+import { isTeacher } from 'src/utils/utils';
+import { StudentsUtils } from './helpers/students.utils';
 
 @Injectable({ scope: Scope.REQUEST })
 export class StudentsService extends BaseRepository {
   constructor(
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
+    private readonly studentsUtils: StudentsUtils,
     private readonly imageService: ImagesService,
     private readonly filesService: FilesService,
     private readonly accountsService: AccountsService,
@@ -80,18 +83,21 @@ export class StudentsService extends BaseRepository {
     });
     if (!academicYear) throw new ForbiddenException('No active academic year');
 
+    const rollNo = await this.studentsUtils.generateRollNo(createStudentDto);
+
     const enrollment = this.getRepository<Enrollment>(Enrollment).create({
       classRoom,
       academicYear,
+      rollNo,
       enrollmentDate: createStudentDto.admissionDate,
-      rollNo: createStudentDto.rollNo,
       registrationNumber: getRegistrationNumber(academicYear),
       ledger: this.getRepository<StudentLedger>(StudentLedger).create(),
     });
 
     const newStudent = this.getRepository<Student>(Student).create({
       ...createStudentDto,
-      studentId: await this.generateStudentId(),
+      studentId: await this.studentsUtils.generateStudentId(),
+      rollNo,
       classRoom,
       documentAttachments,
       dormitoryRoom,
@@ -100,42 +106,18 @@ export class StudentsService extends BaseRepository {
       routeStop,
     });
 
-    const savedStudent = await this.getRepository<Student>(Student).save(newStudent);
+    // const savedStudent = await this.getRepository<Student>(Student).save(newStudent);
 
     // CREATE ACCOUNT
-    await this.accountsService.createAccount(savedStudent, profileImage);
+    await this.accountsService.createAccount(newStudent, profileImage);
 
     return { message: 'Student created' }
   }
 
-  async generateStudentId() {
-    const currentYear = new Date().getFullYear();
-
-    const lastStudent = await this.getRepository(Student)
-      .createQueryBuilder('student')
-      .orderBy('student.createdAt', 'DESC')
-      .limit(1)
-      .select(['student.id', 'student.studentId'])
-      .getOne();
-
-    if (!lastStudent || !lastStudent.studentId) {
-      return `STU-${currentYear}-00001`;
-    }
-
-    const lastStudentIdParts = lastStudent.studentId?.split('-');
-    const lastYear = parseInt(lastStudentIdParts[1], 10);
-    const lastCounter = parseInt(lastStudentIdParts[2], 10);
-
-    if (lastYear !== currentYear) {
-      return `STU-${currentYear}-00001`; // Reset counter if the year has changed
-    }
-
-    const newCounter = (lastCounter + 1).toString().padStart(5, '0');
-    return `STU-${currentYear}-${newCounter}`;
-  }
 
   async findOne(id: string) {
     const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
+    const currentUser = this.utilitiesService.getCurrentUser();
 
     const querybuilder = this.getRepository<Student>(Student).createQueryBuilder('student')
       .leftJoin('student.account', 'account')
@@ -149,6 +131,10 @@ export class StudentsService extends BaseRepository {
       .leftJoin('student.routeStop', 'routeStop')
       .leftJoin('routeStop.vehicle', 'vehicle')
       .where('student.id = :id', { id })
+
+    if (isTeacher(currentUser)) { // teacher can request students of his class routine classes
+      querybuilder.innerJoin('classRoom.classRoutines', 'classRoutine', 'classRoutine.teacherId = :teacherId', { teacherId: currentUser.teacherId })
+    }
 
     applySelectColumns(querybuilder, singleStudentColumnsConfig, 'student');
 
@@ -172,19 +158,18 @@ export class StudentsService extends BaseRepository {
     const queryBuilder = this.getRepository<Student>(Student).createQueryBuilder('student')
       .innerJoin("student.enrollments", "enrollments", "enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
       .leftJoin('enrollments.classRoom', 'classRoom')
-      .leftJoin("classRoom.parent", "parent")
       .leftJoin("student.bookTransactions", "bookTransactions")
       .leftJoin("student.account", "account")
       .leftJoin("account.profileImage", "profileImage")
       .where("student.studentId = :studentId", { studentId })
       .select([
         "student.id AS id",
-        "CONCAT(student.firstName, ' ', student.lastName) AS name",
+        "account.lowerCasedFullName AS name",
         "student.rollNo AS rollNo",
         "student.phone AS phone",
         "student.email AS email",
         "profileImage.url AS profileImageUrl",
-        "CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, ' - ', classRoom.name) END AS classRoomName",
+        "classRoom.fullName AS classRoomName",
         "COUNT(bookTransactions.id) AS transactionCount"
       ])
       .groupBy('student.id')
@@ -200,7 +185,6 @@ export class StudentsService extends BaseRepository {
 
   async update(id: string, updateStudentDto: UpdateStudentDto) {
     const existing = await this.findOne(id);
-    const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
 
     // check if credentials are already taken
     await this.studentsHelper.checkIfStudentExists(updateStudentDto, existing);
@@ -233,18 +217,6 @@ export class StudentsService extends BaseRepository {
     });
 
     await this.getRepository<Student>(Student).save(existing);
-
-    // update roll no in enrollment
-    if (updateStudentDto.rollNo && existing.rollNo !== updateStudentDto.rollNo) {
-      const updatedEnrollment = await this.getRepository<Enrollment>(Enrollment).createQueryBuilder()
-        .update(Enrollment)
-        .set({ rollNo: updateStudentDto.rollNo })
-        .where("studentId = :studentId", { studentId: existing.id })
-        .andWhere("academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
-        .execute();
-
-      if (updatedEnrollment.affected === 0) throw new NotFoundException('Student not found');
-    }
 
     return { message: 'Student updated' }
   }

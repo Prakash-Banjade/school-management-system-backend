@@ -1,14 +1,12 @@
 import { Account } from "src/auth-system/accounts/entities/account.entity";
-import { User } from "src/auth-system/users/entities/user.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { Guardian } from "src/guardians/entities/guardian.entity";
-import { Staff } from "src/staffs/entities/staff.entity";
-import { Student } from "src/students/entities/student.entity";
-import { Teacher } from "src/teachers/entities/teacher.entity";
-import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from "typeorm";
+import { LibraryBook } from "src/library-system/library-book/entities/library-book.entity";
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToOne } from "typeorm";
 
 @Entity()
 export class Image extends BaseEntity {
+    @Index({ unique: true })
     @Column({ type: 'varchar' })
     url!: string
 
@@ -53,4 +51,8 @@ export class Image extends BaseEntity {
     @OneToOne(() => Guardian, guardian => guardian.profileImage, { onDelete: 'CASCADE', nullable: true })
     @JoinColumn()
     guardian_profileImage: Guardian;
+
+    @OneToOne(() => LibraryBook, libraryBook => libraryBook.coverImage, { onDelete: 'CASCADE' })
+    @JoinColumn()
+    libraryBookCoverImage: LibraryBook;
 }

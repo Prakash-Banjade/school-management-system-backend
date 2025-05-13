@@ -18,7 +18,7 @@ export class SalaryPayment extends BaseEntity {
     @Column({ type: 'enum', enum: EPaymentMethod })
     paymentMethod: EPaymentMethod;
 
-    @ManyToOne(() => Payroll, payroll => payroll.salaryPayments, { onDelete: 'CASCADE' })
+    @ManyToOne(() => Payroll, payroll => payroll.salaryPayments, { onDelete: 'CASCADE', nullable: false })
     payroll: Payroll;
 
     @OneToOne(() => EmployeeLedger, ledger => ledger.payment, { cascade: true })

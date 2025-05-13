@@ -15,17 +15,19 @@ import { FastifyRequest } from 'fastify';
 import { REQUEST } from '@nestjs/core';
 import { paginatedRawData } from 'src/utils/paginatedData';
 import { isStudent } from 'src/utils/utils';
-import { AcademicYearsService } from 'src/academic-years/academic-years.service';
 import { ExamType } from '../exam-types/entities/exam-type.entity';
 import { UtilitiesService } from 'src/utilities/utilities.service';
 import { AcademicYear } from 'src/academic-years/entities/academic-year.entity';
+import { ExamResultsService } from '../exam-results/exam-results.service';
+import { ExamResult } from '../exam-results/entities/exam-result.entity';
+import { isAfter } from 'date-fns';
 
 @Injectable({ scope: Scope.REQUEST })
 export class ExamsService extends BaseRepository {
   constructor(
     dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
-    private readonly academicYearService: AcademicYearsService,
     private readonly utilitiesService: UtilitiesService,
+    private readonly examResultsService: ExamResultsService,
   ) { super(dataSource, req); }
 
   async create(createExamDto: CreateExamDto) {
@@ -76,13 +78,19 @@ export class ExamsService extends BaseRepository {
         venue: examSubject.venue,
         subject
       })
-    }))
+    }));
+
+    const examSubjectsSortedByDate = examSubjects.sort((a, b) => new Date(a.examDate).getTime() - new Date(b.examDate).getTime());
+    const startingFrom = examSubjectsSortedByDate[0].examDate;
+    const endsOn = examSubjectsSortedByDate[examSubjectsSortedByDate.length - 1].examDate;
 
     const newExam = this.getRepository(Exam).create({
       examType,
       classRoom,
       academicYear,
       examSubjects,
+      startingFrom,
+      endsOn
     });
 
     await this.getRepository(Exam).save(newExam);
@@ -132,6 +140,8 @@ export class ExamsService extends BaseRepository {
       .select([
         'exam.id as id',
         'exam.createdAt as createdAt',
+        'exam.startingFrom as startingFrom',
+        'exam.endsOn as endsOn',
         'exam.isReportPublished as isReportPublished',
         'examType.id as examTypeId', // required in frontend in exam columns
         'examType.name as examType',
@@ -184,6 +194,8 @@ export class ExamsService extends BaseRepository {
       },
       select: {
         id: true,
+        startingFrom: true,
+        isReportPublished: true,
         examType: { id: true },
         classRoom: {
           id: true,
@@ -197,12 +209,16 @@ export class ExamsService extends BaseRepository {
     });
     if (!existing) throw new NotFoundException('Exam not found');
 
-    if (updateExamDto.examTypeId && (updateExamDto.examTypeId !== existing.examType?.id || !existing.examType)) {
-      const examType = await this.getRepository(ExamType).findOne({ where: { id: updateExamDto.examTypeId }, select: { id: true } });
-      if (!examType) throw new NotFoundException('Exam type not found');
+    // check if the exam has begun, if yes cannot update or if report has been published
+    if (isAfter(new Date(), existing.startingFrom) || existing.isReportPublished) throw new BadRequestException('Cannot update an exam that has already begun or result is published.');
 
-      existing.examType = examType;
-    }
+    // check if exam type has changed
+    // if (updateExamDto.examTypeId && (updateExamDto.examTypeId !== existing.examType?.id || !existing.examType)) {
+    //   const examType = await this.getRepository(ExamType).findOne({ where: { id: updateExamDto.examTypeId }, select: { id: true } });
+    //   if (!examType) throw new NotFoundException('Exam type not found');
+
+    //   existing.examType = examType;
+    // }
 
     const examSubjects: Partial<ExamSubject>[] = await Promise.all(updateExamDto.examSubjects.map(async (examSubject) => ({
       id: examSubject.id,
@@ -215,7 +231,7 @@ export class ExamsService extends BaseRepository {
       practicalPM: examSubject.practicalPM,
       venue: examSubject.venue,
       subject: await this.getSubject(examSubject.subjectId, existing.classRoom)
-    })))
+    })));
 
     // remove discarded subjects
     await this.removeDiscardedSubjects(
@@ -223,7 +239,16 @@ export class ExamsService extends BaseRepository {
       updateExamDto.examSubjects.map(examSubject => examSubject.id)
     );
 
-    Object.assign(existing, { examSubjects });
+    // compute startingFrom and endsOn
+    const examSubjectsSortedByDate = examSubjects.sort((a, b) => new Date(a.examDate).getTime() - new Date(b.examDate).getTime());
+    const startingFrom = examSubjectsSortedByDate[0].examDate;
+    const endsOn = examSubjectsSortedByDate[examSubjectsSortedByDate.length - 1].examDate;
+
+    Object.assign(existing, {
+      examSubjects,
+      startingFrom,
+      endsOn
+    });
 
     await this.getRepository(Exam).save(existing);
 
@@ -231,13 +256,45 @@ export class ExamsService extends BaseRepository {
   }
 
   async publishReport(id: string, publish: boolean) {
-    const existing = await this.getRepository(Exam).findOne({ where: { id }, select: { id: true } });
+    const existing = await this.getRepository(Exam).findOne({
+      where: { id },
+      relations: {
+        classRoom: { children: true },
+        academicYear: true,
+        examSubjects: { subject: true }
+      },
+      select: {
+        id: true,
+        classRoom: { id: true, children: { id: true } },
+        academicYear: { id: true },
+        examSubjects: {
+          id: true,
+          theoryFM: true,
+          theoryPM: true,
+          practicalFM: true,
+          practicalPM: true,
+          subject: {
+            id: true,
+            type: true,
+          }
+        }
+      },
+    });
 
-    if (!existing) return;
+    if (!existing) throw new NotFoundException('Exam not found');
 
-    existing.isReportPublished = publish;
-    
-    await this.getRepository(Exam).save(existing);
+    if (publish) {
+      await this.examResultsService.generate(existing);
+    } else {
+      // remove exam results of this exam
+      await this.getRepository(Exam).createQueryBuilder()
+        .delete()
+        .from(ExamResult)
+        .where('examId = :examId', { examId: existing.id })
+        .execute();
+    }
+
+    await this.getRepository(Exam).update({ id: existing.id }, { isReportPublished: publish });
 
     return { message: publish ? 'Report published' : 'Report unpublished' }
   }

@@ -36,7 +36,7 @@ export class PayrollsHelper {
 
 
         if (currentUser.branchId) {
-            querybuilder.andWhere('employeeAccount.branchId = :branchId', { branchId: currentUser.branchId });
+            querybuilder.andWhere('teacherAccount.branchId = :branchId OR staffAccount.branchId = :branchId', { branchId: currentUser.branchId });
         }
 
         querybuilder
@@ -79,7 +79,9 @@ export class PayrollsHelper {
         return paginatedRawData(queryDto, querybuilder);
     }
 
-    async getEmployee(employeeId: string) { // employeeId is not pk, is teacherId or staffId
+    async getEmployee(employeeId: string, currentUser: AuthUser) { // employeeId is not pk, is teacherId or staffId
+        const { branchId } = currentUser;
+
         const salaryStructure = await this.salaryStructureRepo.createQueryBuilder('salaryStructure')
             .leftJoin('salaryStructure.teacher', 'teacher')
             .leftJoin('teacher.account', 'teacherAccount')
@@ -105,6 +107,11 @@ export class PayrollsHelper {
                 '(SELECT MAX(innerPayroll.createdAt) FROM payroll innerPayroll WHERE (innerPayroll.teacherId = teacher.id OR innerPayroll.staffId = staff.id))'
             )
             .where('teacher.teacherId = :employeeId OR staff.staffId = :employeeId', { employeeId: employeeId })
+            .andWhere(new Brackets(qb => {
+                if (branchId) {
+                    qb.andWhere('teacherAccount.branchId = :branchId OR staffAccount.branchId = :branchId', { branchId });
+                }
+            }))
             .select([
                 `
                     CASE WHEN teacher.id IS NOT NULL THEN JSON_OBJECT(
@@ -115,7 +122,8 @@ export class PayrollsHelper {
                         'designation', 'teacher', 
                         'phone', teacher.phone,
                         'email', teacher.email,
-                        'profileImageUrl', teacherProfileImage.url
+                        'profileImageUrl', teacherProfileImage.url,
+                        'accountId', teacherAccount.id
                     ) ELSE JSON_OBJECT(
                         'id', staff.id,
                         'payAmount', staff.payAmount,
@@ -124,7 +132,8 @@ export class PayrollsHelper {
                         'designation', staff.type,
                         'phone', staff.phone,
                         'email', staff.email,
-                        'profileImageUrl', staffProfileImage.url
+                        'profileImageUrl', staffProfileImage.url,
+                        'accountId', staffAccount.id
                     ) END
                     as employee
                 `,

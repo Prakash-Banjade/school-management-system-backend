@@ -16,10 +16,10 @@ import { Repository } from 'typeorm';
 
 @Injectable()
 export class TaskSubmissionsService {
-  @InjectRepository(Task) private readonly taskRepo: Repository<Task>;
-  @InjectRepository(Student) private readonly studentRepo: Repository<Student>;
-  @InjectRepository(TaskSubmission) private readonly taskSubmissionRepo: Repository<TaskSubmission>;
   constructor(
+    @InjectRepository(Task) private readonly taskRepo: Repository<Task>,
+    @InjectRepository(Student) private readonly studentRepo: Repository<Student>,
+    @InjectRepository(TaskSubmission) private readonly taskSubmissionRepo: Repository<TaskSubmission>,
     private readonly filesService: FilesService
   ) { }
 
@@ -33,10 +33,9 @@ export class TaskSubmissionsService {
     if (!student) throw new NotFoundException('Student not found');
 
     const task = await this.taskRepo.createQueryBuilder('task')
-      .leftJoin('task.classRooms', 'classRoom')
+      .innerJoin('task.classRoom', 'classRoom', 'classRoom.id = :classRoomId', { classRoomId: currentUser.classRoomId }) // Ensure task is assigned to the student's classroom
       .leftJoin('task.submissions', 'submission', 'submission.studentId = :studentId', { studentId: student.id }) // Join task submissions by student ID
       .where('task.id = :taskId', { taskId: createTaskSubmissionDto.taskId }) // Get the task by ID
-      .andWhere('classRoom.id = :classRoomId', { classRoomId: currentUser.classRoomId }) // Ensure task is assigned to the student's classroom
       .andWhere('submission.id IS NULL') // Ensure no existing submission by this student
       .andWhere('task.taskType = :taskType', { taskType: ETask.ASSIGNMENT }) // only assignments are submitted, homework are not submitted
       .select(['task.id', 'task.deadline'])
@@ -77,7 +76,19 @@ export class TaskSubmissionsService {
       .leftJoin('taskSubmission.attachments', 'attachments')
       .where('taskSubmission.taskId = :taskId', { taskId: queryDto.taskId })
 
-    applySelectColumns(queryBuilder, taskSubmissionSelectCols, 'taskSubmission')
+    if (queryDto.search) {
+      queryBuilder.andWhere("student.studentId = :search", { search: queryDto.search })
+    }
+
+    if (queryDto.evaluated === "false") {
+      queryBuilder.andWhere("evaluation.id IS NULL")
+    }
+
+    if (queryDto.evaluated === "true") {
+      queryBuilder.andWhere("evaluation.id IS NOT NULL")
+    }
+
+    applySelectColumns(queryBuilder, taskSubmissionSelectCols, 'taskSubmission');
 
     return paginatedData(queryDto, queryBuilder);
   }
@@ -88,6 +99,8 @@ export class TaskSubmissionsService {
       relations: {
         attachments: true,
         student: true,
+        task: true,
+        evaluation: true,
       },
       select: taskSubmissionSelectCols,
     });

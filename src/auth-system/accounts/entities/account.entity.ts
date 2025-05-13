@@ -2,7 +2,7 @@ import { BeforeInsert, BeforeUpdate, Column, Entity, Index, ManyToOne, OneToMany
 import bcrypt from "bcryptjs";
 import { BadRequestException } from "@nestjs/common";
 import { BaseEntity } from "src/common/entities/base.entity";
-import { AuthProvider, Role } from "src/common/types/global.type";
+import { Role } from "src/common/types/global.type";
 import { User } from "src/auth-system/users/entities/user.entity";
 import { Image } from "src/file-management/images/entities/image.entity";
 import { BCRYPT_HASH, EMAIL_REGEX, PASSWORD_SALT_COUNT } from "src/common/CONSTANTS";
@@ -12,7 +12,6 @@ import { Staff } from "src/staffs/entities/staff.entity";
 import { Attendance } from "src/attendances/entities/attendance.entity";
 import { LeaveRequest } from "src/leave-requests/entities/leave-request.entity";
 import { Task } from "src/task-system/tasks/entities/task.entity";
-import { LessonPlan } from "src/lesson-plans/entities/lesson-plan.entity";
 import { Branch } from "src/branches/entities/branch.entity";
 import { WebAuthnCredential } from "src/auth-system/webAuthn/entities/webAuthnCredential.entity";
 import { LoginDevice } from "./login-devices.entity";
@@ -47,9 +46,6 @@ export class Account extends BaseEntity {
     @Column({ type: 'timestamp', nullable: true })
     verifiedAt: Date | null = null;
 
-    @Column({ type: 'enum', enum: AuthProvider, default: AuthProvider.CREDENTIALS })
-    provider: AuthProvider;
-
     @Column({ type: 'simple-array' })
     prevPasswords: string[];
 
@@ -68,13 +64,13 @@ export class Account extends BaseEntity {
     @ManyToOne(() => Branch, branch => branch.accounts, { onDelete: 'RESTRICT', nullable: true })
     branch: Branch | null;
 
-    @OneToOne(() => User, user => user.account, { nullable: true })
+    @OneToOne(() => User, user => user.account, { nullable: true, cascade: true })
     user: User;
 
-    @OneToOne(() => Student, student => student.account, { nullable: true })
+    @OneToOne(() => Student, student => student.account, { cascade: true, nullable: true })
     student: Student;
 
-    @OneToOne(() => Teacher, teacher => teacher.account, { nullable: true })
+    @OneToOne(() => Teacher, teacher => teacher.account, { cascade: true, nullable: true })
     teacher: Teacher;
 
     @OneToOne(() => Staff, staff => staff.account, { nullable: true })
@@ -104,9 +100,6 @@ export class Account extends BaseEntity {
 
     @OneToMany(() => Task, task => task.setBy)
     tasks: Task[];
-
-    @OneToMany(() => LessonPlan, lessonPlan => lessonPlan.createdBy)
-    createdLessonPlans: LessonPlan[];
 
     @OneToOne(() => Image, image => image.account_profileImage, { nullable: true })
     profileImage: Image | null;

@@ -1,14 +1,14 @@
 import { BadRequestException } from "@nestjs/common";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsEnum, IsMilitaryTime, IsNotEmpty, IsOptional, IsUUID, ValidateIf } from "class-validator";
+import { ArrayMinSize, IsEnum, IsMilitaryTime, IsNotEmpty, IsOptional, IsUUID, ValidateIf } from "class-validator";
 import { differenceInMinutes, isAfter, parse } from "date-fns";
 import { EDayOfWeek, ERoutineType } from "src/common/types/global.type";
 
 export class CreateClassRoutineDto {
-    @ApiProperty({ enum: EDayOfWeek, description: 'Day of the week' })
-    @IsNotEmpty()
-    @IsEnum(EDayOfWeek)
-    dayOfTheWeek: EDayOfWeek;
+    @ApiProperty({ enum: EDayOfWeek, isArray: true, description: 'Days of the week' })
+    @IsEnum(EDayOfWeek, { each: true })
+    @ArrayMinSize(1, { message: 'At least one day of the week is required' })
+    daysOfTheWeek: EDayOfWeek[];
 
     @ApiProperty({ type: 'string', description: 'Start time' })
     @IsNotEmpty()

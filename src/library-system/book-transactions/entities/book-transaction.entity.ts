@@ -3,14 +3,18 @@ import { BaseEntity } from 'src/common/entities/base.entity';
 import { Student } from 'src/students/entities/student.entity';
 import { LibraryBook } from 'src/library-system/library-book/entities/library-book.entity';
 import { LedgerItem } from 'src/finance-system/fee-management/student-ledgers/entities/ledger-item.entity';
+import { Teacher } from 'src/teachers/entities/teacher.entity';
 
 @Entity()
 export class BookTransaction extends BaseEntity {
-    @ManyToOne(() => LibraryBook, (libraryBook) => libraryBook.transactions, { onDelete: 'CASCADE', nullable: false })
+    @ManyToOne(() => LibraryBook, (libraryBook) => libraryBook.transactions, { onDelete: 'RESTRICT', nullable: false })
     book: LibraryBook;
 
     @ManyToOne(() => Student, (student) => student.bookTransactions, { onDelete: 'CASCADE' })
     student: Student;
+
+    @ManyToOne(() => Teacher, (teacher) => teacher.bookTransactions, { onDelete: 'CASCADE' })
+    teacher: Teacher;
 
     @Column({ type: 'datetime' })
     dueDate: string;

@@ -23,7 +23,7 @@ export class Enrollment extends BaseEntity {
     @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
     enrollmentDate: string;
 
-    @Column({ type: 'int', default: 1 })
+    @Column({ type: 'int' })
     rollNo: number;
 
     @OneToOne(() => StudentLedger, studentLedger => studentLedger.enrollment, { cascade: true })

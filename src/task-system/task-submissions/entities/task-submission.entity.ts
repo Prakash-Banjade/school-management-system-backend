@@ -10,7 +10,7 @@ import { Entity, Column, ManyToOne, OneToMany, OneToOne, Unique } from 'typeorm'
 @Unique(['task', 'student'])
 export class TaskSubmission extends BaseEntity {
 
-    @ManyToOne(() => Task, task => task.submissions, { onDelete: 'CASCADE' })
+    @ManyToOne(() => Task, task => task.submissions, { onDelete: 'CASCADE', nullable: false })
     task: Task;
 
     @ManyToOne(() => Student, student => student.taskSubmissions, { onDelete: 'CASCADE', nullable: false })

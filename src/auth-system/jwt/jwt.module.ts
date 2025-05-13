@@ -3,11 +3,13 @@ import { JwtService } from './jwt.service';
 import { JwtModule as Jwt } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Student } from 'src/students/entities/student.entity';
+import { Teacher } from 'src/teachers/entities/teacher.entity';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       Student,
+      Teacher
     ]),
     Jwt.register({
       global: true,

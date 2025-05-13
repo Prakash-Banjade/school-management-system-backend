@@ -5,6 +5,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { LibraryBook } from './entities/library-book.entity';
 import { BookCategoriesModule } from '../book-categories/book-categories.module';
 import { LibraryHelper } from './helpers/library.helper';
+import { FilesModule } from 'src/file-management/files/files.module';
+import { ImagesModule } from 'src/file-management/images/images.module';
 
 @Module({
   imports: [
@@ -12,6 +14,8 @@ import { LibraryHelper } from './helpers/library.helper';
       LibraryBook,
     ]),
     BookCategoriesModule,
+    FilesModule,
+    ImagesModule,
   ],
   controllers: [LibraryBookController],
   providers: [LibraryBookService, LibraryHelper],

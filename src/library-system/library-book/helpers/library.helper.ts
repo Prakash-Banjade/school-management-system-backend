@@ -1,4 +1,4 @@
-import { ForbiddenException, Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { REQUEST } from "@nestjs/core";
 import { FastifyRequest } from "fastify";
 import { BaseRepository } from "src/common/repository/base-repository";
@@ -7,7 +7,7 @@ import { LibraryBook } from "../entities/library-book.entity";
 import { BookTransaction } from "src/library-system/book-transactions/entities/book-transaction.entity";
 import { QueryDto } from "src/common/dto/query.dto";
 import { AuthUser } from "src/common/types/global.type";
-import { isStudent } from "src/utils/utils";
+import { isStudent, isTeacher } from "src/utils/utils";
 import { UtilitiesService } from "src/utilities/utilities.service";
 
 @Injectable()
@@ -30,7 +30,6 @@ export class LibraryHelper extends BaseRepository {
             .getRawOne();
 
         const transactionCount = this.getRepository(BookTransaction).createQueryBuilder("transaction")
-            .leftJoin("transaction.student", "student")
             .leftJoin("transaction.book", "book")
             .where(new Brackets(qb => {
                 branchId && qb.andWhere('book.branchId = :branchId', { branchId });
@@ -42,15 +41,18 @@ export class LibraryHelper extends BaseRepository {
             ])
             .getRawOne();
 
-        const studentsCount = this.getRepository(BookTransaction).createQueryBuilder("transaction")
+        const membersCount = this.getRepository(BookTransaction).createQueryBuilder("transaction")
             .leftJoin("transaction.student", "student")
+            .leftJoin("transaction.teacher", "teacher")
             .leftJoin("transaction.book", "book")
             .where(new Brackets(qb => {
                 branchId && qb.andWhere('book.branchId = :branchId', { branchId });
             }))
             .select([
                 "COUNT(DISTINCT student.id) AS totalStudentCount",
-                `COUNT(DISTINCT CASE WHEN transaction.returnedAt IS NULL THEN student.id END) AS issuedStudentCount`
+                `COUNT(DISTINCT CASE WHEN transaction.returnedAt IS NULL THEN student.id END) AS issuedStudentCount`,
+                "COUNT(DISTINCT teacher.id) AS totalTeacherCount",
+                `COUNT(DISTINCT CASE WHEN transaction.returnedAt IS NULL THEN teacher.id END) AS issuedTeacherCount`,
             ])
             .getRawOne();
 
@@ -70,34 +72,39 @@ export class LibraryHelper extends BaseRepository {
             .getRawMany();
 
 
-        const data = await Promise.all([booksCount, transactionCount, studentsCount, topBooks]);
+        const data = await Promise.all([booksCount, transactionCount, membersCount, topBooks]);
 
         return {
             booksCount: +data[0].totalCount,
             transactionCount: +data[1].totalCount,
             issuedCount: +data[1].issuedCount,
             overdueCount: +data[1].overdueCount,
-            studentsCount: +data[2].totalStudentCount,
-            issuedStudentCount: +data[2].issuedStudentCount,
+            membersCount: +data[2].totalStudentCount + +data[2].totalTeacherCount,
+            issuedMembersCount: +data[2].issuedStudentCount + +data[2].issuedTeacherCount,
             topBooks: data[3]
         };
     }
 
-    async getDashboardCount_student(currentUser: AuthUser) {
-        if (!isStudent(currentUser)) throw new ForbiddenException();
+    async getDashboardCount_member(currentUser: AuthUser) {
+        const querybuilder = this.getRepository(BookTransaction).createQueryBuilder("transaction")
 
-        const transactionCount = await this.getRepository(BookTransaction).createQueryBuilder("transaction")
-            .leftJoin("transaction.student", "student")
-            .where("student.id = :studentId", { studentId: currentUser.studentId })
+        if (isTeacher(currentUser)) {
+            querybuilder.where("transaction.teacherId = :teacherId", { teacherId: currentUser.teacherId })
+        }
+
+        if (isStudent(currentUser)) {
+            querybuilder.where("transaction.studentId = :studentId", { studentId: currentUser.studentId })
+        }
+
+        querybuilder
             .select([
                 "COUNT(transaction.id) AS totalCount",
                 `COUNT(CASE WHEN transaction.returnedAt IS NULL AND DATE(transaction.dueDate) >= DATE(:today) THEN 1 END) AS issuedCount`,
                 `COUNT(CASE WHEN transaction.returnedAt IS NULL AND DATE(transaction.dueDate) < DATE(:today) THEN 1 END) AS overdueCount`,
             ])
             .setParameter("today", new Date().toISOString().split("T")[0])
-            .getRawOne();
 
-        return transactionCount;
+        return querybuilder.getRawOne();
     }
 
     async getOptions(queryDto: QueryDto) {

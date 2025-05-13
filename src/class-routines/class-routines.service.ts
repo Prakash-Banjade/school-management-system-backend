@@ -13,7 +13,7 @@ import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
-import { isAdmin, isStudent } from 'src/utils/utils';
+import { isAdmin, isStudent, isTeacher } from 'src/utils/utils';
 import { UtilitiesService } from 'src/utilities/utilities.service';
 import { Teacher } from 'src/teachers/entities/teacher.entity';
 
@@ -65,14 +65,19 @@ export class ClassRoutinesService extends BaseRepository {
     // validate if class room have the subject
     subject && this.validateIfClassRoomHaveSubject(subject, classRoom);
 
-    const newClassRoutine = this.getRepository(ClassRoutine).create({
-      ...dto,
-      classRoom,
-      subject,
-      teacher: teacher ?? null,
-    });
+    const newClassRoutines = dto.daysOfTheWeek.map(day => (
+      this.getRepository(ClassRoutine).create({
+        dayOfTheWeek: day,
+        startTime: dto.startTime,
+        endTime: dto.endTime,
+        type: dto.type,
+        classRoom,
+        subject,
+        teacher: teacher ?? null,
+      })
+    ));
 
-    await this.getRepository(ClassRoutine).save(newClassRoutine);
+    await this.getRepository(ClassRoutine).save(newClassRoutines);
 
     return { message: 'Class routine created' };
   }
@@ -85,8 +90,7 @@ export class ClassRoutinesService extends BaseRepository {
   async findAll(queryDto: ClassRoutineQueryDto, currentUser: AuthUser) {
     const querybuilder = this.getRepository(ClassRoutine).createQueryBuilder('classRoutine');
 
-    querybuilder
-      .orderBy("classRoutine.createdAt", queryDto.order)
+    querybuilder.orderBy("classRoutine.createdAt", queryDto.order)
 
     if (!queryDto.skipPagination) {
       querybuilder.offset(queryDto.skip).limit(queryDto.take);
@@ -98,23 +102,27 @@ export class ClassRoutinesService extends BaseRepository {
       .leftJoin('classRoutine.subject', 'subject')
       .leftJoin('classRoutine.teacher', 'teacher')
       .where(new Brackets(qb => {
-        queryDto.dayOfTheWeek && qb.andWhere('classRoutine.dayOfTheWeek = :dayOfTheWeek', { dayOfTheWeek: queryDto.dayOfTheWeek });
-
         if (isAdmin(currentUser) && queryDto.classRoomId) { // routine can be associated with parent ot itself is a parent
-          qb.andWhere(new Brackets(qb => {
-            qb.orWhere('parent.id = :classRoomId', { classRoomId: queryDto.classRoomId });
-            qb.orWhere('classRoom.id = :classRoomId', { classRoomId: queryDto.classRoomId });
-          }))
+          qb.andWhere("classRoom.id = :classRoomId OR parent.id = :classRoomId", { classRoomId: queryDto.classRoomId });
         }
 
-        if (isAdmin(currentUser)) { // admin access
+        if (isAdmin(currentUser)) {
           queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId }); // the sectionId send by the frontend is the class room id
           queryDto.subjectId && qb.andWhere('subject.id = :subjectId', { subjectId: queryDto.subjectId });
-        } else if (isStudent(currentUser)) {
-          qb.andWhere('classRoom.id = :classRoomId', { classRoomId: currentUser.classRoomId });
         }
-      }))
-      .cache(true);
+      }));
+
+    if (queryDto.dayOfTheWeek.length) {
+      querybuilder.andWhere('classRoutine.dayOfTheWeek IN (:...dayOfTheWeek)', { dayOfTheWeek: queryDto.dayOfTheWeek });
+    }
+
+    if (isStudent(currentUser)) {
+      querybuilder.andWhere('classRoom.id = :classRoomId', { classRoomId: currentUser.classRoomId }).cache(true); // cache result
+    }
+
+    if (isTeacher(currentUser)) {
+      querybuilder.andWhere('teacher.id = :teacherId', { teacherId: currentUser.teacherId }).cache(true); // cache result
+    }
 
     applySelectColumns(querybuilder, classRoutinesSelectCols, 'classRoutine');
     this.utilitiesService.applyBranchFilter(querybuilder, 'classRoom.branchId = :branchId');
@@ -140,25 +148,25 @@ export class ClassRoutinesService extends BaseRepository {
     });
     if (!existing) throw new NotFoundException('Class routine not found');
 
-    // update subject
-    if (updateClassRoutineDto.subjectId && (updateClassRoutineDto.subjectId !== existing.subject?.id || !existing.subject)) {
-      const subject = await this.getRepository(Subject).findOne({ where: { id: updateClassRoutineDto.subjectId }, select: { id: true } });
-      if (!subject) throw new NotFoundException('Subject not found');
-      existing.subject = subject;
-    }
+    // // update subject
+    // if (updateClassRoutineDto.subjectId && (updateClassRoutineDto.subjectId !== existing.subject?.id || !existing.subject)) {
+    //   const subject = await this.getRepository(Subject).findOne({ where: { id: updateClassRoutineDto.subjectId }, select: { id: true } });
+    //   if (!subject) throw new NotFoundException('Subject not found');
+    //   existing.subject = subject;
+    // }
 
-    // update class room
-    if (updateClassRoutineDto.classRoomId && (updateClassRoutineDto.classRoomId !== existing.classRoom?.id || !existing.classRoom)) {
-      const classRoom = await this.getRepository(ClassRoom).findOne({ where: { id: updateClassRoutineDto.classRoomId }, select: { id: true } });
-      if (!classRoom) throw new NotFoundException('Class room not found');
-      existing.classRoom = classRoom;
-    }
+    // // update class room
+    // if (updateClassRoutineDto.classRoomId && (updateClassRoutineDto.classRoomId !== existing.classRoom?.id || !existing.classRoom)) {
+    //   const classRoom = await this.getRepository(ClassRoom).findOne({ where: { id: updateClassRoutineDto.classRoomId }, select: { id: true } });
+    //   if (!classRoom) throw new NotFoundException('Class room not found');
+    //   existing.classRoom = classRoom;
+    // }
 
-    if (updateClassRoutineDto.teacherId && (updateClassRoutineDto.teacherId !== existing.teacher?.id || !existing.teacher)) {
-      const teacher = await this.getRepository(Teacher).findOne({ where: { id: updateClassRoutineDto.teacherId }, select: { id: true } });
-      if (!teacher) throw new NotFoundException('Teacher not found');
-      existing.teacher = teacher;
-    }
+    // if (updateClassRoutineDto.teacherId && (updateClassRoutineDto.teacherId !== existing.teacher?.id || !existing.teacher)) {
+    //   const teacher = await this.getRepository(Teacher).findOne({ where: { id: updateClassRoutineDto.teacherId }, select: { id: true } });
+    //   if (!teacher) throw new NotFoundException('Teacher not found');
+    //   existing.teacher = teacher;
+    // }
 
     Object.assign(existing, {
       ...updateClassRoutineDto,

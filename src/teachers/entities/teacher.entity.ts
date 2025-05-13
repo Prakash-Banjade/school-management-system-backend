@@ -7,22 +7,18 @@ import { Faculty } from "src/faculties/entities/faculty.entity";
 import { EmployeeLedger } from "src/finance-system/salary-management/employee-ledgers/entities/employee-ledger.entity";
 import { Payroll } from "src/finance-system/salary-management/payrolls/entities/payroll.entity";
 import { SalaryStructure } from "src/finance-system/salary-management/salary-structures/entities/salary-structure.entity";
+import { LessonPlan } from "src/lesson-plans/entities/lesson-plan.entity";
+import { BookTransaction } from "src/library-system/book-transactions/entities/book-transaction.entity";
 import { OnlineClass } from "src/online-classes/entities/online-class.entity";
 import { Subject } from "src/subjects/entities/subject.entity";
 import { TaskEvaluation } from "src/task-system/task-evaluations/entities/task-evaluation.entity";
-import { generateTeacherId } from "src/utils/generate-teacher-id";
-import { BeforeInsert, Column, Entity, Index, JoinColumn, JoinTable, ManyToMany, OneToMany, OneToOne } from "typeorm";
+import { Column, Entity, Index, JoinColumn, JoinTable, ManyToMany, OneToMany, OneToOne } from "typeorm";
 
 @Entity()
 export class Teacher extends BaseEntity {
     @Index({ unique: true })
-    @Column({ type: 'int' })
-    teacherId: number;
-
-    @BeforeInsert()
-    generateTeacherId() {
-        if (!this.teacherId) this.teacherId = generateTeacherId();
-    }
+    @Column({ type: 'varchar' })
+    teacherId: string;
 
     @Column({ type: 'varchar' })
     firstName: string;
@@ -83,6 +79,9 @@ export class Teacher extends BaseEntity {
     @OneToMany(() => OnlineClass, onlineClass => onlineClass.teacher)
     onlineClasses: OnlineClass[];
 
+    @OneToMany(() => LessonPlan, (lessonPlan) => lessonPlan.createdBy)
+    createdLessonPlans: LessonPlan[]
+
     @OneToMany(() => ClassRoutine, (classRoutine) => classRoutine.teacher)
     classRoutines: ClassRoutine[]
 
@@ -104,4 +103,7 @@ export class Teacher extends BaseEntity {
     setPayAmount(amount: number) {
         this.payAmount += amount;
     }
+
+    @OneToMany(() => BookTransaction, (bookTransaction) => bookTransaction.teacher)
+    bookTransactions: BookTransaction[];
 }

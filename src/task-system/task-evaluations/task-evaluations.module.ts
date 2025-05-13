@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { TaskEvaluation } from './entities/task-evaluation.entity';
 import { Teacher } from 'src/teachers/entities/teacher.entity';
 import { TaskSubmission } from '../task-submissions/entities/task-submission.entity';
+import { ClassRoutine } from 'src/class-routines/entities/class-routine.entity';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { TaskSubmission } from '../task-submissions/entities/task-submission.ent
       TaskEvaluation,
       Teacher,
       TaskSubmission,
+      ClassRoutine
     ])
   ],
   controllers: [TaskEvaluationsController],

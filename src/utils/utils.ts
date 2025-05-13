@@ -17,6 +17,10 @@ export function isStudent(authUser: AuthUser): authUser is Extract<AuthUser, { r
     return authUser.role === Role.STUDENT;
 }
 
+export function isTeacher(authUser: AuthUser): authUser is Extract<AuthUser, { role: Role.TEACHER }> {
+    return authUser.role === Role.TEACHER;
+}
+
 export function isAdmin(authUser: AuthUser): boolean {
     return ([Role.ADMIN, Role.SUPER_ADMIN] as Role[]).includes(authUser.role as Role);
 }

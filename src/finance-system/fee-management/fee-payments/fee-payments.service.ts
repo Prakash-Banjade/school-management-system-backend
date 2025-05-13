@@ -18,7 +18,8 @@ import { EMonth } from 'src/common/types/months';
 import { UnpaidTransactionsQueryDto } from 'src/library-system/book-transactions/dto/book-transactions-query.dto';
 import { AcademicYearsService } from 'src/academic-years/academic-years.service';
 import { BookTransaction } from 'src/library-system/book-transactions/entities/book-transaction.entity';
-import { startOfDayString } from 'src/utils/utils';
+import { isStudent, startOfDayString } from 'src/utils/utils';
+import { AuthUser } from 'src/common/types/global.type';
 
 @Injectable({ scope: Scope.REQUEST })
 export class FeePaymentsService extends BaseRepository {
@@ -88,7 +89,7 @@ export class FeePaymentsService extends BaseRepository {
         }
     }
 
-    async findOne(id: string) {
+    async findOne(id: string, currentUser: AuthUser) {
         const queryBuilder = this.getRepository(FeePayment).createQueryBuilder('feePayment')
             .leftJoin('feePayment.ledgerItem', 'paymentLedgerItem')
             .leftJoin('feePayment.feeInvoice', 'feeInvoice')
@@ -101,7 +102,13 @@ export class FeePaymentsService extends BaseRepository {
             .leftJoin('enrollment.student', 'student')
             .leftJoin('feeInvoice.items', 'items')
             .leftJoin('items.chargeHead', 'chargeHead')
-            .where('feePayment.id = :id', { id })
+            .where('feePayment.id = :id', { id });
+
+        if (isStudent(currentUser)) { // student can only see their own payments
+            queryBuilder.andWhere("student.id = :studentId", { studentId: currentUser.studentId });
+        }
+
+        queryBuilder
             .select([
                 'feePayment.id',
                 'feePayment.receiptNo',

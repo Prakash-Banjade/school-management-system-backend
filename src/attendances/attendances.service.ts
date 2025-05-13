@@ -13,7 +13,7 @@ import { BaseRepository } from 'src/common/repository/base-repository';
 import { FastifyRequest } from 'fastify';
 import { REQUEST } from '@nestjs/core';
 import { Account } from 'src/auth-system/accounts/entities/account.entity';
-import { isAdmin } from 'src/utils/utils';
+import { isAdmin, isTeacher } from 'src/utils/utils';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AttendancesService extends BaseRepository {
@@ -48,7 +48,13 @@ export class AttendancesService extends BaseRepository {
   async findAll(queryDto: AttendanceQueryDto, currentUser: AuthUser) {
     const queryBuilder = this.getRepository(Attendance).createQueryBuilder('attendance');
 
-    const accountId = isAdmin(currentUser) ? queryDto.accountId : currentUser.accountId;
+    const accountId = isAdmin(currentUser)
+      ? queryDto.accountId
+      : isTeacher(currentUser) // teacher can request the attendance of self and their students
+        ? queryDto.self
+          ? currentUser.accountId
+          : queryDto.accountId
+        : currentUser.accountId
 
     queryBuilder
       .orderBy("attendance.createdAt", queryDto.order)
@@ -68,7 +74,10 @@ export class AttendancesService extends BaseRepository {
   }
 
   async findOne(id: string) {
-    const existing = await this.getRepository(Attendance).findOneBy({ id });
+    const existing = await this.getRepository(Attendance).findOne({
+      where: { id },
+      select: { id: true, status: true, inTime: true, outTime: true }
+    });
     if (!existing) throw new NotFoundException('Attendance not found');
 
     return existing;
@@ -90,6 +99,8 @@ export class AttendancesService extends BaseRepository {
 
   async updateInBatch(updateAttendanceBatchDto: UpdateAttendanceBatchDto) {
     const attendancesToRemove = updateAttendanceBatchDto.updatedAttendances?.map(attendance => attendance.status === null ? attendance.id : null).filter(Boolean);
+
+    // TODO: if teacher is updating the attendance, make sure he is the class teacher
 
     const attendances = await Promise.all(updateAttendanceBatchDto.updatedAttendances.filter(a => a.status !== null)?.map(async attendance => {
       if (!!attendance?.outTime && !attendance?.inTime) throw new BadRequestException('There must be in time to have out time.')

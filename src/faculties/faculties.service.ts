@@ -8,8 +8,9 @@ import { FacultyOptionsQueryDto } from './dto/faculties-query.dto';
 import { paginatedRawData } from 'src/utils/paginatedData';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { UtilitiesService } from 'src/utilities/utilities.service';
-import { EClassType } from 'src/common/types/global.type';
+import { EClassType, Role } from 'src/common/types/global.type';
 import { QueryDto } from 'src/common/dto/query.dto';
+import { SCHOOL_LEVEL_FACULTY_NAME } from 'src/common/CONSTANTS';
 
 @Injectable()
 export class FacultiesService {
@@ -69,47 +70,41 @@ export class FacultiesService {
 
   async getOptions(queryDto: FacultyOptionsQueryDto) {
     const branchId = this.utilitiesService.getBranchId();
+    const currentUser = this.utilitiesService.getCurrentUser();
 
     const includeSection = queryDto.include === 'section';
-    const includeClassRoom = includeSection || queryDto.include === 'classRoom';
+    const includeClassRoom = includeSection || queryDto.include === 'classRoom' || currentUser.role === Role.TEACHER;
 
     if (queryDto.keyValue) return this.getOptionsByKeyValue(queryDto);
 
-    return this.facultiesRepo.createQueryBuilder('faculty')
+    const querybuilder = this.facultiesRepo.createQueryBuilder('faculty')
       .orderBy('faculty.name', 'ASC')
-      .leftJoin(
+      .select(["faculty.id", "faculty.name"]);
+
+    if (includeClassRoom) {
+      querybuilder.leftJoin(
         'faculty.classRooms',
         'classRooms',
-        includeClassRoom
-          ? !!branchId
-            ? "classRooms.branchId = :branchId AND classRooms.classType = :classType"
-            : 'classRooms.classType = :classType'
-          : '1 = 0',
+        !!branchId
+          ? "classRooms.branchId = :branchId AND classRooms.classType = :classType"
+          : 'classRooms.classType = :classType',
         { branchId, classType: EClassType.PRIMARY }
-      )
-      .leftJoin(
-        'classRooms.children',
-        'children',
-        includeSection ? '1 = 1' : '1 = 0'
-      )
-      .select([
-        "faculty.id",
-        "faculty.name",
-        ...(
-          includeClassRoom ? [
-            "classRooms.id",
-            "classRooms.name"
-          ] : []
-        ),
-        ...(
-          includeSection ? [
-            "children.id",
-            "children.name"
-          ] : []
-        )
+      ).addSelect([
+        "classRooms.id",
+        "classRooms.name"
       ])
-      .cache(true)
-      .getMany()
+    }
+
+    if (includeSection) {
+      querybuilder
+        .leftJoin('classRooms.children', 'children')
+        .addSelect([
+          "children.id",
+          "children.name"
+        ])
+    }
+
+    return querybuilder.cache(true).getMany();
   }
 
 
@@ -132,6 +127,8 @@ export class FacultiesService {
   async update(id: string, updateFacultyDto: UpdateFacultyDto) {
     const existing = await this.findOne(id)
 
+    if (existing.name === SCHOOL_LEVEL_FACULTY_NAME) throw new ForbiddenException("Cannot update school level faculty.");
+
     if (updateFacultyDto.name && updateFacultyDto.name?.toLowerCase() !== existing.name?.toLocaleLowerCase()) {
       const existingWithSameName = await this.facultiesRepo.findOne({ where: { name: ILike(updateFacultyDto.name) }, select: { id: true } });
       if (existingWithSameName) throw new ConflictException('Faculty with same name already exists');
@@ -145,10 +142,13 @@ export class FacultiesService {
   async remove(id: string) {
     const existingClassroom = await this.classRoomsRepo.findOne({
       where: { faculty: { id } },
-      select: { id: true }
+      relations: { faculty: true },
+      select: { id: true, name: true, faculty: { id: true, name: true } }
     });
 
     if (existingClassroom) throw new ForbiddenException("Cannot delete faculty because it has class rooms. Please delete the class rooms first.");
+
+    if (existingClassroom.faculty?.name === SCHOOL_LEVEL_FACULTY_NAME) throw new ForbiddenException("Cannot delete school level faculty.");
 
     await this.facultiesRepo.delete({ id });
 

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payroll</title>
+</head>
+
+<body>
+    <div class="min-h-[297mm] w-[210mm] bg-white text-black mx-auto flex flex-col" id="payroll-card">
+        <div class="bg-gray-50 border-b p-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">Employee Salary Payroll</h2>
+                    <p class="text-sm text-gray-600">Pay Period: {{formatDate startDate "MMM dd, yyyy"}} - {{formatDate
+                        endDate "MMM dd, yyyy"}}</p>
+                </div>
+            </div>
+        </div>
+        <div class="space-y-6 p-6">
+            <div class="space-y-2">
+                <h3 class="font-semibold text-lg text-gray-800">Employee Information</h3>
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                    <section class="flex items-start gap-2">
+                        <p class="text-gray-600">Name:</p>
+                        <p class="font-medium">{{employee.fullName}}</p>
+                    </section>
+                    <section class="flex items-start gap-2">
+                        <p class="text-gray-600">Employee ID:</p>
+                        <p class="font-medium">{{employee.employeeId}}</p>
+                    </section>
+                    <section class="flex items-start gap-2">
+                        <p class="text-gray-600">Position:</p>
+                        <p class="font-medium capitalize">{{employee.designation}}</p>
+                    </section>
+                    <section class="flex items-start gap-2">
+                        <p class="text-gray-600">Email:</p>
+                        <p class="font-medium break-words">{{employee.email}}</p>
+                    </section>
+                    <section class="flex items-start gap-2">
+                        <p class="text-gray-600">Phone:</p>
+                        <p class="font-medium break-words">{{employee.phone}}</p>
+                    </section>
+                </div>
+            </div>
+
+            <hr class="border-t border-gray-200 my-4">
+
+            <div class="space-y-4">
+                <h3 class="font-semibold text-lg text-gray-800">Earnings</h3>
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50">
+                            <th class="text-left p-2 font-semibold">Particular</th>
+                            <th class="text-right p-2 font-semibold">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-t border-gray-200">
+                            <td class="p-2">Basic Salary</td>
+                            <td class="text-right p-2">Rs. {{formatNumber basicSalary}}</td>
+                        </tr>
+                        <tr class="border-t border-gray-200">
+                            <td class="p-2">Allowances</td>
+                            <td class="text-right p-2">Rs. {{formatNumber allowanceAmount}}</td>
+                        </tr>
+                        {{#if unpaidAmount}}
+                        {{#gt unpaidAmount 0}}
+                        <tr class="border-t border-gray-200">
+                            <td class="p-2">Unpaid Salary</td>
+                            <td class="text-right p-2">Rs. {{formatNumber unpaidAmount}}</td>
+                        </tr>
+                        {{/gt}}
+                        {{/if}}
+                        {{#if advanceAmount}}
+                        {{#gt advanceAmount 0}}
+                        <tr class="border-t border-gray-200">
+                            <td class="p-2">Advance Amount this month</td>
+                            <td class="text-right p-2">Rs. {{formatNumber advanceAmount}}</td>
+                        </tr>
+                        {{/gt}}
+                        {{/if}}
+                        {{#each salaryAdjustments}}
+                        {{#eq this.type "Bonus"}}
+                        <tr class="border-t border-gray-200">
+                            <td class="p-2">{{this.description}}</td>
+                            <td class="text-right p-2">Rs. {{formatNumber this.amount}}</td>
+                        </tr>
+                        {{/eq}}
+                        {{/each}}
+                        <tr class="border-t border-gray-200 font-semibold">
+                            <td class="p-2">Gross Earnings</td>
+                            <td class="text-right p-2">Rs. {{formatNumber totalEarnings}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="space-y-4">
+                <h3 class="font-semibold text-lg text-gray-800">Deductions</h3>
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50">
+                            <th class="text-left p-2 font-semibold">Description</th>
+                            <th class="text-right p-2 font-semibold">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#if previousAdvanceAmount}}
+                        {{#gt previousAdvanceAmount 0}}
+                        <tr class="border-t border-gray-200">
+                            <td class="p-2">Previous Advance</td>
+                            <td class="text-right p-2">Rs. {{formatNumber previousAdvanceAmount}}</td>
+                        </tr>
+                        {{/gt}}
+                        {{/if}}
+                        {{#each deductions}}
+                        <tr class="border-t border-gray-200">
+                            <td class="p-2">{{this.description}}</td>
+                            <td class="text-right p-2">Rs. {{formatNumber this.amount}}</td>
+                        </tr>
+                        {{/each}}
+                        {{#if totalDeduction}}
+                        {{#gt totalDeduction 0}}
+                        <tr class="border-t border-gray-200 font-semibold">
+                            <td class="p-2">Total Deductions</td>
+                            <td class="text-right p-2">Rs. {{formatNumber totalDeduction}}</td>
+                        </tr>
+                        {{/gt}}
+                        {{/if}}
+                        {{#if noDeductions}}
+                        <tr class="border-t border-gray-200">
+                            <td colspan="2" class="text-gray-500 text-center p-2">
+                                No Deductions
+                            </td>
+                        </tr>
+                        {{/if}}
+                    </tbody>
+                </table>
+            </div>
+
+            <hr class="border-t border-gray-200 my-4">
+
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
+                <div class="space-y-1">
+                    <p class="text-xl font-bold text-gray-800">Net Pay: Rs. {{formatNumber netSalary}}</p>
+                    <p class="text-gray-500 text-sm"><span class="font-semibold">In Words</span>: {{amountInWords
+                        netSalary}}</p>
+                </div>
+            </div>
+
+            <div class="text-sm text-gray-500 space-y-2">
+                <p class="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="w-4 h-4 mr-1">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    For questions about your payroll, please contact HR at hr@abhyam-groups.com or ext. 1234.
+                </p>
+                <p class="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="w-4 h-4 mr-1">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    Next Pay Date: {{formatDate nextPayDate "MMM dd, yyyy"}}
+                </p>
+            </div>
+        </div>
+        <div class="bg-gray-50 border-t p-4 text-sm text-gray-500 mt-auto">
+            <p>This payroll statement is for informational purposes only and does not constitute a contract.</p>
+        </div>
+    </div>
+
+</body>
+
+</html>

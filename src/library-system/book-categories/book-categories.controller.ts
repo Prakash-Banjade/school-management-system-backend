@@ -24,7 +24,7 @@ export class BookCategoriesController {
   }
 
   @Get()
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @CheckAbilities({ subject: Role.USER, action: Action.READ })
   @ApiOperation({ summary: 'Get all book categories' })
   @ApiResponse({ status: 200, description: 'Book categories retrieved successfully' })
   findAll(@Query() queryDto: QueryDto, @BranchId() branchId: string | undefined) {
@@ -32,7 +32,7 @@ export class BookCategoriesController {
   }
 
   @Get(':id')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @CheckAbilities({ subject: Role.USER, action: Action.READ })
   @ApiOperation({ summary: 'Get a book category by ID' })
   @ApiResponse({ status: 200, description: 'Book category retrieved successfully' })
   @ApiParam({ name: 'id', description: 'ID of the book category' })

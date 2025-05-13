@@ -14,6 +14,13 @@ export type AuthUser = {
     studentId: string;
     branchId: string;
     deviceId: string;
+} | {
+    accountId: string;
+    email: string;
+    role: Role.TEACHER;
+    teacherId: string;
+    branchId: string;
+    deviceId: string;
 }
 
 export enum Action {
@@ -27,15 +34,10 @@ export enum Action {
 
 export enum Role {
     SUPER_ADMIN = 'super_admin',
-    MODERATOR = 'moderator',
     ADMIN = 'admin',
     USER = 'user',
     TEACHER = 'teacher',
-    GUARDIAN = 'guardian',
-    ACCOUNTANT = 'accountant',
-    RECEPTIONIST = 'receptionist',
     STUDENT = 'student',
-    LIBRARIAN = 'librarian',
     STAFF = 'staff',
 }
 
@@ -43,11 +45,6 @@ export enum Gender {
     MALE = 'male',
     FEMALE = 'female',
     OTHER = 'other',
-}
-
-export enum AuthProvider {
-    GOOGLE = 'google',
-    CREDENTIALS = 'credentials',
 }
 
 export enum EClassType {
@@ -156,13 +153,13 @@ export enum EDormitoryType {
 }
 
 export enum EDayOfWeek {
+    SUNDAY = 'sunday',
     MONDAY = 'monday',
     TUESDAY = 'tuesday',
     WEDNESDAY = 'wednesday',
     THURSDAY = 'thursday',
     FRIDAY = 'friday',
     SATURDAY = 'saturday',
-    SUNDAY = 'sunday',
 }
 
 export enum ERoutineType {
@@ -189,6 +186,8 @@ export enum EFileMimeType {
     PDF = 'application/pdf',
     DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Audio = 'audio/mpeg',
+    MP4 = 'video/mp4',
 }
 
 export enum EVehicleType {

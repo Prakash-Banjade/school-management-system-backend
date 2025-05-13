@@ -16,16 +16,20 @@ import { FeeInvoice } from "src/finance-system/fee-management/fee-invoice/entiti
 import { ELedgerItemType } from "src/finance-system/fee-management/student-ledgers/entities/ledger-item.entity";
 import { isUUID } from "class-validator";
 import { UtilitiesService } from "src/utilities/utilities.service";
+import { isTeacher } from "src/utils/utils";
+import { StudentsUtils } from "./students.utils";
 
 @Injectable()
 export class StudentsHelper extends BaseRepository {
     constructor(
         dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
         private readonly utilitiesService: UtilitiesService,
+        private readonly studentsUtils: StudentsUtils
     ) { super(dataSource, req); }
 
     async findAll(queryDto: StudentQueryDto) {
         const academicYearId = queryDto.academicYearId || await this.utilitiesService.getAcademicYearId();
+        const currentUser = this.utilitiesService.getCurrentUser();
 
         const queryBuilder = this.getRepository(Student).createQueryBuilder('student');
 
@@ -66,59 +70,30 @@ export class StudentsHelper extends BaseRepository {
             .cache(true)
             .select(
                 queryDto.includeLedgerAmount ? [
-                    ...this.getStudentsSelectCols(queryDto.onlyBasicInfo),
+                    ...this.studentsUtils.getStudentsSelectCols(queryDto.onlyBasicInfo),
                     "ledger.amount as ledgerAmount"
-                ] : this.getStudentsSelectCols(queryDto.onlyBasicInfo)
+                ] : this.studentsUtils.getStudentsSelectCols(queryDto.onlyBasicInfo)
             );
+
+        if (isTeacher(currentUser)) { // teacher can request students of his class routine classes
+            queryBuilder
+                .innerJoin('classRoom.classRoutines', 'classRoutine', 'classRoutine.teacherId = :teacherId', { teacherId: currentUser.teacherId })
+                .groupBy('student.id')
+                .addGroupBy("enrollments.rollNo")
+                .addGroupBy("classRoom.id")
+        }
 
         this.utilitiesService.applyBranchFilter(queryBuilder);
 
         return paginatedRawData(queryDto, queryBuilder);
     }
 
-    private getStudentsSelectCols(onlyBasicInfo: boolean) {
-        const basicCols = [
-            "student.id as id",
-            "CONCAT(student.firstName, ' ', student.lastName) AS fullName",
-            "enrollments.rollNo as rollNo",
-            "student.studentId as studentId",
-            "classRoom.id as classRoomId",
-            "CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, ' - ', classRoom.name) END AS classRoomName",
-            "faculty.name as faculty",
-        ];
-
-        return onlyBasicInfo
-            ? basicCols
-            : [
-                ...basicCols,
-                "student.phone as phone",
-                "student.email as email",
-                "student.dob as dob",
-                "student.studentId as studentId",
-                "student.gender as gender",
-                "profileImage.url as profileImageUrl",
-                "classRoom.id as classRoomId",
-                "classRoom.name as classRoom",
-                "parent.id as parentClassId",
-                "parent.name as parentClass",
-                "routeStop.id as routeStopId",
-                "routeStop.name as routeStop",
-                "account.id as accountId",
-                "faculty.name as faculty",
-            ]
-    }
-
     async checkIfStudentExists(studentDto: CreateStudentDto | UpdateStudentDto, student?: Student) {
-        const { rollNo, email, bankAccountNumber, nationalIdCardNo, birthCertificateNumber } = studentDto;
+        const { email, nationalIdCardNo, birthCertificateNumber } = studentDto;
 
         const duplicateEmailMsg = {
             field: 'email',
             message: 'Student with this email already exists'
-        };
-
-        const duplicateRollNoMsg = {
-            field: 'rollNo',
-            message: 'Student with this rollNo already exists'
         };
 
         const duplicateNationalIdCardNoMsg = {
@@ -126,17 +101,15 @@ export class StudentsHelper extends BaseRepository {
             message: 'Student with this nationalIdCardNo already exists'
         };
 
-        const duplicateBankAccountNumberMsg = {
-            field: 'bankAccountNumber',
-            message: 'Student with this bankAccountNumber already exists'
+        const duplicateBirthCertificateNumberMsg = {
+            field: 'birthCertificateNumber',
+            message: 'Student with this birth certificate number already exists'
         };
 
         const existingStudent = await this.getRepository(Student).createQueryBuilder('student')
             .where(new Brackets(qb => {
                 qb.where([
                     { email },
-                    { rollNo },
-                    { bankAccountNumber },
                     { nationalIdCardNo },
                     { birthCertificateNumber }
                 ])
@@ -145,21 +118,18 @@ export class StudentsHelper extends BaseRepository {
 
         if (existingStudent && !student) {
             if (existingStudent.email === email) throw new ConflictException(duplicateEmailMsg);
-            if (existingStudent.rollNo === rollNo) throw new ConflictException(duplicateRollNoMsg);
             if (existingStudent.nationalIdCardNo === nationalIdCardNo) throw new ConflictException(duplicateNationalIdCardNoMsg);
-            if (existingStudent.bankAccountNumber === bankAccountNumber) throw new ConflictException(duplicateBankAccountNumberMsg);
-            if (existingStudent.birthCertificateNumber === birthCertificateNumber) throw new ConflictException(duplicateBankAccountNumberMsg);
+            if (existingStudent.birthCertificateNumber === birthCertificateNumber) throw new ConflictException(duplicateBirthCertificateNumberMsg);
         } else if (existingStudent && student) {
             if (existingStudent.email === email && existingStudent.id !== student.id) throw new ConflictException(duplicateEmailMsg);
             if (existingStudent.nationalIdCardNo === nationalIdCardNo && existingStudent.id !== student.id) throw new ConflictException(duplicateNationalIdCardNoMsg);
-            if (existingStudent.rollNo === rollNo && existingStudent.id !== student.id) throw new ConflictException(duplicateRollNoMsg);
-            if (existingStudent.bankAccountNumber === bankAccountNumber && existingStudent.id !== student.id) throw new ConflictException(duplicateBankAccountNumberMsg);
-            if (existingStudent.birthCertificateNumber === birthCertificateNumber && existingStudent.id !== student.id) throw new ConflictException(duplicateBankAccountNumberMsg);
+            if (existingStudent.birthCertificateNumber === birthCertificateNumber && existingStudent.id !== student.id) throw new ConflictException(duplicateBirthCertificateNumberMsg);
         }
     }
 
     async getStudentsWithAttendance(queryDto: StudentAttendanceQueryDto) {
         const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
+        const currentUser = this.utilitiesService.getCurrentUser();
 
         const queryBuilder = this.getRepository(Student).createQueryBuilder('student')
             .innerJoin("student.enrollments", "enrollments", "enrollments.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
@@ -173,10 +143,20 @@ export class StudentsHelper extends BaseRepository {
                 "attendance.accountId = account.id AND DATE(attendance.date) = DATE(:attendanceDate)",
                 { attendanceDate: queryDto.date }
             )
-            .andWhere(new Brackets((qb) => {
-                queryDto.classRoomId && qb.andWhere('classRoom.id = :classRoomId OR parent.id = :classRoomId', { classRoomId: queryDto.classRoomId });
-                queryDto.sectionId && qb.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId });
-            }))
+
+        if (queryDto.classRoomId) {
+            queryBuilder.andWhere('classRoom.id = :classRoomId OR parent.id = :classRoomId', { classRoomId: queryDto.classRoomId })
+        }
+
+        if (queryDto.sectionId) {
+            queryBuilder.andWhere('classRoom.id = :sectionId', { sectionId: queryDto.sectionId })
+        }
+
+        if (isTeacher(currentUser)) { // teacher can view the attendance of their assigned classes only
+            queryBuilder.andWhere('classRoom.classTeacherId = :teacherId', { teacherId: currentUser.teacherId })
+        }
+
+        queryBuilder
             .select([
                 "student.id",
                 "student.firstName",

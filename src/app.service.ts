@@ -8,7 +8,7 @@ import { Faculty } from './faculties/entities/faculty.entity';
 import { AcademicYear } from './academic-years/entities/academic-year.entity';
 import { ChargeHead, EChargeHeadPeriod } from './finance-system/fee-management/charge-heads/entities/charge-head.entity';
 import { Role } from './common/types/global.type';
-import { CACHE_KEYS, CHARGE_HEADS, PASSWORD_SALT_COUNT } from './common/CONSTANTS';
+import { CACHE_KEYS, CHARGE_HEADS, PASSWORD_SALT_COUNT, SCHOOL_LEVEL_FACULTY_NAME } from './common/CONSTANTS';
 import bcrypt from 'bcryptjs';
 import { endOfYear, startOfYear } from 'date-fns';
 import { startOfDayString } from './utils/utils';
@@ -47,7 +47,7 @@ export class AppService {
 
     // Create default faculty
     const faculty = facultyRepo.create({
-      name: 'School Level',
+      name: SCHOOL_LEVEL_FACULTY_NAME,
     });
     await facultyRepo.save(faculty);
 

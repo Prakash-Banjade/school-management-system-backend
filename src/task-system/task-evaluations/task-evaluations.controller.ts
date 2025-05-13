@@ -21,22 +21,14 @@ export class TaskEvaluationsController {
   }
 
   @Get()
-  @CheckAbilities(
-    { subject: Role.ADMIN, action: Action.READ },
-    { subject: Role.TEACHER, action: Action.READ },
-    { subject: Role.STUDENT, action: Action.READ }
-  )
+  @CheckAbilities({ subject: Role.USER, action: Action.READ })
   findAll(@Query() queryDto: TaskEvaluationQueryDto, @CurrentUser() currentUser: AuthUser) {
     return this.taskEvaluationsService.findAll(queryDto, currentUser);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.taskEvaluationsService.findOne(+id);
-  }
-
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTaskEvaluationDto: UpdateTaskEvaluationDto) {
-    return this.taskEvaluationsService.update(+id, updateTaskEvaluationDto);
+  @CheckAbilities({ subject: Role.TEACHER, action: Action.CREATE })
+  update(@Param('id') id: string, @Body() dto: UpdateTaskEvaluationDto, @CurrentUser() currentUser: AuthUser) {
+    return this.taskEvaluationsService.update(id, dto, currentUser);
   }
 }

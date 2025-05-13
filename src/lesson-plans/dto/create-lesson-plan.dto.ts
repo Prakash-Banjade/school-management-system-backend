@@ -1,7 +1,7 @@
 import { BadRequestException } from "@nestjs/common";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
-import { ArrayMaxSize, ArrayMinSize, IsArray, IsDateString, isDateString, IsNotEmpty, IsOptional, IsString, IsUUID, Length, ValidateIf } from "class-validator";
+import { ArrayMaxSize, IsDateString, isDateString, IsNotEmpty, IsOptional, IsString, IsUUID, Length, ValidateIf } from "class-validator";
 import { isFuture, isToday } from "date-fns";
 import { IsFutureDate } from "src/common/decorators/validators/isFutureDate.decorator";
 import { IsUuidOrUrl } from "src/common/decorators/validators/isUrlOrUUid.decorator";
@@ -50,9 +50,7 @@ export class CreateLessonPlanDto {
     @IsUUID()
     subjectId: string;
 
-    @ApiProperty({ type: "string", format: 'uuid', description: 'ClassRoom ids' })
-    @IsUUID(4, { each: true })
-    @IsArray()
-    @ArrayMinSize(1)
-    classRoomIds: string[];
+    @ApiProperty({ type: "string", format: 'uuid', description: 'ClassRoom id' })
+    @IsUUID(4)
+    classRoomId: string;
 }

@@ -1,13 +1,15 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
+import { Transform } from "class-transformer";
 import { IsOptional, IsString } from "class-validator";
 import { ClassRoomSearchQueryDto } from "src/common/dto/classRoomSearchQueryDto";
 import { EDayOfWeek, ERoutineType } from "src/common/types/global.type";
 
 export class ClassRoutineQueryDto extends ClassRoomSearchQueryDto {
     @ApiPropertyOptional({ enum: EDayOfWeek, description: 'Day of the week' })
-    @IsString()
+    @IsString({ each: true })
     @IsOptional()
-    dayOfTheWeek: string;
+    @Transform(({ value }) => value ? value.split(',') : [])
+    dayOfTheWeek: string[] = [];
 
     @ApiPropertyOptional({ type: 'string', description: 'Start time' })
     @IsString()

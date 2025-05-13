@@ -1,9 +1,10 @@
 import { AcademicYear } from "src/academic-years/entities/academic-year.entity";
 import { ClassRoom } from "src/class-rooms/entities/class-room.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
+import { ExamResult } from "src/examination-system/exam-results/entities/exam-result.entity";
 import { ExamSubject } from "src/examination-system/exam-subjects/entities/exam-subject.entity";
 import { ExamType } from "src/examination-system/exam-types/entities/exam-type.entity";
-import { Column, Entity, ManyToOne, OneToMany, Unique } from "typeorm";
+import { Column, Entity, Index, ManyToOne, OneToMany, Unique } from "typeorm";
 
 @Entity()
 @Unique(['examType', 'classRoom', 'academicYear'])
@@ -20,6 +21,17 @@ export class Exam extends BaseEntity {
     @ManyToOne(() => AcademicYear, academicYear => academicYear.exams, { onDelete: 'CASCADE', nullable: false })
     academicYear: AcademicYear;
 
+    @Index()
+    @Column({ type: 'datetime', nullable: false })
+    startingFrom: string;
+
+    @Index()
+    @Column({ type: 'datetime', nullable: false })
+    endsOn: string;
+
     @Column({ type: 'boolean', default: false })
     isReportPublished: boolean;
+
+    @OneToMany(() => ExamResult, examResult => examResult.exam, { cascade: true })
+    examResults: ExamResult[];
 }

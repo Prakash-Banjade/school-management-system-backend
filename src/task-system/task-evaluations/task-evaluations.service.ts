@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTaskEvaluationDto } from './dto/create-task-evaluation.dto';
 import { UpdateTaskEvaluationDto } from './dto/update-task-evaluation.dto';
 import { Brackets, Repository } from 'typeorm';
@@ -9,7 +9,8 @@ import { AuthUser } from 'src/common/types/global.type';
 import { Teacher } from 'src/teachers/entities/teacher.entity';
 import { TaskEvaluationQueryDto } from './dto/task-evaluation-query.dto';
 import paginatedData from 'src/utils/paginatedData';
-import { isStudent } from 'src/utils/utils';
+import { isStudent, isTeacher } from 'src/utils/utils';
+import { ClassRoutine } from 'src/class-routines/entities/class-routine.entity';
 
 @Injectable()
 export class TaskEvaluationsService {
@@ -17,21 +18,16 @@ export class TaskEvaluationsService {
     @InjectRepository(TaskEvaluation) private readonly taskEvaluationRepo: Repository<TaskEvaluation>,
     @InjectRepository(TaskSubmission) private readonly taskSubmissionRepo: Repository<TaskSubmission>,
     @InjectRepository(Teacher) private readonly teacherRepo: Repository<Teacher>,
+    @InjectRepository(ClassRoutine) private readonly classRoutineRepo: Repository<ClassRoutine>,
   ) { }
 
   async create(dto: CreateTaskEvaluationDto, currentUser: AuthUser) {
-    const teacher = await this.teacherRepo.findOne({
-      where: {
-        account: { id: currentUser.accountId }
-      },
-      select: { id: true }
-    });
-    if (!teacher) throw new NotFoundException('Teacher not found');
+    if (!isTeacher(currentUser)) throw new NotFoundException('Access denied');
 
     const taskSubmission = await this.taskSubmissionRepo.createQueryBuilder('submission')
       .leftJoin('submission.task', 'task')
       .leftJoin('task.subject', 'subject')
-      .innerJoin('subject.teachers', 'teacher', 'teacher.id = :teacherId', { teacherId: teacher.id })
+      .innerJoin('subject.teachers', 'teacher', 'teacher.id = :teacherId', { teacherId: currentUser.teacherId })
       .where('submission.id = :submissionId', { submissionId: dto.taskSubmissionId })
       .select([
         'submission.id',
@@ -41,6 +37,8 @@ export class TaskEvaluationsService {
       .getOne();
 
     if (dto.score > taskSubmission.task.marks) throw new NotFoundException('Invalid score. Score cannot be greater than task marks');
+
+    const teacher = await this.teacherRepo.findOne({ where: { id: currentUser.teacherId }, select: { id: true } });
 
     const taskEvaluation = this.taskEvaluationRepo.create({
       ...dto,
@@ -76,7 +74,7 @@ export class TaskEvaluationsService {
         'taskEvaluation.score',
         'taskEvaluation.feedback',
         'taskEvaluation.createdAt',
-        'submission.id', 
+        'submission.id',
         'submission.createdAt',
         'task.id',
         'task.title',
@@ -91,11 +89,48 @@ export class TaskEvaluationsService {
     return paginatedData(queryDto, querybuilder);
   }
 
-  findOne(id: number) {
+  findOne(id: string) {
     return `This action returns a #${id} taskEvaluation`;
   }
 
-  update(id: number, dto: UpdateTaskEvaluationDto) {
-    return `This action updates a #${id} taskEvaluation`;
+  async update(id: string, dto: UpdateTaskEvaluationDto, currentUser: AuthUser) {
+    const existing = await this.taskEvaluationRepo.findOne({
+      where: { id },
+      relations: {
+        submission: { task: { classRoom: true, subject: true } }
+      },
+      select: {
+        id: true,
+        submission: {
+          id: true,
+          task: {
+            id: true,
+            classRoom: { id: true },
+            subject: { id: true }
+          }
+        }
+      }
+    });
+
+    if (!existing) throw new NotFoundException('Task evaluation not found');
+
+    if (isTeacher(currentUser)) { // if user is teacher, validate if he is allowed to update
+      const task = existing.submission.task;
+
+      const classRoutine = await this.classRoutineRepo.findOne({
+        where: {
+          classRoom: { id: task.classRoom.id },
+          subject: { id: task.subject.id },
+          teacher: { id: currentUser.teacherId }
+        },
+        select: { id: true }
+      });
+
+      if (!classRoutine) throw new ForbiddenException('Access denied');
+    }
+
+    await this.taskEvaluationRepo.update({ id }, dto);
+
+    return { message: 'Task evaluation updated' };
   }
 }

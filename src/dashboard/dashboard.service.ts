@@ -1,4 +1,4 @@
-import { Inject, Injectable, Scope } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, Scope } from '@nestjs/common';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { Brackets, DataSource } from 'typeorm';
 import { FastifyRequest } from 'fastify';
@@ -8,9 +8,12 @@ import { Teacher } from 'src/teachers/entities/teacher.entity';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { Staff } from 'src/staffs/entities/staff.entity';
 import { LeaveRequest } from 'src/leave-requests/entities/leave-request.entity';
-import { EClassType, ELeaveRequestStatus, Role } from 'src/common/types/global.type';
+import { AuthUser, EClassType, EDayOfWeek, ELeaveRequestStatus, Role } from 'src/common/types/global.type';
 import { UtilitiesService } from 'src/utilities/utilities.service';
 import { Account } from 'src/auth-system/accounts/entities/account.entity';
+import { isTeacher } from 'src/utils/utils';
+import { TaskSubmission } from 'src/task-system/task-submissions/entities/task-submission.entity';
+import { ClassRoutine } from 'src/class-routines/entities/class-routine.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class DashboardService extends BaseRepository {

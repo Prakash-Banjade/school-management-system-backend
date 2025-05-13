@@ -42,4 +42,9 @@ export class ExamStudentsQueryDto {
     @IsUUID()
     @IsOptional()
     optionalSubjectId?: string;
+
+    @ApiPropertyOptional({ type: "string", format: 'uuid', description: 'Section id' })
+    @IsOptional()
+    @IsString()
+    sectionId?: string;
 }

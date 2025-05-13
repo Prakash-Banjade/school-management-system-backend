@@ -1,18 +1,19 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { Brackets, In, Repository } from 'typeorm';
 import { Task } from './entities/task.entity';
-import { SubjectsService } from 'src/subjects/subjects.service';
-import { AuthUser, EClassType } from 'src/common/types/global.type';
+import { AuthUser } from 'src/common/types/global.type';
 import { selectTaskCols } from './helpers/select-task-cols.config';
 import { ClassRoom } from 'src/class-rooms/entities/class-room.entity';
 import { TaskQueryDto } from './dto/task-query.dto';
 import { FilesService } from 'src/file-management/files/files.service';
 import { paginatedRawData } from 'src/utils/paginatedData';
-import { UtilitiesService } from 'src/utilities/utilities.service';
 import { Account } from 'src/auth-system/accounts/entities/account.entity';
 import { InjectRepository } from '@nestjs/typeorm';
+import { isAdmin, isTeacher } from 'src/utils/utils';
+import { Subject } from 'src/subjects/entities/subject.entity';
+import { ClassRoutine } from 'src/class-routines/entities/class-routine.entity';
 
 @Injectable()
 export class TasksService {
@@ -20,9 +21,9 @@ export class TasksService {
     @InjectRepository(Account) private readonly accountRepo: Repository<Account>,
     @InjectRepository(Task) private readonly taskRepo: Repository<Task>,
     @InjectRepository(ClassRoom) private readonly classRoomRepo: Repository<ClassRoom>,
-    private readonly subjectsService: SubjectsService,
+    @InjectRepository(ClassRoutine) private readonly classRoutineRepo: Repository<ClassRoutine>,
+    // private readonly subjectsService: SubjectsService,
     private readonly filesService: FilesService,
-    private readonly utilitiesService: UtilitiesService,
   ) { }
 
   async create(createTaskDto: CreateTaskDto, currentUser: AuthUser) {
@@ -30,39 +31,57 @@ export class TasksService {
 
     const attachments = createTaskDto.attachmentIds?.length
       ? await this.filesService.findAllByIds(createTaskDto.attachmentIds)
-      : null;
+      : [];
 
-    // validate if class room have the subject
-    const classRoomWithSubject = await this.classRoomRepo.createQueryBuilder('classRoom')
-      .leftJoin('classRoom.subjects', 'subject')
-      .leftJoin('classRoom.children', 'children')
-      .where('subject.id = :subjectId', { subjectId: createTaskDto.subjectId })
-      .select(['classRoom.id', 'subject.id', 'children.id'])
-      .getOne();
+    let classRoom: ClassRoom;
+    let subject: Subject;
 
-    if (!classRoomWithSubject || !classRoomWithSubject.subjects[0]) throw new NotFoundException('No class found or the subject is not in the class')
+    if (isAdmin(currentUser)) {
+      // validate if class room have the subject
+      const classRoomWithSubject = await this.classRoomRepo.createQueryBuilder('classRoom')
+        .leftJoinAndSelect('classRoom.subjects', 'subject')
+        .where('subject.id = :subjectId', { subjectId: createTaskDto.subjectId })
+        .select(['classRoom.id', 'subject.id'])
+        .getOne();
 
-    const classRoomsTheTaskFor = createTaskDto.classRoomIds?.length > 1 // if length is greater than one, then class room must be of type section, so we need to get children
-      ? classRoomWithSubject.children?.filter(classRoom => createTaskDto.classRoomIds.includes(classRoom.id)) // getting only those childrens which has a match in classRoomIds
-      : classRoomWithSubject.id === createTaskDto.classRoomIds[0] // check if the classRoomIds[0](can be primary class) is equal to the classRoomWithSubject
-        ? [classRoomWithSubject]
-        : [classRoomWithSubject.children?.find(classRoom => classRoom.id === createTaskDto.classRoomIds[0])].filter(Boolean); // At this stage, it is guaranteed that the classRoomIds[0] is a child of the classRoomWithSubject;
+      if (!classRoomWithSubject || !classRoomWithSubject.subjects[0]) throw new NotFoundException('No class found or the subject is not in the class')
 
-    if (!classRoomsTheTaskFor?.length) throw new NotFoundException('Class room not found with subject');
+      classRoom = classRoomWithSubject;
+      subject = classRoomWithSubject.subjects[0];
+    }
+
+    if (isTeacher(currentUser)) {
+      // teacher must posses a schedule in the class room with the subject
+      const classRoutine = await this.classRoutineRepo.createQueryBuilder('classRoutine')
+        .leftJoinAndSelect('classRoutine.classRoom', 'classRoom')
+        .leftJoinAndSelect('classRoutine.subject', 'subject')
+        .leftJoinAndSelect('classRoutine.teacher', 'teacher')
+        .where("teacher.id = :teacherId", { teacherId: currentUser.teacherId })
+        .andWhere("subject.id = :subjectId", { subjectId: createTaskDto.subjectId })
+        .andWhere("classRoom.id = :classRoomId", { classRoomId: createTaskDto.classRoomId })
+        .select(['classRoutine.id', 'classRoom.id', 'subject.id'])
+        .getOne();
+
+      if (!classRoutine) throw new BadRequestException("You don't have a schedule in the class.")
+
+      classRoom = classRoutine.classRoom;
+      subject = classRoutine.subject;
+    }
 
     const newTask = this.taskRepo.create({
       ...createTaskDto,
       setBy: account,
-      subject: classRoomWithSubject.subjects[0],
+      subject,
       attachments,
-      classRooms: classRoomsTheTaskFor,
-    })
+      classRoom,
+    });
 
     await this.taskRepo.save(newTask);
+
     return { message: 'Task created successfully' };
   }
 
-  async findAll(queryDto: TaskQueryDto) {
+  async findAll(queryDto: TaskQueryDto, currentUser: AuthUser, branchId: string | undefined) {
     const queryBuilder = this.taskRepo.createQueryBuilder('task');
 
     queryBuilder
@@ -70,7 +89,7 @@ export class TasksService {
       .offset(queryDto.skip)
       .limit(queryDto.take)
       .leftJoin('task.subject', 'subject')
-      .leftJoin('task.classRooms', 'classRoom')
+      .leftJoin('task.classRoom', 'classRoom')
       .leftJoin('classRoom.parent', 'parent')
       .leftJoin('classRoom.faculty', 'faculty')
       .andWhere(new Brackets(qb => {
@@ -82,7 +101,13 @@ export class TasksService {
 
         queryDto.subjectId && qb.andWhere('subject.id = :subjectId', { subjectId: queryDto.subjectId });
         queryDto.taskType && qb.andWhere('task.taskType = :taskType', { taskType: queryDto.taskType });
-      }))
+      }));
+
+    if (branchId) {
+      queryBuilder.andWhere('classRoom.branchId = :branchId', { branchId });
+    }
+
+    queryBuilder
       .select([
         "task.id as id",
         "task.title as title",
@@ -91,14 +116,18 @@ export class TasksService {
         "task.marks as marks",
         "task.createdAt as createdAt",
         "subject.subjectName as subjectName",
-        "JSON_ARRAYAGG(JSON_OBJECT('id', classRoom.id, 'name', classRoom.name)) as classRooms", // Aggregate classrooms as JSON
-        "MAX(parent.id) as parentClassId",  // Aggregate non-grouped fields with MAX
-        "MAX(parent.name) as parentClassName",
-        "MAX(faculty.name) as faculty",
+        "classRoom.id as classRoomId",
+        "classRoom.fullName as classRoomName",
+        "parent.id as parentClassId",  // Aggregate non-grouped fields with MAX
+        "parent.name as parentClassName",
+        "faculty.name as faculty",
       ])
       .groupBy("task.id");
 
-    this.utilitiesService.applyBranchFilter(queryBuilder, "classRoom.branchId = :branchId");
+    if (isTeacher(currentUser)) {
+      queryBuilder
+        .innerJoin('classRoom.classRoutines', 'classRoutine', 'classRoutine.teacherId = :teacherId', { teacherId: currentUser.teacherId })
+    }
 
     return paginatedRawData(queryDto, queryBuilder);
   }
@@ -119,59 +148,73 @@ export class TasksService {
     return taskStatistics;
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, branchId: string) {
     const existingTask = await this.taskRepo.findOne({
       where: {
         id,
-        classRooms: { branch: { id: this.utilitiesService.getBranchId() } }
+        classRoom: { branch: { id: branchId } },
       },
       relations: {
         subject: true,
         setBy: true,
         attachments: true,
-        classRooms: {
+        classRoom: {
           parent: true,
           faculty: true
         }
       },
       select: selectTaskCols,
     });
+
     if (!existingTask) throw new NotFoundException(`Task with id ${id} not found`);
+
     return existingTask;
   }
 
-  async update(id: string, updateTaskDto: UpdateTaskDto) {
-    const existingTask = await this.findOne(id);
+  async update(id: string, updateTaskDto: UpdateTaskDto, branchId: string, currentUser: AuthUser) {
+    const existingTask = await this.findOne(id, branchId);
+
+    if (isTeacher(currentUser)) { // if user is teacher, validate if he is allowed to update
+      const classRoutine = await this.classRoutineRepo.findOne({
+        where: {
+          classRoom: { id: existingTask.classRoom.id },
+          subject: { id: existingTask.subject.id },
+          teacher: { id: currentUser.teacherId }
+        },
+        select: { id: true }
+      });
+
+      if (!classRoutine) throw new ForbiddenException('Access denied');
+    }
+
     const attachments = updateTaskDto.attachmentIds ?
       await this.filesService.findAllByIds(updateTaskDto.attachmentIds)
       : existingTask.attachments;
 
-    // validate subject
-    const subject = updateTaskDto.subjectId
-      ? await this.subjectsService.findOne(updateTaskDto.subjectId)
-      : existingTask.subject;
+    // // validate subject
+    // const subject = updateTaskDto.subjectId
+    //   ? await this.subjectsService.findOne(updateTaskDto.subjectId)
+    //   : existingTask.subject;
 
-    // validate class room
-    const classRooms = updateTaskDto.classRoomIds?.length
-      ? await this.classRoomRepo.find({
-        where: {
-          id: In(updateTaskDto.classRoomIds)
-        },
-        relations: ['parent']
-      })
-      : existingTask.classRooms;
+    // // validate class room
+    // const classRooms = updateTaskDto.classRoomIds?.length
+    //   ? await this.classRoomRepo.find({
+    //     where: {
+    //       id: In(updateTaskDto.classRoomIds)
+    //     },
+    //     relations: ['parent']
+    //   })
+    //   : existingTask.classRooms;
 
     // validate if class room have the subject
-    if (!classRooms?.length) throw new BadRequestException('No class room found with the given ids');
+    // if (!classRooms?.length) throw new BadRequestException('No class room found with the given ids');
 
-    if (classRooms[0].classType === EClassType.SECTION) {
-      const parentClassId = classRooms[0].parent?.id;
-      if (parentClassId !== subject.classRoom?.id) throw new BadRequestException('Subject doesn\'t belong to the class room');
-    } else if (subject.classRoom?.id !== classRooms[0].id) throw new BadRequestException('Subject doesn\'t belong to the class room');
+    // if (classRooms[0].classType === EClassType.SECTION) {
+    //   const parentClassId = classRooms[0].parent?.id;
+    //   if (parentClassId !== subject.classRoom?.id) throw new BadRequestException('Subject doesn\'t belong to the class room');
+    // } else if (subject.classRoom?.id !== classRooms[0].id) throw new BadRequestException('Subject doesn\'t belong to the class room');
 
     existingTask.attachments = attachments;
-    existingTask.subject = subject;
-    existingTask.classRooms = classRooms;
 
     const updatedTask = this.taskRepo.merge(existingTask, updateTaskDto);
 
@@ -180,10 +223,28 @@ export class TasksService {
     return { message: 'Task updated' }
   }
 
-  async remove(id: string) {
+  async remove(id: string, currentUser: AuthUser) {
+    if (isTeacher(currentUser)) {
+      const existingTask = await this.findOne(id, currentUser.branchId);
+
+      if (isTeacher(currentUser)) { // if user is teacher, validate if he is allowed to delete
+        const classRoutine = await this.classRoutineRepo.findOne({
+          where: {
+            classRoom: { id: existingTask.classRoom.id },
+            subject: { id: existingTask.subject.id },
+            teacher: { id: currentUser.teacherId }
+          },
+          select: { id: true }
+        });
+
+        if (!classRoutine) throw new ForbiddenException('Access denied');
+
+        await this.taskRepo.delete({ id });
+      }
+    }
+
     await this.taskRepo.delete({ id });
 
     return { message: 'Task removed' }
   }
-
 }

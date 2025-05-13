@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -6,10 +6,10 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
 import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
-import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 import { TaskQueryDto } from './dto/task-query.dto';
 import { TaskStudentViewService } from './task.student-view.service';
 import { isStudent } from 'src/utils/utils';
+import { BranchId } from 'src/common/decorators/branchId.decorator';
 
 @ApiBearerAuth()
 @ApiTags('Tasks')
@@ -21,20 +21,20 @@ export class TasksController {
   ) { }
 
   @Post()
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
+  @CheckAbilities(
+    { subject: Role.ADMIN, action: Action.CREATE },
+    { subject: Role.TEACHER, action: Action.CREATE }
+  )
   create(@Body() createTaskDto: CreateTaskDto, @CurrentUser() currentUser: AuthUser) {
     return this.tasksService.create(createTaskDto, currentUser);
   }
 
   @Get()
-  @CheckAbilities(
-    { subject: Role.ADMIN, action: Action.READ },
-    { subject: Role.STUDENT, action: Action.READ }
-  )
-  findAll(@Query() queryDto: TaskQueryDto, @CurrentUser() currentUser: AuthUser) {
+  @CheckAbilities({ subject: Role.USER, action: Action.READ })
+  findAll(@Query() queryDto: TaskQueryDto, @CurrentUser() currentUser: AuthUser, @BranchId() branchId: string | undefined) {
     return isStudent(currentUser)
       ? this.taskStudentViewService.findAll(queryDto, currentUser)
-      : this.tasksService.findAll(queryDto);
+      : this.tasksService.findAll(queryDto, currentUser, branchId);
   }
 
   @Get('counts')
@@ -44,26 +44,38 @@ export class TasksController {
   }
 
   @Get(':id/statistics')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
+  @CheckAbilities(
+    { subject: Role.ADMIN, action: Action.READ },
+    { subject: Role.TEACHER, action: Action.READ }
+  )
   getStatistics(@Param('id') id: string) {
     return this.tasksService.getStatistics(id);
   }
 
   @Get(':id')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
-  findOne(@Param('id') id: string, @CurrentUser() currentUser: AuthUser) {
-    return this.tasksService.findOne(id);
+  @CheckAbilities(
+    { subject: Role.ADMIN, action: Action.READ },
+    { subject: Role.TEACHER, action: Action.READ }
+  )
+  findOne(@Param('id') id: string, @BranchId() branchId: string | undefined) {
+    return this.tasksService.findOne(id, branchId);
   }
 
   @Patch(':id')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
-  update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto) {
-    return this.tasksService.update(id, updateTaskDto);
+  @CheckAbilities(
+    { subject: Role.ADMIN, action: Action.UPDATE },
+    { subject: Role.TEACHER, action: Action.UPDATE }
+  )
+  update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto, @CurrentUser() currentUser: AuthUser, @BranchId() branchId: string | undefined) {
+    return this.tasksService.update(id, updateTaskDto, branchId, currentUser);
   }
 
   @Delete(':id')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.DELETE })
-  remove(@Param('id') id: string) {
-    return this.tasksService.remove(id);
+  @CheckAbilities(
+    { subject: Role.ADMIN, action: Action.DELETE },
+    { subject: Role.TEACHER, action: Action.DELETE }
+  )
+  remove(@Param('id') id: string, @CurrentUser() currentUser: AuthUser) {
+    return this.tasksService.remove(id, currentUser);
   }
 }

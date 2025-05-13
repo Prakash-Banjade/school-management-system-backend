@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { EnvService } from 'src/env/env.service';
 import { FastifyRequest } from 'fastify';
 import { generateDeviceId } from 'src/utils/utils';
+import { Teacher } from 'src/teachers/entities/teacher.entity';
 
 @Injectable()
 export class JwtService {
@@ -15,6 +16,7 @@ export class JwtService {
         private readonly jwtService: JwtSer,
         private readonly envService: EnvService,
         @InjectRepository(Student) private readonly studentRepo: Repository<Student>,
+        @InjectRepository(Teacher) private readonly teacherRepo: Repository<Teacher>,
     ) { }
 
     async createAccessToken(payload: AuthUser): Promise<string> {
@@ -80,6 +82,28 @@ export class JwtService {
                 branchId: student.account?.branch?.id ?? undefined,
                 deviceId,
             };
+        } else if (account.role === Role.TEACHER) {
+            const teacher = await this.teacherRepo.findOne({
+                where: {
+                    account: { id: account.id },
+                },
+                relations: {
+                    account: { branch: true },
+                },
+                select: {
+                    id: true,
+                    account: { id: true, branch: { id: true } }
+                }
+            });
+
+            payload = {
+                accountId: account.id,
+                email: account.email,
+                role: Role.TEACHER,
+                teacherId: teacher.id,
+                branchId: teacher.account?.branch?.id ?? undefined,
+                deviceId,
+            }
         } else {
             payload = {
                 accountId: account.id,

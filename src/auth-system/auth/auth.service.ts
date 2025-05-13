@@ -158,7 +158,7 @@ export class AuthService extends BaseRepository {
     const newPassword = generateRandomPassword();
 
     foundAccount.verifiedAt = new Date();
-    foundAccount.password = newPassword;
+    foundAccount.password = bcrypt.hashSync(newPassword, PASSWORD_SALT_COUNT);
     foundAccount.prevPasswords = [bcrypt.hashSync(newPassword, PASSWORD_SALT_COUNT)];
     await this.getRepository(Account).save(foundAccount);
 

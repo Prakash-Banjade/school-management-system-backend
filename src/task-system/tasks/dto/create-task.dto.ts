@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
-import { ArrayMaxSize, ArrayMinSize, IsArray, IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Length, Max, ValidateIf } from "class-validator";
+import { ArrayMaxSize, IsArray, IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Length, ValidateIf } from "class-validator";
 import { IsFutureDate } from "src/common/decorators/validators/isFutureDate.decorator";
 import { IsUuidOrUrl } from "src/common/decorators/validators/isUrlOrUUid.decorator";
 import { ETask } from "src/common/types/global.type";
@@ -46,9 +46,7 @@ export class CreateTaskDto {
     @IsNotEmpty()
     subjectId: string;
 
-    @ApiProperty({ type: "string", format: 'uuid', description: 'ClassRoom ids' })
-    @IsUUID(4, { each: true })
-    @IsArray()
-    @ArrayMinSize(1)
-    classRoomIds: string[];
+    @ApiProperty({ type: "string", format: 'uuid', description: 'ClassRoom id' })
+    @IsUUID()
+    classRoomId: string;
 }

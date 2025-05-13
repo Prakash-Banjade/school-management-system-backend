@@ -46,7 +46,7 @@ export class AttendancesHelper extends BaseRepository {
             .addSelect('COUNT(attendance.id)', 'attendanceCount')
             .where(new Brackets(qb => {
                 queryDto.year && qb.andWhere('YEAR(attendance.date) = :year', { year: queryDto.year });
-                
+
                 if (accountId) qb.andWhere('account.id = :accountId', { accountId })
             }))
             .groupBy('attendance.status');
@@ -54,7 +54,7 @@ export class AttendancesHelper extends BaseRepository {
         // Run both queries and format the result into the desired structure
         const [monthlyResult, yearlyResult] = await Promise.all([
             monthlyQuery.getRawMany(),
-            yearlyQuery.getRawMany(),
+            !queryDto.onlyMonthly && yearlyQuery.getRawMany(), // will return null if onlyMonthly is true
         ]);
 
         const formatResult = (result: { status: EAttendanceStatus, attendanceCount: string }[]) => {
@@ -72,12 +72,15 @@ export class AttendancesHelper extends BaseRepository {
                 total: countDaysInMonth(queryDto.year, queryDto.month),
                 month: queryDto.month,
             },
-            yearly: {
+        };
+
+        if (!queryDto.onlyMonthly) {
+            finalResult["yearly"] = {
                 ...formatResult(yearlyResult),
                 year: queryDto.year,
                 total: countDaysInYear(queryDto.year),
-            },
-        };
+            }
+        }
 
         return finalResult;
     }

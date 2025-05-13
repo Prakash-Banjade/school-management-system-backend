@@ -11,6 +11,7 @@ import { FastifyRequest } from "fastify";
 import { REQUEST } from "@nestjs/core";
 import { UtilitiesService } from "src/utilities/utilities.service";
 import { QueryDto } from "src/common/dto/query.dto";
+import { isTeacher } from "src/utils/utils";
 
 @Injectable()
 export class ClassRoomsHelper extends BaseRepository {
@@ -50,6 +51,7 @@ export class ClassRoomsHelper extends BaseRepository {
                 "faculty.id as facultyId",
                 "CONCAT(classTeacher.firstName, ' ', classTeacher.lastName) as classTeacherName",
                 'parentClass.name as parentClassName',
+                'parentClass.id as parentClassId',
                 `(SELECT JSON_ARRAYAGG(
                     JSON_OBJECT(
                       'teacherName', CONCAT(childClassTeacher.firstName, ' ', childClassTeacher.lastName),
@@ -67,8 +69,9 @@ export class ClassRoomsHelper extends BaseRepository {
                 `COUNT(DISTINCT CASE WHEN student.gender = '${Gender.MALE}' THEN student.id END) + COUNT(DISTINCT CASE WHEN childClassStudent.gender = '${Gender.MALE}' THEN childClassStudent.id END) AS totalMaleStudentsCount`,
                 `COUNT(DISTINCT CASE WHEN student.gender = '${Gender.FEMALE}' THEN student.id END) + COUNT(DISTINCT CASE WHEN childClassStudent.gender = '${Gender.FEMALE}' THEN childClassStudent.id END) AS totalFemaleStudentsCount`
             ])
+            .cache(true)
             .groupBy('classRoom.id')  // Ensure group by to aggregate counts per classRoom
-            .addGroupBy('parentClass.name')
+            .addGroupBy('parentClass.id')
 
         this.utilitiesService.applyBranchFilter(queryBuilder, "classRoom.branchId = :branchId");
 
@@ -118,17 +121,24 @@ export class ClassRoomsHelper extends BaseRepository {
     // this is used in single class room page in frontend
     async getClassRoomDetails(id: string) {
         const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();
+        const currentUser = this.utilitiesService.getCurrentUser();
 
-        return this.getRepository(ClassRoom).createQueryBuilder('classRoom')
+        const querybuilder = this.getRepository(ClassRoom).createQueryBuilder('classRoom')
             .where('classRoom.id = :classroomId', { classroomId: id }) // Filter by specific classroom ID
             .leftJoin('classRoom.classTeacher', 'classTeacher')
             .leftJoin('classRoom.faculty', 'faculty')
             .leftJoin('classRoom.students', 'student', 'FIND_IN_SET(:currentAcademicYearId, student.academicYearIds) > 0', { currentAcademicYearId })
             .leftJoin('classRoom.children', 'childClass')
-            .leftJoin('childClass.students', 'childClassStudent', 'FIND_IN_SET(:currentAcademicYearId, childClassStudent.academicYearIds) > 0', { currentAcademicYearId })
+            .leftJoin('childClass.students', 'childClassStudent', 'FIND_IN_SET(:currentAcademicYearId, childClassStudent.academicYearIds) > 0', { currentAcademicYearId });
+
+        if (isTeacher(currentUser)) {
+            querybuilder.andWhere("classRoom.classTeacherId = :teacherId", { teacherId: currentUser.teacherId });
+        }
+
+        querybuilder
             .select([
                 'classRoom.id as id',
-                'classRoom.name as name',
+                'classRoom.fullName as name',
                 'classRoom.description as description',
                 'classRoom.location as location',
                 'classRoom.classType as classType',
@@ -143,7 +153,9 @@ export class ClassRoomsHelper extends BaseRepository {
                 'COUNT(DISTINCT student.id) + COUNT(DISTINCT childClassStudent.id) AS totalStudentsCount',
                 `COUNT(DISTINCT CASE WHEN student.gender = '${Gender.MALE}' THEN student.id END) + COUNT(DISTINCT CASE WHEN childClassStudent.gender = '${Gender.MALE}' THEN childClassStudent.id END) AS totalMaleStudentsCount`,
                 `COUNT(DISTINCT CASE WHEN student.gender = '${Gender.FEMALE}' THEN student.id END) + COUNT(DISTINCT CASE WHEN childClassStudent.gender = '${Gender.FEMALE}' THEN childClassStudent.id END) AS totalFemaleStudentsCount`
-            ]).getRawOne();
+            ]);
+
+        return querybuilder.getRawOne();
     }
 
     // used in teacher panel
@@ -156,7 +168,6 @@ export class ClassRoomsHelper extends BaseRepository {
             .leftJoin('classRoom.classRoutines', 'classRoutine')
             .leftJoin('classRoutine.teacher', 'teacher')
             .leftJoin('classRoutine.subject', 'subject')
-            .leftJoin('classRoom.parent', 'parent')
             .where('teacher.accountId = :accountId', { accountId })
             .andWhere(new Brackets((qb) => {
                 if (queryDto.search) {
@@ -166,7 +177,7 @@ export class ClassRoomsHelper extends BaseRepository {
             .groupBy('classRoom.id, subject.id') // Group by unique key combination
             .select([
                 'classRoom.id as id',
-                'CASE WHEN parent.id IS NULL THEN classRoom.name ELSE CONCAT(parent.name, \' - \', classRoom.name) END as name',
+                'classRoom.fullName as name',
                 'subject.id as subjectId',
                 'subject.subjectName as subjectName',
             ]);

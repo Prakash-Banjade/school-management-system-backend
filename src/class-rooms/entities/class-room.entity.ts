@@ -90,7 +90,7 @@ export class ClassRoom extends BaseEntity {
     @OneToMany(() => OptionalSubject, (optionalSubject) => optionalSubject.classRoom)
     optionalSubjects: OptionalSubject[];
 
-    @ManyToMany(() => Task, (task) => task.classRooms)
+    @OneToMany(() => Task, (task) => task.classRoom)
     tasks: Task[]
 
     @OneToMany(() => ClassRoutine, (classRoutine) => classRoutine.classRoom)
@@ -99,7 +99,7 @@ export class ClassRoom extends BaseEntity {
     @OneToMany(() => Exam, exam => exam.classRoom)
     exams: Exam[];
 
-    @ManyToMany(() => LessonPlan, lessonPlan => lessonPlan.classRooms)
+    @OneToMany(() => LessonPlan, lessonPlan => lessonPlan.classRoom)
     lessonPlans: LessonPlan[];
 
     @OneToMany(() => FeeStructure, feeStructure => feeStructure.classRoom, { cascade: true })

@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
-import { IsOptional, IsString } from "class-validator";
+import { IsDateString, IsOptional, IsString } from "class-validator";
 import { QueryDto } from "src/common/dto/query.dto";
 
 const employeesSortBy = {
@@ -30,4 +30,21 @@ export class GetEmployeesQueryDto extends QueryDto {
         return 'salaryStructure.createdAt';
     })
     sortBy?: string = 'salaryStructure.createdAt';
+}
+
+export class PayrollsQueryDto extends QueryDto {
+    @ApiPropertyOptional({ type: 'string', description: 'Employee id' })
+    @IsOptional()
+    @IsString()
+    employeeId?: string;
+
+    @ApiPropertyOptional({ format: 'date-time', description: 'Date from' })
+    @IsDateString()
+    @IsOptional()
+    dateFrom?: string;
+
+    @ApiPropertyOptional({ format: 'date-time', description: 'Date to' })
+    @IsDateString()
+    @IsOptional()
+    dateTo?: string;
 }

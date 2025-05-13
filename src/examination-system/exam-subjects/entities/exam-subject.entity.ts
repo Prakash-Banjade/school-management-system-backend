@@ -2,9 +2,10 @@ import { BaseEntity } from "src/common/entities/base.entity";
 import { ExamReport } from "src/examination-system/exam-reports/entities/exam-report.entity";
 import { Exam } from "src/examination-system/exams/entities/exam.entity";
 import { Subject } from "src/subjects/entities/subject.entity";
-import { Column, Entity, ManyToOne, OneToMany } from "typeorm";
+import { Column, Entity, ManyToOne, OneToMany, Unique } from "typeorm";
 
 @Entity()
+@Unique(['exam', 'subject'])
 export class ExamSubject extends BaseEntity {
     @Column({ type: 'datetime' })
     examDate: string;
@@ -33,7 +34,7 @@ export class ExamSubject extends BaseEntity {
     @ManyToOne(() => Exam, exam => exam.examSubjects, { onDelete: 'CASCADE' })
     exam: Exam;
 
-    @ManyToOne(() => Subject, subject => subject.examSubjects, { onDelete: 'CASCADE' })
+    @ManyToOne(() => Subject, subject => subject.examSubjects, { onDelete: 'CASCADE', nullable: false })
     subject: Subject;
 
     @OneToMany(() => ExamReport, examReport => examReport.examSubject)

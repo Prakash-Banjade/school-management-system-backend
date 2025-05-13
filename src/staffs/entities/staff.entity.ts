@@ -6,19 +6,13 @@ import { EmployeeLedger } from "src/finance-system/salary-management/employee-le
 import { Payroll } from "src/finance-system/salary-management/payrolls/entities/payroll.entity";
 import { SalaryStructure } from "src/finance-system/salary-management/salary-structures/entities/salary-structure.entity";
 import { Vehicle } from "src/transportation-system/vehicles/entities/vehicle.entity";
-import { generateTeacherId } from "src/utils/generate-teacher-id";
-import { BeforeInsert, Column, Entity, Index, JoinColumn, JoinTable, ManyToMany, OneToMany, OneToOne } from "typeorm";
+import { Column, Entity, Index, JoinColumn, JoinTable, ManyToMany, OneToMany, OneToOne } from "typeorm";
 
 @Entity()
 export class Staff extends BaseEntity {
     @Index({ unique: true })
-    @Column({ type: 'int' })
-    staffId: number;
-
-    @BeforeInsert()
-    generateTeacherId() {
-        if (!this.staffId) this.staffId = generateTeacherId();
-    }
+    @Column({ type: 'varchar' })
+    staffId: string;
 
     @Column({ type: 'varchar' })
     firstName: string;

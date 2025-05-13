@@ -3,7 +3,7 @@ import { ExamsService } from './exams.service';
 import { CreateExamDto } from './dto/create-exam.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
 import { ExamQueryDto, ExamReportByStudentQueryDto, ExamStudentsQueryDto } from './dto/exam-query.dto';
-import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse, ApiParam, ApiOkResponse } from '@nestjs/swagger';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
 import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { ExamsHelper } from './helpers/exams.helper';
@@ -54,7 +54,7 @@ export class ExamsController {
   }
 
   @Get(':id/students')
-  @CheckAbilities({ subject: Role.ADMIN, action: Action.CREATE })
+  @CheckAbilities({ subject: Role.ADMIN, action: Action.READ })
   @ApiOperation({ summary: 'Get students assigned to a specific exam' })
   @ApiParam({ name: 'id', description: 'Exam ID to retrieve students for' })
   @ApiResponse({ status: 200, description: 'Students for the exam retrieved successfully.' })
@@ -78,6 +78,7 @@ export class ExamsController {
   @ApiOperation({ summary: 'Toggle the publish status of an existing exam' })
   @ApiParam({ name: 'id', description: 'Exam ID to update' })
   @ApiResponse({ status: 200, description: 'Exam updated successfully.' })
+  @UseInterceptors(TransactionInterceptor)
   publishReport(@Param('id', ParseUUIDPipe) id: string, @Query('publish', ParseBoolPipe) publish: boolean) {
     return this.examsService.publishReport(id, publish);
   }

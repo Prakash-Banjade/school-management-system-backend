@@ -1,4 +1,4 @@
-import { ConflictException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { CreateClassRoomDto } from './dto/create-class-room.dto';
 import { UpdateClassRoomDto } from './dto/update-class-room.dto';
 import { DataSource, ILike } from 'typeorm';
@@ -6,7 +6,7 @@ import { ClassRoom } from './entities/class-room.entity';
 import { REQUEST } from '@nestjs/core';
 import { BaseRepository } from 'src/common/repository/base-repository';
 import { FastifyRequest } from 'fastify';
-import { EClassType } from 'src/common/types/global.type';
+import { AuthUser, EClassType } from 'src/common/types/global.type';
 import { classRoomColumnsConfig } from './helpers/class-room-select-cols.config';
 import { FeeStructuresService } from 'src/finance-system/fee-management/fee-structures/fee-structures.service';
 import { Teacher } from 'src/teachers/entities/teacher.entity';
@@ -14,6 +14,9 @@ import { UtilitiesService } from 'src/utilities/utilities.service';
 import { BranchesService } from 'src/branches/branches.service';
 import { Faculty } from 'src/faculties/entities/faculty.entity';
 import { FeeStructure } from 'src/finance-system/fee-management/fee-structures/entities/fee-structure.entity';
+import { isStudent, isTeacher } from 'src/utils/utils';
+import { AcademicYearsService } from 'src/academic-years/academic-years.service';
+import { Student } from 'src/students/entities/student.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class ClassRoomsService extends BaseRepository {
@@ -22,6 +25,7 @@ export class ClassRoomsService extends BaseRepository {
     private readonly feeStructuresService: FeeStructuresService,
     private readonly utilitiesService: UtilitiesService,
     private readonly branchesService: BranchesService,
+    private readonly academicYearsService: AcademicYearsService,
   ) { super(dataSource, req) }
 
   async create(dto: CreateClassRoomDto) {
@@ -110,10 +114,13 @@ export class ClassRoomsService extends BaseRepository {
   }
 
   async findOne(id: string) {
+    const currentUser = this.utilitiesService.getCurrentUser();
+
     const existing = await this.getRepository(ClassRoom).findOne({
       where: {
         id,
-        branch: { id: this.utilitiesService.getBranchId() }
+        branch: { id: this.utilitiesService.getBranchId() },
+        ...(isTeacher(currentUser) ? { classTeacher: { id: currentUser.teacherId } } : {}) // teacher can read only their classes
       },
       relations: {
         parent: true,
@@ -150,16 +157,63 @@ export class ClassRoomsService extends BaseRepository {
     }
   }
 
-  private async checkIfExisting(dto: Partial<{ name: string, classType: EClassType, facultyId: string }>) {
+  async updateRollNo(id: string) {
+    const activeAcademicYear = await this.academicYearsService.latest();
+
+    const classRoom = await this.getRepository(ClassRoom).findOne({
+      where: { id },
+      relations: { children: true },
+      select: { id: true, classType: true, children: { id: true } },
+    });
+
+    if (!classRoom) throw new NotFoundException('Class room not found');
+    if (classRoom.classType === EClassType.PRIMARY && classRoom.children.length > 0) throw new BadRequestException('Class room has sections, please update them');
+
+    // get all students in the class in latest academic year
+    const students = await this.getRepository(Student).find({
+      where: {
+        classRoom: { id: classRoom.id },
+        enrollments: { academicYear: { id: activeAcademicYear.id } }
+      },
+      relations: { account: true, enrollments: true },
+      select: { id: true, rollNo: true, account: { id: true, lowerCasedFullName: true }, enrollments: { id: true } },
+      order: { account: { lowerCasedFullName: 'ASC' } }
+    });
+
+    students.forEach((student, index) => {
+      student.rollNo = index + 1;
+      student.enrollments[0].rollNo = index + 1; // update roll number in enrollments as well
+    });
+
+    await this.getRepository(Student).save(students);
+
+    return { message: 'Roll numbers updated successfully' };
+  }
+
+  private async checkIfExisting(dto: Partial<{ name: string, classType: EClassType, facultyId: string, parentClassId: string }>) {
     const existingWithSameName = await this.getRepository(ClassRoom).findOne({
       where: {
         name: ILike(dto.name),
         classType: dto.classType,
+        parent: {
+          id: dto.parentClassId
+        },
         branch: { id: this.utilitiesService.getBranchId() },
         faculty: { id: dto.facultyId }
       },
       select: { id: true }
     });
     if (existingWithSameName) throw new ConflictException('Class room with same name already exists');
+  }
+
+  async getMyClassInfo(currentUser: AuthUser) {
+    if (!isStudent(currentUser)) return null;
+
+    return this.getRepository(ClassRoom).findOne({
+      where: {
+        id: currentUser.classRoomId,
+      },
+      select: { id: true, fullName: true }
+    });
   }
 }

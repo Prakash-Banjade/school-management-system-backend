@@ -9,7 +9,7 @@ export class ExamReport extends BaseEntity {
     @ManyToOne(() => ExamSubject, (examSubject) => examSubject.examReports, { nullable: false, onDelete: 'CASCADE' })
     examSubject: ExamSubject
 
-    @ManyToOne(() => Student, (student) => student.examReports, { onDelete: 'CASCADE' })
+    @ManyToOne(() => Student, (student) => student.examReports, { nullable: false, onDelete: 'CASCADE' })
     student: Student
 
     @Column({ type: 'float', precision: 10, scale: 2 })

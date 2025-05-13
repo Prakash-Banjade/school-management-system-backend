@@ -5,10 +5,9 @@ import { AppModule } from './app.module';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { AllExceptionsFilter } from './common/filters/all-exception.filter';
 import { setupSwagger } from './config/swagger.config';
-import { BadRequestException, ValidationPipe } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import fastifyCookie from '@fastify/cookie';
 import { ConfigService } from '@nestjs/config';
-import fastifyHelmet from '@fastify/helmet';
 import fastifyCsrfProtection from '@fastify/csrf-protection';
 import fastifyCors from '@fastify/cors';
 import multipart from '@fastify/multipart';
@@ -28,18 +27,19 @@ async function bootstrap() {
     secret: configService.get<string>('COOKIE_SECRET'),
   });
 
-  configService.get('NODE_ENV') === 'production' && app.register(fastifyHelmet);
+  // configService.get('NODE_ENV') === 'production' && app.register(fastifyHelmet);
   app.register(fastifyCsrfProtection, { cookieOpts: { signed: true } });
   app.register(multipart);
 
   app.register(fastifyCors, {
     credentials: true,
-    origin: (origin, callback) => {
-      if (configService.get<string>('NODE_ENV') === 'development' || origin === configService.get<string>('CLIENT_URL')) {
-        return callback(null, true);
-      }
-      return callback(new BadRequestException('Wrong Step'), false);
-    },
+    origin: configService.get<string>('CLIENT_URL'),
+    // origin: (origin, callback) => {
+    //   if (configService.get<string>('NODE_ENV') === 'development' || origin === configService.get<string>('CLIENT_URL')) {
+    //     return callback(null, true);
+    //   }
+    //   return callback(new BadRequestException('Wrong Step'), false);
+    // },
     allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
     optionsSuccessStatus: 200,
     methods: ['GET', 'POST', 'DELETE', 'PATCH'],

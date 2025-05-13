@@ -56,9 +56,8 @@ export class AccountsService extends BaseRepository {
       ? Role.TEACHER
       : entity instanceof Student
         ? Role.STUDENT
-        : entity instanceof Staff ?
-          Role.STAFF
-          : Role.GUARDIAN;
+        : Role.STAFF
+
 
     const account = this.getRepository<Account>(Account).create({
       email: entity.email,
@@ -85,7 +84,7 @@ export class AccountsService extends BaseRepository {
     } as Account);
   }
 
-  async createAdminAccount(user: User, branch: Branch, dto: { firstName: string, lastName: string, email: string }) {
+  async createAdminAccount(branch: Branch, dto: { firstName: string, lastName: string, email: string }) {
     const existingAccount = await this.getRepository(Account).findOne({ where: { email: dto.email }, select: { id: true } });
     if (existingAccount) throw new BadRequestException({
       message: 'Duplicate email. Please use different email.',
@@ -99,7 +98,6 @@ export class AccountsService extends BaseRepository {
       firstName: dto.firstName,
       lastName: dto.lastName,
       role: Role.ADMIN,
-      user,
       password,
       prevPasswords: [bcrypt.hashSync(password, PASSWORD_SALT_COUNT)],
       branch,
@@ -107,14 +105,16 @@ export class AccountsService extends BaseRepository {
 
     account.setLowerCasedFullName();
 
-    await this.getRepository(Account).save(account);
+    const createdAccount = await this.getRepository(Account).save(account);
 
-    return this.authHelper.sendEmailConfirmation({
+    await this.authHelper.sendEmailConfirmation({
       id: account.id,
       email: account.email,
       firstName: account.firstName,
       lastName: account.lastName,
     } as Account);
+
+    return createdAccount
   }
 
   async update(id: string, dto: UpdateAccountDto) {
@@ -126,15 +126,14 @@ export class AccountsService extends BaseRepository {
 
     if (!account) throw new NotFoundException('No associated account found');
 
-    if (account.profileImage?.id && dto.profileImageId !== undefined) {
-      await this.imagesService.update(account.profileImage.id, dto.profileImageId);
-    } else if (dto.profileImageId !== undefined) {
-      account.profileImage = dto.profileImageId ? await this.imagesService.findOne(dto.profileImageId) : null;
-    }
+    const image = await this.imagesService.update(account.profileImage?.id, dto.profileImageId);
+    if (image !== undefined) account.profileImage = image;
+
+    Object.assign(account, dto)
 
     account.setLowerCasedFullName();
 
-    await this.getRepository(Account).save(Object.assign(account, dto));
+    await this.getRepository(Account).save(account);
   }
 
   async getDevices() {

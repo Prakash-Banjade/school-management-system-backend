@@ -43,9 +43,8 @@ export class Task extends BaseEntity {
     @ManyToOne(() => Subject, subject => subject.tasks, { onDelete: 'CASCADE', nullable: false })
     subject: Subject;
 
-    @ManyToMany(() => ClassRoom, classRoom => classRoom.tasks, { onDelete: 'CASCADE' })
-    @JoinTable()
-    classRooms: ClassRoom[];
+    @ManyToOne(() => ClassRoom, classRoom => classRoom.tasks, { onDelete: 'CASCADE', nullable: false })
+    classRoom: ClassRoom;
 
     @OneToMany(() => TaskSubmission, taskSubmission => taskSubmission.task)
     submissions: TaskSubmission[];

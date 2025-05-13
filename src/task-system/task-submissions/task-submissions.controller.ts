@@ -25,10 +25,7 @@ export class TaskSubmissionsController {
   }
 
   @Get()
-  @CheckAbilities(
-    { subject: Role.ADMIN, action: Action.READ },
-    { subject: Role.STUDENT, action: Action.READ }
-  )
+  @CheckAbilities({ subject: Role.USER, action: Action.READ })
   findAll(@Query() queryDto: TaskSubmissionQueryDto, @CurrentUser() currentUser: AuthUser) {
     return isStudent(currentUser)
       ? this.taskSubmissionsStudentViewService.findAll(queryDto, currentUser)

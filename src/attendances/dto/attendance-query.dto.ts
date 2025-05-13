@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
-import { IsDateString, IsEnum, IsNumber, IsOptional, IsUUID } from "class-validator";
+import { IsBoolean, IsDateString, IsEnum, IsNumber, IsOptional, IsUUID } from "class-validator";
 import { QueryDto } from "src/common/dto/query.dto";
 import { EAttendanceStatus } from "src/common/types/global.type";
 
@@ -28,4 +28,9 @@ export class AttendanceQueryDto extends QueryDto {
         return undefined;
     })
     month?: number;
+
+    @ApiPropertyOptional({ description: "Flag to get own attendance. Useful for teacher to determine own attendance or students attendance" })
+    @IsBoolean()
+    @Transform(({ value }) => value === 'true')
+    self: boolean = false;
 }

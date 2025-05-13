@@ -3,6 +3,7 @@ import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import { ArrayMinSize, IsArray, IsDateString, IsDefined, IsEnum, IsMilitaryTime, IsOptional, IsUUID, ValidateIf, ValidateNested } from "class-validator";
 import { compareAsc, parse } from "date-fns";
+import { IsNotFutureDate } from "src/common/decorators/validators/isNotFutureDate.decorator";
 import { EAttendanceStatus } from "src/common/types/global.type";
 
 const UpdateStatusEnum = [...Object.values(EAttendanceStatus), null];
@@ -20,6 +21,7 @@ class UpdateAttendanceDto {
 
     @ApiPropertyOptional({ type: "string", format: 'date-time' })
     @IsDateString()
+    @IsNotFutureDate({ message: 'Cannot make attendance in the future' })
     @IsOptional()
     date?: string;
 
