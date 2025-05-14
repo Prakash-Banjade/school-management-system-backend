@@ -22,7 +22,6 @@ export class TasksService {
     @InjectRepository(Task) private readonly taskRepo: Repository<Task>,
     @InjectRepository(ClassRoom) private readonly classRoomRepo: Repository<ClassRoom>,
     @InjectRepository(ClassRoutine) private readonly classRoutineRepo: Repository<ClassRoutine>,
-    // private readonly subjectsService: SubjectsService,
     private readonly filesService: FilesService,
   ) { }
 
@@ -40,14 +39,24 @@ export class TasksService {
       // validate if class room have the subject
       const classRoomWithSubject = await this.classRoomRepo.createQueryBuilder('classRoom')
         .leftJoinAndSelect('classRoom.subjects', 'subject')
+        .leftJoinAndSelect('classRoom.children', 'children')
         .where('subject.id = :subjectId', { subjectId: createTaskDto.subjectId })
-        .select(['classRoom.id', 'subject.id'])
+        .select(['classRoom.id', 'subject.id', 'children.id'])
         .getOne();
 
       if (!classRoomWithSubject || !classRoomWithSubject.subjects[0]) throw new NotFoundException('No class found or the subject is not in the class')
 
-      classRoom = classRoomWithSubject;
       subject = classRoomWithSubject.subjects[0];
+
+      // check if class room has children, then classroom must be one of the children else the same class room
+      if (classRoomWithSubject.children.length > 0) {
+        classRoom = classRoomWithSubject.children.find((c) => c.id === createTaskDto.classRoomId);
+      } else if (classRoomWithSubject.id === createTaskDto.classRoomId) {
+        classRoom = classRoomWithSubject;
+      }
+
+      // if class room is not found, throw error
+      if (!classRoom) throw new NotFoundException('No class found')
     }
 
     if (isTeacher(currentUser)) {
