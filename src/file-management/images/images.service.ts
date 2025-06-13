@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Res } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateImageDto } from './dto/create-image.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Image } from './entities/image.entity';
@@ -10,7 +10,6 @@ import { ImageQueryDto } from './dto/image-query.dto';
 import { AuthUser } from 'src/common/types/global.type';
 import { getImageMetadata } from 'src/utils/getImageMetadata';
 import { FastifyReply } from 'fastify';
-import { isBackendUrl } from 'src/common/decorators/validators/isUrlOrUUid.decorator';
 import { Account } from 'src/auth-system/accounts/entities/account.entity';
 
 @Injectable()
