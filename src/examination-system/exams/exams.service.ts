@@ -265,6 +265,7 @@ export class ExamsService extends BaseRepository {
       },
       select: {
         id: true,
+        endsOn: true,
         classRoom: { id: true, children: { id: true } },
         academicYear: { id: true },
         examSubjects: {
@@ -284,6 +285,9 @@ export class ExamsService extends BaseRepository {
     if (!existing) throw new NotFoundException('Exam not found');
 
     if (publish) {
+      // check if exam has been ended or not
+      if (isAfter(existing.endsOn, new Date())) throw new BadRequestException('Cannot publish report. Exam is not ended yet.');
+
       await this.examResultsService.generate(existing);
     } else {
       // remove exam results of this exam

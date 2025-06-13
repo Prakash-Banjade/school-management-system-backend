@@ -1,15 +1,15 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsArray, IsNumber, IsOptional, IsString, IsUUID, Min, ValidateNested } from "class-validator";
-import { CreateSalaryAdjustmentDto } from "../../salary-adjustments/dto/create-salary-adjustment.dto";
-import { Transform, Type } from "class-transformer";
+import { SalaryAdjustmentDto } from "../../salary-adjustments/dto/salary-adjustment.dto";
+import { Type } from "class-transformer";
 
 export class CreatePayrollDto {
-    @ApiPropertyOptional({ type: [CreateSalaryAdjustmentDto], isArray: true, description: 'Salary adjustments array' })
+    @ApiPropertyOptional({ type: [SalaryAdjustmentDto], isArray: true, description: 'Salary adjustments array' })
     @IsArray()
     @ValidateNested({ each: true })
-    @Type(() => CreateSalaryAdjustmentDto)
+    @Type(() => SalaryAdjustmentDto)
     @IsOptional()
-    salaryAdjustments: CreateSalaryAdjustmentDto[] = [];
+    salaryAdjustments: SalaryAdjustmentDto[] = [];
 
     @ApiProperty({ format: 'uuid', description: 'Employee id' })
     @IsUUID()
@@ -19,7 +19,7 @@ export class CreatePayrollDto {
     @IsOptional()
     @IsNumber()
     @Min(0, { message: 'Advance amount must be greater than or equal to 0' })
-    advance?: number;
+    advance: number = 0;
 
     @ApiProperty({ enum: ['teacher', 'staff'], description: 'Employee type' })
     @IsOptional()
@@ -32,12 +32,12 @@ export class UpdatePayrollDto {
     @IsOptional()
     @IsNumber()
     @Min(0, { message: 'Advance amount must be greater than or equal to 0' })
-    advance?: number;
+    advance: number = 0;
 
-    @ApiPropertyOptional({ type: [CreateSalaryAdjustmentDto], isArray: true, description: 'Salary adjustments array' })
+    @ApiPropertyOptional({ type: [SalaryAdjustmentDto], isArray: true, description: 'Salary adjustments array' })
     @IsArray()
     @ValidateNested({ each: true })
-    @Type(() => CreateSalaryAdjustmentDto)
+    @Type(() => SalaryAdjustmentDto)
     @IsOptional()
-    salaryAdjustments: CreateSalaryAdjustmentDto[] = [];
+    salaryAdjustments: SalaryAdjustmentDto[] = [];
 }
