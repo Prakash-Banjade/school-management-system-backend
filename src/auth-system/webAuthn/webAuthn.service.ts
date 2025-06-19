@@ -10,7 +10,7 @@ import { EnvService } from 'src/env/env.service';
 import { EPasskeyChallengeType, PasskeyChallenge } from './entities/passkey-challenge.entity';
 import { WebAuthnCredential } from './entities/webAuthnCredential.entity';
 import { AuthVerifyDto } from './dto/login-verify.dto';
-import { Tokens } from 'src/common/CONSTANTS';
+import { thisSchool, Tokens } from 'src/common/CONSTANTS';
 import { JwtService } from '../jwt/jwt.service';
 import { AuthService } from '../auth/auth.service';
 import { AuthChallengeDto } from './dto/login-challenge.dto';
@@ -41,7 +41,7 @@ export class WebAuthnService extends BaseRepository {
 
         const challengePayload = await generateRegistrationOptions({
             rpID: this.envService.CLIENT_DOMAIN,
-            rpName: 'Abhyam SMS', // Todo: udpate this value
+            rpName: thisSchool.name,
             userName: account.email,
             timeout: 30 * 1000,
             excludeCredentials: account.webAuthnCredentials?.map(c => ({
