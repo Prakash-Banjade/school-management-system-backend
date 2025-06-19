@@ -81,13 +81,13 @@ export class AcademicYearsController {
     return this.academicYearsService.update(id, updateAcademicYearDto);
   }
 
-  @Delete(':id')
-  @CheckAbilities({ action: Action.DELETE, subject: Role.SUPER_ADMIN })
-  @ApiOperation({ summary: 'Delete an academic year by ID' })
-  @ApiParam({ name: 'id', description: 'The ID of the academic year to delete' })
-  @ApiResponse({ status: 200, description: 'The academic year has been successfully deleted.' })
-  @ApiResponse({ status: 404, description: 'Academic year not found.' })
-  remove(@Param('id') id: string) {
-    return this.academicYearsService.remove(id);
-  }
+  // @Delete(':id')
+  // @CheckAbilities({ action: Action.DELETE, subject: Role.SUPER_ADMIN })
+  // @ApiOperation({ summary: 'Delete an academic year by ID' })
+  // @ApiParam({ name: 'id', description: 'The ID of the academic year to delete' })
+  // @ApiResponse({ status: 200, description: 'The academic year has been successfully deleted.' })
+  // @ApiResponse({ status: 404, description: 'Academic year not found.' })
+  // remove(@Param('id') id: string) {
+  //   return this.academicYearsService.remove(id);
+  // }
 }

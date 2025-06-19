@@ -150,11 +150,16 @@ export class AcademicYearsService {
 
   }
 
-  async latest() {
+  async latest(select?: string[]) {
     const latestAcademicYear = await this.academicYearRepo.createQueryBuilder('academicYear') // this is one which is last added
       .orderBy('academicYear.startDate', 'DESC')
       .limit(1)
-      .select(['academicYear.id', 'academicYear.name', 'academicYear.startDate', 'academicYear.endDate'])
+      .select(select ?? [
+        'academicYear.id',
+        'academicYear.name',
+        'academicYear.startDate',
+        'academicYear.endDate'
+      ])
       .getOne();
 
     if (!latestAcademicYear) throw new NotFoundException('Latest academic year not found');

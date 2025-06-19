@@ -25,6 +25,6 @@ import { BookTransactionsHelper } from './helpers/book-transactinos.helper';
     BookTransactionsCron,
     BookTransactionsHelper,
   ],
-  exports: [BookTransactionsHelper],
+  exports: [BookTransactionsService, BookTransactionsHelper],
 })
 export class BookTransactionsModule { }

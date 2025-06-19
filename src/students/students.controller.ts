@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Query, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Query, UseInterceptors, Delete } from '@nestjs/common';
 import { StudentsService } from './students.service';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentClassDto, UpdateStudentDto } from './dto/update-student.dto';
@@ -99,4 +99,14 @@ export class StudentsController {
   update(@Param('id') id: string, @Body() updateStudentDto: UpdateStudentDto) {
     return this.studentsService.update(id, updateStudentDto);
   }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete student by ID' })
+  @ApiParam({ name: 'id', required: true, description: 'Unique ID of the student' })
+  @ApiResponse({ status: 200, description: 'Student deleted successfully.' })
+  @CheckAbilities({ subject: Role.SUPER_ADMIN, action: Action.DELETE })
+  delete(@Param('id') id: string) {
+    return this.studentsService.delete(id);
+  }
+
 }

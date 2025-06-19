@@ -8,6 +8,7 @@ import { TeachersStudentViewService } from './teachers.student-view.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Teacher } from './entities/teacher.entity';
 import { TeacherUtilsService } from './helpers/teacher-utils.service';
+import { BookTransactionsModule } from 'src/library-system/book-transactions/book-transactions.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { TeacherUtilsService } from './helpers/teacher-utils.service';
     ]),
     AccountsModule,
     ImagesModule,
+    BookTransactionsModule,
   ],
   controllers: [TeachersController],
   providers: [TeachersService, TeachersHelper, TeachersStudentViewService, TeacherUtilsService],

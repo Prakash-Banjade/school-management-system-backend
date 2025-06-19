@@ -32,7 +32,7 @@ export class Staff extends BaseEntity {
     @Column({ type: 'datetime' })
     dob: string;
 
-    @OneToOne(() => Account, account => account.staff, { onDelete: "CASCADE" })
+    @OneToOne(() => Account, account => account.staff, { onDelete: "CASCADE", nullable: false })
     @JoinColumn()
     account: Account;
 

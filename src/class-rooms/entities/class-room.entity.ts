@@ -64,7 +64,7 @@ export class ClassRoom extends BaseEntity {
     @ManyToOne(() => Branch, branch => branch.classRooms, { onDelete: 'CASCADE' })
     branch: Branch;
 
-    @ManyToOne(() => Teacher, teacher => teacher.assignedClassRooms, { onDelete: 'SET NULL' })
+    @ManyToOne(() => Teacher, teacher => teacher.assignedClassRooms, { onDelete: 'SET NULL', nullable: true })
     classTeacher: Teacher;
 
     @BeforeInsert()

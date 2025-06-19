@@ -11,7 +11,7 @@ import { ImagesService } from 'src/file-management/images/images.service';
 import { AccountsService } from 'src/auth-system/accounts/accounts.service';
 import { FastifyRequest } from 'fastify';
 import { StudentsHelper } from './helpers/students.helper';
-import { EClassType } from 'src/common/types/global.type';
+import { EBookTransactionStatus, EClassType } from 'src/common/types/global.type';
 import { FilesService } from 'src/file-management/files/files.service';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { AcademicYear } from 'src/academic-years/entities/academic-year.entity';
@@ -26,6 +26,11 @@ import { UpdateAccountDto } from 'src/auth-system/accounts/dto/update-account.dt
 import { isTeacher } from 'src/utils/utils';
 import { StudentsUtils } from './helpers/students.utils';
 import { Guardian } from 'src/guardians/entities/guardian.entity';
+import { BookTransactionsService } from 'src/library-system/book-transactions/book-transactions.service';
+import { BookTransactionsHelper } from 'src/library-system/book-transactions/helpers/book-transactinos.helper';
+import { BookTransactionByMemberQueryDto, UnpaidTransactionsQueryDto } from 'src/library-system/book-transactions/dto/book-transactions-query.dto';
+import { Account } from 'src/auth-system/accounts/entities/account.entity';
+import { OptionalSubject } from 'src/optional-subject/entities/optional-subject.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class StudentsService extends BaseRepository {
@@ -41,6 +46,8 @@ export class StudentsService extends BaseRepository {
     private readonly academicYearService: AcademicYearsService,
     private readonly utilitiesService: UtilitiesService,
     private readonly imagesService: ImagesService,
+    private readonly bookTransactionsService: BookTransactionsService,
+    private readonly bookTransactionsHelper: BookTransactionsHelper,
   ) {
     super(dataSource, req);
   }
@@ -316,5 +323,57 @@ export class StudentsService extends BaseRepository {
     return {
       message: 'Class Updated',
     }
+  }
+
+  async delete(id: string) {
+    const student = await this.getRepository<Student>(Student).findOne({
+      where: { id },
+      relations: { account: true, optionalSubjects: true },
+      select: { id: true, studentId: true, account: { id: true }, optionalSubjects: { id: true } }
+    });
+    if (!student) throw new NotFoundException('Student not found');
+
+    // check if student has any book transactions that is not returned
+    const issuedBookTransactions = await this.bookTransactionsService.findAllByMember(
+      {
+        studentId: student.studentId, // this must be studentId, not student.id
+        status: EBookTransactionStatus.Issued,
+      } as BookTransactionByMemberQueryDto,
+      ["transaction.id AS id"]
+    );
+
+    if (issuedBookTransactions?.data.length > 0) {
+      throw new BadRequestException('Cannot delete. This student has issued books. Please return them first.');
+    }
+
+    // check if student has any unpaid book transactions
+    const unpaidTransactions = await this.bookTransactionsHelper.getUnPaidTransactions(
+      new UnpaidTransactionsQueryDto({
+        studentId: student.id,
+      }),
+      ["transaction.id AS id"]
+    );
+
+    if (unpaidTransactions?.length > 0) {
+      throw new BadRequestException('Cannot delete. This student has unpaid book transactions. Please pay the fine first.');
+    }
+
+    // check if student has ledger amount in last enrollment
+    const lastEnrollment = await this.getRepository<Enrollment>(Enrollment).findOne({
+      where: { student: { id: student.id } },
+      order: { createdAt: 'DESC' },
+      relations: { ledger: true },
+      select: { id: true, createdAt: true, ledger: { id: true, amount: true } }
+    });
+
+    if (lastEnrollment && lastEnrollment.ledger?.amount > 0) {
+      throw new BadRequestException('Cannot delete. This student has due amount pending. Please clear the dues first.');
+    }
+
+    await this.getRepository(OptionalSubject).remove(student.optionalSubjects); // need to delete optional subjects first, else cannot delete fk constraint occurs
+
+    await this.getRepository(Account).remove(student.account); // deleting account will cascade delete the student record
+
+    return { message: 'Student removed' };
   }
 }

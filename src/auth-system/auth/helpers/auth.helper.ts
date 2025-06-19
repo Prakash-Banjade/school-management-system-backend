@@ -19,6 +19,7 @@ import { UtilitiesService } from "src/utilities/utilities.service";
 import { JwtService } from "src/auth-system/jwt/jwt.service";
 import { EOptVerificationType, OtpVerificationPending } from "../entities/otp-verification-pending.entity";
 import { OtpVerificationDto } from "../dto/auth.dtos";
+import { Role } from "src/common/types/global.type";
 
 @Injectable({ scope: Scope.REQUEST })
 export class AuthHelper extends BaseRepository {
@@ -82,6 +83,8 @@ export class AuthHelper extends BaseRepository {
     }
 
     async sendEmailConfirmation(account: Account) {
+        if (account.role === Role.STAFF) return; // no need to send email confirmation for staff accounts
+
         const { otp, encryptedVerificationToken } = await this.generateOtp(account, EOptVerificationType.EMAIL_VERIFICATION);
 
         // send mail

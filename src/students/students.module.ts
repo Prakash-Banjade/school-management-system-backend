@@ -10,6 +10,7 @@ import { RouteStopsModule } from 'src/transportation-system/route-stops/route-st
 import { StudentsUtils } from './helpers/students.utils';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Student } from './entities/student.entity';
+import { BookTransactionsModule } from 'src/library-system/book-transactions/book-transactions.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { Student } from './entities/student.entity';
     DormitoryRoomsModule,
     FilesModule,
     RouteStopsModule,
+    BookTransactionsModule,
   ],
   controllers: [StudentsController],
   providers: [StudentsService, StudentsHelper, StudentsUtils],

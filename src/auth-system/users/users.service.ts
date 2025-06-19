@@ -150,4 +150,17 @@ export class UsersService extends BaseRepository {
 
     return { message: 'Profile Updated' }
   }
+
+  async delete(id: string) {
+    const account = await this.getRepository(Account).findOne({
+      where: { user: { id } },
+      select: { id: true }
+    });
+    if (!account) throw new NotFoundException('User not found');
+
+    // delete the account
+    await this.getRepository(Account).remove(account);
+
+    return { message: 'Admin removed' }
+  }
 }

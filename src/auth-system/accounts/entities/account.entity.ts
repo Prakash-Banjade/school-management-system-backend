@@ -73,7 +73,7 @@ export class Account extends BaseEntity {
     @OneToOne(() => Teacher, teacher => teacher.account, { cascade: true, nullable: true })
     teacher: Teacher;
 
-    @OneToOne(() => Staff, staff => staff.account, { nullable: true })
+    @OneToOne(() => Staff, staff => staff.account, { cascade: true, nullable: true })
     staff: Staff;
 
     @OneToMany(() => Image, image => image.uploadedBy)

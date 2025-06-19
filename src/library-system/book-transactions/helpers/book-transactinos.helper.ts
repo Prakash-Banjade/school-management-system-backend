@@ -13,7 +13,7 @@ export class BookTransactionsHelper {
         @InjectRepository(BookTransaction) private readonly bookTransactionRepo: Repository<BookTransaction>
     ) { }
 
-    async getUnPaidTransactions(queryDto: UnpaidTransactionsQueryDto) {
+    async getUnPaidTransactions(queryDto: UnpaidTransactionsQueryDto, select?: string[]) {
         const querybuilder = this.bookTransactionRepo.createQueryBuilder('transaction')
             .leftJoin('transaction.book', 'book')
             .where('transaction.returnedAt IS NOT NULL') // ensure book is returned
@@ -21,21 +21,22 @@ export class BookTransactionsHelper {
             .andWhere('DATE(transaction.dueDate) < DATE(transaction.returnedAt)'); // only over due transactions
 
         if (queryDto.studentId) {
-            querybuilder.where('transaction.studentId = :studentId', { studentId: queryDto.studentId })
+            querybuilder.andWhere('transaction.studentId = :studentId', { studentId: queryDto.studentId })
         }
 
         if (queryDto.teacherId) {
-            querybuilder.where('transaction.teacherId = :teacherId', { teacherId: queryDto.teacherId })
+            querybuilder.andWhere('transaction.teacherId = :teacherId', { teacherId: queryDto.teacherId })
         }
 
         querybuilder
-            .select([
+            .select(select ?? [
                 'transaction.id as id',
                 'book.bookName as bookName',
                 'transaction.fine as fine',
                 'transaction.dueDate as dueDate',
                 'transaction.returnedAt as returnedAt',
                 'transaction.createdAt as createdAt',
+                'transaction.paidAt as paidAt',
             ]);
 
         return querybuilder.getRawMany();

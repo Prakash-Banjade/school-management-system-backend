@@ -2,7 +2,7 @@ import { Controller, Get, Body, Patch, Param, Delete, Query, UseInterceptors, Po
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersQueryDto } from './dto/user-query.dto';
-import { ApiExcludeController, ApiTags } from '@nestjs/swagger';
+import { ApiExcludeController, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
 import { Action, AuthUser, Role } from 'src/common/types/global.type';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
@@ -16,6 +16,7 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) { }
 
   @Post()
+  @ApiOperation({ summary: 'Create a new user, particularly ADMIN' })
   @CheckAbilities({ subject: Role.SUPER_ADMIN, action: Action.CREATE })
   @UseInterceptors(TransactionInterceptor)
   create(@Body() createUserDto: CreateUserDto) {
@@ -44,4 +45,12 @@ export class UsersController {
   update(@Body() updateUserDto: UpdateUserDto, @CurrentUser() currentUser: AuthUser) {
     return this.usersService.update(updateUserDto, currentUser);
   }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete a user, particularly ADMIN' })
+  @CheckAbilities({ subject: Role.SUPER_ADMIN, action: Action.DELETE })
+  delete(@Param('id') id: string) {
+    return this.usersService.delete(id);
+  }
+
 }
