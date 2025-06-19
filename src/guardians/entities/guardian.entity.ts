@@ -2,7 +2,7 @@ import { BaseEntity } from "src/common/entities/base.entity";
 import { EGuardianRelation } from "src/common/types/global.type";
 import { Image } from "src/file-management/images/entities/image.entity";
 import { Student } from "src/students/entities/student.entity";
-import { Column, Entity, JoinTable, ManyToMany, OneToOne } from "typeorm";
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, OneToOne } from "typeorm";
 
 @Entity()
 export class Guardian extends BaseEntity {
@@ -27,7 +27,7 @@ export class Guardian extends BaseEntity {
     @Column({ type: 'varchar', length: 255 })
     occupation: string;
 
-    @OneToOne(() => Image, image => image.guardian_profileImage, { nullable: true })
+    @OneToOne(() => Image, image => image.guardian_profileImage, { cascade: true, nullable: true })
     profileImage: Image
 
     @ManyToMany(() => Student, (student) => student.guardians, { onDelete: 'CASCADE' })

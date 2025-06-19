@@ -25,6 +25,7 @@ import { UtilitiesService } from 'src/utilities/utilities.service';
 import { UpdateAccountDto } from 'src/auth-system/accounts/dto/update-account.dto';
 import { isTeacher } from 'src/utils/utils';
 import { StudentsUtils } from './helpers/students.utils';
+import { Guardian } from 'src/guardians/entities/guardian.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class StudentsService extends BaseRepository {
@@ -39,6 +40,7 @@ export class StudentsService extends BaseRepository {
     private readonly routeStopsService: RouteStopsService,
     private readonly academicYearService: AcademicYearsService,
     private readonly utilitiesService: UtilitiesService,
+    private readonly imagesService: ImagesService,
   ) {
     super(dataSource, req);
   }
@@ -94,8 +96,17 @@ export class StudentsService extends BaseRepository {
       ledger: this.getRepository<StudentLedger>(StudentLedger).create(),
     });
 
+    const guardians = await Promise.all(createStudentDto.guardians.map(async (guardian) => {
+      const image = guardian.profileImageId
+        ? await this.imageService.findOne(guardian.profileImageId)
+        : null;
+
+      return this.getRepository<Guardian>(Guardian).create({ ...guardian, profileImage: image });
+    }));
+
     const newStudent = this.getRepository<Student>(Student).create({
       ...createStudentDto,
+      guardians,
       studentId: await this.studentsUtils.generateStudentId(),
       rollNo,
       classRoom,
@@ -106,7 +117,7 @@ export class StudentsService extends BaseRepository {
       routeStop,
     });
 
-    // const savedStudent = await this.getRepository<Student>(Student).save(newStudent);
+    // const savedStudent = await this.getRepository<Student>(Student).save(newStudent); // student record is automatically created in createAccount method, because accout has set cascade: true in student
 
     // CREATE ACCOUNT
     await this.accountsService.createAccount(newStudent, profileImage);
@@ -126,6 +137,7 @@ export class StudentsService extends BaseRepository {
       .leftJoin('enrollments.classRoom', 'classRoom')
       .leftJoin('classRoom.parent', 'parent')
       .leftJoin('student.guardians', 'guardians')
+      .leftJoin('guardians.profileImage', 'guardianProfileImage')
       .leftJoin('student.dormitoryRoom', 'dormitoryRoom')
       .leftJoin('student.documentAttachments', 'documentAttachments')
       .leftJoin('student.routeStop', 'routeStop')
@@ -184,7 +196,27 @@ export class StudentsService extends BaseRepository {
   }
 
   async update(id: string, updateStudentDto: UpdateStudentDto) {
-    const existing = await this.findOne(id);
+    // const existing = await this.findOne(id);
+    const existing = await this.getRepository<Student>(Student).findOne({
+      where: { id },
+      relations: {
+        documentAttachments: true,
+        dormitoryRoom: true,
+        routeStop: true,
+        account: true,
+        guardians: { profileImage: true },
+      },
+      select: {
+        id: true,
+        documentAttachments: { id: true },
+        dormitoryRoom: { id: true },
+        routeStop: { id: true },
+        account: { id: true },
+        guardians: { id: true, profileImage: { id: true } },
+      }
+    });
+
+    if (!existing) throw new NotFoundException('Student not found');
 
     // check if credentials are already taken
     await this.studentsHelper.checkIfStudentExists(updateStudentDto, existing);
@@ -209,11 +241,33 @@ export class StudentsService extends BaseRepository {
       existing.routeStop = null;
     }
 
+    const guardians = await Promise.all(updateStudentDto.guardians.map(async (guardian) => {
+      const foundGuardian = existing.guardians.find(g => g.id === guardian.id);
+
+      if (!foundGuardian) { // if guardian is not found, create a new one
+        const image = guardian.profileImageId
+          ? await this.imagesService.findOne(guardian.profileImageId)
+          : null;
+
+        return this.getRepository<Guardian>(Guardian).create({ ...guardian, profileImage: image });
+      }
+
+      // if guardian is found, update it
+      const image = await this.imagesService.update(foundGuardian.profileImage?.id, guardian.profileImageId);
+      if (image !== undefined) foundGuardian.profileImage = image;
+
+      Object.assign(foundGuardian, guardian);
+
+      return foundGuardian;
+
+    }))
+
     // update account related details
     await this.accountsService.update(existing.account?.id, new UpdateAccountDto(updateStudentDto));
 
     Object.assign(existing, {
       ...updateStudentDto,
+      guardians,
     });
 
     await this.getRepository<Student>(Student).save(existing);

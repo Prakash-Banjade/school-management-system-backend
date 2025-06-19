@@ -1,7 +1,4 @@
-import { FindOptionsSelect } from "typeorm";
-import { Student } from "../entities/student.entity";
-
-export const singleStudentColumnsConfig: FindOptionsSelect<Student> = {
+export const singleStudentColumnsConfig = {
     id: true,
     createdAt: true,
     firstName: true,
@@ -50,7 +47,7 @@ export const singleStudentColumnsConfig: FindOptionsSelect<Student> = {
         phone: true,
         address: true,
         occupation: true,
-        profileImage: {
+        guardianProfileImage: { // this is done because there will be a conflict with the profileImage field between Guardian and Account
             id: true,
             url: true
         },
