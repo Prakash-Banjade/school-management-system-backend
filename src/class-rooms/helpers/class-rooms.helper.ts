@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { ClassRoom } from "../entities/class-room.entity";
 import { Brackets, DataSource } from "typeorm";
 import { EClassType, Gender, Role } from "src/common/types/global.type";
@@ -155,7 +155,13 @@ export class ClassRoomsHelper extends BaseRepository {
                 `COUNT(DISTINCT CASE WHEN student.gender = '${Gender.FEMALE}' THEN student.id END) + COUNT(DISTINCT CASE WHEN childClassStudent.gender = '${Gender.FEMALE}' THEN childClassStudent.id END) AS totalFemaleStudentsCount`
             ]);
 
-        return querybuilder.getRawOne();
+        const classRoom = await querybuilder.getRawOne();
+
+        if (!classRoom.id) {
+            throw new NotFoundException('Classroom not found');
+        }
+
+        return classRoom;
     }
 
     // used in teacher panel

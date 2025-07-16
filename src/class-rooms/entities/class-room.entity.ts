@@ -12,7 +12,7 @@ import { Subject } from "src/subjects/entities/subject.entity";
 import { LessonPlan } from "src/lesson-plans/entities/lesson-plan.entity";
 import { Task } from "src/task-system/tasks/entities/task.entity";
 import { Teacher } from "src/teachers/entities/teacher.entity";
-import { BeforeInsert, BeforeUpdate, Column, Entity, Index, ManyToMany, ManyToOne, OneToMany, Tree, TreeChildren, TreeParent, Unique } from "typeorm";
+import { BeforeInsert, BeforeUpdate, Column, Entity, Index, ManyToOne, OneToMany, Tree, TreeChildren, TreeParent, Unique } from "typeorm";
 import { Faculty } from "src/faculties/entities/faculty.entity";
 import { OnlineClass } from "src/online-classes/entities/online-class.entity";
 

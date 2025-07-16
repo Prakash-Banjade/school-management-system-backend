@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { CreateClassRoomDto } from './dto/create-class-room.dto';
 import { UpdateClassRoomDto } from './dto/update-class-room.dto';
-import { DataSource, ILike } from 'typeorm';
+import { DataSource, ILike, In } from 'typeorm';
 import { ClassRoom } from './entities/class-room.entity';
 import { REQUEST } from '@nestjs/core';
 import { BaseRepository } from 'src/common/repository/base-repository';
@@ -17,6 +17,7 @@ import { FeeStructure } from 'src/finance-system/fee-management/fee-structures/e
 import { isStudent, isTeacher } from 'src/utils/utils';
 import { AcademicYearsService } from 'src/academic-years/academic-years.service';
 import { Student } from 'src/students/entities/student.entity';
+import { Account } from 'src/auth-system/accounts/entities/account.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class ClassRoomsService extends BaseRepository {
@@ -215,5 +216,10 @@ export class ClassRoomsService extends BaseRepository {
       },
       select: { id: true, fullName: true }
     });
+  }
+
+  async delete(id: string) {
+    await this.getRepository(ClassRoom).delete({ id });
+    return { message: 'Class room deleted' };
   }
 }

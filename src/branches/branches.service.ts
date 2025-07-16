@@ -83,7 +83,7 @@ export class BranchesService extends BaseRepository {
     // check if the school has any branch
     const branchesCount = await this.getRepository(Branch).createQueryBuilder().getCount();
 
-    if (branchesCount > 0 && !branchId) throw new InternalServerErrorException('Branch id not provided');
+    if (branchesCount > 0 && !branchId) throw new InternalServerErrorException('Branch not provided');
 
     if (!branchId) return null; // there might not be any branch
 

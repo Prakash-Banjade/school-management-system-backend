@@ -25,8 +25,6 @@ export class SudoGuard implements CanActivate {
         const reply = context.switchToHttp().getResponse<FastifyReply>();
         const sudo_token = this.extractSudoTokenFromRequest(request);
 
-        if (!sudo_token) throw new ForbiddenException({ message: 'Something is wrong. Please try again.' });
-
         try {
             const { accountId } = await this.jwtService.verifyAsync(sudo_token, {
                 secret: this.envService.SUDO_ACCESS_TOKEN_SECRET,
@@ -50,13 +48,13 @@ export class SudoGuard implements CanActivate {
         const token: string | undefined = request.cookies[Tokens.SUDO_ACCESS_TOKEN_COOKIE_NAME];
 
         if (!token) {
-            throw new ForbiddenException({ message: 'Something is wrong. Please try again.' });
+            throw new ForbiddenException({ message: 'Operation Denied' });
         }
 
         const { valid, value } = request.unsignCookie(token);
 
         if (!valid) {
-            throw new ForbiddenException({ message: 'Something is wrong. Please try again.' });
+            throw new ForbiddenException({ message: 'Operation Denied' });
         }
 
         return value;

@@ -14,7 +14,7 @@ export class Enrollment extends BaseEntity {
     @ManyToOne(() => Student, (student) => student.enrollments, { onDelete: 'CASCADE', nullable: false })
     student: Student;
 
-    @ManyToOne(() => ClassRoom, (classRoom) => classRoom.enrollments, { onDelete: 'RESTRICT', nullable: false })
+    @ManyToOne(() => ClassRoom, (classRoom) => classRoom.enrollments, { onDelete: 'CASCADE', nullable: false })
     classRoom: ClassRoom;
 
     @ManyToOne(() => AcademicYear, (academicYear) => academicYear.enrollments, { onDelete: 'CASCADE', nullable: false })
