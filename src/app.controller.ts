@@ -1,4 +1,4 @@
-import { Controller, Get, Post } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
 import { ApiExcludeController } from '@nestjs/swagger';
 import { Public } from './common/decorators/setPublicRoute.decorator';
@@ -14,7 +14,7 @@ export class AppController {
   }
 
   // @Public()
-  // @Post('seed')
+  // @Get('seed')
   // seed() {
   //   return this.appService.seed();
   // }

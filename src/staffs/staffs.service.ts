@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { CreateStaffDto } from './dto/create-staff.dto';
 import { UpdateStaffDto } from './dto/update-staff.dto';
 import { Staff } from './entities/staff.entity';
@@ -17,6 +17,9 @@ import { UtilitiesService } from 'src/utilities/utilities.service';
 import { Faculty } from 'src/faculties/entities/faculty.entity';
 import { UpdateAccountDto } from 'src/auth-system/accounts/dto/update-account.dto';
 import { StaffUtilsService } from './helpers/staffs-utils.service';
+import { EBookTransactionStatus } from 'src/common/types/global.type';
+import { BookTransactionByMemberQueryDto } from 'src/library-system/book-transactions/dto/book-transactions-query.dto';
+import { Account } from 'src/auth-system/accounts/entities/account.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class StaffsService extends BaseRepository {
@@ -26,9 +29,7 @@ export class StaffsService extends BaseRepository {
     private readonly accountsService: AccountsService,
     private readonly utilitiesService: UtilitiesService,
     private readonly staffUtilsService: StaffUtilsService,
-  ) {
-    super(dataSource, req);
-  }
+  ) { super(dataSource, req) }
 
   async create(createStaffDto: CreateStaffDto) {
     // check if staff already exists
@@ -52,10 +53,10 @@ export class StaffsService extends BaseRepository {
       }),
       faculties
     });
-    const savedStaff = await this.getRepository(Staff).save(staff);
+    // const savedStaff = await this.getRepository(Staff).save(staff); // auto created when account is created due to cascade
 
     // create account
-    await this.accountsService.createAccount(savedStaff, profileImage);
+    await this.accountsService.createAccount(staff, profileImage); // an account for staff is also created, because attendance records are stored in accounts
 
     return { message: 'Staff created' }
   }
@@ -154,6 +155,12 @@ export class StaffsService extends BaseRepository {
   async checkIfStaffExists(staffDto: CreateStaffDto | UpdateStaffDto, staff?: Staff) {
     const { email, phone, accountNumber } = staffDto;
 
+    const errorMsg = {
+      email: { field: 'email', message: 'Staff with this email already exists' },
+      phone: { field: 'phone', message: 'Staff with this phone already exists' },
+      accountNumber: { field: 'accountNumber', message: 'Staff with this account number already exists' }
+    }
+
     const existingStaff = await this.getRepository(Staff).createQueryBuilder('staff')
       .where({ id: staff?.id ? Not(staff.id) : undefined })
       .where(new Brackets(qb => {
@@ -165,13 +172,33 @@ export class StaffsService extends BaseRepository {
       })).getOne();
 
     if (existingStaff && !staff) {
-      if (existingStaff.email === email) throw new BadRequestException('Staff with this email already exists');
-      if (existingStaff.phone === phone) throw new BadRequestException('Staff with this phone already exists');
-      if (existingStaff.accountNumber === accountNumber) throw new BadRequestException('Staff with this accountNumber already exists');
+      if (existingStaff.email === email) throw new ConflictException(errorMsg.email);
+      if (existingStaff.phone === phone) throw new ConflictException(errorMsg.phone);
+      if (existingStaff.accountNumber === accountNumber) throw new ConflictException(errorMsg.accountNumber);
     } else if (existingStaff && staff) {
-      if (existingStaff.email === email && existingStaff.id !== staff.id) throw new BadRequestException('Staff with this email already exists');
-      if (existingStaff.phone === phone && existingStaff.id !== staff.id) throw new BadRequestException('Staff with this phone already exists');
-      if (existingStaff.accountNumber === accountNumber && existingStaff.id !== staff.id) throw new BadRequestException('Staff with this accountNumber already exists');
+      if (existingStaff.email === email && existingStaff.id !== staff.id) throw new ConflictException(errorMsg.email);
+      if (existingStaff.phone === phone && existingStaff.id !== staff.id) throw new ConflictException(errorMsg.phone);
+      if (existingStaff.accountNumber === accountNumber && existingStaff.id !== staff.id) throw new ConflictException(errorMsg.accountNumber);
     }
+  }
+
+  async delete(id: string) {
+    const staff = await this.getRepository(Staff).findOne({
+      where: { id },
+      relations: { account: true },
+      select: { id: true, staffId: true, payAmount: true, account: { id: true } }
+    });
+
+    if (!staff) throw new NotFoundException('Staff not found');
+
+    // check if staff has any salary dues
+    if (staff.payAmount > 0) {
+      throw new BadRequestException('Cannot delete. This staff has salary pending. Please pay the salary first.');
+    }
+
+    await this.getRepository(Account).remove(staff.account); // deleting account will cascade delete the staff record
+
+    return { message: 'Staff removed' };
+
   }
 }

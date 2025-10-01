@@ -237,6 +237,8 @@ export class FeePaymentsService extends BaseRepository {
         await this.getRepository(FeeInvoice).save(feeInvoice);
 
         // update paidAt in transactions
+        console.log(feeInvoice)
+        console.log(transactions.map(t => t.id))
         await this.getRepository(BookTransaction).update({ id: In(transactions.map(t => t.id)) }, { paidAt: new Date().toISOString() })
 
         return {

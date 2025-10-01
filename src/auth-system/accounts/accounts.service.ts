@@ -73,15 +73,10 @@ export class AccountsService extends BaseRepository {
 
     account.setLowerCasedFullName();
 
-    await this.getRepository(Account).save(account);
+    const savedAccount = await this.getRepository(Account).save(account);
 
-    // send account confirmation mail to the user
-    return this.authHelper.sendEmailConfirmation({
-      id: account.id,
-      email: account.email,
-      firstName: account.firstName,
-      lastName: account.lastName,
-    } as Account);
+    // send account confirmation mail to the user, mail won't be sent if the account is staff
+    return this.authHelper.sendEmailConfirmation(savedAccount);
   }
 
   async createAdminAccount(branch: Branch, dto: { firstName: string, lastName: string, email: string }) {
@@ -107,12 +102,7 @@ export class AccountsService extends BaseRepository {
 
     const createdAccount = await this.getRepository(Account).save(account);
 
-    await this.authHelper.sendEmailConfirmation({
-      id: account.id,
-      email: account.email,
-      firstName: account.firstName,
-      lastName: account.lastName,
-    } as Account);
+    await this.authHelper.sendEmailConfirmation(createdAccount);
 
     return createdAccount
   }

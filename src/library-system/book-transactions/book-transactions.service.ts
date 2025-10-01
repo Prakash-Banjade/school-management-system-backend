@@ -166,7 +166,7 @@ export class BookTransactionsService extends BaseRepository {
    * Returns all the book transactions for a given student.
    * Accounts only for issued and returned transactions.
    */
-  async findAllByMember(queryDto: BookTransactionByMemberQueryDto) {
+  async findAllByMember(queryDto: BookTransactionByMemberQueryDto, select?: string[]) {
     const { teacherId, studentId } = queryDto;
 
     if (!teacherId && !studentId) throw new BadRequestException('Please provide teacherId or studentId');
@@ -193,7 +193,7 @@ export class BookTransactionsService extends BaseRepository {
           ? qb.andWhere("transaction.returnedAt IS NULL") // issued
           : qb.andWhere("transaction.returnedAt IS NOT NULL") // returned
       }))
-      .select([
+      .select(select ?? [
         "transaction.id AS id",
         "transaction.dueDate as dueDate",
         "transaction.returnedAt as returnedAt",

@@ -11,6 +11,7 @@ const studentSortByQuery = {
     gender: "student.gender",
     dob: "student.dob",
     amount: "ledger.amount",
+    createdAt: "student.createdAt",
 }
 
 export class StudentQueryDto extends ClassRoomSearchQueryDto {
@@ -28,9 +29,9 @@ export class StudentQueryDto extends ClassRoomSearchQueryDto {
     @IsString()
     @Transform(({ value }) => {
         if (value in studentSortByQuery) return studentSortByQuery[value];
-        return 'student.createdAt';
+        return studentSortByQuery.createdAt; // default sort by createdAt
     })
-    sortBy?: string;
+    sortBy?: string = studentSortByQuery.createdAt;
 
     @ApiPropertyOptional({ type: "boolean", description: 'Include ledger amount flag', default: false })
     @IsOptional()

@@ -19,6 +19,8 @@ import { UtilitiesService } from "src/utilities/utilities.service";
 import { JwtService } from "src/auth-system/jwt/jwt.service";
 import { EOptVerificationType, OtpVerificationPending } from "../entities/otp-verification-pending.entity";
 import { OtpVerificationDto } from "../dto/auth.dtos";
+import { Role } from "src/common/types/global.type";
+import { CookieSerializeOptions } from "@fastify/cookie";
 
 @Injectable({ scope: Scope.REQUEST })
 export class AuthHelper extends BaseRepository {
@@ -82,6 +84,8 @@ export class AuthHelper extends BaseRepository {
     }
 
     async sendEmailConfirmation(account: Account) {
+        if (account.role === Role.STAFF) return; // no need to send email confirmation for staff accounts
+
         const { otp, encryptedVerificationToken } = await this.generateOtp(account, EOptVerificationType.EMAIL_VERIFICATION);
 
         // send mail
@@ -231,6 +235,17 @@ export class AuthHelper extends BaseRepository {
         }
     }
 
+    private getSudoCookieOptions(): CookieSerializeOptions {
+        return {
+            secure: this.envService.NODE_ENV === 'production',
+            httpOnly: true,
+            signed: true,
+            sameSite: this.envService.NODE_ENV === 'production' ? 'none' : 'lax',
+            expires: new Date(Date.now() + (this.envService.SUDO_ACCESS_TOKEN_EXPIRATION_SEC * 1000)),
+            path: '/',
+        }
+    }
+
     async verifySudoPassword(password: string, reply: FastifyReply) {
         const { accountId } = this.utilitiesService.getCurrentUser();
 
@@ -250,16 +265,13 @@ export class AuthHelper extends BaseRepository {
             .setCookie(
                 Tokens.SUDO_ACCESS_TOKEN_COOKIE_NAME,
                 sudoAccessToken,
-                {
-                    secure: this.envService.NODE_ENV === 'production',
-                    httpOnly: true,
-                    signed: true,
-                    sameSite: this.envService.NODE_ENV === 'production' ? 'none' : 'lax',
-                    expires: new Date(Date.now() + (this.envService.SUDO_ACCESS_TOKEN_EXPIRATION_SEC * 1000)),
-                    path: '/',
-                }
+                this.getSudoCookieOptions()
             )
             .header('Content-Type', 'application/json')
             .send({ verified: true })
+    }
+
+    async removeSudoCookie(reply: FastifyReply, data: any = {}) {
+        return reply.clearCookie(Tokens.SUDO_ACCESS_TOKEN_COOKIE_NAME, this.getSudoCookieOptions()).send(data);
     }
 }

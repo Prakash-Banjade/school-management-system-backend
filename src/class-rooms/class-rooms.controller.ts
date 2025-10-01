@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, UseInterceptors, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, UseInterceptors, Query, Delete, UseGuards, Res } from '@nestjs/common';
 import { ClassRoomsService } from './class-rooms.service';
 import { CreateClassRoomDto } from './dto/create-class-room.dto';
 import { UpdateClassRoomDto } from './dto/update-class-room.dto';
@@ -14,6 +14,9 @@ import { ClassRoomsStatistics } from './helpers/class-rooms.statistics';
 import { CurrentUser } from 'src/common/decorators/user.decorator';
 import { ClassRoomsTeacherViewService } from './helpers/class-rooms_teacher-view.service';
 import { isTeacher } from 'src/utils/utils';
+import { SudoGuard } from 'src/common/guards/sudo.guard';
+import { FastifyReply } from 'fastify';
+import { AuthHelper } from 'src/auth-system/auth/helpers/auth.helper';
 
 @ApiBearerAuth()
 @ApiTags('Class rooms')
@@ -24,6 +27,7 @@ export class ClassRoomsController {
     private readonly classRoomsHelper: ClassRoomsHelper,
     private readonly classRoomsStatistics: ClassRoomsStatistics,
     private readonly classRoomsTeacherViewService: ClassRoomsTeacherViewService,
+    private readonly authHelper: AuthHelper
   ) { }
 
   @Post()
@@ -140,5 +144,17 @@ export class ClassRoomsController {
   @ApiResponse({ status: 409, description: 'Class room with same name already exists' })
   update(@Param('id') id: string, @Body() updateClassRoomDto: UpdateClassRoomDto) {
     return this.classRoomsService.update(id, updateClassRoomDto);
+  }
+
+  @Delete(':id')
+  @CheckAbilities({ subject: Role.SUPER_ADMIN, action: Action.DELETE })
+  @ApiOperation({ summary: 'Delete class room by ID' })
+  @ApiParam({ name: 'id', description: 'The ID of the class room to update' })
+  @ApiResponse({ status: 200, description: 'Class room deleted.' })
+  @UseInterceptors(TransactionInterceptor)
+  @UseGuards(SudoGuard)
+  async delete(@Param('id') id: string, @Res() reply: FastifyReply) {
+    const msg = await this.classRoomsService.delete(id);
+    this.authHelper.removeSudoCookie(reply, msg); // immediately remove sudo cookie, require sudo token for each delete request
   }
 }

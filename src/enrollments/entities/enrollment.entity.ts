@@ -11,13 +11,13 @@ export class Enrollment extends BaseEntity {
     @Column({ type: 'varchar', length: 255, unique: true })
     registrationNumber: string;
 
-    @ManyToOne(() => Student, (student) => student.enrollments, { onDelete: 'CASCADE' })
+    @ManyToOne(() => Student, (student) => student.enrollments, { onDelete: 'CASCADE', nullable: false })
     student: Student;
 
-    @ManyToOne(() => ClassRoom, (classRoom) => classRoom.enrollments, { onDelete: 'CASCADE' })
+    @ManyToOne(() => ClassRoom, (classRoom) => classRoom.enrollments, { onDelete: 'CASCADE', nullable: false })
     classRoom: ClassRoom;
 
-    @ManyToOne(() => AcademicYear, (academicYear) => academicYear.enrollments, { onDelete: 'CASCADE' })
+    @ManyToOne(() => AcademicYear, (academicYear) => academicYear.enrollments, { onDelete: 'CASCADE', nullable: false })
     academicYear: AcademicYear;
 
     @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })

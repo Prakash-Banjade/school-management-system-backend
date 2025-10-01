@@ -37,7 +37,7 @@ export class Task extends BaseEntity {
     @OneToMany(() => File, file => file.task_attachment)
     attachments: File[];
 
-    @ManyToOne(() => Account, account => account.tasks, { onDelete: 'SET NULL' })
+    @ManyToOne(() => Account, account => account.tasks, { onDelete: 'SET NULL', nullable: true })
     setBy: Account;
 
     @ManyToOne(() => Subject, subject => subject.tasks, { onDelete: 'CASCADE', nullable: false })

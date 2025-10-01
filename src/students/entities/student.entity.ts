@@ -12,7 +12,7 @@ import { BookTransaction } from "src/library-system/book-transactions/entities/b
 import { OptionalSubject } from "src/optional-subject/entities/optional-subject.entity";
 import { TaskSubmission } from "src/task-system/task-submissions/entities/task-submission.entity";
 import { RouteStop } from "src/transportation-system/route-stops/entities/route-stop.entity";
-import { Column, Entity, Index, JoinColumn, ManyToMany, ManyToOne, OneToMany, OneToOne } from "typeorm";
+import { Column, Entity, Index, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne } from "typeorm";
 
 @Entity()
 export class Student extends BaseEntity {
@@ -28,7 +28,7 @@ export class Student extends BaseEntity {
     @Column({ type: 'simple-array' })
     academicYearIds: string[];
 
-    @ManyToOne(() => ClassRoom, (classRoom) => classRoom.students, { onDelete: 'RESTRICT', nullable: false })
+    @ManyToOne(() => ClassRoom, (classRoom) => classRoom.students, { onDelete: 'CASCADE', nullable: false })
     classRoom: ClassRoom;
 
     @ManyToMany(() => OptionalSubject, (optionalSubject) => optionalSubject.students, { cascade: true })
@@ -37,7 +37,7 @@ export class Student extends BaseEntity {
     @Column({ type: 'int' })
     rollNo: number;
 
-    @ManyToOne(() => DormitoryRoom, (dormitoryRoom) => dormitoryRoom.students, { onDelete: 'RESTRICT' })
+    @ManyToOne(() => DormitoryRoom, (dormitoryRoom) => dormitoryRoom.students, { onDelete: 'SET NULL', nullable: true })
     dormitoryRoom: DormitoryRoom;
 
     @ManyToOne(() => RouteStop, (routeStop) => routeStop.students, { onDelete: 'SET NULL' })
@@ -65,7 +65,7 @@ export class Student extends BaseEntity {
     @Column({ type: 'varchar' })
     studentId: string;
 
-    @OneToOne(() => Account, account => account.student, { onDelete: "RESTRICT" })
+    @OneToOne(() => Account, account => account.student, { onDelete: "CASCADE", nullable: false })
     @JoinColumn()
     account: Account;
 
@@ -117,7 +117,7 @@ export class Student extends BaseEntity {
     |--------------------------------------------------
     */
 
-    @ManyToMany(() => Guardian, (guardian) => guardian.students, { cascade: true })
+    @OneToMany(() => Guardian, (guardian) => guardian.students, { cascade: true })
     guardians: Guardian[]
 
     /**

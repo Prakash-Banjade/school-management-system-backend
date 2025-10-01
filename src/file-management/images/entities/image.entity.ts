@@ -34,7 +34,7 @@ export class Image extends BaseEntity {
     @Column({ type: 'varchar', default: '' })
     name!: string
 
-    @ManyToOne(() => Account, account => account.images, { onDelete: 'CASCADE' })
+    @ManyToOne(() => Account, account => account.images, { onDelete: 'SET NULL', nullable: true })
     uploadedBy!: Account
 
     /**

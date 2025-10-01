@@ -46,8 +46,8 @@ export const enum CACHE_KEYS {
 }
 
 export const thisSchool = {
-    name: 'Abhyam SMS',
-    address: 'Comming soon...',
-    phone: '9800525463',
-    logo: 'https://marketplace.canva.com/EAGLphtN1-E/1/0/1600w/canva-blue-modern-school-logo-bVNORNpm-c8.jpg',
+    name: 'Aayam Global SMS',
+    address: 'Kalikanagar-11, Butwal',
+    phone: '071415272',
+    logo: 'https://tscapis.e-aribt.com/uploads/Aayam%20Global%20School%20Logo-01-1cb6f8.png',
 } as const;

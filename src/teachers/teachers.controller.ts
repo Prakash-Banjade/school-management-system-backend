@@ -1,8 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Query, UseInterceptors, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Query, UseInterceptors, ParseUUIDPipe, Delete } from '@nestjs/common';
 import { TeachersService } from './teachers.service';
 import { CreateTeacherDto } from './dto/create-teacher.dto';
 import { UpdateTeacherDto } from './dto/update-teacher.dto';
-import { ApiBearerAuth, ApiConflictResponse, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConflictResponse, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { TeacherOptionsQueryDto, TeacherQueryDto } from './dto/teacher-query.dto';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 import { CheckAbilities } from 'src/common/decorators/abilities.decorator';
@@ -109,5 +109,14 @@ export class TeachersController {
   @CheckAbilities({ subject: Role.ADMIN, action: Action.UPDATE })
   update(@Param('id', ParseUUIDPipe) id: string, @Body() updateTeacherDto: UpdateTeacherDto) {
     return this.teachersService.update(id, updateTeacherDto);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete teacher by ID' })
+  @ApiParam({ name: 'id', required: true, description: 'Unique ID of the teacher' })
+  @ApiResponse({ status: 200, description: 'Teacher deleted successfully.' })
+  @CheckAbilities({ subject: Role.SUPER_ADMIN, action: Action.DELETE })
+  delete(@Param('id') id: string) {
+    return this.teachersService.delete(id);
   }
 }

@@ -8,6 +8,7 @@ import { AcademicYearsModule } from 'src/academic-years/academic-years.module';
 import { ClassRoomsTeacherViewService } from './helpers/class-rooms_teacher-view.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClassRoom } from './entities/class-room.entity';
+import { AuthModule } from 'src/auth-system/auth/auth.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { ClassRoom } from './entities/class-room.entity';
     ]),
     FeeStructuresModule,
     AcademicYearsModule,
+    AuthModule,
   ],
   controllers: [ClassRoomsController],
   providers: [ClassRoomsService, ClassRoomsHelper, ClassRoomsStatistics, ClassRoomsTeacherViewService],
