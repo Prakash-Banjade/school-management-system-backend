@@ -54,7 +54,7 @@ export class JwtService {
     async getAuthTokens(account: Account, req: FastifyRequest) {
         let payload: AuthUser;
 
-        const deviceId = generateDeviceId(req.headers['user-agent'], req.ip);
+        const deviceId = req.user?.deviceId ?? generateDeviceId(req.headers['user-agent'], req.ip);
 
         if (account.role === Role.STUDENT) {
             const student = await this.studentRepo.findOne({
