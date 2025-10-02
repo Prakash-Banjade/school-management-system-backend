@@ -1,4 +1,3 @@
-// sync-database.js
 const { DataSource } = require('typeorm');
 require('dotenv').config();
 
@@ -10,6 +9,7 @@ const AppDataSource = new DataSource({
 
     synchronize: false, // We'll do this manually
     logging: true, // Shows SQL queries in console
+    logger: 'simple-console',
 });
 
 async function synchronizeDatabase() {

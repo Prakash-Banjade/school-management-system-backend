@@ -16,7 +16,7 @@
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "nest start",
+    "start": "node dist/main",
     "dev": "nest start --watch",
     "db:sync": "node ./dist/datasource/sync-script.js", 
     "debug": "nest start --debug --watch",
