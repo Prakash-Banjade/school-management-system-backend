@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional, OmitType } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsDateString, IsDefined, IsEmail, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Length, Matches, MaxLength, Min, ValidateIf, ValidateNested } from "class-validator";
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsDateString, IsDefined, IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID, Length, Matches, MaxLength, ValidateIf, ValidateNested } from "class-validator";
 import { NAME_REGEX, NAME_WITH_SPACE_REGEX, PHONE_NUMBER_REGEX } from "src/common/CONSTANTS";
 import { IsDateOfBirth } from "src/common/decorators/validators/isDateOfBrith.decorator";
 import { IsNotFutureDate } from "src/common/decorators/validators/isNotFutureDate.decorator";
@@ -111,9 +111,8 @@ export class CreateStudentDto {
     email: string;
 
     @ApiProperty({ type: "string", description: 'Phone number of the student' })
-    @IsString()
-    @IsNotEmpty()
-    @Matches(PHONE_NUMBER_REGEX)
+    @Matches(PHONE_NUMBER_REGEX, { message: 'Invalid phone number' })
+    @IsOptional()
     phone: string;
 
     /**

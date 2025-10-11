@@ -108,8 +108,8 @@ export class Student extends BaseEntity {
     |--------------------------------------------------
     */
 
-    @Column({ type: 'enum', enum: EBloodGroup })
-    bloodGroup: EBloodGroup
+    @Column({ type: 'enum', enum: EBloodGroup, nullable: true })
+    bloodGroup: EBloodGroup | null
 
     /**
     |--------------------------------------------------
