@@ -22,6 +22,7 @@ import { BookTransactionsService } from 'src/library-system/book-transactions/bo
 import { EBookTransactionStatus } from 'src/common/types/global.type';
 import { BookTransactionByMemberQueryDto, UnpaidTransactionsQueryDto } from 'src/library-system/book-transactions/dto/book-transactions-query.dto';
 import { Account } from 'src/auth-system/accounts/entities/account.entity';
+import { FilesService } from 'src/file-management/files/files.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class TeachersService extends BaseRepository {
@@ -33,6 +34,7 @@ export class TeachersService extends BaseRepository {
     private readonly teacherUtilsService: TeacherUtilsService,
     private readonly bookTransactionsService: BookTransactionsService,
     private readonly bookTransactionsHelper: BookTransactionsHelper,
+    private readonly filesService: FilesService,
   ) { super(dataSource, req) }
 
   async create(createTeacherDto: CreateTeacherDto) {
@@ -42,6 +44,10 @@ export class TeachersService extends BaseRepository {
     const profileImage = createTeacherDto.profileImageId
       ? await this.imageService.findOne(createTeacherDto.profileImageId)
       : null;
+
+    const documentAttachments = createTeacherDto.documentAttachmentIds
+      ? await this.filesService.findAllByIds(createTeacherDto.documentAttachmentIds)
+      : [];
 
     const faculties = createTeacherDto.facultyIds?.length ? await this.getRepository(Faculty).find({
       where: { id: In(createTeacherDto.facultyIds) },
@@ -55,7 +61,8 @@ export class TeachersService extends BaseRepository {
       salaryStructure: this.getRepository(SalaryStructure).create({
         basicSalary: createTeacherDto.basicSalary,
         allowances: createTeacherDto.allowances ?? [],
-      })
+      }),
+      documentAttachments
     });
 
     // const savedTeacher = await this.getRepository(Teacher).save(teacher); // auto created when account is created due to cascade
@@ -99,6 +106,7 @@ export class TeachersService extends BaseRepository {
       relations: {
         faculties: true,
         account: { profileImage: true },
+        documentAttachments: true
       },
       select: {
         account: {
@@ -111,6 +119,11 @@ export class TeachersService extends BaseRepository {
         faculties: {
           id: true,
           name: true,
+        },
+        documentAttachments: {
+          id: true,
+          originalName: true,
+          url: true,
         }
       }
     });
@@ -151,17 +164,25 @@ export class TeachersService extends BaseRepository {
     // check if teacher already exists
     await this.checkIfTeacherExists(updateTeacherDto, existingTeacher);
 
-    const faculties = updateTeacherDto.facultyIds?.length ? await this.getRepository(Faculty).find({
-      where: { id: In(updateTeacherDto.facultyIds) },
-      select: { id: true }
-    }) : [];
+    if (updateTeacherDto.facultyIds?.length) {
+      const faculties = await this.getRepository(Faculty).find({
+        where: { id: In(updateTeacherDto.facultyIds) },
+        select: { id: true }
+      });
+
+      existingTeacher.faculties = faculties;
+    }
+
+    if (updateTeacherDto.documentAttachmentIds?.length) {
+      const newDocuments = await this.filesService.findAllByIds(updateTeacherDto.documentAttachmentIds);
+      existingTeacher.documentAttachments = newDocuments;
+    }
 
     // update account related details
     await this.accountsService.update(existingTeacher.account?.id, updateTeacherDto as UpdateAccountDto)
 
     Object.assign(existingTeacher, {
       ...updateTeacherDto,
-      faculties,
     });
     await this.getRepository(Teacher).save(existingTeacher);
 

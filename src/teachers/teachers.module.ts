@@ -9,6 +9,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Teacher } from './entities/teacher.entity';
 import { TeacherUtilsService } from './helpers/teacher-utils.service';
 import { BookTransactionsModule } from 'src/library-system/book-transactions/book-transactions.module';
+import { FilesModule } from 'src/file-management/files/files.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { BookTransactionsModule } from 'src/library-system/book-transactions/boo
     ]),
     AccountsModule,
     ImagesModule,
+    FilesModule,
     BookTransactionsModule,
   ],
   controllers: [TeachersController],

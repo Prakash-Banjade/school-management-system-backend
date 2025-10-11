@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { ArrayMinSize, IsArray, IsDateString, IsEmail, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Matches, Min, ValidateNested } from "class-validator";
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsDateString, IsEmail, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Matches, Min, ValidateNested } from "class-validator";
 import { NAME_REGEX, NAME_WITH_SPACE_REGEX, PHONE_NUMBER_REGEX } from "src/common/CONSTANTS";
 import { IsDateOfBirth } from "src/common/decorators/validators/isDateOfBrith.decorator";
 import { IsNotFutureDate } from "src/common/decorators/validators/isNotFutureDate.decorator";
@@ -95,6 +95,12 @@ export class CreateEmployeeDto {
     @IsNotFutureDate({ message: 'Joining date cannot be in the future' })
     @IsNotEmpty()
     joinedDate!: string;
+
+    @ApiPropertyOptional({ type: [String], description: 'Document attachment gallery id/url' })
+    @IsString({ each: true })
+    @IsOptional()
+    @ArrayMaxSize(5, { message: 'Maximum 5 attachments allowed' })
+    documentAttachmentIds: string[];
 
     @ApiProperty({ type: "string", example: 'Swish Bank', description: 'Bank name of the teacher' })
     @IsString()

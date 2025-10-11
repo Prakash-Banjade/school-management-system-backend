@@ -74,7 +74,7 @@ export class StudentsService extends BaseRepository {
     // evaluate document attachments
     const documentAttachments = createStudentDto.documentAttachmentIds
       ? await this.filesService.findAllByIds(createStudentDto.documentAttachmentIds)
-      : null;
+      : [];
 
     // evaluate dormitory room
     const dormitoryRoom = createStudentDto.dormitoryRoomId
@@ -131,7 +131,6 @@ export class StudentsService extends BaseRepository {
 
     return { message: 'Student created' }
   }
-
 
   async findOne(id: string) {
     const currentAcademicYearId = await this.utilitiesService.getAcademicYearId();

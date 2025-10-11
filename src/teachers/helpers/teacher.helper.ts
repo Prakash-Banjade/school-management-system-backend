@@ -81,6 +81,7 @@ export class TeachersHelper extends BaseRepository {
     async getDetails(id: string) { // used in single teacher page in frontend
         const querybuilder = this.getRepository(Teacher).createQueryBuilder('teacher')
             .leftJoin('teacher.account', 'account')
+            .leftJoin('teacher.documentAttachments', 'documentAttachments')
             .leftJoin('account.profileImage', 'profileImage')
             .leftJoin('teacher.assignedClassRooms', 'assignedClassRooms')
             .leftJoin('assignedClassRooms.parent', 'parent')
@@ -104,6 +105,15 @@ export class TeachersHelper extends BaseRepository {
                 'teacher.shortDescription as shortDescription',
                 'account.id as accountId',
                 'profileImage.url as profileImageUrl',
+                `
+                    JSON_ARRAYAGG(
+                        JSON_OBJECT(
+                            'id', documentAttachments.id,
+                            'name', documentAttachments.name,
+                            'url', documentAttachments.url
+                        )
+                    ) AS documentAttachments
+                `,
                 `
                     JSON_ARRAYAGG(
                         JSON_OBJECT(
