@@ -4,6 +4,7 @@ import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsDateString, IsDefined
 import { NAME_REGEX, NAME_WITH_SPACE_REGEX, PHONE_NUMBER_REGEX } from "src/common/CONSTANTS";
 import { IsDateOfBirth } from "src/common/decorators/validators/isDateOfBrith.decorator";
 import { IsNotFutureDate } from "src/common/decorators/validators/isNotFutureDate.decorator";
+import { IsOptionalEmail } from "src/common/decorators/validators/isOptionalEmail.decorator";
 import { IsUuidOrUrl } from "src/common/decorators/validators/isUrlOrUUid.decorator";
 import { EBloodGroup, EReligion, Gender } from "src/common/types/global.type";
 import { CreateGuardianDto } from "src/guardians/dto/create-guardian.dto";
@@ -105,12 +106,12 @@ export class CreateStudentDto {
     |--------------------------------------------------
     */
 
-    @ApiProperty({ type: "string", description: 'Email of the student' })
-    @IsEmail()
-    @IsNotEmpty()
+    @ApiPropertyOptional({ type: "string", description: 'Email of the student' })
+    @IsOptionalEmail()
+    @IsOptional()
     email: string;
 
-    @ApiProperty({ type: "string", description: 'Phone number of the student' })
+    @ApiPropertyOptional({ type: "string", description: 'Phone number of the student' })
     @Matches(PHONE_NUMBER_REGEX, { message: 'Invalid phone number' })
     @IsOptional()
     phone: string;

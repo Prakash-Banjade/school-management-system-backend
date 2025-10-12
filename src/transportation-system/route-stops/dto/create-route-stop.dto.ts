@@ -38,6 +38,6 @@ export class CreateRouteStopDto {
 
     @ApiProperty()
     @IsNumber()
-    @Min(1, { message: "Distance must be greater than 0" })
+    @Min(0, { message: "Distance must be greater than 0" })
     distance: number;
 }

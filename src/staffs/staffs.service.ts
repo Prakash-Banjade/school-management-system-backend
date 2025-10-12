@@ -20,6 +20,7 @@ import { StaffUtilsService } from './helpers/staffs-utils.service';
 import { EBookTransactionStatus } from 'src/common/types/global.type';
 import { BookTransactionByMemberQueryDto } from 'src/library-system/book-transactions/dto/book-transactions-query.dto';
 import { Account } from 'src/auth-system/accounts/entities/account.entity';
+import { FilesService } from 'src/file-management/files/files.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class StaffsService extends BaseRepository {
@@ -29,6 +30,7 @@ export class StaffsService extends BaseRepository {
     private readonly accountsService: AccountsService,
     private readonly utilitiesService: UtilitiesService,
     private readonly staffUtilsService: StaffUtilsService,
+    private readonly filesService: FilesService,
   ) { super(dataSource, req) }
 
   async create(createStaffDto: CreateStaffDto) {
@@ -38,6 +40,10 @@ export class StaffsService extends BaseRepository {
     const profileImage = createStaffDto.profileImageId
       ? await this.imageService.findOne(createStaffDto.profileImageId)
       : null;
+
+    const documentAttachments = createStaffDto.documentAttachmentIds
+      ? await this.filesService.findAllByIds(createStaffDto.documentAttachmentIds)
+      : [];
 
     const faculties = createStaffDto.facultyIds?.length ? await this.getRepository(Faculty).find({
       where: { id: In(createStaffDto.facultyIds) },
@@ -51,7 +57,8 @@ export class StaffsService extends BaseRepository {
         basicSalary: createStaffDto.basicSalary,
         allowances: createStaffDto.allowances ?? [],
       }),
-      faculties
+      faculties,
+      documentAttachments
     });
     // const savedStaff = await this.getRepository(Staff).save(staff); // auto created when account is created due to cascade
 
@@ -113,6 +120,7 @@ export class StaffsService extends BaseRepository {
       relations: {
         account: { profileImage: true },
         faculties: true,
+        documentAttachments: true,
       },
       select: {
         account: {
@@ -125,6 +133,11 @@ export class StaffsService extends BaseRepository {
         faculties: {
           id: true,
           name: true,
+        },
+        documentAttachments: {
+          id: true,
+          originalName: true,
+          url: true,
         }
       }
     });
@@ -137,15 +150,24 @@ export class StaffsService extends BaseRepository {
     const existingStaff = await this.findOne(id);
     await this.checkIfStaffExists(updateStaffDto, existingStaff);
 
-    const faculties = updateStaffDto.facultyIds?.length ? await this.getRepository(Faculty).find({
-      where: { id: In(updateStaffDto.facultyIds) },
-      select: { id: true }
-    }) : [];
+    if (updateStaffDto.facultyIds?.length) {
+      const faculties = await this.getRepository(Faculty).find({
+        where: { id: In(updateStaffDto.facultyIds) },
+        select: { id: true }
+      });
+
+      existingStaff.faculties = faculties;
+    }
+
+    if (updateStaffDto.documentAttachmentIds?.length) {
+      const newDocuments = await this.filesService.findAllByIds(updateStaffDto.documentAttachmentIds);
+      existingStaff.documentAttachments = newDocuments;
+    }
 
     // update account related details
     await this.accountsService.update(existingStaff.account?.id, updateStaffDto as UpdateAccountDto)
 
-    Object.assign(existingStaff, { ...updateStaffDto, faculties });
+    Object.assign(existingStaff, { ...updateStaffDto });
 
     await this.getRepository(Staff).save(existingStaff);
 

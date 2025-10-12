@@ -4,7 +4,7 @@ export const enum Tokens {
 }
 
 export const NAME_REGEX = /^[A-Za-z]+$/;
-export const NAME_WITH_SPACE_REGEX = /^[A-Za-z]+( [A-Za-z]+)*$/;
+export const NAME_WITH_SPACE_REGEX = /^[A-Za-z.]+( [A-Za-z.]+)*$/;
 
 export const BCRYPT_HASH = /^\$2[aby]?\$[0-9]{2}\$[./A-Za-z0-9]{53}$/;
 

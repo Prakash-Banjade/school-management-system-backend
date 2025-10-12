@@ -20,6 +20,7 @@ export class FilesCron {
             where: {
                 student_documentAttachment: IsNull(),
                 teacher_documentAttachment: IsNull(),
+                staff_documentAttachment: IsNull(),
                 lessonPlan_attachment: IsNull(),
                 task_attachment: IsNull(),
                 task_submission_attachment: IsNull(),

@@ -2,6 +2,7 @@ import { Account } from "src/auth-system/accounts/entities/account.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { EBloodGroup, EMaritalStatus, EStaff, Gender } from "src/common/types/global.type";
 import { Faculty } from "src/faculties/entities/faculty.entity";
+import { File } from "src/file-management/files/entities/file.entity";
 import { EmployeeLedger } from "src/finance-system/salary-management/employee-ledgers/entities/employee-ledger.entity";
 import { Payroll } from "src/finance-system/salary-management/payrolls/entities/payroll.entity";
 import { SalaryStructure } from "src/finance-system/salary-management/salary-structures/entities/salary-structure.entity";
@@ -57,6 +58,9 @@ export class Staff extends BaseEntity {
 
     @Column({ type: 'datetime' })
     joinedDate: string
+
+    @OneToMany(() => File, (documentAttachments) => documentAttachments.staff_documentAttachment)
+    documentAttachments: File[];
 
     @Column({ type: 'varchar', nullable: true })
     bankName: string;
