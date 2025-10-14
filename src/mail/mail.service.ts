@@ -80,7 +80,7 @@ export class MailService {
             clientUrl: this.domain,
             schoolName: thisSchool.name,
             schoolAddress: thisSchool.address,
-            schoolLogo: `${this.backendDomain}/logo.webp`,
+            schoolLogo: thisSchool.logo,
         });
         this.sendEmail(dto.receiverEmail, subject, html);
     }
@@ -93,7 +93,7 @@ export class MailService {
             clientUrl: this.domain,
             schoolName: thisSchool.name,
             schoolAddress: thisSchool.address,
-            schoolLogo: `${this.backendDomain}/logo.webp`,
+            schoolLogo: thisSchool.logo,
         });
         this.sendEmail(dto.email, subject, html);
     }
@@ -108,7 +108,7 @@ export class MailService {
             clientUrl: this.domain,
             schoolName: thisSchool.name,
             schoolAddress: thisSchool.address,
-            schoolLogo: `${this.backendDomain}/logo.webp`,
+            schoolLogo: thisSchool.logo,
         });
         this.sendEmail(
             receiverEmail,
@@ -139,7 +139,7 @@ export class MailService {
             clientUrl: this.domain,
             schoolName: thisSchool.name,
             schoolAddress: thisSchool.address,
-            schoolLogo: `${this.backendDomain}/logo.webp`,
+            schoolLogo: thisSchool.logo,
         });
         this.sendEmail(dto.receiverEmail, subject, html);
     }

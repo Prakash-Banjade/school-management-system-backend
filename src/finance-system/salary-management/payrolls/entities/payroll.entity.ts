@@ -35,6 +35,7 @@ export class Payroll extends BaseEntity {
     @BeforeInsert()
     calculateNetSalary() {
         const adjustmentAmount = this.salaryAdjustments?.reduce((acc, curr) => {
+            if (!curr) return acc;
             (deductionTypes.includes(curr.type)) ? acc -= curr.amount : acc += curr.amount;
             return acc;
         }, 0);
