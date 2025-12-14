@@ -106,9 +106,8 @@ export class CreateStudentDto {
     |--------------------------------------------------
     */
 
-    @ApiPropertyOptional({ type: "string", description: 'Email of the student' })
-    @IsOptionalEmail()
-    @IsOptional()
+    @ApiProperty({ type: "string", description: 'Email of the student' })
+    @IsEmail()
     email: string;
 
     @ApiPropertyOptional({ type: "string", description: 'Phone number of the student' })
