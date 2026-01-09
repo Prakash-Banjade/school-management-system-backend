@@ -2,6 +2,7 @@ import { Account } from "src/auth-system/accounts/entities/account.entity";
 import { ClassRoom } from "src/class-rooms/entities/class-room.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { EBloodGroup, EReligion, Gender } from "src/common/types/global.type";
+import { Conversation } from "src/conversation-system/conversation/entities/conversation.entity";
 import { DormitoryRoom } from "src/dormitory-system/dormitory-rooms/entities/dormitory-room.entity";
 import { Enrollment } from "src/enrollments/entities/enrollment.entity";
 import { ExamReport } from "src/examination-system/exam-reports/entities/exam-report.entity";
@@ -54,6 +55,9 @@ export class Student extends BaseEntity {
 
     @OneToMany(() => TaskSubmission, (taskSubmission) => taskSubmission.student)
     taskSubmissions: TaskSubmission[];
+
+    @OneToMany(() => Conversation, (conversation) => conversation.student)
+    conversations: Conversation[]
 
     /**
     |--------------------------------------------------

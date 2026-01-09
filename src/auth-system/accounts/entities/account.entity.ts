@@ -16,6 +16,8 @@ import { Branch } from "src/branches/entities/branch.entity";
 import { WebAuthnCredential } from "src/auth-system/webAuthn/entities/webAuthnCredential.entity";
 import { LoginDevice } from "./login-devices.entity";
 import { getLowerCasedFullName } from "src/utils/utils";
+import { Conversation } from "src/conversation-system/conversation/entities/conversation.entity";
+import { Message } from "src/conversation-system/messages/entities/message.entity";
 
 @Entity()
 export class Account extends BaseEntity {
@@ -103,4 +105,8 @@ export class Account extends BaseEntity {
 
     @OneToOne(() => Image, image => image.account_profileImage, { nullable: true })
     profileImage: Image | null;
+
+    // only student and teacher can have conversationMessages
+    @OneToMany(() => Message, message => message.sender)
+    conversationMessages: Message[]
 }
