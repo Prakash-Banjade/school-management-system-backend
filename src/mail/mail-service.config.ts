@@ -29,4 +29,5 @@ export interface ITemplates<T = any> {
     invoiceCreated: TemplateDelegate<T>;
     userCredentials: TemplateDelegate<T>;
     twoFaOtp: TemplateDelegate<T>;
+    notice: TemplateDelegate<T>;
 }

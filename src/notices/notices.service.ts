@@ -4,17 +4,18 @@ import { UpdateNoticeDto } from './dto/update-notice.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Notice } from './entities/notice.entity';
 import { Brackets, Repository } from 'typeorm';
-import paginatedData from 'src/utils/paginatedData';
 import { NoticesQueryDto } from './dto/notices-query.dto';
 import { subDays } from 'date-fns';
 import { MAX_RECENT_DAYS } from 'src/common/CONSTANTS';
 import { PageMetaDto } from 'src/common/dto/pageMeta.dto';
 import { PageDto } from 'src/common/dto/page.dto.';
+import { NoticeHelperService } from './notice-helper.service';
 
 @Injectable()
 export class NoticesService {
   constructor(
     @InjectRepository(Notice) private readonly noticeRepo: Repository<Notice>,
+    private readonly noticeHelperService: NoticeHelperService
   ) { }
 
   async create(createNoticeDto: CreateNoticeDto) {
@@ -24,6 +25,8 @@ export class NoticesService {
     })
 
     const saved = await this.noticeRepo.save(newNotice);
+
+    this.noticeHelperService.sendMail(saved.title, saved.description);
 
     return {
       message: 'Notice created successfully',
@@ -80,6 +83,8 @@ export class NoticesService {
     Object.assign(existingNotice, updateNoticeDto);
 
     const saved = await this.noticeRepo.save(existingNotice);
+
+    this.noticeHelperService.sendMail(saved.title, saved.description);
 
     return {
       message: 'Notice updated successfully',

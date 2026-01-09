@@ -17,7 +17,7 @@ async function bootstrap() {
     AppModule,
     new FastifyAdapter({}),
     {
-      logger: ['error', 'warn', 'debug', 'verbose',],
+      logger: ['error', 'warn', 'debug', 'verbose'],
     }
   );
 

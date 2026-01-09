@@ -7,7 +7,7 @@ import * as nodemailer from 'nodemailer';
 import Handlebars from 'handlebars';
 import { join } from 'path';
 import { OnEvent } from '@nestjs/event-emitter';
-import { ConfirmationMailEventDto, FeeInvoiceCreatedEventDto, ResetPasswordMailEventDto, TwoFAMailEventDto, UserCredentialsEventDto } from './dto/events.dto';
+import { ConfirmationMailEventDto, FeeInvoiceCreatedEventDto, NoticeEventDto, ResetPasswordMailEventDto, TwoFAMailEventDto, UserCredentialsEventDto } from './dto/events.dto';
 import Mail from 'nodemailer/lib/mailer';
 import { thisSchool } from 'src/common/CONSTANTS';
 import { ConfigService } from '@nestjs/config';
@@ -18,6 +18,7 @@ export enum MailEvents {
     RESET_PASSWORD = 'mail.reset-password',
     FEE_INVOICE_CREATED = 'fee-invoice:created',
     TWOFA_OTP = 'twofa.otp',
+    NOTICE = 'notice'
 }
 
 @Injectable()
@@ -40,6 +41,7 @@ export class MailService {
             invoiceCreated: MailService.parseTemplate('fee-system/fee-invoice-created.hbs'),
             userCredentials: MailService.parseTemplate('sendUserCredentials.hbs'),
             twoFaOtp: MailService.parseTemplate('two-fa-otp.hbs'),
+            notice: MailService.parseTemplate('notice.hbs'),
         };
     }
 
@@ -54,7 +56,7 @@ export class MailService {
     }
 
     public async sendEmail(
-        to: string,
+        to: string | string[],
         subject: string,
         html: string,
         attachments?: Mail.Attachment[]
@@ -142,5 +144,17 @@ export class MailService {
             schoolLogo: thisSchool.logo,
         });
         this.sendEmail(dto.receiverEmail, subject, html);
+    }
+
+    @OnEvent(MailEvents.NOTICE)
+    public async sendNotice(dto: NoticeEventDto) {
+        const html = this.templates.notice({
+            ...dto,
+            clientUrl: this.domain,
+            schoolName: thisSchool.name,
+            schoolAddress: thisSchool.address,
+            schoolLogo: thisSchool.logo,
+        });
+        this.sendEmail(dto.recipients, dto.subject, html);
     }
 }
