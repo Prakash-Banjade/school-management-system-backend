@@ -2,7 +2,6 @@ import { Account } from "src/auth-system/accounts/entities/account.entity";
 import { ClassRoom } from "src/class-rooms/entities/class-room.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { EBloodGroup, EReligion, Gender } from "src/common/types/global.type";
-import { Conversation } from "src/conversation-system/conversation/entities/conversation.entity";
 import { DormitoryRoom } from "src/dormitory-system/dormitory-rooms/entities/dormitory-room.entity";
 import { Enrollment } from "src/enrollments/entities/enrollment.entity";
 import { ExamReport } from "src/examination-system/exam-reports/entities/exam-report.entity";
@@ -13,7 +12,7 @@ import { BookTransaction } from "src/library-system/book-transactions/entities/b
 import { OptionalSubject } from "src/optional-subject/entities/optional-subject.entity";
 import { TaskSubmission } from "src/task-system/task-submissions/entities/task-submission.entity";
 import { RouteStop } from "src/transportation-system/route-stops/entities/route-stop.entity";
-import { Column, Entity, Index, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToMany, ManyToOne, OneToMany, OneToOne } from "typeorm";
 
 @Entity()
 export class Student extends BaseEntity {
@@ -55,9 +54,6 @@ export class Student extends BaseEntity {
 
     @OneToMany(() => TaskSubmission, (taskSubmission) => taskSubmission.student)
     taskSubmissions: TaskSubmission[];
-
-    @OneToMany(() => Conversation, (conversation) => conversation.student)
-    conversations: Conversation[]
 
     /**
     |--------------------------------------------------

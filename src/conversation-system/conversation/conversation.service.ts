@@ -1,35 +1,74 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateConversationDto } from './dto/create-conversation.dto';
-import { UpdateConversationDto } from './dto/update-conversation.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsSelect, Repository } from 'typeorm';
 import { Conversation } from './entities/conversation.entity';
-import { AuthUser } from 'src/common/types/global.type';
-import { isStudent, isTeacher } from 'src/utils/utils';
+import { AuthUser, Role } from 'src/common/types/global.type';
+import { isStudent, } from 'src/utils/utils';
+import { ClassRoutine } from 'src/class-routines/entities/class-routine.entity';
+import { EConversationType } from './interfaces';
+import { Account } from 'src/auth-system/accounts/entities/account.entity';
+import { ConversationParticipant } from '../conversation-participants/entities/conversation-participant.entity';
 import { QueryDto } from 'src/common/dto/query.dto';
-import { Message } from '../messages/entities/message.entity';
-import { paginatedRawData } from 'src/utils/paginatedData';
+import paginatedData from 'src/utils/paginatedData';
+import { applySelectColumns } from 'src/utils/apply-select-cols';
 
 @Injectable()
 export class ConversationService {
   constructor(
-    @InjectRepository(Conversation)
-    private readonly conversationRepo: Repository<Conversation>
+    @InjectRepository(Conversation) private readonly conversationRepo: Repository<Conversation>,
+    @InjectRepository(ClassRoutine) private readonly classRoutineRepo: Repository<ClassRoutine>,
+    @InjectRepository(Account) private readonly accountRepo: Repository<Account>,
+    @InjectRepository(ConversationParticipant) private readonly conversationParticipantRepo: Repository<ConversationParticipant>,
+
   ) { }
 
   async create(dto: CreateConversationDto, currentUser: AuthUser) {
-    if (isStudent(currentUser) && !dto.teacherId) throw new BadRequestException('Teacher id is required');
-    if (isTeacher(currentUser) && !dto.studentId) throw new BadRequestException('Student id is required');
+    if (!isStudent(currentUser)) throw new ForbiddenException('You are not allowed to create a conversation');
 
-    const duplicateConversation = await this.conversationRepo.findOneBy({
-      teacher: { id: isStudent(currentUser) ? dto.teacherId : dto.studentId },
-      student: { id: isTeacher(currentUser) ? dto.studentId : dto.teacherId }
-    })
-    if (duplicateConversation) throw new BadRequestException('Conversation already exists');
+    const isValidRoutine = await this.classRoutineRepo.findOne({
+      where: {
+        classRoom: { id: currentUser.classRoomId },
+        teacher: { id: dto.teacherId }
+      },
+      select: { id: true }
+    });
+    if (!isValidRoutine) throw new ForbiddenException("You can only chat with your assigned subject teachers.");
+
+    // teacher account
+    const teacherAccount = await this.accountRepo.findOne({
+      where: {
+        role: Role.TEACHER,
+        teacher: { id: dto.teacherId }
+      },
+      select: { id: true }
+    });
+    if (!teacherAccount) throw new NotFoundException('Teacher not found');
+
+    // check for duplicate
+    const existing = await this.conversationRepo
+      .createQueryBuilder('conv')
+      .where('conv.type = :type', { type: EConversationType.DIRECT })
+      .innerJoin('conv.participants', 'p1')
+      .innerJoin('conv.participants', 'p2')
+      .andWhere('p1.accountId = :studentAccountId', { studentAccountId: currentUser.accountId })
+      .andWhere('p2.accountId = :teacherAccountId', { teacherAccountId: teacherAccount.id })
+      .getOne();
+
+    if (existing) {
+      throw new BadRequestException('A conversation with this teacher already exists');
+    }
 
     const conversation = this.conversationRepo.create({
-      teacher: { id: isStudent(currentUser) ? dto.teacherId : dto.studentId },
-      student: { id: isTeacher(currentUser) ? dto.studentId : dto.teacherId }
+      type: EConversationType.DIRECT,
+      participants: [
+        this.conversationParticipantRepo.create({
+          account: { id: currentUser.accountId },
+        }),
+        this.conversationParticipantRepo.create({
+          account: { id: teacherAccount.id },
+        })
+      ]
     })
 
     await this.conversationRepo.save(conversation);
@@ -37,69 +76,87 @@ export class ConversationService {
     return { message: 'Conversation created successfully' }
   }
 
-  findAll(queryDto: QueryDto) {
-    const queryBuilder = this.conversationRepo.createQueryBuilder("conv")
-      .limit(queryDto.take)
-      .offset(queryDto.skip)
-      // subquery gets latest message per conv
-      .leftJoin(
-        qb => {
-          return qb
-            .subQuery()
-            .select("msg.conversationId", "conversationid")     // lowercase
-            .addSelect("msg.createdAt", "latestcreatedat")    // lowercase
-            .addSelect("msg.seenAt", "latestseenat")    // lowercase
-            .addSelect("msg.senderId", "latestmessagesenderid")    // lowercase
-            .from(Message, "msg")
-            .where(qb2 => {
-              const sub = qb2
-                .subQuery()
-                .select("MAX(inner.createdAt)")
-                .from(Message, "inner")
-                .where("inner.conversationId = msg.conversationId")
-                .getQuery();
-              return "msg.createdAt = " + sub;
-            });
-        },
-        "lm", // alias of the derived table
-        "lm.conversationid = conv.id"  // must match alias casing
-      )
-      .leftJoin("conv.account", "account")
-      .leftJoin("account.organization", "organization")
+  findAll(queryDto: QueryDto, currentUser: AuthUser) {
+    const queryBuilder = this.conversationRepo.createQueryBuilder('conv')
+      .orderBy('conv.lastMessageAt', 'DESC')
+      .take(queryDto.take)
+      .skip(queryDto.skip)
+      // Subquery: Only get conversations where the current user is a participant
+      .where(qb => {
+        const subQuery = qb
+          .subQuery()
+          .select('cp.conversationId')
+          .from(ConversationParticipant, 'cp')
+          .where('cp.accountId = :accountId', { accountId: currentUser.accountId })
+          .getQuery();
+        return 'conv.id IN ' + subQuery;
+      })
+      // Now join all participants (for DIRECT, this includes the other participant)
+      .leftJoinAndSelect('conv.participants', 'participant')
+      .leftJoinAndSelect('participant.account', 'participantAccount')
+      .leftJoinAndSelect('participantAccount.profileImage', 'profileImage')
       .select([
-        'conv.id as id',
-        'account.id as "senderId"',
-        'account.firstName as senderFirstName',
-        'account.lastName as senderLastName',
-        'account.role as "senderRole"',
-        // 'lm.latestcreatedat as "latestMessageCreatedAt"',
-        // 'lm.latestseenat as "latestMessageSeenAt"',
-        // 'lm.latestmessagesenderid as "latestMessageSenderId"',
+        'conv.id',
+        'conv.type',
+        'conv.title',
+        'conv.lastMessageContent',
+        'conv.lastMessageAt',
+        'participant.id',
+        'participant.unreadCount',
+        'participantAccount.id',
+        'participantAccount.lowerCasedFullName',
+        'participantAccount.role',
+        'profileImage.id',
+        'profileImage.url',
       ])
-      .orderBy("lm.latestcreatedat", "DESC")
 
-    return paginatedRawData(queryDto, queryBuilder);
+    return paginatedData(queryDto, queryBuilder);
   }
 
-  async findOne(id: string) {
-    const existing = await this.conversationRepo.findOne({
-      where: { id },
-      relations: ['teacher', 'student'],
-      select: {
-        id: true,
-        teacher: {
-          id: true,
-          firstName: true,
-          lastName: true,
-        },
-        student: {
-          id: true,
-          firstName: true,
-          lastName: true,
-        }
-      }
-    });
+  async findOne(id: string, currentUser: AuthUser) {
+    const queryBuilder = this.conversationRepo.createQueryBuilder('conv')
+      .where('conv.id = :id', { id })
+      // Subquery: Only get conversations where the current user is a participant
+      .andWhere(qb => {
+        const subQuery = qb
+          .subQuery()
+          .select('cp.conversationId')
+          .from(ConversationParticipant, 'cp')
+          .where('cp.accountId = :accountId', { accountId: currentUser.accountId })
+          .getQuery();
+        return 'conv.id IN ' + subQuery;
+      })
+      // Now join all participants (for DIRECT, this includes the other participant)
+      .leftJoinAndSelect('conv.participants', 'participant')
+      .leftJoinAndSelect('participant.account', 'participantAccount')
+      .leftJoinAndSelect('participantAccount.profileImage', 'profileImage')
+
+    queryBuilder.select([
+      'conv.id',
+      'conv.type',
+      'conv.title',
+      'conv.lastMessageContent',
+      'conv.lastMessageAt',
+      'participant.id',
+      'participant.unreadCount',
+      'participantAccount.id',
+      'participantAccount.lowerCasedFullName',
+      'participantAccount.role',
+      'profileImage.id',
+      'profileImage.url',
+    ])
+
+    const existing = await queryBuilder.getOne();
+
     if (!existing) throw new BadRequestException('Conversation not found');
     return existing;
   }
+
+  async markAsRead(conversationId: string, currentUser: AuthUser) {
+    await this.conversationParticipantRepo.update(
+      { account: { id: currentUser.accountId }, conversation: { id: conversationId } },
+      { unreadCount: 0 }
+    );
+  }
+
 }

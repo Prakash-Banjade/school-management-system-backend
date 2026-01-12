@@ -3,7 +3,6 @@ import { ClassRoom } from "src/class-rooms/entities/class-room.entity";
 import { ClassRoutine } from "src/class-routines/entities/class-routine.entity";
 import { BaseEntity } from "src/common/entities/base.entity";
 import { EBloodGroup, EMaritalStatus, Gender } from "src/common/types/global.type";
-import { Conversation } from "src/conversation-system/conversation/entities/conversation.entity";
 import { Faculty } from "src/faculties/entities/faculty.entity";
 import { File } from "src/file-management/files/entities/file.entity";
 import { EmployeeLedger } from "src/finance-system/salary-management/employee-ledgers/entities/employee-ledger.entity";
@@ -111,8 +110,4 @@ export class Teacher extends BaseEntity {
 
     @OneToMany(() => BookTransaction, (bookTransaction) => bookTransaction.teacher)
     bookTransactions: BookTransaction[];
-
-
-    @OneToMany(() => Conversation, conversation => conversation.teacher)
-    conversations: Conversation[]
 }
