@@ -1,7 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateConversationDto } from './dto/create-conversation.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsSelect, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Conversation } from './entities/conversation.entity';
 import { AuthUser, Role } from 'src/common/types/global.type';
 import { isStudent, } from 'src/utils/utils';
@@ -11,7 +11,6 @@ import { Account } from 'src/auth-system/accounts/entities/account.entity';
 import { ConversationParticipant } from '../conversation-participants/entities/conversation-participant.entity';
 import { QueryDto } from 'src/common/dto/query.dto';
 import paginatedData from 'src/utils/paginatedData';
-import { applySelectColumns } from 'src/utils/apply-select-cols';
 
 @Injectable()
 export class ConversationService {
@@ -153,7 +152,8 @@ export class ConversationService {
   }
 
   async markAsRead(conversationId: string, currentUser: AuthUser) {
-    await this.conversationParticipantRepo.update(
+    console.log(1)
+    this.conversationParticipantRepo.update(
       { account: { id: currentUser.accountId }, conversation: { id: conversationId } },
       { unreadCount: 0 }
     );
