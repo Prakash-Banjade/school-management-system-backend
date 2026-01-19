@@ -48,6 +48,7 @@ import { OnlineClassesModule } from './online-classes/online-classes.module';
 import { StreamClientModule } from './auth-system/stream-client/stream-client.module';
 import { SentryModule } from '@sentry/nestjs/setup';
 import { createKeyv } from '@keyv/redis';
+import { ConversationSystemModule } from './conversation-system/conversation-system.module';
 
 @Module({
   imports: [
@@ -112,6 +113,7 @@ import { createKeyv } from '@keyv/redis';
     UtilitiesModule,
     LessonPlansModule,
     OnlineClassesModule,
+    ConversationSystemModule,
   ],
   controllers: [AppController],
   providers: [

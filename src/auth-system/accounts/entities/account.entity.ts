@@ -16,6 +16,8 @@ import { Branch } from "src/branches/entities/branch.entity";
 import { WebAuthnCredential } from "src/auth-system/webAuthn/entities/webAuthnCredential.entity";
 import { LoginDevice } from "./login-devices.entity";
 import { getLowerCasedFullName } from "src/utils/utils";
+import { Message } from "src/conversation-system/messages/entities/message.entity";
+import { ConversationParticipant } from "src/conversation-system/conversation-participants/entities/conversation-participant.entity";
 
 @Entity()
 export class Account extends BaseEntity {
@@ -103,4 +105,10 @@ export class Account extends BaseEntity {
 
     @OneToOne(() => Image, image => image.account_profileImage, { nullable: true })
     profileImage: Image | null;
+
+    @OneToMany(() => Message, message => message.sender)
+    messages: Message[]
+
+    @OneToMany(() => ConversationParticipant, participant => participant.account)
+    conversations: ConversationParticipant[];
 }

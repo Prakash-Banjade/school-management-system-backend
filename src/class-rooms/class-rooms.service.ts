@@ -17,7 +17,6 @@ import { FeeStructure } from 'src/finance-system/fee-management/fee-structures/e
 import { isStudent, isTeacher } from 'src/utils/utils';
 import { AcademicYearsService } from 'src/academic-years/academic-years.service';
 import { Student } from 'src/students/entities/student.entity';
-import { Account } from 'src/auth-system/accounts/entities/account.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class ClassRoomsService extends BaseRepository {
@@ -74,9 +73,10 @@ export class ClassRoomsService extends BaseRepository {
 
       const savedClass = await this.getRepository(ClassRoom).save(newClassRoom);
 
-      await this.getRepository(ClassRoom).update(
-        { id: parentClass.id },
-        {
+      // save the section
+      await this.getRepository(ClassRoom).save(
+        this.getRepository(ClassRoom).create({
+          id: parentClass.id,
           name: dto.name,
           location: dto.location,
           classType: EClassType.SECTION,
@@ -84,7 +84,7 @@ export class ClassRoomsService extends BaseRepository {
           classTeacher: classTeacher,
           createdAt: savedClass.createdAt,
           updatedAt: savedClass.updatedAt,
-        }
+        })
       );
 
       return {

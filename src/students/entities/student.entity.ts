@@ -12,7 +12,7 @@ import { BookTransaction } from "src/library-system/book-transactions/entities/b
 import { OptionalSubject } from "src/optional-subject/entities/optional-subject.entity";
 import { TaskSubmission } from "src/task-system/task-submissions/entities/task-submission.entity";
 import { RouteStop } from "src/transportation-system/route-stops/entities/route-stop.entity";
-import { Column, Entity, Index, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToMany, ManyToOne, OneToMany, OneToOne } from "typeorm";
 
 @Entity()
 export class Student extends BaseEntity {
@@ -108,8 +108,8 @@ export class Student extends BaseEntity {
     |--------------------------------------------------
     */
 
-    @Column({ type: 'enum', enum: EBloodGroup })
-    bloodGroup: EBloodGroup
+    @Column({ type: 'enum', enum: EBloodGroup, nullable: true })
+    bloodGroup: EBloodGroup | null
 
     /**
     |--------------------------------------------------

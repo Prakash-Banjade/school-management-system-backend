@@ -3,8 +3,10 @@ import { Student } from "src/students/entities/student.entity";
 import { LessonPlan } from "src/lesson-plans/entities/lesson-plan.entity";
 import { TaskSubmission } from "src/task-system/task-submissions/entities/task-submission.entity";
 import { Task } from "src/task-system/tasks/entities/task.entity";
-import { Column, Entity, Index, JoinColumn, ManyToOne, OneToOne } from "typeorm";
+import { Column, Entity, Index, ManyToOne } from "typeorm";
 import { LibraryBook } from "src/library-system/library-book/entities/library-book.entity";
+import { Teacher } from "src/teachers/entities/teacher.entity";
+import { Staff } from "src/staffs/entities/staff.entity";
 
 @Entity()
 export class File extends BaseEntity {
@@ -35,6 +37,12 @@ export class File extends BaseEntity {
 
     @ManyToOne(() => Student, student => student.documentAttachments, { onDelete: 'CASCADE' })
     student_documentAttachment: Student;
+
+    @ManyToOne(() => Teacher, teacher => teacher.documentAttachments, { onDelete: 'CASCADE' })
+    teacher_documentAttachment: Teacher;
+
+    @ManyToOne(() => Staff, staff => staff.documentAttachments, { onDelete: 'CASCADE' })
+    staff_documentAttachment: Staff;
 
     @ManyToOne(() => Task, task => task.attachments, { onDelete: 'CASCADE' })
     task_attachment: Task;
