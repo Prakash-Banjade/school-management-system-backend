@@ -152,7 +152,6 @@ export class ConversationService {
   }
 
   async markAsRead(conversationId: string, currentUser: AuthUser) {
-    console.log(1)
     this.conversationParticipantRepo.update(
       { account: { id: currentUser.accountId }, conversation: { id: conversationId } },
       { unreadCount: 0 }

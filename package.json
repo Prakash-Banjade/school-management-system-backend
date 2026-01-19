@@ -11,7 +11,7 @@
     "typeorm"
   ],
   "homepage": "https://github.com/Prakash-Banjade/school-management-system-backend.git",
-  "private": true,
+  "private": false,
   "license": "MIT",
   "scripts": {
     "build": "nest build",
