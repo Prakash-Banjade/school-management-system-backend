@@ -26,9 +26,9 @@ export class JwtService {
         });
     }
 
-    async createRefreshToken(payload: Pick<AuthUser, 'accountId'>): Promise<string> {
+    async createRefreshToken(payload: Pick<AuthUser, 'accountId' | 'asGuest'>): Promise<string> {
         return await this.jwtService.signAsync(
-            { accountId: payload.accountId },
+            { accountId: payload.accountId, asGuest: payload.asGuest },
             {
                 secret: this.envService.REFRESH_TOKEN_SECRET,
                 expiresIn: this.envService.REFRESH_TOKEN_EXPIRATION_SEC,
@@ -51,7 +51,7 @@ export class JwtService {
      * @param account the account
      * @returns the access and refresh tokens
      */
-    async getAuthTokens(account: Account, req: FastifyRequest) {
+    async getAuthTokens(account: Account, req: FastifyRequest, asGuest?: boolean) {
         let payload: AuthUser;
 
         const deviceId = req.user?.deviceId ?? generateDeviceId(req.headers['user-agent'], req.ip);
@@ -81,6 +81,7 @@ export class JwtService {
                 studentId: student.id,
                 branchId: student.account?.branch?.id ?? undefined,
                 deviceId,
+                asGuest,
             };
         } else if (account.role === Role.TEACHER) {
             const teacher = await this.teacherRepo.findOne({
@@ -103,6 +104,7 @@ export class JwtService {
                 teacherId: teacher.id,
                 branchId: teacher.account?.branch?.id ?? undefined,
                 deviceId,
+                asGuest,
             }
         } else {
             payload = {
@@ -111,6 +113,7 @@ export class JwtService {
                 role: account.role,
                 branchId: account.branch?.id ?? undefined,
                 deviceId,
+                asGuest,
             };
         }
 

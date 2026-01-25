@@ -52,11 +52,14 @@ export class AllExceptionsFilter extends BaseExceptionFilter {
             errResponse.type = 'Others'
         }
 
-        console.log(
+        const stack = exception instanceof Error ? (exception.stack?.split('\n')[1]?.trim() || exception.stack) : 'Unknown Origin';
+
+        console.error(
             request.method,
             errResponse.path,
             errResponse.type,
             errResponse.message,
+            stack
         );
 
         if (typeof errResponse.message === 'string' && errResponse.message.includes('foreign key constraint fails')) {

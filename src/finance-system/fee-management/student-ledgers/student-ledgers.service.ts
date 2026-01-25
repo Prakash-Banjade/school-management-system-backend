@@ -79,9 +79,10 @@ export class StudentLedgersService extends BaseRepository {
 
     async getStatistics(currentUser: AuthUser) {
         const currentAcademicYearId = await this.academicYearService.getCurrentAcademicYearId();
-
+        
         if (!isStudent(currentUser)) throw new ForbiddenException('Access Denied');
-
+        console.log(currentAcademicYearId, currentUser.studentId);
+        
         const studentLedger = await this.getRepository(StudentLedger).createQueryBuilder('ledger')
             .leftJoin('ledger.enrollment', 'enrollment')
             .where("enrollment.academicYearId = :academicYearId", { academicYearId: currentAcademicYearId })
@@ -91,6 +92,8 @@ export class StudentLedgersService extends BaseRepository {
                 'ledger.amount',
             ])
             .getOne();
+
+        if (!studentLedger) throw new NotFoundException('Student Ledger not found');
 
         const lastInvoiceQuerybuilder = this.getRepository(FeeInvoice).createQueryBuilder('invoice')
             .orderBy('invoice.createdAt', 'DESC')
