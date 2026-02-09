@@ -7,7 +7,7 @@ import { FastifyReply, FastifyRequest } from 'fastify';
 import { Account } from '../accounts/entities/account.entity';
 import { AuthUser } from 'src/common/types/global.type';
 import { AuthMessage, MAX_PREV_PASSWORDS, PASSWORD_SALT_COUNT, Tokens } from 'src/common/CONSTANTS';
-import { SignInDto } from './dto/signIn.dto';
+import { GuestSignInDto, SignInDto } from './dto/signIn.dto';
 import { AuthHelper } from './helpers/auth.helper';
 import { JwtService } from '../jwt/jwt.service';
 import { CookieSerializeOptions } from '@fastify/cookie';
@@ -48,9 +48,9 @@ export class AuthService extends BaseRepository {
   }
 
   async proceedLogin({
-    account, req, reply, checkDevice = true, method = 'password'
+    account, req, reply, checkDevice = true, method = 'password', asGuest = false
   }: {
-    account: Account, req: FastifyRequest, reply: FastifyReply, checkDevice?: boolean, method?: 'password' | 'passkey'
+    account: Account, req: FastifyRequest, reply: FastifyReply, checkDevice?: boolean, method?: 'password' | 'passkey', asGuest?: boolean
   }) {
     if (checkDevice) {
       const message = await this.handleDevice(account, req, method); // refreshtoken instance initialized here
@@ -59,7 +59,7 @@ export class AuthService extends BaseRepository {
 
     const existingRefreshCookie = req.cookies?.[Tokens.REFRESH_TOKEN_COOKIE_NAME];
 
-    const { access_token, refresh_token } = await this.jwtService.getAuthTokens(account, req);
+    const { access_token, refresh_token } = await this.jwtService.getAuthTokens(account, req, asGuest);
 
     // remove old refresh token from cookie
     if (existingRefreshCookie) {
@@ -140,6 +140,18 @@ export class AuthService extends BaseRepository {
       expires: new Date(Date.now() + (this.envService.REFRESH_TOKEN_EXPIRATION_SEC * 1000)),
       path: '/', // necessary to be able to access cookie from out of this route path context, like auth.guard.ts
     }
+  }
+
+  async guestLogin({ role }: GuestSignInDto, req: FastifyRequest, reply: FastifyReply) {
+    const guestEmail = `guest_${role}@gmail.com`;
+    const foundAccount = await this.getRepository(Account).findOne({
+      where: { email: guestEmail },
+      relations: { branch: true, profileImage: true },
+      select: { branch: { id: true, name: true }, profileImage: { url: true } },
+    });
+    if (!foundAccount) throw new NotFoundException('Account not found');
+
+    return this.proceedLogin({ account: foundAccount, req, reply, asGuest: true });
   }
 
   async verifyEmail(otpVerificationDto: OtpVerificationDto, req: FastifyRequest) {

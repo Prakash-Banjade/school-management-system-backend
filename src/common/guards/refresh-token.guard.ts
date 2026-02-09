@@ -22,13 +22,17 @@ export class RefreshTokenGuard implements CanActivate {
         if (!valid) throw new ForbiddenException();
 
         try {
-            const { accountId } = await this.jwtService.verifyAsync(refreshCookieValue, {
+            const { accountId, asGuest } = await this.jwtService.verifyAsync(refreshCookieValue, {
                 secret: this.envService.REFRESH_TOKEN_SECRET,
             })
 
+            const isLogout = request.url === '/api/auth/logout';
+            if (asGuest && !isLogout) throw new ForbiddenException();
+
             request.accountId = accountId;
-        } catch {
+        } catch (e) {
             reply.clearCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME)
+            if (e instanceof ForbiddenException) throw e;
             throw new UnauthorizedException();
         }
         return true;

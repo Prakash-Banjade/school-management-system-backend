@@ -5,10 +5,9 @@
     "Prakash Banjade (https://github.com/prakash-banjade)"
   ],
   "keywords": [
-    "nestjs",
-    "fastify",
-    "typescript",
-    "typeorm"
+    "school-management-system",
+    "sms",
+    "school-management-system-backend"
   ],
   "homepage": "https://github.com/Prakash-Banjade/school-management-system-backend.git",
   "private": false,
@@ -18,7 +17,10 @@
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "node dist/main",
     "dev": "nest start --watch",
-    "db:sync": "node ./dist/datasource/sync-script.js", 
+    "db:sync:prod": "node ./dist/database/sync-script.js",
+    "db:sync": "ts-node -r tsconfig-paths/register src/database/sync-script.ts",
+    "db:seed:prod": "node ./dist/database/seeds/seed.ts", 
+    "db:seed": "ts-node -r tsconfig-paths/register src/database/seeds/seed.ts", 
     "debug": "nest start --debug --watch",
     "prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",

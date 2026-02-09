@@ -1,8 +1,8 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Req, Res, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post, Query, Req, Res, UseGuards, UseInterceptors } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { SignInDto } from './dto/signIn.dto';
+import { GuestSignInDto, SignInDto } from './dto/signIn.dto';
 import { Public } from 'src/common/decorators/setPublicRoute.decorator';
 import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 import { RefreshTokenGuard } from 'src/common/guards/refresh-token.guard';
@@ -37,6 +37,21 @@ export class AuthController {
         @Res({ passthrough: true }) response: FastifyReply,
     ) {
         return this.authService.login(signInDto, request, response);
+    }
+
+    @ApiOperation({ summary: 'Login a user as guest' })
+    @ApiResponse({ status: 200, description: 'User successfully logged in.' })
+    @ApiResponse({ status: 401, description: 'Invalid credentials.' })
+    @UseInterceptors(TransactionInterceptor)
+    @HttpCode(HttpStatus.OK)
+    @Public()
+    @Post('login/guest')
+    guestLogin(
+        @Query() guestSignInDto: GuestSignInDto,
+        @Req() request: FastifyRequest,
+        @Res({ passthrough: true }) response: FastifyReply,
+    ) {
+        return this.authService.guestLogin(guestSignInDto, request, response);
     }
 
     @ApiOperation({ summary: 'Refresh access token' })

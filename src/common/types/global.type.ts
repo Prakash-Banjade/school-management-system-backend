@@ -1,27 +1,36 @@
 
-export type AuthUser = {
-    accountId: string;
-    email: string;
-    role: Omit<Role, Role.STUDENT>;
-    branchId: string | undefined;
-    deviceId: string;
-} | {
-    accountId: string;
-    email: string;
-    role: Role.STUDENT;
-    classRoomId: string;
-    parentClassId: string | null;
-    studentId: string;
-    branchId: string;
-    deviceId: string;
-} | {
-    accountId: string;
-    email: string;
-    role: Role.TEACHER;
-    teacherId: string;
-    branchId: string;
-    deviceId: string;
-}
+export type AuthUser =
+    // when logged in as super admin, admin
+    {
+        accountId: string;
+        email: string;
+        role: Omit<Role, Role.STUDENT>;
+        branchId: string | undefined;
+        deviceId: string;
+        asGuest?: boolean
+    }
+    // when logged in as student
+    | {
+        accountId: string;
+        email: string;
+        role: Role.STUDENT;
+        classRoomId: string;
+        parentClassId: string | null;
+        studentId: string;
+        branchId: string;
+        deviceId: string;
+        asGuest?: boolean
+    }
+    // when logged in as teacher
+    | {
+        accountId: string;
+        email: string;
+        role: Role.TEACHER;
+        teacherId: string;
+        branchId: string;
+        deviceId: string;
+        asGuest?: boolean
+    }
 
 export enum Action {
     MANAGE = 'manage',

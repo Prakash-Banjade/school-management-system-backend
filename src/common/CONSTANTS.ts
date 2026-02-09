@@ -46,8 +46,8 @@ export const enum CACHE_KEYS {
 }
 
 export const thisSchool = {
-    name: 'Aayam Global SMS',
+    name: 'Loomis SMS',
     address: 'Kalikanagar-11, Butwal',
     phone: '071415272',
-    logo: 'https://tscapis.e-aribt.com/uploads/Aayam%20Global%20School%20Logo-01-1cb6f8.png',
+    logo: 'https://res.cloudinary.com/dbj0ffzhn/image/upload/v1769360427/logo_sor0ko.png',
 } as const;

@@ -12,10 +12,4 @@ export class AppController {
   getHello(): string {
     return this.appService.getHello();
   }
-
-  // @Public()
-  // @Get('seed')
-  // seed() {
-  //   return this.appService.seed();
-  // }
 }

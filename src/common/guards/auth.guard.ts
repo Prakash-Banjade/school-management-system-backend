@@ -1,10 +1,11 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common";
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { JwtService } from "@nestjs/jwt";
 import { IS_PUBLIC_KEY } from "../decorators/setPublicRoute.decorator";
 import { FastifyRequest } from "fastify";
 import { Tokens } from "../CONSTANTS";
 import { EnvService } from "src/env/env.service";
+import { AuthUser } from "../types/global.type";
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -31,12 +32,18 @@ export class AuthGuard implements CanActivate {
                 secret: this.envService.REFRESH_TOKEN_SECRET,
             })
 
-            const payload = await this.jwtService.verifyAsync(access_token, {
+            const payload: AuthUser = await this.jwtService.verifyAsync(access_token, {
                 secret: this.envService.ACCESS_TOKEN_SECRET,
             });
 
+            // guest users can only access get requests, except POST /api/auth/logout
+            const isLogout = request.url === '/api/auth/logout';
+            const isGuestAndNotGetMethod = payload.asGuest === true && request.method !== 'GET';
+            if (isGuestAndNotGetMethod && !isLogout) throw new ForbiddenException();
+
             request['user'] = payload;
-        } catch {
+        } catch (e) {
+            if (e instanceof ForbiddenException) throw e;
             throw new UnauthorizedException();
         }
         return true;

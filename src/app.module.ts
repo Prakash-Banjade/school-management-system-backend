@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from './datasource/typeorm.module';
+import { DatabaseModule } from './database/database.module';
 import { AuthSystemModule } from './auth-system/auth-system.module';
 import { FileManagementModule } from './file-management/file-management.module';
 import { MemoryStoredFile, NestjsFormDataModule } from 'nestjs-form-data';
@@ -80,7 +80,7 @@ import { ConversationSystemModule } from './conversation-system/conversation-sys
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'wwwroot'),
     }),
-    TypeOrmModule,
+    DatabaseModule,
     AuthSystemModule,
     FileManagementModule,
     MailModule,
